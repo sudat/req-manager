@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>変更要求一覧 - 要件管理ツール</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../shared/tailwind-style.js"></script>
+</head>
+<body>
+    <!-- サイドバー -->
+    <aside class="sidebar" id="sidebar"></aside>
+
+    <!-- メインコンテンツ -->
+    <div class="main-wrapper">
+        <div class="container">
+            <!-- ヘッダー -->
+            <div class="header">
+                <h1>変更要求一覧</h1>
+                <p>仕様変更のチケットを管理</p>
+            </div>
+
+            <!-- ツールバー -->
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <div class="search-box">
+                        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                        <input type="text" class="search-input" placeholder="変更要求を検索...">
+                    </div>
+                    <select class="filter-select">
+                        <option value="">すべてのステータス</option>
+                        <option value="open">オープン</option>
+                        <option value="review">レビュー中</option>
+                        <option value="approved">承認済</option>
+                        <option value="applied">適用済</option>
+                    </select>
+                    <select class="filter-select">
+                        <option value="">すべての領域</option>
+                        <option value="fi">FI</option>
+                        <option value="sd">SD</option>
+                        <option value="mm">MM</option>
+                        <option value="hr">HR</option>
+                    </select>
+                </div>
+                <a href="ticket_create.html" class="btn-primary">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    追加
+                </a>
+            </div>
+
+            <!-- テーブル -->
+            <div class="table-card">
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>タイトル</th>
+                                <th>影響業務</th>
+                                <th>影響領域</th>
+                                <th>ステータス</th>
+                                <th>適用先版</th>
+                                <th>起票日</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>CR-001</td>
+                                <td>インボイス制度対応</td>
+                                <td>
+                                    <div class="business-tags">
+                                        <span class="business-tag">請求業務</span>
+                                        <span class="business-tag">経理業務</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="area-badges">
+                                        <span class="badge area-fi">FI</span>
+                                        <span class="badge area-sd">SD</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge status-approved">適用済</span>
+                                </td>
+                                <td>
+                                    <div class="versions">
+                                        <span class="version">v2.0</span>
+                                        <span class="version">v2.1</span>
+                                    </div>
+                                </td>
+                                <td>2024-01-15</td>
+                                <td>
+                                    <div class="actions">
+                                        <a class="icon-btn view" href="ticket_detail.html" title="照会">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                                <circle cx="12" cy="12" r="3"></circle>
+                                            </svg>
+                                        </a>
+                                        <a class="icon-btn edit" href="ticket_detail.html" title="編集">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M12 20h9"></path>
+                                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                                            </svg>
+                                        </a>
+                                        <button class="icon-btn delete" type="button" title="削除">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="3 6 5 6 21 6"></polyline>
+                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>CR-002</td>
+                                <td>電子帳簿保存法対応</td>
+                                <td>
+                                    <div class="business-tags">
+                                        <span class="business-tag">請求業務</span>
+                                        <span class="business-tag">経理業務</span>
+                                        <span class="business-tag">+1</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="area-badges">
+                                        <span class="badge area-fi">FI</span>
+                                        <span class="badge area-sd">SD</span>
+                                        <span class="badge area-mm">MM</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge status-approved">承認済</span>
+                                </td>
+                                <td>
+                                    <div class="versions">
+                                        <span class="version">v2.1</span>
+                                    </div>
+                                </td>
+                                <td>2024-02-01</td>
+                                <td>
+                                    <div class="actions">
+                                        <a class="icon-btn view" href="ticket_detail.html" title="照会">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                                <circle cx="12" cy="12" r="3"></circle>
+                                            </svg>
+                                        </a>
+                                        <a class="icon-btn edit" href="ticket_detail.html" title="編集">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M12 20h9"></path>
+                                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                                            </svg>
+                                        </a>
+                                        <button class="icon-btn delete" type="button" title="削除">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="3 6 5 6 21 6"></polyline>
+                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>CR-003</td>
+                                <td>承認ワークフロー改善</td>
+                                <td>
+                                    <div class="business-tags">
+                                        <span class="business-tag">購買業務</span>
+                                        <span class="business-tag">経費精算業務</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="area-badges">
+                                        <span class="badge area-mm">MM</span>
+                                        <span class="badge area-fi">FI</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge status-review">レビュー中</span>
+                                </td>
+                                <td>
+                                    <div class="versions">
+                                        <span class="version">未適用</span>
+                                    </div>
+                                </td>
+                                <td>2024-02-10</td>
+                                <td>
+                                    <div class="actions">
+                                        <a class="icon-btn view" href="ticket_detail.html" title="照会">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                                <circle cx="12" cy="12" r="3"></circle>
+                                            </svg>
+                                        </a>
+                                        <a class="icon-btn edit" href="ticket_detail.html" title="編集">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M12 20h9"></path>
+                                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                                            </svg>
+                                        </a>
+                                        <button class="icon-btn delete" type="button" title="削除">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="3 6 5 6 21 6"></polyline>
+                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>CR-004</td>
+                                <td>在庫管理機能強化</td>
+                                <td>
+                                    <div class="business-tags">
+                                        <span class="business-tag">在庫管理業務</span>
+                                        <span class="business-tag">購買業務</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="area-badges">
+                                        <span class="badge area-mm">MM</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge status-open">オープン</span>
+                                </td>
+                                <td>
+                                    <div class="versions">
+                                        <span class="version">未適用</span>
+                                    </div>
+                                </td>
+                                <td>2024-02-15</td>
+                                <td>
+                                    <div class="actions">
+                                        <a class="icon-btn view" href="ticket_detail.html" title="照会">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                                <circle cx="12" cy="12" r="3"></circle>
+                                            </svg>
+                                        </a>
+                                        <a class="icon-btn edit" href="ticket_detail.html" title="編集">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M12 20h9"></path>
+                                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                                            </svg>
+                                        </a>
+                                        <button class="icon-btn delete" type="button" title="削除">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="3 6 5 6 21 6"></polyline>
+                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>CR-005</td>
+                                <td>取引先マスタ統合</td>
+                                <td>
+                                    <div class="business-tags">
+                                        <span class="business-tag">販売業務</span>
+                                        <span class="business-tag">購買業務</span>
+                                        <span class="business-tag">+1</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="area-badges">
+                                        <span class="badge area-sd">SD</span>
+                                        <span class="badge area-mm">MM</span>
+                                        <span class="badge area-fi">FI</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge status-review">レビュー中</span>
+                                </td>
+                                <td>
+                                    <div class="versions">
+                                        <span class="version">未適用</span>
+                                    </div>
+                                </td>
+                                <td>2024-02-20</td>
+                                <td>
+                                    <div class="actions">
+                                        <a class="icon-btn view" href="ticket_detail.html" title="照会">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                                <circle cx="12" cy="12" r="3"></circle>
+                                            </svg>
+                                        </a>
+                                        <a class="icon-btn edit" href="ticket_detail.html" title="編集">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M12 20h9"></path>
+                                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                                            </svg>
+                                        </a>
+                                        <button class="icon-btn delete" type="button" title="削除">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="3 6 5 6 21 6"></polyline>
+                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="../shared/sidebar.js"></script>
+</body>
+</html>

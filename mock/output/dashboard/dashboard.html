@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ダッシュボード - 要件管理ツール</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../shared/tailwind-style.js"></script>
+</head>
+<body>
+    <!-- サイドバー -->
+    <aside class="sidebar" id="sidebar"></aside>
+
+    <!-- メインコンテンツ -->
+    <div class="main-wrapper">
+        <div class="dashboard-container">
+            <!-- ヘッダー -->
+            <div class="header">
+                <div class="header-title-row">
+                    <h1>ダッシュボード</h1>
+                    <span class="baseline-badge">ベースライン v1.2</span>
+                </div>
+                <p>プロジェクト全体のサマリーとクイックアクション</p>
+                <div class="baseline-meta">現在のベースライン: v1.2 / 作成: 2026-01-05</div>
+            </div>
+
+            <!-- サマリーカード -->
+            <div class="summary-section">
+                <div class="summary-card">
+                    <div class="summary-card-icon green">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                    </div>
+                    <div class="summary-card-value">12</div>
+                    <div class="summary-card-label">オープン変更要求</div>
+                    <div class="summary-subtext">次回リリースまで 27日</div>
+                </div>
+
+                <div class="summary-group">
+                    <div class="summary-group-title">要再確認リンク（重大度）</div>
+                    <div class="summary-group-cards">
+                        <div class="summary-group-card high">
+                            <div class="summary-group-label">重大度: 高</div>
+                            <div class="summary-group-value">8 件</div>
+                        </div>
+                        <div class="summary-group-card medium">
+                            <div class="summary-group-label">重大度: 中</div>
+                            <div class="summary-group-value">15 件</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="summary-card actions">
+                    <div class="summary-card-label">クイックアクション</div>
+                    <div class="summary-actions">
+                        <a href="#" class="summary-action primary">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.35-4.35"></path>
+                            </svg>
+                            <span>照会</span>
+                        </a>
+                        <a href="#" class="summary-action secondary">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            <span>ベースライン参照</span>
+                        </a>
+                        <a href="#" class="summary-action secondary">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            <span>変更要求起票</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- メインコンテンツ -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                <div>
+                    <!-- レビュー待ち変更要求（優先順） -->
+                    <div class="content-card">
+                        <div class="content-card-header">
+                            <div class="content-card-title">レビュー待ち変更要求（優先順）</div>
+                            <div class="card-subtitle">優先度: リリース日が近い順 → 重大度</div>
+                        </div>
+                        <ul class="change-request-list">
+                            <li class="change-request-item">
+                                <div class="change-request-left">
+                                    <div class="change-request-id">CR-2026-031<span class="status-badge review">レビュー中</span></div>
+                                    <div class="change-request-title">インボイス制度対応</div>
+                                    <div class="change-request-category">請求業務</div>
+                                </div>
+                                <div class="change-request-right">
+                                    <div class="change-request-meta">
+                                        <span class="meta-pill release">リリース: 2026-01-12</span>
+                                        <span class="meta-pill deadline soon">残り: 7日</span>
+                                        <span class="meta-pill severity-high">重大度: 高</span>
+                                    </div>
+                                    <div class="review-actions">
+                                        <button class="mini-button approve" type="button">承認</button>
+                                        <button class="mini-button reject" type="button">否認</button>
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="change-request-item">
+                                <div class="change-request-left">
+                                    <div class="change-request-id">CR-2026-030<span class="status-badge review">レビュー中</span></div>
+                                    <div class="change-request-title">電子帳簿保存法対応</div>
+                                    <div class="change-request-category">会計業務</div>
+                                </div>
+                                <div class="change-request-right">
+                                    <div class="change-request-meta">
+                                        <span class="meta-pill release">リリース: 2026-01-20</span>
+                                        <span class="meta-pill deadline">残り: 15日</span>
+                                        <span class="meta-pill severity-medium">重大度: 中</span>
+                                    </div>
+                                    <div class="review-actions">
+                                        <button class="mini-button approve" type="button">承認</button>
+                                        <button class="mini-button reject" type="button">否認</button>
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="change-request-item">
+                                <div class="change-request-left">
+                                    <div class="change-request-id">CR-2026-029<span class="status-badge review">レビュー中</span></div>
+                                    <div class="change-request-title">多通貨対応機能追加</div>
+                                    <div class="change-request-category">販売業務</div>
+                                </div>
+                                <div class="change-request-right">
+                                    <div class="change-request-meta">
+                                        <span class="meta-pill release">リリース: 2026-02-01</span>
+                                        <span class="meta-pill deadline">残り: 27日</span>
+                                        <span class="meta-pill severity-medium">重大度: 中</span>
+                                    </div>
+                                    <div class="review-actions">
+                                        <button class="mini-button approve" type="button">承認</button>
+                                        <button class="mini-button reject" type="button">否認</button>
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="change-request-item">
+                                <div class="change-request-left">
+                                    <div class="change-request-id">CR-2026-028<span class="status-badge review">レビュー中</span></div>
+                                    <div class="change-request-title">在庫管理アルゴリズム改善</div>
+                                    <div class="change-request-category">在庫業務</div>
+                                </div>
+                                <div class="change-request-right">
+                                    <div class="change-request-meta">
+                                        <span class="meta-pill release">リリース: 2026-02-15</span>
+                                        <span class="meta-pill deadline">残り: 41日</span>
+                                        <span class="meta-pill severity-medium">重大度: 中</span>
+                                    </div>
+                                    <div class="review-actions">
+                                        <button class="mini-button approve" type="button">承認</button>
+                                        <button class="mini-button reject" type="button">否認</button>
+                                    </div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+
+                </div>
+
+                <div>
+                    <!-- 業務領域別 要件分布グラフ -->
+                    <div class="content-card">
+                        <div class="content-card-header">
+                            <div class="content-card-title">業務領域別 要件分布</div>
+                        </div>
+
+                        <div class="distribution">
+                            <div class="distribution-item">
+                                <div class="distribution-label">請求/販売</div>
+                                <div class="distribution-bar"><span style="width: 33%"></span></div>
+                                <div class="distribution-value">52件 (33%)</div>
+                            </div>
+                            <div class="distribution-item">
+                                <div class="distribution-label">会計</div>
+                                <div class="distribution-bar"><span style="width: 26%"></span></div>
+                                <div class="distribution-value">41件 (26%)</div>
+                            </div>
+                            <div class="distribution-item">
+                                <div class="distribution-label">購買</div>
+                                <div class="distribution-bar"><span style="width: 18%"></span></div>
+                                <div class="distribution-value">28件 (18%)</div>
+                            </div>
+                            <div class="distribution-item">
+                                <div class="distribution-label">在庫</div>
+                                <div class="distribution-bar"><span style="width: 14%"></span></div>
+                                <div class="distribution-value">22件 (14%)</div>
+                            </div>
+                            <div class="distribution-item">
+                                <div class="distribution-label">共通</div>
+                                <div class="distribution-bar"><span style="width: 9%"></span></div>
+                                <div class="distribution-value">13件 (9%)</div>
+                            </div>
+                        </div>
+
+                        <div class="distribution-note">※ サンプル表示（合計: 156件）</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="../shared/sidebar.js"></script>
+</body>
+</html>

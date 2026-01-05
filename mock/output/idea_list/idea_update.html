@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>概念を編集 - 要件管理ツール</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../shared/tailwind-style.js"></script>
+</head>
+<body>
+    <aside class="sidebar" id="sidebar"></aside>
+
+    <div class="main-content">
+        <main class="content-area">
+            <a href="idea_list.html" class="back-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                概念詳細に戻る
+            </a>
+
+            <h1 class="page-title">概念を編集</h1>
+
+            <div class="form-container">
+                <div class="form-group">
+                    <label class="form-label">概念ID</label>
+                    <input type="text" class="form-input" value="C001" disabled />
+                    <div class="help-text">概念IDは変更できません</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        概念名<span class="required">*</span>
+                    </label>
+                    <input type="text" class="form-input" value="インボイス制度" placeholder="概念名を入力" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">同義語</label>
+                    <textarea class="form-textarea" placeholder="カンマ区切りで複数入力可能">適格請求書, 適格請求書等保存方式, Invoice System</textarea>
+                    <div class="help-text">カンマ区切りで複数入力可能</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        影響領域<span class="required">*</span>
+                    </label>
+                    <div class="domain-checkboxes">
+                        <label class="checkbox-item">
+                            <input type="checkbox" checked />
+                            <span class="checkbox-label">FI</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" checked />
+                            <span class="checkbox-label">SD</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" checked />
+                            <span class="checkbox-label">MM</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" />
+                            <span class="checkbox-label">HR</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">必読ドキュメント</label>
+                    <textarea class="form-textarea" placeholder="改行区切りで複数入力可能">国税庁ガイドライン
+経理規程改定案</textarea>
+                    <div class="help-text">改行区切りで複数入力可能</div>
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn btn-cancel" onclick="window.location.href='idea_view.html'">キャンセル</button>
+                    <button class="btn btn-save">保存</button>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="../shared/sidebar.js"></script>
+</body>
+</html>

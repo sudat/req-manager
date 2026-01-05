@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>通知設定 - 要件管理ツール</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../shared/tailwind-style.js"></script>
+</head>
+<body>
+    <aside class="sidebar" id="sidebar"></aside>
+
+    <div class="main-content">
+        <div class="settings-header">
+            <h1 class="settings-title">設定</h1>
+            <p class="settings-description">プロジェクトとシステムの設定を管理</p>
+        </div>
+
+        <main class="content-area">
+            <div class="settings-nav">
+                <a href="settings.html" class="settings-nav-item">
+                    <svg class="settings-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"></path>
+                    </svg>
+                    <span>プロジェクト設定</span>
+                </a>
+                <a href="settings_llm.html" class="settings-nav-item">
+                    <svg class="settings-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 3v18h18"></path>
+                        <path d="m19 9-5 5-4-4-3 3"></path>
+                    </svg>
+                    <span>LLM設定</span>
+                </a>
+                <a href="settings_domains.html" class="settings-nav-item">
+                    <svg class="settings-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                    <span>影響領域マスタ</span>
+                </a>
+                <a href="settings_notification.html" class="settings-nav-item active">
+                    <svg class="settings-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span>通知設定</span>
+                </a>
+            </div>
+
+            <div class="settings-content">
+                <div class="settings-section">
+                    <h2 style="font-size: 20px; font-weight: 600; margin-bottom: 24px; color: #333;">通知設定</h2>
+                    <div class="toggle-container">
+                        <div class="toggle-info">
+                            <div class="toggle-label">変更要求の更新通知</div>
+                            <div class="toggle-description">変更要求のステータスが変更されたときに通知します</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="toggle-container">
+                        <div class="toggle-info">
+                            <div class="toggle-label">suspect link通知</div>
+                            <div class="toggle-description">要再確認リンクが発生したときに通知します</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="toggle-container">
+                        <div class="toggle-info">
+                            <div class="toggle-label">レビュー依頼通知</div>
+                            <div class="toggle-description">レビューが依頼されたときに通知します</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="toggle-container">
+                        <div class="toggle-info">
+                            <div class="toggle-label">週次サマリー</div>
+                            <div class="toggle-description">毎週月曜日にプロジェクトのサマリーを送信します</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="btn btn-save">変更を保存</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="../shared/sidebar.js"></script>
+</body>
+</html>
