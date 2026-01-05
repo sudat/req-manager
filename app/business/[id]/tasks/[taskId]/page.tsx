@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Pencil } from "lucide-react";
 import type { TaskKnowledge } from "@/lib/mock/task-knowledge";
 import { getDefaultTaskKnowledge } from "@/lib/mock/task-knowledge";
+import { getSystemFunctionById } from "@/lib/mock/srf-knowledge";
 
 export default function TaskDetailPage({ params }: { params: Promise<{ id: string; taskId: string }> }) {
   const { id, taskId } = use(params);
@@ -106,7 +107,12 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
               {knowledge.businessRequirements.length === 0 ? (
                 <div className="text-sm text-slate-500">まだ登録されていません。</div>
               ) : (
-                knowledge.businessRequirements.map((req) => (
+                knowledge.businessRequirements.map((req) => {
+                  const srfId = req.srfId;
+                  const systemFunction = srfId ? getSystemFunctionById(srfId) : undefined;
+                  const systemFunctionName = systemFunction?.summary?.split("：")[0] || "システム機能";
+
+                  return (
                   <div key={req.id} className="rounded-lg border border-slate-100 bg-white p-4">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
@@ -126,6 +132,13 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                             </Badge>
                           </Link>
                         ))}
+                        {srfId && systemFunction && (
+                          <Link href={`/srf/${srfId}`}>
+                            <Badge variant="outline" className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100">
+                              {systemFunctionName}
+                            </Badge>
+                          </Link>
+                        )}
                       </div>
                     </div>
                     <div className="mt-3">
@@ -137,135 +150,8 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                       </ul>
                     </div>
                   </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="mt-6">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-base">システム要件</CardTitle>
-              <Link href={`/business/${id}/tasks/${taskId}/edit`}>
-                <Button variant="outline" size="sm">追加/編集</Button>
-              </Link>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {knowledge.systemRequirements.length === 0 ? (
-                <div className="text-sm text-slate-500">まだ登録されていません。</div>
-              ) : (
-                knowledge.systemRequirements.map((req) => (
-                  <div key={req.id} className="rounded-lg border border-slate-100 bg-white p-4">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <div className="text-xs text-slate-400">{req.id}</div>
-                        <div className="text-sm font-semibold text-slate-900">{req.title}</div>
-                        <div className="mt-1 text-xs text-slate-600">{req.summary}</div>
-                      </div>
-                      <Badge variant="outline" className="bg-slate-50">{req.type}</Badge>
-                    </div>
-                    <div className="mt-3 grid gap-2 md:grid-cols-2">
-                      <div>
-                        <div className="text-xs font-semibold text-slate-500">影響領域</div>
-                        <div className="mt-1 flex flex-wrap gap-2">
-                          {req.impacts.map((impact) => (
-                            <Badge key={impact} variant="outline">{impact}</Badge>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-xs font-semibold text-slate-500">関連概念</div>
-                        <div className="mt-1 flex flex-wrap gap-2">
-                          {req.concepts.map((concept) => (
-                            <Link key={concept.id} href={`/ideas/${concept.id}`}>
-                              <Badge variant="outline" className="bg-slate-100 text-slate-600 hover:bg-slate-200">
-                                {concept.name}
-                              </Badge>
-                            </Link>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                    {req.related.length > 0 && (
-                      <div className="mt-3">
-                        <div className="text-xs font-semibold text-slate-500">関連要件</div>
-                        <div className="mt-1 flex flex-wrap gap-2">
-                          {req.related.map((rel) => (
-                            <Badge key={rel} variant="outline" className="bg-white">{rel}</Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    <div className="mt-3">
-                      <div className="text-xs font-semibold text-slate-500">受入条件</div>
-                      <ul className="mt-1 list-disc pl-5 text-xs text-slate-700">
-                        {req.acceptanceCriteria.map((ac, i) => (
-                          <li key={i}>{ac}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="mt-6">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-base">設計書</CardTitle>
-              <Link href={`/business/${id}/tasks/${taskId}/edit`}>
-                <Button variant="outline" size="sm">追加/編集</Button>
-              </Link>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {knowledge.designDocs.length === 0 ? (
-                <div className="text-sm text-slate-500">まだ登録されていません。</div>
-              ) : (
-                knowledge.designDocs.map((doc) => (
-                  <div key={doc.id} className="rounded-lg border border-slate-100 bg-white p-4">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <div className="text-xs text-slate-400">{doc.id}</div>
-                        <div className="text-sm font-semibold text-slate-900">{doc.title}</div>
-                        <div className="mt-1 flex flex-wrap gap-2 text-xs">
-                          <Badge variant="outline">{doc.category}</Badge>
-                          <Badge variant="outline" className="bg-slate-50">{doc.source}</Badge>
-                          {doc.url && (
-                            <a className="text-brand hover:underline" href={doc.url} target="_blank" rel="noreferrer">
-                              外部リンク
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    {doc.content.trim().length > 0 && (
-                      <pre className="mt-3 whitespace-pre-wrap rounded-md bg-slate-50 p-3 text-xs text-slate-700">
-                        {doc.content}
-                      </pre>
-                    )}
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="mt-6">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-base">実装</CardTitle>
-              <Link href={`/business/${id}/tasks/${taskId}/edit`}>
-                <Button variant="outline" size="sm">追加/編集</Button>
-              </Link>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {knowledge.codeRefs.length === 0 ? (
-                <div className="text-sm text-slate-500">まだ登録されていません。</div>
-              ) : (
-                knowledge.codeRefs.map((ref, index) => (
-                  <div key={index} className="rounded-lg border border-slate-100 bg-white p-4">
-                    {ref.paths.map((path, i) => (
-                      <div key={i} className="text-sm text-slate-900">{path}</div>
-                    ))}
-                  </div>
-                ))
+                  );
+                })
               )}
             </CardContent>
           </Card>

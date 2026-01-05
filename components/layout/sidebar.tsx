@@ -10,7 +10,8 @@ import {
   Edit3,
   Clock,
   FileText,
-  Settings
+  Settings,
+  Cpu
 } from "lucide-react";
 
 const primaryItems = [
@@ -24,6 +25,7 @@ const primaryItems = [
 
 const managementItems = [
   { key: "ideas", label: "概念辞書", href: "/ideas", icon: Calendar },
+  { key: "srf", label: "システム機能", href: "/srf", icon: Cpu },
   { key: "settings", label: "設定", href: "/settings", icon: Settings },
 ];
 

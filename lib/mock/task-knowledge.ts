@@ -9,6 +9,7 @@ export type Requirement = {
 	impacts: string[];
 	acceptanceCriteria: string[];
 	related: string[];
+	srfId?: string;
 };
 
 export type DesignDoc = {
@@ -85,6 +86,7 @@ export const getDefaultTaskKnowledge = ({
 						"帳票テンプレートに税率別内訳が差し込まれること",
 					],
 					related: ["BR-TASK-001-001"],
+					srfId: "SRF-001",
 				},
 			],
 			designDocs: [
