@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Sidebar } from "@/components/layout/sidebar";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent } from "@/components/ui/card";
@@ -40,10 +41,42 @@ export default function QueryPage() {
 
           <Card>
             <CardContent className="p-8">
-              <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
-                <div className="text-sm text-slate-500">
-                  質問を入力して検索を実行してください
-                </div>
+              <div className="mb-4 text-sm font-semibold text-slate-600">
+                検索結果（サンプル）
+              </div>
+              <div className="space-y-4">
+                {[
+                  {
+                    id: "BR-001",
+                    title: "請求書にインボイス番号を表示する",
+                    type: "業務要件",
+                    concepts: ["C001", "C002"],
+                  },
+                  {
+                    id: "SR-023",
+                    title: "インボイス制度対応の税額計算ロジック",
+                    type: "システム要件",
+                    concepts: ["C001", "C003"],
+                  },
+                ].map((item) => (
+                  <div key={item.id} className="rounded-lg border border-slate-100 bg-white p-4">
+                    <div className="text-xs text-slate-400">{item.id}</div>
+                    <div className="text-sm font-semibold text-slate-900">{item.title}</div>
+                    <div className="mt-2 text-xs text-slate-500">根拠: 関連概念</div>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {item.concepts.map((conceptId) => (
+                        <Link
+                          key={conceptId}
+                          href={`/ideas/${conceptId}`}
+                          className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-200"
+                        >
+                          {conceptId}
+                        </Link>
+                      ))}
+                    </div>
+                    <div className="mt-3 text-xs text-slate-500">種別: {item.type}</div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>

@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Pencil, FileText, Plus, Scissors, Trash2 } from "lucide-react";
 
-export default function IdeaDetailPage({ params }: { params: { id: string } }) {
+export default async function IdeaDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   return (
     <>
       <Sidebar />
@@ -16,7 +17,7 @@ export default function IdeaDetailPage({ params }: { params: { id: string } }) {
               <ArrowLeft className="h-4 w-4" />
               概念辞書に戻る
             </Link>
-            <Link href={`/ideas/${params.id}/edit`}>
+            <Link href={`/ideas/${id}/edit`}>
               <Button variant="outline" className="gap-2">
                 <Pencil className="h-4 w-4" />
                 編集
@@ -33,7 +34,7 @@ export default function IdeaDetailPage({ params }: { params: { id: string } }) {
                 <div className="grid gap-4 md:grid-cols-2 mb-6">
                   <div className="rounded-md border border-slate-100 bg-slate-50/60 p-4">
                     <div className="text-xs font-semibold text-slate-500">概念ID</div>
-                    <div className="mt-1 text-sm font-semibold text-slate-900">{params.id}</div>
+                    <div className="mt-1 text-sm font-semibold text-slate-900">{id}</div>
                   </div>
                   <div className="rounded-md border border-slate-100 bg-slate-50/60 p-4">
                     <div className="text-xs font-semibold text-slate-500">使用要件数</div>

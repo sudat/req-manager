@@ -1,12 +1,5 @@
 import type { Metadata } from "next";
-import { Noto_Sans_JP } from "next/font/google";
 import "./globals.css";
-
-const notoSansJP = Noto_Sans_JP({
-	variable: "--font-geist-sans",
-	subsets: ["latin"],
-	weight: ["400", "500", "600", "700"],
-});
 
 export const metadata: Metadata = {
 	title: "要件管理ツール",
@@ -20,7 +13,7 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="ja" suppressHydrationWarning>
-			<body className={`${notoSansJP.variable} antialiased font-sans`}>
+			<body className="antialiased font-sans">
 				{children}
 			</body>
 		</html>

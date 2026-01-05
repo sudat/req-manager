@@ -13,14 +13,17 @@ import {
   Settings
 } from "lucide-react";
 
-const menuItems = [
+const primaryItems = [
   { key: "dashboard", label: "ダッシュボード", href: "/dashboard", icon: LayoutDashboard },
   { key: "query", label: "照会", href: "/query", icon: Search },
   { key: "business", label: "業務一覧", href: "/business", icon: BookOpen },
-  { key: "ideas", label: "概念辞書", href: "/ideas", icon: Calendar },
   { key: "tickets", label: "変更要求一覧", href: "/tickets", icon: Edit3 },
   { key: "baseline", label: "ベースライン履歴", href: "/baseline", icon: Clock },
   { key: "export", label: "エクスポート", href: "/export", icon: FileText },
+];
+
+const managementItems = [
+  { key: "ideas", label: "概念辞書", href: "/ideas", icon: Calendar },
   { key: "settings", label: "設定", href: "/settings", icon: Settings },
 ];
 
@@ -41,7 +44,32 @@ export function Sidebar() {
       </div>
       <nav className="py-2">
         <ul className="space-y-0">
-          {menuItems.map((item) => {
+          {primaryItems.map((item) => {
+            const Icon = item.icon;
+            const active = isActive(item.href);
+
+            return (
+              <li key={item.key}>
+                <Link
+                  href={item.href}
+                  className={`flex items-center gap-3 px-5 py-3 text-sm transition hover:bg-slate-100 hover:text-slate-900 ${
+                    active
+                      ? "bg-brand-50 text-brand-700 font-semibold"
+                      : "text-slate-600"
+                  }`}
+                >
+                  <Icon className="h-5 w-5" />
+                  <span>{item.label}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+        <div className="mt-4 px-5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+          管理
+        </div>
+        <ul className="mt-2 space-y-0">
+          {managementItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
 

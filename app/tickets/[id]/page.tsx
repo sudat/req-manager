@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, CheckCircle2, Globe } from "lucide-react";
 
-export default function TicketDetailPage({ params }: { params: { id: string } }) {
+export default async function TicketDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   return (
     <>
       <Sidebar />
@@ -36,7 +37,7 @@ export default function TicketDetailPage({ params }: { params: { id: string } })
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="rounded-md border border-slate-100 bg-slate-50/60 p-4">
                     <div className="text-xs font-semibold text-slate-500">変更要求ID</div>
-                    <div className="mt-1 text-sm font-semibold text-slate-900">{params.id}</div>
+                    <div className="mt-1 text-sm font-semibold text-slate-900">{id}</div>
                   </div>
                   <div className="rounded-md border border-slate-100 bg-slate-50/60 p-4">
                     <div className="text-xs font-semibold text-slate-500">ステータス</div>
@@ -110,16 +111,35 @@ export default function TicketDetailPage({ params }: { params: { id: string } })
               </CardContent>
             </Card>
 
-            {/* 関連概念 */}
+            {/* 関連概念（AI候補） */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">関連概念</CardTitle>
+                <CardTitle className="text-base">関連概念（AI候補）</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  <Badge variant="outline" className="bg-slate-100 text-slate-600">インボイス制度</Badge>
-                  <Badge variant="outline" className="bg-slate-100 text-slate-600">請求書発行</Badge>
-                  <Badge variant="outline" className="bg-slate-100 text-slate-600">消費税計算</Badge>
+                <div className="space-y-3">
+                  {[
+                    { id: "C001", name: "インボイス制度", status: "レビュー中" },
+                    { id: "C002", name: "請求書発行", status: "レビュー中" },
+                    { id: "C003", name: "消費税計算", status: "レビュー中" },
+                  ].map((concept) => (
+                    <div key={concept.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-slate-100 bg-white p-4">
+                      <div className="flex items-center gap-2">
+                        <Link href={`/ideas/${concept.id}`}>
+                          <Badge variant="outline" className="bg-slate-100 text-slate-600 hover:bg-slate-200">
+                            {concept.name}
+                          </Badge>
+                        </Link>
+                        <span className="text-xs text-slate-400">({concept.id})</span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge className="bg-sky-50 text-sky-700 hover:bg-sky-100">{concept.status}</Badge>
+                        <Button size="sm" className="bg-brand hover:bg-brand-600">承認</Button>
+                        <Button size="sm" variant="outline">修正</Button>
+                        <Button size="sm" variant="outline" className="text-rose-600 hover:text-rose-700 hover:bg-rose-50">却下</Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
