@@ -10,49 +10,43 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
   return (
     <>
       <Sidebar />
-      <div className="ml-[280px] flex-1 min-h-screen bg-slate-50">
-        <div className="mx-auto max-w-[1400px] p-8">
-          <Link href="/tickets" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900 mb-4">
-            <ArrowLeft className="h-4 w-4" />
-            変更要求一覧に戻る
-          </Link>
-
-          <div className="flex items-start justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-semibold text-slate-900">インボイス制度対応</h1>
-            </div>
-            <Button className="bg-brand hover:bg-brand-600 gap-2">
+      <div className="ml-[280px] flex-1 min-h-screen bg-white">
+        <div className="mx-auto max-w-[1400px] px-8 py-6">
+          <div className="flex items-center justify-between mb-6">
+            <Link href="/tickets" className="inline-flex items-center gap-2 text-[14px] font-medium text-slate-600 hover:text-slate-900">
+              <ArrowLeft className="h-4 w-4" />
+              変更要求一覧に戻る
+            </Link>
+            <Button className="h-8 gap-2 text-[14px] bg-slate-900 hover:bg-slate-800">
               <CheckCircle2 className="h-4 w-4" />
               ベースラインに反映
             </Button>
           </div>
 
-          <div className="space-y-6">
+          <h1 className="text-[32px] font-semibold tracking-tight text-slate-900 mb-6">インボイス制度対応</h1>
+
+          <div className="space-y-4">
             {/* 基本情報 */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">基本情報</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="rounded-md border border-slate-100 bg-slate-50/60 p-4">
-                    <div className="text-xs font-semibold text-slate-500">変更要求ID</div>
-                    <div className="mt-1 text-sm font-semibold text-slate-900">{id}</div>
+            <Card className="rounded-md border border-slate-200">
+              <CardContent className="p-3 space-y-2.5">
+                <div className="flex items-center gap-3 text-[12px] text-slate-500">
+                  <span className="font-mono">{id}</span>
+                </div>
+
+                <div className="flex flex-wrap gap-x-6 gap-y-2 text-[13px]">
+                  <div>
+                    <span className="text-slate-500">ステータス</span>
+                    <Badge variant="outline" className="ml-2 border-slate-200 bg-slate-50 text-slate-600 text-[12px]">承認済</Badge>
                   </div>
-                  <div className="rounded-md border border-slate-100 bg-slate-50/60 p-4">
-                    <div className="text-xs font-semibold text-slate-500">ステータス</div>
-                    <div className="mt-1">
-                      <Badge className="bg-emerald-50 text-emerald-700 hover:bg-emerald-100">承認済</Badge>
-                    </div>
-                  </div>
-                  <div className="rounded-md border border-slate-100 bg-slate-50/60 p-4">
-                    <div className="text-xs font-semibold text-slate-500">起票日</div>
-                    <div className="mt-1 text-sm font-semibold text-slate-900">2024-01-15</div>
+                  <div>
+                    <span className="text-slate-500">起票日</span>
+                    <span className="ml-2 text-slate-900">2024-01-15</span>
                   </div>
                 </div>
-                <div className="mt-4">
-                  <div className="text-xs font-semibold text-slate-500 mb-2">背景・目的</div>
-                  <p className="text-xs text-slate-700 leading-relaxed">
+
+                <div className="border-t border-slate-100 pt-2 mt-2 space-y-0.5">
+                  <div className="text-[12px] font-medium text-slate-500">背景・目的</div>
+                  <p className="text-[14px] text-slate-700 leading-relaxed">
                     2023年10月より開始されるインボイス制度に対応するため、請求書フォーマットの変更および税額計算ロジックの改修が必要。
                     適格請求書発行事業者の登録番号を請求書に表示し、税率ごとの消費税額を明記する必要がある。
                   </p>
@@ -61,82 +55,84 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
             </Card>
 
             {/* 影響範囲 */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">影響範囲</CardTitle>
-                  <Button variant="outline" size="sm" className="gap-2">
+            <Card className="rounded-md border border-slate-200">
+              <CardContent className="p-3 space-y-2">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                  <h3 className="text-[14px] font-semibold text-slate-900">影響範囲</h3>
+                  <Button variant="outline" size="sm" className="h-7 gap-2 text-[12px]">
                     <Globe className="h-4 w-4" />
                     AI影響分析
                   </Button>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <div className="text-xs font-semibold text-slate-500 mb-2">影響業務</div>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge className="bg-brand-50 text-brand-700 hover:bg-brand-100">請求業務</Badge>
-                    <Badge className="bg-brand-50 text-brand-700 hover:bg-brand-100">経理業務</Badge>
+
+                <div className="border-t border-slate-100 pt-2 mt-2 space-y-1">
+                  <div className="text-[12px] font-medium text-slate-500">影響業務</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px]">請求業務</Badge>
+                    <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px]">経理業務</Badge>
                   </div>
                 </div>
 
-                <div>
-                  <div className="text-xs font-semibold text-slate-500 mb-2">影響領域</div>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge className="bg-sky-50 text-sky-700 hover:bg-sky-100">FI</Badge>
-                    <Badge className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100">SD</Badge>
+                <div className="border-t border-slate-100 pt-2 mt-2 space-y-1">
+                  <div className="text-[12px] font-medium text-slate-500">影響領域</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    <Badge variant="outline" className="font-mono border-slate-200 bg-slate-50 text-slate-600 text-[12px]">FI</Badge>
+                    <Badge variant="outline" className="font-mono border-slate-200 bg-slate-50 text-slate-600 text-[12px]">SD</Badge>
                   </div>
                 </div>
 
-                <div>
-                  <div className="text-xs font-semibold text-slate-500 mb-2">影響要件</div>
-                  <ul className="space-y-3">
+                <div className="border-t border-slate-100 pt-2 mt-2 space-y-2">
+                  <div className="text-[12px] font-medium text-slate-500">影響要件</div>
+                  <div className="space-y-2">
                     {[
                       { id: "BR-001", text: "請求書にインボイス番号を表示する", type: "業務要件" },
                       { id: "SR-012", text: "インボイス番号の自動採番機能", type: "システム要件" },
                       { id: "SR-023", text: "インボイス制度対応の税額計算ロジック", type: "システム要件" },
                     ].map((req) => (
-                      <li key={req.id} className="flex items-start justify-between gap-3 rounded-md border border-slate-100 bg-white p-4">
-                        <div className="flex-1">
-                          <div className="text-xs text-slate-400">{req.id}</div>
-                          <div className="text-xs text-slate-700">{req.text}</div>
+                      <div key={req.id} className="rounded-md border border-slate-200 p-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1">
+                            <div className="font-mono text-[11px] text-slate-400">{req.id}</div>
+                            <div className="text-[13px] text-slate-700 mt-1">{req.text}</div>
+                          </div>
+                          <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] font-medium px-2 py-0.5">
+                            {req.type}
+                          </Badge>
                         </div>
-                        <Badge className={req.type === "業務要件" ? "bg-brand-50 text-brand-700" : "bg-slate-100 text-slate-600"}>
-                          {req.type}
-                        </Badge>
-                      </li>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* 関連概念（AI候補） */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">関連概念（AI候補）</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
+            <Card className="rounded-md border border-slate-200">
+              <CardContent className="p-3 space-y-2">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                  <h3 className="text-[14px] font-semibold text-slate-900">関連概念（AI候補）</h3>
+                </div>
+
+                <div className="space-y-2">
                   {[
                     { id: "C001", name: "インボイス制度", status: "レビュー中" },
                     { id: "C002", name: "請求書発行", status: "レビュー中" },
                     { id: "C003", name: "消費税計算", status: "レビュー中" },
                   ].map((concept) => (
-                    <div key={concept.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-slate-100 bg-white p-4">
+                    <div key={concept.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-slate-200 p-3">
                       <div className="flex items-center gap-2">
                         <Link href={`/ideas/${concept.id}`}>
-                          <Badge variant="outline" className="bg-slate-100 text-slate-600 hover:bg-slate-200">
+                          <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] hover:bg-slate-100">
                             {concept.name}
                           </Badge>
                         </Link>
-                        <span className="text-xs text-slate-400">({concept.id})</span>
+                        <span className="font-mono text-[11px] text-slate-400">({concept.id})</span>
                       </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge className="bg-sky-50 text-sky-700 hover:bg-sky-100">{concept.status}</Badge>
-                        <Button size="sm" className="bg-brand hover:bg-brand-600">承認</Button>
-                        <Button size="sm" variant="outline">修正</Button>
-                        <Button size="sm" variant="outline" className="text-rose-600 hover:text-rose-700 hover:bg-rose-50">却下</Button>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px]">{concept.status}</Badge>
+                        <Button size="sm" className="h-7 text-[12px] bg-slate-900 hover:bg-slate-800">承認</Button>
+                        <Button size="sm" variant="outline" className="h-7 text-[12px]">修正</Button>
+                        <Button size="sm" variant="outline" className="h-7 text-[12px]">却下</Button>
                       </div>
                     </div>
                   ))}
@@ -145,25 +141,26 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
             </Card>
 
             {/* 版適用履歴 */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">版適用履歴</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-3">
+            <Card className="rounded-md border border-slate-200">
+              <CardContent className="p-3 space-y-2">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                  <h3 className="text-[14px] font-semibold text-slate-900">版適用履歴</h3>
+                </div>
+
+                <div className="space-y-2">
                   {[
                     { version: "v2.0", date: "2024-01-20", status: "適用済" },
                     { version: "v2.1", date: "2024-02-15", status: "適用済" },
                   ].map((ver) => (
-                    <li key={ver.version} className="flex items-center justify-between rounded-md border border-slate-100 bg-white p-4">
-                      <div className="space-y-1">
-                        <div className="text-sm font-semibold text-slate-900">{ver.version}</div>
-                        <div className="text-xs text-slate-400">適用日: {ver.date}</div>
+                    <div key={ver.version} className="flex items-center justify-between rounded-md border border-slate-200 p-3">
+                      <div className="space-y-0.5">
+                        <div className="text-[14px] font-semibold text-slate-900">{ver.version}</div>
+                        <div className="text-[11px] text-slate-400">適用日: {ver.date}</div>
                       </div>
-                      <span className="text-xs font-semibold text-emerald-600">{ver.status}</span>
-                    </li>
+                      <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px]">{ver.status}</Badge>
+                    </div>
                   ))}
-                </ul>
+                </div>
               </CardContent>
             </Card>
           </div>

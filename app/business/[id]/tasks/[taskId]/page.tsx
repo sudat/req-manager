@@ -36,76 +36,71 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   return (
     <>
       <Sidebar />
-      <div className="ml-[280px] flex-1 min-h-screen bg-slate-50">
-        <div className="mx-auto max-w-[1400px] p-8">
-          <div className="flex items-center justify-between mb-4">
-            <Link href={`/business/${id}/tasks`} className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900">
+      <div className="ml-[280px] flex-1 min-h-screen bg-white">
+        <div className="mx-auto max-w-[1400px] px-8 py-6">
+          <div className="flex items-center justify-between mb-6">
+            <Link href={`/business/${id}/tasks`} className="inline-flex items-center gap-2 text-[14px] font-medium text-slate-600 hover:text-slate-900">
               <ArrowLeft className="h-4 w-4" />
               業務一覧（詳細）に戻る
             </Link>
             <Link href={`/business/${id}/tasks/${taskId}/edit`}>
-              <Button variant="outline" className="gap-2">
+              <Button variant="outline" className="h-8 gap-2 text-[14px]">
                 <Pencil className="h-4 w-4" />
                 編集
               </Button>
             </Link>
           </div>
 
-          <h1 className="text-2xl font-semibold text-slate-900 mb-6">業務タスク詳細</h1>
+          <h1 className="text-[32px] font-semibold tracking-tight text-slate-900 mb-6">業務タスク詳細</h1>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">基本情報</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-md border border-slate-100 bg-slate-50/60 p-4">
-                  <div className="text-xs font-semibold text-slate-500">業務ID</div>
-                  <div className="mt-1 text-sm font-semibold text-slate-900">{knowledge.bizId}</div>
+          <Card className="rounded-md border border-slate-200/60 bg-white hover:border-slate-300/60 transition-colors">
+            <CardContent className="p-3 space-y-2">
+              <div className="flex items-center gap-3 text-[12px] text-slate-500">
+                <span className="font-mono">{knowledge.bizId}</span>
+                <span className="text-slate-300">/</span>
+                <span className="font-mono">{knowledge.taskId}</span>
+              </div>
+
+              <h2 className="text-[20px] font-semibold text-slate-900 leading-tight">
+                {knowledge.taskName}
+              </h2>
+
+              <p className="text-[14px] text-slate-700 leading-relaxed">
+                {knowledge.taskSummary}
+              </p>
+
+              <div className="flex flex-wrap gap-x-6 gap-y-2 pt-2 border-t border-slate-100 text-[13px]">
+                <div>
+                  <span className="text-slate-500">担当者</span>
+                  <span className="ml-2 text-slate-900">{knowledge.person ?? "—"}</span>
                 </div>
-                <div className="rounded-md border border-slate-100 bg-slate-50/60 p-4">
-                  <div className="text-xs font-semibold text-slate-500">業務タスクID</div>
-                  <div className="mt-1 text-sm font-semibold text-slate-900">{knowledge.taskId}</div>
+                <div>
+                  <span className="text-slate-500">インプット</span>
+                  <span className="ml-2 text-slate-900">{knowledge.input ?? "—"}</span>
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="text-xs font-semibold text-slate-500">業務タスク</div>
-                <div className="text-sm text-slate-900">{knowledge.taskName}</div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="text-xs font-semibold text-slate-500">業務概要</div>
-                <div className="text-sm text-slate-700">{knowledge.taskSummary}</div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="text-xs font-semibold text-slate-500">担当者</div>
-                <div className="text-sm text-slate-700">{knowledge.person ?? "—"}</div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="text-xs font-semibold text-slate-500">インプット</div>
-                <div className="text-sm text-slate-700">{knowledge.input ?? "—"}</div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="text-xs font-semibold text-slate-500">アウトプット</div>
-                <div className="text-sm text-slate-700">{knowledge.output ?? "—"}</div>
+                <div>
+                  <span className="text-slate-500">アウトプット</span>
+                  <span className="ml-2 text-slate-900">{knowledge.output ?? "—"}</span>
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="mt-6">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-base">業務要件</CardTitle>
-              <Link href={`/business/${id}/tasks/${taskId}/edit`}>
-                <Button variant="outline" size="sm">追加/編集</Button>
-              </Link>
-            </CardHeader>
-            <CardContent className="space-y-3">
+          <Card className="mt-4 rounded-md border border-slate-200/60 bg-white hover:border-slate-300/60 transition-colors">
+            <CardContent className="p-3 space-y-2">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-[14px] font-semibold text-slate-900">業務要件</h3>
+                  <Badge variant="outline" className="font-mono text-[11px] border-slate-200 bg-slate-50 text-slate-600 px-1.5 py-0">
+                    {knowledge.businessRequirements.length}
+                  </Badge>
+                </div>
+                <Link href={`/business/${id}/tasks/${taskId}/edit`}>
+                  <Button variant="outline" size="sm" className="h-7 text-[12px]">追加/編集</Button>
+                </Link>
+              </div>
               {knowledge.businessRequirements.length === 0 ? (
-                <div className="text-sm text-slate-500">まだ登録されていません。</div>
+                <div className="text-[14px] text-slate-500">まだ登録されていません。</div>
               ) : (
                 knowledge.businessRequirements.map((req) => {
                   const srfId = req.srfId;
@@ -113,37 +108,68 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                   const systemFunctionName = systemFunction?.summary?.split("：")[0] || "システム機能";
 
                   return (
-                  <div key={req.id} className="rounded-lg border border-slate-100 bg-white p-4">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <div className="text-xs text-slate-400">{req.id}</div>
-                        <div className="text-sm font-semibold text-slate-900">{req.title}</div>
-                        <div className="mt-1 text-xs text-slate-600">{req.summary}</div>
+                  <div key={req.id} className="rounded-md border border-slate-200 p-3">
+                    <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
+                      <div className="flex-1">
+                        <div className="font-mono text-[11px] text-slate-400">{req.id}</div>
+                        <div className="text-[14px] font-medium text-slate-900 mt-1">{req.title}</div>
+                        <div className="mt-1 text-[13px] text-slate-600">{req.summary}</div>
                       </div>
-                      <Badge variant="outline" className="bg-slate-50">{req.type}</Badge>
+                      <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] font-medium px-2 py-0.5">{req.type}</Badge>
                     </div>
-                    <div className="mt-3">
-                      <div className="text-xs font-semibold text-slate-500">関連概念</div>
-                      <div className="mt-1 flex flex-wrap gap-2">
-                        {req.concepts.map((concept) => (
-                          <Link key={concept.id} href={`/ideas/${concept.id}`}>
-                            <Badge variant="outline" className="bg-slate-100 text-slate-600 hover:bg-slate-200">
-                              {concept.name}
-                            </Badge>
-                          </Link>
-                        ))}
-                        {srfId && systemFunction && (
+                    {req.concepts && req.concepts.length > 0 && (
+                      <div className="border-t border-slate-100 pt-2 mt-2 space-y-1">
+                        <div className="text-[12px] font-medium text-slate-500">関連概念</div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {req.concepts.map((concept) => (
+                            <Link key={concept.id} href={`/ideas/${concept.id}`}>
+                              <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] hover:bg-slate-100">
+                                {concept.name}
+                              </Badge>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {srfId && systemFunction && (
+                      <div className="border-t border-slate-100 pt-2 mt-2 space-y-1">
+                        <div className="text-[12px] font-medium text-slate-500">関連システム機能</div>
+                        <div className="flex flex-wrap gap-1.5">
                           <Link href={`/srf/${srfId}`}>
-                            <Badge variant="outline" className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100">
+                            <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] hover:bg-slate-100">
                               {systemFunctionName}
                             </Badge>
                           </Link>
-                        )}
+                        </div>
                       </div>
-                    </div>
-                    <div className="mt-3">
-                      <div className="text-xs font-semibold text-slate-500">受入条件</div>
-                      <ul className="mt-1 list-disc pl-5 text-xs text-slate-700">
+                    )}
+                    {req.impacts && req.impacts.length > 0 && (
+                      <div className="border-t border-slate-100 pt-2 mt-2 space-y-1">
+                        <div className="text-[12px] font-medium text-slate-500">影響領域</div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {req.impacts.map((impact, i) => (
+                            <Badge key={i} variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px]">
+                              {impact}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {req.related && req.related.length > 0 && (
+                      <div className="border-t border-slate-100 pt-2 mt-2 space-y-1">
+                        <div className="text-[12px] font-medium text-slate-500">関連要件</div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {req.related.map((relId, i) => (
+                            <Badge key={i} variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px]">
+                              {relId}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    <div className="border-t border-slate-100 pt-2 mt-2 space-y-1">
+                      <div className="text-[12px] font-medium text-slate-500">受入条件</div>
+                      <ul className="list-disc pl-5 text-[13px] text-slate-700 space-y-0.5">
                         {req.acceptanceCriteria.map((ac, i) => (
                           <li key={i}>{ac}</li>
                         ))}

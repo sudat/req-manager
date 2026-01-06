@@ -28,26 +28,28 @@ export function SettingsLayout({ children }: SettingsLayoutProps) {
 
   return (
     <div className="flex flex-1 gap-8">
-      <div className="h-fit w-[280px] rounded-lg border border-slate-100 bg-white p-5 shadow-sm">
-        {menuItems.map((item) => {
-          const Icon = item.icon;
-          const active = isActive(item.href);
+      <div className="h-fit w-[260px] rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <nav className="space-y-1">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            const active = isActive(item.href);
 
-          return (
-            <Link
-              key={item.key}
-              href={item.href}
-              className={`mb-2 flex items-center gap-3 rounded-md px-4 py-3 text-sm transition hover:bg-slate-50 ${
-                active
-                  ? "bg-brand-50 text-brand-700 font-semibold"
-                  : "text-slate-600"
-              }`}
-            >
-              <Icon className="h-5 w-5" />
-              <span>{item.label}</span>
-            </Link>
-          );
-        })}
+            return (
+              <Link
+                key={item.key}
+                href={item.href}
+                className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-all ${
+                  active
+                    ? "bg-brand-50 text-brand-700 shadow-sm"
+                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
       </div>
       <div className="flex-1">{children}</div>
     </div>

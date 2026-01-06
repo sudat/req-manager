@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Sidebar } from "@/components/layout/sidebar";
-import { PageHeader } from "@/components/layout/page-header";
 import { SettingsLayout } from "@/components/layout/settings-layout";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,7 +9,17 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Card } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { Eye, EyeOff, Info } from "lucide-react";
+
+function SectionHeader({ title, description }: { title: string; description?: string }) {
+  return (
+    <div className="mb-6">
+      <h3 className="text-[15px] font-semibold text-slate-900">{title}</h3>
+      {description && <p className="mt-1 text-[13px] text-slate-500 leading-relaxed">{description}</p>}
+    </div>
+  );
+}
 
 export default function LLMSettingsPage() {
   const [showApiKey, setShowApiKey] = useState(false);
@@ -19,20 +28,28 @@ export default function LLMSettingsPage() {
   return (
     <>
       <Sidebar />
-      <div className="ml-[280px] flex-1 min-h-screen bg-slate-50">
-        <div className="mx-auto max-w-[1400px] p-8">
-          <PageHeader
-            title="設定"
-            description="プロジェクトとシステムの設定を管理"
-          />
+      <div className="ml-[280px] flex-1 min-h-screen bg-white">
+        <div className="mx-auto max-w-[1200px] px-8 py-6">
+          {/* Page Header */}
+          <div className="mb-6">
+            <h1 className="text-[32px] font-semibold tracking-tight text-slate-900 mb-2">
+              LLM設定
+            </h1>
+            <p className="text-[13px] text-slate-500">
+              LLMプロバイダーとモデルの設定を管理
+            </p>
+          </div>
 
           <SettingsLayout>
-            <div className="rounded-lg border border-slate-100 bg-white p-6 shadow-sm">
-              <h2 className="text-xl font-semibold text-slate-900 mb-6">LLM設定</h2>
+            <div className="rounded-md border border-slate-200 bg-white p-6">
+              <SectionHeader
+                title="LLM設定"
+                description="LLMプロバイダーとモデルの設定を管理します"
+              />
 
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="provider">LLMプロバイダー</Label>
+                  <Label htmlFor="provider" className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">LLMプロバイダー</Label>
                   <Select defaultValue="openai">
                     <SelectTrigger id="provider">
                       <SelectValue />
@@ -46,8 +63,10 @@ export default function LLMSettingsPage() {
                   </Select>
                 </div>
 
+                <Separator />
+
                 <div className="space-y-2">
-                  <Label htmlFor="apiKey">APIキー</Label>
+                  <Label htmlFor="apiKey" className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">APIキー</Label>
                   <div className="relative">
                     <Input
                       id="apiKey"
@@ -60,14 +79,14 @@ export default function LLMSettingsPage() {
                       onClick={() => setShowApiKey(!showApiKey)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                     >
-                      {showApiKey ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
-                  <p className="text-xs text-slate-500">APIキーは暗号化して保存されます</p>
+                  <p className="text-[13px] text-slate-500 leading-relaxed">APIキーは暗号化して保存されます</p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="model">モデル</Label>
+                  <Label htmlFor="model" className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">モデル</Label>
                   <Select defaultValue="gpt-4-turbo">
                     <SelectTrigger id="model">
                       <SelectValue />
@@ -81,10 +100,12 @@ export default function LLMSettingsPage() {
                   </Select>
                 </div>
 
+                <Separator />
+
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <Label>Temperature</Label>
-                    <span className="text-sm font-semibold text-slate-900">{temperature[0]}</span>
+                    <Label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Temperature</Label>
+                    <span className="text-[13px] font-semibold text-slate-900">{temperature[0]}</span>
                   </div>
                   <Slider
                     value={temperature}
@@ -94,27 +115,27 @@ export default function LLMSettingsPage() {
                     step={0.1}
                     className="w-full"
                   />
-                  <div className="flex justify-between text-xs text-slate-500">
+                  <div className="flex justify-between text-[13px] text-slate-500">
                     <span>決定的 (0)</span>
                     <span>創造的 (2)</span>
                   </div>
                 </div>
 
-                <Card className="border-blue-200 bg-blue-50 p-4">
+                <Card className="border border-slate-200 bg-slate-50 p-4">
                   <div className="flex items-start gap-3">
-                    <Info className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                    <Info className="h-4 w-4 text-slate-500 mt-0.5 flex-shrink-0" />
                     <div>
-                      <div className="text-sm font-semibold text-blue-900">推奨設定</div>
-                      <div className="text-xs text-blue-700 mt-1">
+                      <div className="text-[13px] font-semibold text-slate-900">推奨設定</div>
+                      <div className="text-[13px] text-slate-600 mt-1 leading-relaxed">
                         要件管理では正確性が重要なため、Temperature は 0.3 以下を推奨します。
                       </div>
                     </div>
                   </div>
                 </Card>
 
-                <div className="flex justify-end gap-3">
-                  <Button variant="outline">接続テスト</Button>
-                  <Button className="bg-brand hover:bg-brand-600">変更を保存</Button>
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button variant="outline" className="h-8 px-6">接続テスト</Button>
+                  <Button className="bg-slate-900 hover:bg-slate-800 h-8 px-6">変更を保存</Button>
                 </div>
               </div>
             </div>

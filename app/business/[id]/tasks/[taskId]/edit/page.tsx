@@ -130,157 +130,187 @@ export default function TaskDetailEditPage({
 	return (
 		<>
 			<Sidebar />
-			<div className="ml-[280px] flex-1 min-h-screen bg-slate-50">
-				<div className="mx-auto max-w-[1400px] p-8">
-					<div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+			<div className="ml-[280px] flex-1 min-h-screen bg-white">
+				<div className="mx-auto max-w-[1400px] px-8 py-6">
+					<div className="mb-6 flex flex-wrap items-center justify-between gap-3">
 						<Link
 							href={`/business/${id}/tasks/${taskId}`}
-							className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900"
+							className="inline-flex items-center gap-2 text-[14px] font-medium text-slate-600 hover:text-slate-900"
 						>
 							<ArrowLeft className="h-4 w-4" />
 							業務タスク詳細に戻る
 						</Link>
 						<div className="flex items-center gap-2">
-							<Button variant="outline" className="gap-2" onClick={handleReset}>
+							<Button variant="outline" className="h-8 gap-2 text-[14px]" onClick={handleReset}>
 								<RotateCcw className="h-4 w-4" />
 								リセット
 							</Button>
-							<Button className="bg-brand hover:bg-brand-600 gap-2" onClick={handleSave}>
+							<Button className="h-8 gap-2 text-[14px] bg-slate-900 hover:bg-slate-800" onClick={handleSave}>
 								<Save className="h-4 w-4" />
 								保存
 							</Button>
 						</div>
 					</div>
 
-					<h1 className="text-2xl font-semibold text-slate-900 mb-2">業務タスク編集</h1>
-					<div className="mb-6 text-sm text-slate-500">
+					<h1 className="text-[32px] font-semibold tracking-tight text-slate-900 mb-2">業務タスク編集</h1>
+					<div className="mb-6 text-[13px] text-slate-500">
 						モックのため、保存先はブラウザのLocalStorageです（API/DBは未実装）。
 					</div>
 
-					<Card>
-						<CardHeader>
-							<CardTitle className="text-base">基本情報</CardTitle>
-						</CardHeader>
-						<CardContent className="space-y-4">
-							<div className="grid gap-4 md:grid-cols-2">
-								<div className="space-y-2">
-									<Label>業務ID</Label>
-									<Input value={knowledge.bizId} disabled />
-								</div>
-								<div className="space-y-2">
-									<Label>業務タスクID</Label>
-									<Input value={knowledge.taskId} disabled />
-								</div>
+					<Card className="rounded-md border border-slate-200">
+						<CardContent className="p-3 space-y-3">
+							<div className="flex items-center gap-3 text-[12px] text-slate-500">
+								<span className="font-mono">{knowledge.bizId}</span>
+								<span className="text-slate-300">/</span>
+								<span className="font-mono">{knowledge.taskId}</span>
 							</div>
-							<div className="space-y-2">
-								<Label>業務タスク</Label>
+
+							<div className="space-y-1.5">
+								<Label className="text-[12px] font-medium text-slate-500">業務タスク</Label>
 								<Input
 									value={knowledge.taskName}
 									onChange={(e) => setKnowledge((p) => ({ ...p, taskName: e.target.value }))}
+									className="text-[16px] font-semibold"
 								/>
 							</div>
-							<div className="space-y-2">
-								<Label>業務概要</Label>
+
+							<div className="space-y-1.5">
+								<Label className="text-[12px] font-medium text-slate-500">業務概要</Label>
 								<Textarea
-									className="min-h-[90px]"
+									className="min-h-[90px] text-[14px]"
 									value={knowledge.taskSummary}
 									onChange={(e) => setKnowledge((p) => ({ ...p, taskSummary: e.target.value }))}
 								/>
 							</div>
-							<div className="grid gap-4 md:grid-cols-3">
-								<div className="space-y-2">
-									<Label>担当者</Label>
+
+							<div className="grid gap-3 md:grid-cols-3">
+								<div className="space-y-1.5">
+									<Label className="text-[12px] font-medium text-slate-500">担当者</Label>
 									<Input
 										value={knowledge.person ?? ""}
 										onChange={(e) => setKnowledge((p) => ({ ...p, person: e.target.value }))}
+										className="text-[14px]"
 									/>
 								</div>
-								<div className="space-y-2 md:col-span-1">
-									<Label>インプット</Label>
+								<div className="space-y-1.5">
+									<Label className="text-[12px] font-medium text-slate-500">インプット</Label>
 									<Input
 										value={knowledge.input ?? ""}
 										onChange={(e) => setKnowledge((p) => ({ ...p, input: e.target.value }))}
+										className="text-[14px]"
 									/>
 								</div>
-								<div className="space-y-2 md:col-span-1">
-									<Label>アウトプット</Label>
+								<div className="space-y-1.5">
+									<Label className="text-[12px] font-medium text-slate-500">アウトプット</Label>
 									<Input
 										value={knowledge.output ?? ""}
 										onChange={(e) => setKnowledge((p) => ({ ...p, output: e.target.value }))}
+										className="text-[14px]"
 									/>
 								</div>
 							</div>
 						</CardContent>
 					</Card>
 
-					<Card className="mt-6">
-						<CardHeader className="flex flex-row items-center justify-between">
-							<CardTitle className="text-base">業務要件</CardTitle>
-							<Button variant="outline" size="sm" className="gap-2" onClick={() => addRequirement("業務要件")}>
-								<Plus className="h-4 w-4" />
-								追加
-							</Button>
-						</CardHeader>
-						<CardContent className="space-y-4">
+					<Card className="mt-4 rounded-md border border-slate-200">
+						<CardContent className="p-3 space-y-3">
+							<div className="flex items-center justify-between pb-2 border-b border-slate-100">
+								<div className="flex items-center gap-2">
+									<h3 className="text-[14px] font-semibold text-slate-900">業務要件</h3>
+									<Badge variant="outline" className="font-mono text-[11px] border-slate-200 bg-slate-50 text-slate-600 px-1.5 py-0">
+										{knowledge.businessRequirements.length}
+									</Badge>
+								</div>
+								<Button variant="outline" size="sm" className="h-7 gap-2 text-[12px]" onClick={() => addRequirement("業務要件")}>
+									<Plus className="h-4 w-4" />
+									追加
+								</Button>
+							</div>
 							{knowledge.businessRequirements.length === 0 ? (
-								<div className="text-sm text-slate-500">まだ登録されていません。</div>
+								<div className="text-[14px] text-slate-500">まだ登録されていません。</div>
 							) : (
 								knowledge.businessRequirements.map((req) => (
-									<Card key={req.id} className="border-slate-100">
-										<CardHeader className="flex flex-row items-start justify-between gap-3">
-											<div>
-												<div className="text-xs text-slate-400">{req.id}</div>
-												<div className="mt-1 flex items-center gap-2">
-													<Badge variant="outline" className="bg-slate-50">
+									<Card key={req.id} className="rounded-md border border-slate-200">
+										<CardContent className="p-3 space-y-3">
+											<div className="flex items-start justify-between gap-3">
+												<div className="flex items-center gap-2">
+													<span className="font-mono text-[11px] text-slate-400">{req.id}</span>
+													<Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] font-medium px-2 py-0.5">
 														{req.type}
 													</Badge>
 												</div>
+												<Button
+													variant="outline"
+													size="icon"
+													title="削除"
+													className="h-8 w-8 rounded-md border-slate-200 hover:bg-slate-900 hover:text-white hover:border-slate-900"
+													onClick={() => removeRequirement("businessRequirements")(req.id)}
+												>
+													<Trash2 className="h-4 w-4" />
+												</Button>
 											</div>
-											<Button
-												variant="outline"
-												size="icon"
-												title="削除"
-												onClick={() => removeRequirement("businessRequirements")(req.id)}
-											>
-												<Trash2 className="h-4 w-4 text-rose-500" />
-											</Button>
-										</CardHeader>
-										<CardContent className="space-y-4">
-											<div className="space-y-2">
-												<Label>タイトル</Label>
+											<div className="space-y-1.5">
+												<Label className="text-[12px] font-medium text-slate-500">タイトル</Label>
 												<Input
 													value={req.title}
 													onChange={(e) => updateRequirement("businessRequirements")(req.id, { title: e.target.value })}
+													className="text-[14px]"
 												/>
 											</div>
-											<div className="space-y-2">
-												<Label>概要</Label>
+											<div className="space-y-1.5">
+												<Label className="text-[12px] font-medium text-slate-500">概要</Label>
 												<Textarea
-													className="min-h-[90px]"
+													className="min-h-[90px] text-[14px]"
 													value={req.summary}
 													onChange={(e) => updateRequirement("businessRequirements")(req.id, { summary: e.target.value })}
 												/>
 											</div>
-											<div className="grid gap-4 md:grid-cols-2">
-												<div className="space-y-2">
-													<Label>影響領域（カンマ区切り）</Label>
+											<div className="grid gap-3 md:grid-cols-2">
+												<div className="space-y-1.5">
+													<Label className="text-[12px] font-medium text-slate-500">関連概念（カンマ区切り）</Label>
 													<Input
-														value={joinCsv(req.impacts)}
-														onChange={(e) => updateRequirement("businessRequirements")(req.id, { impacts: splitCsv(e.target.value) })}
+														value={req.concepts?.map(c => c.name).join(", ") ?? ""}
+														onChange={(e) => {
+															const names = splitCsv(e.target.value);
+															updateRequirement("businessRequirements")(req.id, {
+																concepts: names.map((name, i) => ({ id: `concept-${i}`, name }))
+															});
+														}}
+														className="text-[14px]"
 													/>
 												</div>
-												<div className="space-y-2">
-													<Label>関連要件（カンマ区切り）</Label>
+												<div className="space-y-1.5">
+													<Label className="text-[12px] font-medium text-slate-500">関連システム機能</Label>
 													<Input
-														value={joinCsv(req.related)}
-														onChange={(e) => updateRequirement("businessRequirements")(req.id, { related: splitCsv(e.target.value) })}
+														value={req.srfId ?? ""}
+														onChange={(e) => updateRequirement("businessRequirements")(req.id, { srfId: e.target.value })}
+														className="text-[14px]"
+														placeholder="例: SRF-001"
 													/>
 												</div>
 											</div>
-											<div className="space-y-2">
-												<Label>受入条件（1行=1条件）</Label>
+											<div className="grid gap-3 md:grid-cols-2">
+												<div className="space-y-1.5">
+													<Label className="text-[12px] font-medium text-slate-500">影響領域（カンマ区切り）</Label>
+													<Input
+														value={joinCsv(req.impacts)}
+														onChange={(e) => updateRequirement("businessRequirements")(req.id, { impacts: splitCsv(e.target.value) })}
+														className="text-[14px]"
+													/>
+												</div>
+												<div className="space-y-1.5">
+													<Label className="text-[12px] font-medium text-slate-500">関連要件（カンマ区切り）</Label>
+													<Input
+														value={joinCsv(req.related)}
+														onChange={(e) => updateRequirement("businessRequirements")(req.id, { related: splitCsv(e.target.value) })}
+														className="text-[14px]"
+													/>
+												</div>
+											</div>
+											<div className="space-y-1.5">
+												<Label className="text-[12px] font-medium text-slate-500">受入条件（1行=1条件）</Label>
 												<Textarea
-													className="min-h-[110px]"
+													className="min-h-[110px] text-[14px]"
 													value={joinLines(req.acceptanceCriteria)}
 													onChange={(e) =>
 														updateRequirement("businessRequirements")(req.id, { acceptanceCriteria: splitLines(e.target.value) })
@@ -294,86 +324,6 @@ export default function TaskDetailEditPage({
 						</CardContent>
 					</Card>
 
-					<Card className="mt-6">
-						<CardHeader className="flex flex-row items-center justify-between">
-							<CardTitle className="text-base">システム要件</CardTitle>
-							<Button variant="outline" size="sm" className="gap-2" onClick={() => addRequirement("システム要件")}>
-								<Plus className="h-4 w-4" />
-								追加
-							</Button>
-						</CardHeader>
-						<CardContent className="space-y-4">
-							{knowledge.systemRequirements.length === 0 ? (
-								<div className="text-sm text-slate-500">まだ登録されていません。</div>
-							) : (
-								knowledge.systemRequirements.map((req) => (
-									<Card key={req.id} className="border-slate-100">
-										<CardHeader className="flex flex-row items-start justify-between gap-3">
-											<div>
-												<div className="text-xs text-slate-400">{req.id}</div>
-												<div className="mt-1 flex items-center gap-2">
-													<Badge variant="outline" className="bg-slate-50">
-														{req.type}
-													</Badge>
-												</div>
-											</div>
-											<Button
-												variant="outline"
-												size="icon"
-												title="削除"
-												onClick={() => removeRequirement("systemRequirements")(req.id)}
-											>
-												<Trash2 className="h-4 w-4 text-rose-500" />
-											</Button>
-										</CardHeader>
-										<CardContent className="space-y-4">
-											<div className="space-y-2">
-												<Label>タイトル</Label>
-												<Input
-													value={req.title}
-													onChange={(e) => updateRequirement("systemRequirements")(req.id, { title: e.target.value })}
-												/>
-											</div>
-											<div className="space-y-2">
-												<Label>概要</Label>
-												<Textarea
-													className="min-h-[90px]"
-													value={req.summary}
-													onChange={(e) => updateRequirement("systemRequirements")(req.id, { summary: e.target.value })}
-												/>
-											</div>
-											<div className="grid gap-4 md:grid-cols-2">
-												<div className="space-y-2">
-													<Label>影響領域（カンマ区切り）</Label>
-													<Input
-														value={joinCsv(req.impacts)}
-														onChange={(e) => updateRequirement("systemRequirements")(req.id, { impacts: splitCsv(e.target.value) })}
-													/>
-												</div>
-												<div className="space-y-2">
-													<Label>関連要件（カンマ区切り）</Label>
-													<Input
-														value={joinCsv(req.related)}
-														onChange={(e) => updateRequirement("systemRequirements")(req.id, { related: splitCsv(e.target.value) })}
-													/>
-												</div>
-											</div>
-											<div className="space-y-2">
-												<Label>受入条件（1行=1条件）</Label>
-												<Textarea
-													className="min-h-[110px]"
-													value={joinLines(req.acceptanceCriteria)}
-													onChange={(e) =>
-														updateRequirement("systemRequirements")(req.id, { acceptanceCriteria: splitLines(e.target.value) })
-													}
-												/>
-											</div>
-										</CardContent>
-									</Card>
-								))
-							)}
-						</CardContent>
-					</Card>
 
 				</div>
 			</div>

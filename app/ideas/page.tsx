@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/layout/sidebar";
-import { PageHeader } from "@/components/layout/page-header";
-import { SearchBox } from "@/components/ui/search-box";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -15,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Eye, Pencil, Trash2 } from "lucide-react";
+import { Plus, Eye, Pencil, Trash2, Search } from "lucide-react";
 
 const ideas = [
   {
@@ -55,20 +53,6 @@ const ideas = [
   },
 ];
 
-const getAreaColor = (area: string) => {
-  switch (area) {
-    case "FI":
-      return "bg-sky-50 text-sky-700";
-    case "SD":
-      return "bg-indigo-50 text-indigo-700";
-    case "MM":
-      return "bg-amber-50 text-amber-700";
-    case "HR":
-      return "bg-rose-50 text-rose-700";
-    default:
-      return "";
-  }
-};
 
 export default function IdeasPage() {
   const router = useRouter();
@@ -80,94 +64,141 @@ export default function IdeasPage() {
   return (
     <>
       <Sidebar />
-      <div className="ml-[280px] flex-1 min-h-screen bg-slate-50">
-        <div className="mx-auto max-w-[1400px] p-8">
-          <PageHeader
-            title="概念辞書"
-            description="用語の同義語、影響領域、必読ドキュメントを管理"
-          />
+      <div className="ml-[280px] flex-1 min-h-screen bg-white">
+        <div className="mx-auto max-w-[1400px] px-8 py-6">
+          {/* Page Header */}
+          <div className="mb-6">
+            <h1 className="text-[32px] font-semibold tracking-tight text-slate-900 mb-2">
+              概念辞書
+            </h1>
+            <p className="text-[13px] text-slate-500">
+              用語の同義語、影響領域、必読ドキュメントを管理
+            </p>
+          </div>
 
-          {/* ツールバー */}
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-            <div className="flex flex-1 gap-3 min-w-[300px]">
-              <SearchBox placeholder="概念名または同義語で検索..." />
+          {/* Search Bar */}
+          <div className="mb-6 flex items-center gap-4 rounded-md border border-slate-200 bg-slate-50/50 px-4 py-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="概念名、同義語、領域で検索..."
+                className="w-full pl-10 pr-3 py-1.5 bg-transparent border-0 text-[14px] text-slate-900 placeholder:text-slate-400 focus:outline-none"
+              />
             </div>
             <Link href="/ideas/add">
-              <Button className="bg-brand hover:bg-brand-600 gap-2">
+              <Button className="h-8 px-4 text-[14px] font-medium bg-slate-900 hover:bg-slate-800 gap-2">
                 <Plus className="h-4 w-4" />
                 追加
               </Button>
             </Link>
           </div>
 
-          {/* テーブル */}
-          <div className="rounded-lg border border-slate-100 bg-white shadow-sm">
+          {/* Table Container */}
+          <div className="rounded-md border border-slate-200 bg-white overflow-hidden">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>概念ID</TableHead>
-                  <TableHead>概念名</TableHead>
-                  <TableHead>同義語</TableHead>
-                  <TableHead>影響領域</TableHead>
-                  <TableHead>使用要件数</TableHead>
-                  <TableHead>操作</TableHead>
+                <TableRow className="border-b border-slate-200">
+                  <TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">
+                    概念ID
+                  </TableHead>
+                  <TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">
+                    概念名
+                  </TableHead>
+                  <TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">
+                    同義語
+                  </TableHead>
+                  <TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">
+                    影響領域
+                  </TableHead>
+                  <TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">
+                    使用要件数
+                  </TableHead>
+                  <TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">
+                    操作
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {ideas.map((idea) => (
                   <TableRow
                     key={idea.id}
-                    className="cursor-pointer hover:bg-slate-50"
+                    className="cursor-pointer border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition-colors"
                     onClick={() => handleRowClick(idea.id)}
                   >
-                    <TableCell className="text-xs font-semibold text-slate-500">
-                      {idea.id}
+                    <TableCell className="px-4 py-3">
+                      <span className="font-mono text-[12px] text-slate-400">
+                        {idea.id}
+                      </span>
                     </TableCell>
-                    <TableCell className="text-sm font-semibold text-slate-900">
-                      {idea.name}
+                    <TableCell className="px-4 py-3">
+                      <span className="text-[14px] font-medium text-slate-900">
+                        {idea.name}
+                      </span>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-2">
+                    <TableCell className="px-4 py-3">
+                      <div className="flex flex-wrap gap-1.5">
                         {idea.synonyms.map((s, i) => (
                           <Badge
                             key={i}
-                            className={
-                              s.startsWith("+")
-                                ? "bg-slate-200 text-slate-600"
-                                : "bg-slate-100 text-slate-600"
-                            }
+                            variant="outline"
+                            className="border-slate-200/60 bg-slate-50 text-slate-600 text-[12px] font-medium px-2 py-0.5"
                           >
                             {s}
                           </Badge>
                         ))}
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-2">
+                    <TableCell className="px-4 py-3">
+                      <div className="flex flex-wrap gap-1.5">
                         {idea.domains.map((domain, i) => (
-                          <Badge key={i} className={getAreaColor(domain)}>
+                          <Badge
+                            key={i}
+                            variant="outline"
+                            className="font-mono border-slate-200/60 bg-slate-50 text-slate-600 text-[12px] font-medium px-2 py-0.5"
+                          >
                             {domain}
                           </Badge>
                         ))}
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm font-semibold text-slate-600">
-                      {idea.count}
+                    <TableCell className="px-4 py-3">
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="font-mono text-[16px] font-semibold text-slate-900 tabular-nums">
+                          {idea.count}
+                        </span>
+                        <span className="text-[11px] text-slate-400">件</span>
+                      </div>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                    <TableCell className="px-4 py-3">
+                      <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
                         <Link href={`/ideas/${idea.id}`}>
-                          <Button size="icon" variant="outline" title="照会">
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            title="照会"
+                            className="h-8 w-8 rounded-md border-slate-200 hover:bg-slate-900 hover:text-white hover:border-slate-900"
+                          >
                             <Eye className="h-4 w-4" />
                           </Button>
                         </Link>
                         <Link href={`/ideas/${idea.id}/edit`}>
-                          <Button size="icon" variant="outline" title="編集">
-                            <Pencil className="h-4 w-4 text-brand" />
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            title="編集"
+                            className="h-8 w-8 rounded-md border-slate-200 hover:bg-slate-900 hover:text-white hover:border-slate-900"
+                          >
+                            <Pencil className="h-4 w-4" />
                           </Button>
                         </Link>
-                        <Button size="icon" variant="outline" title="削除">
-                          <Trash2 className="h-4 w-4 text-rose-500" />
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          title="削除"
+                          className="h-8 w-8 rounded-md border-slate-200 hover:bg-slate-900 hover:text-white hover:border-slate-900"
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>

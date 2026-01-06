@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/layout/sidebar";
-import { PageHeader } from "@/components/layout/page-header";
-import { SearchBox } from "@/components/ui/search-box";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -22,36 +20,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Eye, Pencil, Trash2 } from "lucide-react";
+import { Plus, Eye, Pencil, Trash2, Search } from "lucide-react";
 import { srfData } from "@/lib/mock/srf-knowledge";
-
-const getStatusVariant = (status: string) => {
-  switch (status) {
-    case "実装済":
-      return "bg-emerald-50 text-emerald-700 hover:bg-emerald-100";
-    case "実装中":
-      return "bg-sky-50 text-sky-700 hover:bg-sky-100";
-    case "テスト中":
-      return "bg-indigo-50 text-indigo-700 hover:bg-indigo-100";
-    case "未実装":
-      return "bg-slate-50 text-slate-700 hover:bg-slate-100";
-    default:
-      return "";
-  }
-};
-
-const getCategoryColor = (category: string) => {
-  switch (category) {
-    case "画面":
-      return "bg-indigo-50 text-indigo-700 hover:bg-indigo-100";
-    case "内部":
-      return "bg-amber-50 text-amber-700 hover:bg-amber-100";
-    case "IF":
-      return "bg-emerald-50 text-emerald-700 hover:bg-emerald-100";
-    default:
-      return "bg-slate-50 text-slate-700 hover:bg-slate-100";
-  }
-};
 
 export default function SrfPage() {
   const router = useRouter();
@@ -63,43 +33,53 @@ export default function SrfPage() {
   return (
     <>
       <Sidebar />
-      <div className="ml-[280px] flex-1 min-h-screen bg-slate-50">
-        <div className="mx-auto max-w-[1400px] p-8">
-          <PageHeader
-            title="システム機能一覧"
-            description="システム機能を一覧管理"
-          />
+      <div className="ml-[280px] flex-1 min-h-screen bg-white">
+        <div className="mx-auto max-w-[1400px] px-8 py-6">
+          {/* Page Header */}
+          <div className="mb-6">
+            <h1 className="text-[32px] font-semibold tracking-tight text-slate-900 mb-2">
+              システム機能一覧
+            </h1>
+            <p className="text-[13px] text-slate-500">
+              システム機能を一覧管理
+            </p>
+          </div>
 
           {/* ツールバー */}
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-            <div className="flex flex-1 gap-3 min-w-[300px]">
-              <SearchBox placeholder="システム機能を検索..." />
-              <Select>
-                <SelectTrigger className="w-[160px]">
-                  <SelectValue placeholder="すべてのステータス" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">すべてのステータス</SelectItem>
-                  <SelectItem value="implemented">実装済</SelectItem>
-                  <SelectItem value="implementing">実装中</SelectItem>
-                  <SelectItem value="testing">テスト中</SelectItem>
-                  <SelectItem value="not-implemented">未実装</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select>
-                <SelectTrigger className="w-[160px]">
-                  <SelectValue placeholder="すべての機能分類" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">すべての機能分類</SelectItem>
-                  <SelectItem value="ui">画面</SelectItem>
-                  <SelectItem value="internal">内部</SelectItem>
-                  <SelectItem value="if">IF</SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="mb-6 flex flex-wrap items-center gap-4 rounded-md border border-slate-200 bg-slate-50/50 px-4 py-3">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="システム機能を検索..."
+                className="w-full pl-10 pr-3 py-1.5 bg-transparent border-0 text-[14px] text-slate-900 placeholder:text-slate-400 focus:outline-none"
+              />
             </div>
+            <Select>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="すべてのステータス" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">すべてのステータス</SelectItem>
+                <SelectItem value="implemented">実装済</SelectItem>
+                <SelectItem value="implementing">実装中</SelectItem>
+                <SelectItem value="testing">テスト中</SelectItem>
+                <SelectItem value="not-implemented">未実装</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="すべての機能分類" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">すべての機能分類</SelectItem>
+                <SelectItem value="ui">画面</SelectItem>
+                <SelectItem value="internal">内部</SelectItem>
+                <SelectItem value="if">IF</SelectItem>
+              </SelectContent>
+            </Select>
             <Link href="/srf/create">
-              <Button className="bg-brand hover:bg-brand-600 gap-2">
+              <Button className="h-8 px-4 text-[14px] font-medium bg-slate-900 hover:bg-slate-800 gap-2">
                 <Plus className="h-4 w-4" />
                 追加
               </Button>
@@ -107,52 +87,85 @@ export default function SrfPage() {
           </div>
 
           {/* テーブル */}
-          <div className="rounded-lg border border-slate-100 bg-white shadow-sm">
+          <div className="rounded-md border border-slate-200 bg-white overflow-hidden">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>設計書No</TableHead>
-                  <TableHead>機能分類</TableHead>
-                  <TableHead>機能概要</TableHead>
-                  <TableHead>ステータス</TableHead>
-                  <TableHead>操作</TableHead>
+                <TableRow className="border-b border-slate-200">
+                  <TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">
+                    ID
+                  </TableHead>
+                  <TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">
+                    設計書No
+                  </TableHead>
+                  <TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">
+                    機能分類
+                  </TableHead>
+                  <TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">
+                    機能概要
+                  </TableHead>
+                  <TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">
+                    ステータス
+                  </TableHead>
+                  <TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">
+                    操作
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {srfData.map((srf) => (
                   <TableRow
                     key={srf.id}
-                    className="cursor-pointer hover:bg-slate-50"
+                    className="cursor-pointer border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition-colors"
                     onClick={() => handleRowClick(srf.id)}
                   >
-                    <TableCell className="font-medium">{srf.id}</TableCell>
-                    <TableCell>{srf.designDocNo}</TableCell>
-                    <TableCell>
-                      <Badge className={getCategoryColor(srf.category)}>
+                    <TableCell className="px-4 py-3">
+                      <span className="font-mono text-[12px] text-slate-400">{srf.id}</span>
+                    </TableCell>
+                    <TableCell className="px-4 py-3">
+                      <span className="text-[13px] text-slate-700">{srf.designDocNo}</span>
+                    </TableCell>
+                    <TableCell className="px-4 py-3">
+                      <Badge variant="outline" className="border-slate-200/60 bg-slate-50 text-slate-600 text-[12px] font-medium px-2 py-0.5">
                         {srf.category}
                       </Badge>
                     </TableCell>
-                    <TableCell>{srf.summary}</TableCell>
-                    <TableCell>
-                      <Badge className={getStatusVariant(srf.status)}>
+                    <TableCell className="px-4 py-3">
+                      <span className="text-[14px] font-medium text-slate-900">{srf.summary}</span>
+                    </TableCell>
+                    <TableCell className="px-4 py-3">
+                      <Badge variant="outline" className="border-slate-200/60 bg-slate-50 text-slate-600 text-[12px] font-medium px-2 py-0.5">
                         {srf.status}
                       </Badge>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                    <TableCell className="px-4 py-3">
+                      <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
                         <Link href={`/srf/${srf.id}`}>
-                          <Button size="icon" variant="outline" title="照会">
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            title="照会"
+                            className="h-8 w-8 rounded-md border-slate-200 hover:bg-slate-900 hover:text-white hover:border-slate-900"
+                          >
                             <Eye className="h-4 w-4" />
                           </Button>
                         </Link>
                         <Link href={`/srf/${srf.id}/edit`}>
-                          <Button size="icon" variant="outline" title="編集">
-                            <Pencil className="h-4 w-4 text-brand" />
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            title="編集"
+                            className="h-8 w-8 rounded-md border-slate-200 hover:bg-slate-900 hover:text-white hover:border-slate-900"
+                          >
+                            <Pencil className="h-4 w-4" />
                           </Button>
                         </Link>
-                        <Button size="icon" variant="outline" title="削除">
-                          <Trash2 className="h-4 w-4 text-rose-500" />
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          title="削除"
+                          className="h-8 w-8 rounded-md border-slate-200 hover:bg-slate-900 hover:text-white hover:border-slate-900"
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>
