@@ -26,8 +26,8 @@ const tickets = [
   {
     id: "CR-001",
     title: "インボイス制度対応",
-    business: ["請求業務", "経理業務"],
-    areas: ["FI", "SD"],
+    business: ["債権管理"],
+    areas: ["AR"],
     status: "適用済",
     versions: ["v2.0", "v2.1"],
     date: "2024-01-15",
@@ -35,35 +35,35 @@ const tickets = [
   {
     id: "CR-002",
     title: "電子帳簿保存法対応",
-    business: ["請求業務", "経理業務", "+1"],
-    areas: ["FI", "SD", "MM"],
+    business: ["一般会計"],
+    areas: ["GL"],
     status: "承認済",
     versions: ["v2.1"],
     date: "2024-02-01",
   },
   {
     id: "CR-003",
-    title: "承認ワークフロー改善",
-    business: ["購買業務", "経費精算業務"],
-    areas: ["MM", "FI"],
+    title: "支払依頼フロー改善",
+    business: ["債務管理"],
+    areas: ["AP"],
     status: "レビュー中",
     versions: ["未適用"],
     date: "2024-02-10",
   },
   {
     id: "CR-004",
-    title: "在庫管理機能強化",
-    business: ["在庫管理業務", "購買業務"],
-    areas: ["MM"],
+    title: "入金消込自動化",
+    business: ["債権管理"],
+    areas: ["AR"],
     status: "オープン",
     versions: ["未適用"],
     date: "2024-02-15",
   },
   {
     id: "CR-005",
-    title: "取引先マスタ統合",
-    business: ["販売業務", "購買業務", "+1"],
-    areas: ["SD", "MM", "FI"],
+    title: "仕訳自動転換機能",
+    business: ["一般会計"],
+    areas: ["GL"],
     status: "レビュー中",
     versions: ["未適用"],
     date: "2024-02-20",
@@ -121,10 +121,9 @@ export default function TicketsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">すべての領域</SelectItem>
-                <SelectItem value="fi">FI</SelectItem>
-                <SelectItem value="sd">SD</SelectItem>
-                <SelectItem value="mm">MM</SelectItem>
-                <SelectItem value="hr">HR</SelectItem>
+                <SelectItem value="ar">AR</SelectItem>
+                <SelectItem value="ap">AP</SelectItem>
+                <SelectItem value="gl">GL</SelectItem>
               </SelectContent>
             </Select>
             <Link href="/tickets/create">

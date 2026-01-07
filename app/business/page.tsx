@@ -16,12 +16,9 @@ import {
 import { Eye, Pencil, Trash2, Layers, Search } from "lucide-react";
 
 const businesses = [
-  { id: "BIZ-001", name: "請求業務", area: "FI", business: 12, system: 28 },
-  { id: "BIZ-002", name: "会計業務", area: "FI", business: 15, system: 35 },
-  { id: "BIZ-003", name: "販売業務", area: "SD", business: 18, system: 42 },
-  { id: "BIZ-004", name: "在庫業務", area: "MM", business: 10, system: 25 },
-  { id: "BIZ-005", name: "購買業務", area: "MM", business: 14, system: 32 },
-  { id: "BIZ-006", name: "生産管理業務", area: "PP", business: 20, system: 48 },
+  { id: "BIZ-001", name: "債権管理", area: "AR", business: 15, system: 32 },
+  { id: "BIZ-002", name: "債務管理", area: "AP", business: 12, system: 28 },
+  { id: "BIZ-003", name: "一般会計", area: "GL", business: 18, system: 45 },
 ];
 
 export default function BusinessPage() {

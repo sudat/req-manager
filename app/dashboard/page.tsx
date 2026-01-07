@@ -59,7 +59,7 @@ export default function DashboardPage() {
                     {
                       id: "CR-2026-031",
                       title: "インボイス制度対応",
-                      category: "請求業務",
+                      category: "債権管理",
                       release: "2026-01-12",
                       days: 7,
                       severity: "高",
@@ -67,15 +67,15 @@ export default function DashboardPage() {
                     {
                       id: "CR-2026-030",
                       title: "電子帳簿保存法対応",
-                      category: "会計業務",
+                      category: "一般会計",
                       release: "2026-01-20",
                       days: 15,
                       severity: "中",
                     },
                     {
                       id: "CR-2026-029",
-                      title: "多通貨対応機能追加",
-                      category: "販売業務",
+                      title: "支払処理自動化",
+                      category: "債務管理",
                       release: "2026-02-01",
                       days: 27,
                       severity: "中",
@@ -150,11 +150,9 @@ export default function DashboardPage() {
               <CardContent className="p-4">
                 <div className="flex flex-col gap-3">
                   {[
-                    { label: "請求/販売", count: 52, percent: 33 },
-                    { label: "会計", count: 41, percent: 26 },
-                    { label: "購買", count: 28, percent: 18 },
-                    { label: "在庫", count: 22, percent: 14 },
-                    { label: "共通", count: 13, percent: 9 },
+                    { label: "AR（債権管理）", count: 45, percent: 38 },
+                    { label: "AP（債務管理）", count: 38, percent: 32 },
+                    { label: "GL（一般会計）", count: 35, percent: 30 },
                   ].map((item) => (
                     <div key={item.label} className="grid grid-cols-[100px_1fr_100px] items-center gap-3">
                       <div className="text-[12px] font-medium text-slate-700">{item.label}</div>
@@ -173,7 +171,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="mt-4 pt-3 border-t border-slate-100">
                   <div className="text-[11px] text-slate-500">
-                    合計: <span className="font-mono font-semibold text-slate-900">156</span> 件
+                    合計: <span className="font-mono font-semibold text-slate-900">118</span> 件
                   </div>
                 </div>
               </CardContent>

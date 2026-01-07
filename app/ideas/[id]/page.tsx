@@ -92,13 +92,10 @@ export default async function IdeaDetailPage({ params }: { params: Promise<{ id:
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     <Badge variant="outline" className="font-mono border-slate-200/60 bg-slate-50 text-slate-600 text-[12px] font-medium px-2 py-0.5">
-                      FI
+                      AR
                     </Badge>
                     <Badge variant="outline" className="font-mono border-slate-200/60 bg-slate-50 text-slate-600 text-[12px] font-medium px-2 py-0.5">
-                      SD
-                    </Badge>
-                    <Badge variant="outline" className="font-mono border-slate-200/60 bg-slate-50 text-slate-600 text-[12px] font-medium px-2 py-0.5">
-                      MM
+                      GL
                     </Badge>
                   </div>
                 </div>

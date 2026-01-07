@@ -68,16 +68,16 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
                 <div className="border-t border-slate-100 pt-2 mt-2 space-y-1">
                   <div className="text-[12px] font-medium text-slate-500">影響業務</div>
                   <div className="flex flex-wrap gap-1.5">
-                    <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px]">請求業務</Badge>
-                    <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px]">経理業務</Badge>
+                    <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px]">債権管理</Badge>
+                    <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px]">一般会計</Badge>
                   </div>
                 </div>
 
                 <div className="border-t border-slate-100 pt-2 mt-2 space-y-1">
                   <div className="text-[12px] font-medium text-slate-500">影響領域</div>
                   <div className="flex flex-wrap gap-1.5">
-                    <Badge variant="outline" className="font-mono border-slate-200 bg-slate-50 text-slate-600 text-[12px]">FI</Badge>
-                    <Badge variant="outline" className="font-mono border-slate-200 bg-slate-50 text-slate-600 text-[12px]">SD</Badge>
+                    <Badge variant="outline" className="font-mono border-slate-200 bg-slate-50 text-slate-600 text-[12px]">AR</Badge>
+                    <Badge variant="outline" className="font-mono border-slate-200 bg-slate-50 text-slate-600 text-[12px]">GL</Badge>
                   </div>
                 </div>
 

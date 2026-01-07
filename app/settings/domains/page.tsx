@@ -22,24 +22,19 @@ function SectionHeader({ title, description, action }: { title: string; descript
 
 const domains = [
   {
-    code: "FI",
-    name: "財務会計",
-    description: "会計伝票、総勘定元帳、財務諸表",
+    code: "AR",
+    name: "債権管理",
+    description: "売掛金管理、請求書発行、入金消込、債権回収",
   },
   {
-    code: "SD",
-    name: "販売管理",
-    description: "受注、出荷、請求、売掛金管理",
+    code: "AP",
+    name: "債務管理",
+    description: "買掛金管理、支払処理、仕入先管理、支払依頼",
   },
   {
-    code: "MM",
-    name: "購買在庫",
-    description: "発注、入庫、在庫管理、買掛金管理",
-  },
-  {
-    code: "HR",
-    name: "人事給与",
-    description: "人事情報、勤怠、給与計算",
+    code: "GL",
+    name: "一般会計",
+    description: "仕訳転記、総勘定元帳、財務諸表、試算表",
   },
 ];
 
