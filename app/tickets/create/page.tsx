@@ -9,14 +9,15 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, Info } from "lucide-react";
 import { useState } from "react";
+import { businesses } from "@/lib/mock/data";
 
 export default function TicketCreatePage() {
-  const [selectedBusiness, setSelectedBusiness] = useState<string[]>([]);
+  const [selectedBusinessIds, setSelectedBusinessIds] = useState<string[]>([]);
   const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
 
-  const toggleBusiness = (item: string) => {
-    setSelectedBusiness(prev =>
-      prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]
+  const toggleBusiness = (businessId: string) => {
+    setSelectedBusinessIds(prev =>
+      prev.includes(businessId) ? prev.filter(id => id !== businessId) : [...prev, businessId]
     );
   };
 
@@ -61,16 +62,16 @@ export default function TicketCreatePage() {
               <div className="space-y-2">
                 <Label>影響業務</Label>
                 <div className="flex flex-wrap gap-2">
-                  {["請求業務", "経理業務", "購買業務", "在庫管理業務", "販売業務", "経費精算業務"].map((item) => (
+                  {businesses.map((business) => (
                     <Button
-                      key={item}
+                      key={business.id}
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => toggleBusiness(item)}
-                      className={selectedBusiness.includes(item) ? "bg-brand-50 text-brand-700 border-brand-200" : ""}
+                      onClick={() => toggleBusiness(business.id)}
+                      className={selectedBusinessIds.includes(business.id) ? "bg-brand-50 text-brand-700 border-brand-200" : ""}
                     >
-                      {item}
+                      {business.name}
                     </Button>
                   ))}
                 </div>

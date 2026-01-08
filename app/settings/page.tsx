@@ -1,5 +1,7 @@
 "use client"
 
+import { useState } from "react";
+import { Github } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { SettingsLayout } from "@/components/layout/settings-layout";
 import { Input } from "@/components/ui/input";
@@ -9,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { validateGitHubUrl, normalizeGitHubUrl } from "@/lib/utils";
 
 function SectionHeader({ title, description }: { title: string; description?: string }) {
   return (
@@ -20,6 +23,42 @@ function SectionHeader({ title, description }: { title: string; description?: st
 }
 
 export default function SettingsPage() {
+  // GitHubリポジトリURLの状態管理
+  const [githubUrl, setGithubUrl] = useState("");
+  const [githubUrlError, setGithubUrlError] = useState<string>("");
+  const [isUrlTouched, setIsUrlTouched] = useState(false);
+
+  // URL入力ハンドラー
+  const handleGithubUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setGithubUrl(value);
+    setIsUrlTouched(true);
+
+    // バリデーション実行
+    const validation = validateGitHubUrl(value);
+    if (!validation.isValid) {
+      setGithubUrlError(validation.error || "");
+    } else {
+      setGithubUrlError("");
+    }
+  };
+
+  // 保存ボタンハンドラー
+  const handleSave = () => {
+    const normalizedUrl = normalizeGitHubUrl(githubUrl);
+    const validation = validateGitHubUrl(normalizedUrl);
+
+    if (!validation.isValid) {
+      setGithubUrlError(validation.error || "");
+      return;
+    }
+
+    // TODO: 将来的にバックエンドAPIを呼び出して保存
+    console.log("Saving project settings:", {
+      githubRepositoryUrl: normalizedUrl,
+    });
+  };
+
   return (
     <>
       <Sidebar />
@@ -87,8 +126,40 @@ export default function SettingsPage() {
                   <Switch defaultChecked />
                 </div>
 
+                {/* GitHubリポジトリフィールド */}
+                <div className="space-y-2">
+                  <Label htmlFor="githubUrl" className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
+                    GitHubリポジトリ
+                  </Label>
+                  <div className="relative">
+                    <Github className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Input
+                      id="githubUrl"
+                      type="url"
+                      placeholder="https://github.com/owner/repo"
+                      value={githubUrl}
+                      onChange={handleGithubUrlChange}
+                      onBlur={() => setIsUrlTouched(true)}
+                      aria-invalid={isUrlTouched && !!githubUrlError}
+                      className="pl-10"
+                    />
+                  </div>
+                  {isUrlTouched && githubUrlError && (
+                    <p className="text-[13px] text-red-600 leading-relaxed">{githubUrlError}</p>
+                  )}
+                  <p className="text-[13px] text-slate-500 leading-relaxed">
+                    デフォルトのリポジトリURLを設定します。システム機能登録時のGitHubリンクの初期値として使用されます。
+                  </p>
+                </div>
+
                 <div className="flex justify-end pt-4">
-                  <Button className="bg-slate-900 hover:bg-slate-800 h-8 px-6 text-[14px]">変更を保存</Button>
+                  <Button
+                    onClick={handleSave}
+                    disabled={isUrlTouched && !!githubUrlError}
+                    className="bg-slate-900 hover:bg-slate-800 h-8 px-6 text-[14px]"
+                  >
+                    変更を保存
+                  </Button>
                 </div>
               </div>
             </div>

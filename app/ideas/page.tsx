@@ -14,66 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Plus, Eye, Pencil, Trash2, Search } from "lucide-react";
-
-const ideas = [
-  {
-    id: "C001",
-    name: "インボイス制度",
-    synonyms: ["適格請求書", "適格請求書等保存方式"],
-    domains: ["AR", "GL"],
-    count: 18,
-  },
-  {
-    id: "C002",
-    name: "請求書発行",
-    synonyms: ["Invoice Generation", "請求書作成"],
-    domains: ["AR"],
-    count: 14,
-  },
-  {
-    id: "C003",
-    name: "消費税計算",
-    synonyms: ["Tax Calculation", "税額計算"],
-    domains: ["AR", "AP", "GL"],
-    count: 12,
-  },
-  {
-    id: "C004",
-    name: "売掛金",
-    synonyms: ["Accounts Receivable", "債権"],
-    domains: ["AR"],
-    count: 15,
-  },
-  {
-    id: "C005",
-    name: "買掛金",
-    synonyms: ["Accounts Payable", "債務"],
-    domains: ["AP"],
-    count: 13,
-  },
-  {
-    id: "C006",
-    name: "仕訳",
-    synonyms: ["Journal Entry", "転記"],
-    domains: ["GL"],
-    count: 20,
-  },
-  {
-    id: "C007",
-    name: "支払明細",
-    synonyms: ["Payment Detail", "支払伝票"],
-    domains: ["AP"],
-    count: 10,
-  },
-  {
-    id: "C008",
-    name: "試算表",
-    synonyms: ["Trial Balance", "TB"],
-    domains: ["GL"],
-    count: 8,
-  },
-];
-
+import { concepts } from "@/lib/mock/data";
 
 export default function IdeasPage() {
   const router = useRouter();
@@ -86,9 +27,9 @@ export default function IdeasPage() {
     <>
       <Sidebar />
       <div className="ml-[280px] flex-1 min-h-screen bg-white">
-        <div className="mx-auto max-w-[1400px] px-8 py-6">
+        <div className="mx-auto max-w-[1400px] px-8 py-4">
           {/* Page Header */}
-          <div className="mb-6">
+          <div className="mb-4">
             <h1 className="text-[32px] font-semibold tracking-tight text-slate-900 mb-2">
               概念辞書
             </h1>
@@ -98,7 +39,7 @@ export default function IdeasPage() {
           </div>
 
           {/* Search Bar */}
-          <div className="mb-6 flex items-center gap-4 rounded-md border border-slate-200 bg-slate-50/50 px-4 py-3">
+          <div className="mb-4 flex items-center gap-4 rounded-md border border-slate-200 bg-slate-50/50 px-4 py-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <input
@@ -141,25 +82,25 @@ export default function IdeasPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {ideas.map((idea) => (
+                {concepts.map((concept) => (
                   <TableRow
-                    key={idea.id}
+                    key={concept.id}
                     className="cursor-pointer border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition-colors"
-                    onClick={() => handleRowClick(idea.id)}
+                    onClick={() => handleRowClick(concept.id)}
                   >
                     <TableCell className="px-4 py-3">
                       <span className="font-mono text-[12px] text-slate-400">
-                        {idea.id}
+                        {concept.id}
                       </span>
                     </TableCell>
                     <TableCell className="px-4 py-3">
                       <span className="text-[14px] font-medium text-slate-900">
-                        {idea.name}
+                        {concept.name}
                       </span>
                     </TableCell>
                     <TableCell className="px-4 py-3">
                       <div className="flex flex-wrap gap-1.5">
-                        {idea.synonyms.map((s, i) => (
+                        {concept.synonyms.map((s, i) => (
                           <Badge
                             key={i}
                             variant="outline"
@@ -172,13 +113,13 @@ export default function IdeasPage() {
                     </TableCell>
                     <TableCell className="px-4 py-3">
                       <div className="flex flex-wrap gap-1.5">
-                        {idea.domains.map((domain, i) => (
+                        {concept.areas.map((area, i) => (
                           <Badge
                             key={i}
                             variant="outline"
                             className="font-mono border-slate-200/60 bg-slate-50 text-slate-600 text-[12px] font-medium px-2 py-0.5"
                           >
-                            {domain}
+                            {area}
                           </Badge>
                         ))}
                       </div>
@@ -186,14 +127,14 @@ export default function IdeasPage() {
                     <TableCell className="px-4 py-3">
                       <div className="flex items-baseline gap-1.5">
                         <span className="font-mono text-[16px] font-semibold text-slate-900 tabular-nums">
-                          {idea.count}
+                          {concept.requirementCount}
                         </span>
                         <span className="text-[11px] text-slate-400">件</span>
                       </div>
                     </TableCell>
                     <TableCell className="px-4 py-3">
                       <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
-                        <Link href={`/ideas/${idea.id}`}>
+                        <Link href={`/ideas/${concept.id}`}>
                           <Button
                             size="icon"
                             variant="outline"
@@ -203,7 +144,7 @@ export default function IdeasPage() {
                             <Eye className="h-4 w-4" />
                           </Button>
                         </Link>
-                        <Link href={`/ideas/${idea.id}/edit`}>
+                        <Link href={`/ideas/${concept.id}/edit`}>
                           <Button
                             size="icon"
                             variant="outline"

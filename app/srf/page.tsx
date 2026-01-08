@@ -21,7 +21,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Eye, Pencil, Trash2, Search } from "lucide-react";
-import { srfData } from "@/lib/mock/srf-knowledge";
+import { systemFunctions } from "@/lib/mock/data";
+
+const statusLabels: Record<string, string> = {
+  not_implemented: "未実装",
+  implementing: "実装中",
+  testing: "テスト中",
+  implemented: "実装済",
+};
+
+const categoryLabels: Record<string, string> = {
+  screen: "画面",
+  internal: "内部",
+  interface: "IF",
+};
 
 export default function SrfPage() {
   const router = useRouter();
@@ -34,9 +47,9 @@ export default function SrfPage() {
     <>
       <Sidebar />
       <div className="ml-[280px] flex-1 min-h-screen bg-white">
-        <div className="mx-auto max-w-[1400px] px-8 py-6">
+        <div className="mx-auto max-w-[1400px] px-8 py-4">
           {/* Page Header */}
-          <div className="mb-6">
+          <div className="mb-4">
             <h1 className="text-[32px] font-semibold tracking-tight text-slate-900 mb-2">
               システム機能一覧
             </h1>
@@ -46,7 +59,7 @@ export default function SrfPage() {
           </div>
 
           {/* ツールバー */}
-          <div className="mb-6 flex flex-wrap items-center gap-4 rounded-md border border-slate-200 bg-slate-50/50 px-4 py-3">
+          <div className="mb-4 flex flex-wrap items-center gap-4 rounded-md border border-slate-200 bg-slate-50/50 px-4 py-3">
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <input
@@ -112,7 +125,7 @@ export default function SrfPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {srfData.map((srf) => (
+                {systemFunctions.map((srf) => (
                   <TableRow
                     key={srf.id}
                     className="cursor-pointer border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition-colors"
@@ -126,7 +139,7 @@ export default function SrfPage() {
                     </TableCell>
                     <TableCell className="px-4 py-3">
                       <Badge variant="outline" className="border-slate-200/60 bg-slate-50 text-slate-600 text-[12px] font-medium px-2 py-0.5">
-                        {srf.category}
+                        {categoryLabels[srf.category]}
                       </Badge>
                     </TableCell>
                     <TableCell className="px-4 py-3">
@@ -134,7 +147,7 @@ export default function SrfPage() {
                     </TableCell>
                     <TableCell className="px-4 py-3">
                       <Badge variant="outline" className="border-slate-200/60 bg-slate-50 text-slate-600 text-[12px] font-medium px-2 py-0.5">
-                        {srf.status}
+                        {statusLabels[srf.status]}
                       </Badge>
                     </TableCell>
                     <TableCell className="px-4 py-3">

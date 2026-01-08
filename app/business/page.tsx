@@ -13,13 +13,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Eye, Pencil, Trash2, Layers, Search } from "lucide-react";
-
-const businesses = [
-  { id: "BIZ-001", name: "債権管理", area: "AR", business: 15, system: 32 },
-  { id: "BIZ-002", name: "債務管理", area: "AP", business: 12, system: 28 },
-  { id: "BIZ-003", name: "一般会計", area: "GL", business: 18, system: 45 },
-];
+import { Eye, Pencil, Trash2, Search } from "lucide-react";
+import { businesses } from "@/lib/mock/data";
 
 export default function BusinessPage() {
   const router = useRouter();
@@ -32,9 +27,9 @@ export default function BusinessPage() {
     <>
       <Sidebar />
       <div className="ml-[280px] flex-1 min-h-screen bg-white">
-        <div className="mx-auto max-w-[1400px] px-8 py-6">
+        <div className="mx-auto max-w-[1400px] px-8 py-4">
           {/* Page Header */}
-          <div className="mb-6">
+          <div className="mb-4">
             <div className="flex items-baseline justify-between mb-2">
               <h1 className="text-[32px] font-semibold tracking-tight text-slate-900">
                 業務一覧
@@ -55,10 +50,6 @@ export default function BusinessPage() {
                 className="w-full pl-10 pr-3 py-1.5 bg-transparent border-0 text-[14px] text-slate-900 placeholder:text-slate-400 focus:outline-none"
               />
             </div>
-            <Button className="h-8 px-4 text-[14px] font-medium bg-slate-900 hover:bg-slate-800">
-              <Layers className="h-4 w-4 mr-2" />
-              AI修正指示
-            </Button>
           </div>
 
           {/* Table Container */}
@@ -111,7 +102,7 @@ export default function BusinessPage() {
                     <TableCell className="px-4 py-3">
                       <div className="flex items-baseline gap-1.5">
                         <span className="font-mono text-[16px] font-semibold text-slate-900 tabular-nums">
-                          {biz.business}
+                          {biz.businessReqCount}
                         </span>
                         <span className="text-[11px] text-slate-400">件</span>
                       </div>
@@ -119,7 +110,7 @@ export default function BusinessPage() {
                     <TableCell className="px-4 py-3">
                       <div className="flex items-baseline gap-1.5">
                         <span className="font-mono text-[16px] font-semibold text-slate-900 tabular-nums">
-                          {biz.system}
+                          {biz.systemReqCount}
                         </span>
                         <span className="text-[11px] text-slate-400">件</span>
                       </div>

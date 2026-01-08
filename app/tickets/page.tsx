@@ -21,55 +21,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Eye, Pencil, Trash2, Search } from "lucide-react";
+import { tickets, businesses } from "@/lib/mock/data";
 
-const tickets = [
-  {
-    id: "CR-001",
-    title: "インボイス制度対応",
-    business: ["債権管理"],
-    areas: ["AR"],
-    status: "適用済",
-    versions: ["v2.0", "v2.1"],
-    date: "2024-01-15",
-  },
-  {
-    id: "CR-002",
-    title: "電子帳簿保存法対応",
-    business: ["一般会計"],
-    areas: ["GL"],
-    status: "承認済",
-    versions: ["v2.1"],
-    date: "2024-02-01",
-  },
-  {
-    id: "CR-003",
-    title: "支払依頼フロー改善",
-    business: ["債務管理"],
-    areas: ["AP"],
-    status: "レビュー中",
-    versions: ["未適用"],
-    date: "2024-02-10",
-  },
-  {
-    id: "CR-004",
-    title: "入金消込自動化",
-    business: ["債権管理"],
-    areas: ["AR"],
-    status: "オープン",
-    versions: ["未適用"],
-    date: "2024-02-15",
-  },
-  {
-    id: "CR-005",
-    title: "仕訳自動転換機能",
-    business: ["一般会計"],
-    areas: ["GL"],
-    status: "レビュー中",
-    versions: ["未適用"],
-    date: "2024-02-20",
-  },
-];
+const statusLabels: Record<string, string> = {
+  open: "オープン",
+  review: "レビュー中",
+  approved: "承認済",
+  applied: "適用済",
+};
 
+// businessIdsからビジネス名の配列を取得
+const getBusinessNames = (businessIds: string[]): string[] => {
+  return businessIds.map(id => {
+    const biz = businesses.find(b => b.id === id);
+    return biz?.name || id;
+  });
+};
 
 export default function TicketsPage() {
   const router = useRouter();
@@ -82,9 +49,9 @@ export default function TicketsPage() {
     <>
       <Sidebar />
       <div className="ml-[280px] flex-1 min-h-screen bg-white">
-        <div className="mx-auto max-w-[1400px] px-8 py-6">
+        <div className="mx-auto max-w-[1400px] px-8 py-4">
           {/* Page Header */}
-          <div className="mb-6">
+          <div className="mb-4">
             <h1 className="text-[32px] font-semibold tracking-tight text-slate-900 mb-2">
               変更要求一覧
             </h1>
@@ -94,7 +61,7 @@ export default function TicketsPage() {
           </div>
 
           {/* ツールバー */}
-          <div className="mb-6 flex flex-wrap items-center gap-4 rounded-md border border-slate-200 bg-slate-50/50 px-4 py-3">
+          <div className="mb-4 flex flex-wrap items-center gap-4 rounded-md border border-slate-200 bg-slate-50/50 px-4 py-3">
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <input
@@ -164,7 +131,7 @@ export default function TicketsPage() {
                     </TableCell>
                     <TableCell className="px-4 py-3">
                       <div className="flex flex-wrap gap-1.5">
-                        {ticket.business.map((b, i) => (
+                        {getBusinessNames(ticket.businessIds).map((b, i) => (
                           <Badge
                             key={i}
                             variant="outline"
@@ -190,20 +157,26 @@ export default function TicketsPage() {
                     </TableCell>
                     <TableCell className="px-4 py-3">
                       <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px]">
-                        {ticket.status}
+                        {statusLabels[ticket.status]}
                       </Badge>
                     </TableCell>
                     <TableCell className="px-4 py-3">
                       <div className="flex flex-wrap gap-1.5">
-                        {ticket.versions.map((v, i) => (
-                          <Badge key={i} variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px]">
-                            {v}
+                        {ticket.targetVersions.length > 0 ? (
+                          ticket.targetVersions.map((v, i) => (
+                            <Badge key={i} variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px]">
+                              {v}
+                            </Badge>
+                          ))
+                        ) : (
+                          <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px]">
+                            未適用
                           </Badge>
-                        ))}
+                        )}
                       </div>
                     </TableCell>
                     <TableCell className="px-4 py-3">
-                      <span className="text-[13px] text-slate-700">{ticket.date}</span>
+                      <span className="text-[13px] text-slate-700">{ticket.createdAt.split("T")[0]}</span>
                     </TableCell>
                     <TableCell className="px-4 py-3">
                       <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
