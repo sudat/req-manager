@@ -6,7 +6,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Pencil } from "lucide-react";
+import { ArrowLeft, Pencil, ExternalLink } from "lucide-react";
 import type { TaskKnowledge } from "@/lib/mock/task-knowledge";
 import { getDefaultTaskKnowledge } from "@/lib/mock/task-knowledge";
 import { getSystemFunctionById } from "@/lib/mock/data";
@@ -171,6 +171,110 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                       </ul>
                     </div>
                   </div>
+                  );
+                })
+              )}
+            </CardContent>
+          </Card>
+
+          {/* 関連システム要件セクション */}
+          <Card className="mt-4 rounded-md border border-slate-200/60 bg-white hover:border-slate-300/60 transition-colors">
+            <CardContent className="p-3 space-y-2">
+              <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+                <h3 className="text-[14px] font-semibold text-slate-900">関連システム要件</h3>
+                <Badge variant="outline" className="font-mono text-[11px] border-slate-200 bg-slate-50 text-slate-600 px-1.5 py-0">
+                  {knowledge.systemRequirements.length}
+                </Badge>
+              </div>
+              {knowledge.systemRequirements.length === 0 ? (
+                <div className="text-[14px] text-slate-500">まだ登録されていません。</div>
+              ) : (
+                knowledge.systemRequirements.map((sysReq) => {
+                  const srf = sysReq.srfId ? getSystemFunctionById(sysReq.srfId) : undefined;
+                  const srfSummaryShort = srf?.summary?.split("：")[0] || srf?.summary?.split("。")[0] || "";
+
+                  return (
+                    <div key={sysReq.id} className="rounded-md border border-slate-200 bg-slate-50/50 p-3">
+                      {/* システム要件ID + タイトル */}
+                      <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
+                        <div className="flex-1">
+                          <div className="font-mono text-[11px] text-slate-400">{sysReq.id}</div>
+                          <div className="text-[14px] font-medium text-slate-900 mt-1">{sysReq.title}</div>
+                          <div className="mt-1 text-[13px] text-slate-600">{sysReq.summary}</div>
+                        </div>
+                        <Badge variant="outline" className="border-blue-200/60 bg-blue-50 text-blue-700 text-[12px] font-medium px-2 py-0.5">
+                          {sysReq.type}
+                        </Badge>
+                      </div>
+
+                      {/* 関連概念 */}
+                      {sysReq.concepts && sysReq.concepts.length > 0 && (
+                        <div className="border-t border-slate-100 pt-2 mt-2 space-y-1">
+                          <div className="text-[12px] font-medium text-slate-500">関連概念</div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {sysReq.concepts.map((concept) => (
+                              <Link key={concept.id} href={`/ideas/${concept.id}`}>
+                                <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] hover:bg-slate-100">
+                                  {concept.name}
+                                </Badge>
+                              </Link>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 影響領域 */}
+                      {sysReq.impacts && sysReq.impacts.length > 0 && (
+                        <div className="border-t border-slate-100 pt-2 mt-2 space-y-1">
+                          <div className="text-[12px] font-medium text-slate-500">影響領域</div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {sysReq.impacts.map((impact, i) => (
+                              <Badge key={i} variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px]">
+                                {impact}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 受入条件 */}
+                      {sysReq.acceptanceCriteria && sysReq.acceptanceCriteria.length > 0 && (
+                        <div className="border-t border-slate-100 pt-2 mt-2 space-y-1">
+                          <div className="text-[12px] font-medium text-slate-500">受入条件</div>
+                          <ul className="list-disc pl-5 text-[13px] text-slate-700 space-y-0.5">
+                            {sysReq.acceptanceCriteria.map((ac, i) => (
+                              <li key={i}>{ac}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* 関連SRFへのリンク */}
+                      {srf && (
+                        <div className="border-t border-slate-100 pt-2 mt-2">
+                          <div className="text-[12px] font-medium text-slate-500 mb-1">関連システム機能</div>
+                          <div className="ml-1 pl-3 border-l-2 border-purple-200">
+                            <Link
+                              href={`/srf/${srf.id}`}
+                              className="block hover:bg-purple-50/50 rounded px-2 py-1 -ml-2 transition-colors"
+                            >
+                              <div className="flex items-center gap-2">
+                                <Badge
+                                  variant="outline"
+                                  className="border-purple-200/60 bg-purple-50 text-purple-700 text-[12px] font-medium px-2 py-0.5"
+                                >
+                                  {srf.id}
+                                </Badge>
+                                <span className="text-[13px] text-slate-700">
+                                  {srfSummaryShort}
+                                </span>
+                                <ExternalLink className="h-3 w-3 text-slate-400 ml-auto" />
+                              </div>
+                            </Link>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   );
                 })
               )}
