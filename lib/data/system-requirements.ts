@@ -1,68 +1,73 @@
 import { supabase, getSupabaseConfigError } from "@/lib/supabase/client";
 
-export type BusinessRequirement = {
+export type SystemRequirement = {
   id: string;
   taskId: string;
+  srfId: string | null;
   title: string;
   summary: string;
   conceptIds: string[];
-  srfId: string | null;
-  systemDomainIds: string[];
+  impacts: string[];
   acceptanceCriteria: string[];
+  relatedBusinessRequirementIds: string[];
   sortOrder: number;
   createdAt: string;
   updatedAt: string;
 };
 
-export type BusinessRequirementInput = {
+export type SystemRequirementInput = {
   id: string;
   taskId: string;
+  srfId: string | null;
   title: string;
   summary: string;
   conceptIds: string[];
-  srfId: string | null;
-  systemDomainIds: string[];
+  impacts: string[];
   acceptanceCriteria: string[];
+  relatedBusinessRequirementIds: string[];
   sortOrder: number;
 };
 
-type BusinessRequirementRow = {
+type SystemRequirementRow = {
   id: string;
   task_id: string;
+  srf_id: string | null;
   title: string;
   summary: string;
   concept_ids: string[] | null;
-  srf_id: string | null;
-  system_domain_ids: string[] | null;
+  impacts: string[] | null;
   acceptance_criteria: string[] | null;
+  related_business_requirement_ids: string[] | null;
   sort_order: number | null;
   created_at: string;
   updated_at: string;
 };
 
-const toBusinessRequirement = (row: BusinessRequirementRow): BusinessRequirement => ({
+const toSystemRequirement = (row: SystemRequirementRow): SystemRequirement => ({
   id: row.id,
   taskId: row.task_id,
+  srfId: row.srf_id ?? null,
   title: row.title,
   summary: row.summary,
   conceptIds: row.concept_ids ?? [],
-  srfId: row.srf_id ?? null,
-  systemDomainIds: row.system_domain_ids ?? [],
+  impacts: row.impacts ?? [],
   acceptanceCriteria: row.acceptance_criteria ?? [],
+  relatedBusinessRequirementIds: row.related_business_requirement_ids ?? [],
   sortOrder: row.sort_order ?? 0,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });
 
-const toBusinessRequirementRow = (input: BusinessRequirementInput) => ({
+const toSystemRequirementRow = (input: SystemRequirementInput) => ({
   id: input.id,
   task_id: input.taskId,
+  srf_id: input.srfId,
   title: input.title,
   summary: input.summary,
   concept_ids: input.conceptIds,
-  srf_id: input.srfId,
-  system_domain_ids: input.systemDomainIds,
+  impacts: input.impacts,
   acceptance_criteria: input.acceptanceCriteria,
+  related_business_requirement_ids: input.relatedBusinessRequirementIds,
   sort_order: input.sortOrder,
 });
 
@@ -74,84 +79,69 @@ const failIfMissingConfig = () => {
   return null;
 };
 
-export const listBusinessRequirementsByTaskId = async (taskId: string) => {
+export const listSystemRequirementsBySrfId = async (srfId: string) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
   const { data, error } = await supabase
-    .from("business_requirements")
+    .from("system_requirements")
     .select("*")
-    .eq("task_id", taskId)
+    .eq("srf_id", srfId)
     .order("sort_order")
     .order("id");
 
   if (error) return { data: null, error: error.message };
-  return { data: (data as BusinessRequirementRow[]).map(toBusinessRequirement), error: null };
+  return { data: (data as SystemRequirementRow[]).map(toSystemRequirement), error: null };
 };
 
-export const listBusinessRequirementsByIds = async (ids: string[]) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
-  if (ids.length === 0) return { data: [], error: null };
-
-  const { data, error } = await supabase
-    .from("business_requirements")
-    .select("*")
-    .in("id", ids)
-    .order("id");
-
-  if (error) return { data: null, error: error.message };
-  return { data: (data as BusinessRequirementRow[]).map(toBusinessRequirement), error: null };
-};
-
-export const createBusinessRequirements = async (inputs: BusinessRequirementInput[]) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
-  if (inputs.length === 0) return { data: [], error: null };
-
-  const now = new Date().toISOString();
-  const payload = inputs.map((input) => ({
-    ...toBusinessRequirementRow(input),
-    created_at: now,
-    updated_at: now,
-  }));
-
-  const { data, error } = await supabase
-    .from("business_requirements")
-    .insert(payload)
-    .select("*");
-
-  if (error) return { data: null, error: error.message };
-  return { data: (data as BusinessRequirementRow[]).map(toBusinessRequirement), error: null };
-};
-
-export const updateBusinessRequirement = async (id: string, input: Omit<BusinessRequirementInput, "id">) => {
+export const createSystemRequirement = async (input: SystemRequirementInput) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
   const now = new Date().toISOString();
   const payload = {
-    ...toBusinessRequirementRow({ ...input, id }),
+    ...toSystemRequirementRow(input),
+    created_at: now,
     updated_at: now,
   };
 
   const { data, error } = await supabase
-    .from("business_requirements")
+    .from("system_requirements")
+    .insert(payload)
+    .select("*")
+    .single();
+
+  if (error) return { data: null, error: error.message };
+  return { data: toSystemRequirement(data as SystemRequirementRow), error: null };
+};
+
+export const updateSystemRequirement = async (id: string, input: Omit<SystemRequirementInput, "id">) => {
+  const configError = failIfMissingConfig();
+  if (configError) return configError;
+
+  const now = new Date().toISOString();
+  const payload = {
+    ...toSystemRequirementRow({ ...input, id }),
+    updated_at: now,
+  };
+
+  const { data, error } = await supabase
+    .from("system_requirements")
     .update(payload)
     .eq("id", id)
     .select("*")
     .single();
 
   if (error) return { data: null, error: error.message };
-  return { data: toBusinessRequirement(data as BusinessRequirementRow), error: null };
+  return { data: toSystemRequirement(data as SystemRequirementRow), error: null };
 };
 
-export const deleteBusinessRequirement = async (id: string) => {
+export const deleteSystemRequirement = async (id: string) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
   const { error } = await supabase
-    .from("business_requirements")
+    .from("system_requirements")
     .delete()
     .eq("id", id);
 

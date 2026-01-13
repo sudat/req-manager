@@ -86,7 +86,7 @@ export default function SystemDomainFunctionsPage({ params }: { params: Promise<
     const normalized = query.trim().toLowerCase();
     return items.filter((item) => {
       const matchesQuery = normalized
-        ? [item.id, item.designDocNo, item.summary].join(" ").toLowerCase().includes(normalized)
+        ? [item.id, item.designDocNo, item.title].join(" ").toLowerCase().includes(normalized)
         : true;
       const matchesStatus = statusFilter === "all" ? true : item.status === statusFilter;
       const matchesCategory = categoryFilter === "all" ? true : item.category === categoryFilter;
@@ -95,7 +95,7 @@ export default function SystemDomainFunctionsPage({ params }: { params: Promise<
   }, [items, query, statusFilter, categoryFilter]);
 
   const handleDelete = async (srf: SystemFunction) => {
-    if (!confirmDelete(`${srf.summary}（${srf.id}）`)) return;
+    if (!confirmDelete(`${srf.title}（${srf.id}）`)) return;
     const { error: deleteError } = await deleteSystemFunction(srf.id);
     if (deleteError) {
       alert(deleteError);
@@ -182,13 +182,13 @@ export default function SystemDomainFunctionsPage({ params }: { params: Promise<
                     ID
                   </TableHead>
                   <TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">
-                    設計書No
+                    機能名
                   </TableHead>
                   <TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">
                     機能分類
                   </TableHead>
                   <TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">
-                    機能概要
+                    説明
                   </TableHead>
                   <TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">
                     ステータス
@@ -201,19 +201,19 @@ export default function SystemDomainFunctionsPage({ params }: { params: Promise<
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="px-4 py-10 text-center text-[14px] text-slate-500">
+                    <TableCell colSpan={5} className="px-4 py-10 text-center text-[14px] text-slate-500">
                       読み込み中...
                     </TableCell>
                   </TableRow>
                 ) : error ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="px-4 py-10 text-center text-[14px] text-rose-600">
+                    <TableCell colSpan={5} className="px-4 py-10 text-center text-[14px] text-rose-600">
                       {error}
                     </TableCell>
                   </TableRow>
                 ) : filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="px-4 py-10 text-center text-[14px] text-slate-500">
+                    <TableCell colSpan={5} className="px-4 py-10 text-center text-[14px] text-slate-500">
                       該当するシステム機能がありません。
                     </TableCell>
                   </TableRow>
@@ -228,7 +228,7 @@ export default function SystemDomainFunctionsPage({ params }: { params: Promise<
                         <span className="font-mono text-[12px] text-slate-400">{srf.id}</span>
                       </TableCell>
                       <TableCell className="px-4 py-3">
-                        <span className="text-[13px] text-slate-700">{srf.designDocNo}</span>
+                        <span className="text-[14px] font-medium text-slate-900">{srf.title}</span>
                       </TableCell>
                       <TableCell className="px-4 py-3">
                         <Badge variant="outline" className="border-slate-200/60 bg-slate-50 text-slate-600 text-[12px] font-medium px-2 py-0.5">
@@ -236,7 +236,9 @@ export default function SystemDomainFunctionsPage({ params }: { params: Promise<
                         </Badge>
                       </TableCell>
                       <TableCell className="px-4 py-3">
-                        <span className="text-[14px] font-medium text-slate-900">{srf.summary}</span>
+                        <span className="text-[13px] text-slate-600 truncate max-w-[300px] block" title={srf.summary}>
+                          {srf.summary}
+                        </span>
                       </TableCell>
                       <TableCell className="px-4 py-3">
                         <Badge variant="outline" className="border-slate-200/60 bg-slate-50 text-slate-600 text-[12px] font-medium px-2 py-0.5">

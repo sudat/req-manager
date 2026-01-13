@@ -41,6 +41,7 @@ export interface SystemFunctionFormState {
 	designDocNo: string;
 	category: SrfCategory;
 	status: SrfStatus;
+	title: string;
 	summary: string;
 
 	// システム設計
@@ -57,6 +58,7 @@ export interface SystemFunctionFormActions {
 	setDesignDocNo: (value: string) => void;
 	setCategory: (value: SrfCategory) => void;
 	setStatus: (value: SrfStatus) => void;
+	setTitle: (value: string) => void;
 	setSummary: (value: string) => void;
 
 	// システム設計操作
@@ -111,6 +113,7 @@ export function useSystemFunctionForm(srfId: string): {
 	const [designDocNo, setDesignDocNo] = useState("");
 	const [category, setCategory] = useState<SrfCategory>("screen");
 	const [status, setStatus] = useState<SrfStatus>("not_implemented");
+	const [title, setTitle] = useState("");
 	const [summary, setSummary] = useState("");
 
 	// システム設計
@@ -142,6 +145,7 @@ export function useSystemFunctionForm(srfId: string): {
 					setDesignDocNo(data.designDocNo);
 					setCategory(data.category);
 					setStatus(data.status);
+					setTitle(data.title);
 					setSummary(data.summary);
 					setSystemDesign(data.systemDesign ?? []);
 					setCodeRefs(data.codeRefs ?? []);
@@ -223,6 +227,7 @@ export function useSystemFunctionForm(srfId: string): {
 				designDocNo,
 				category,
 				status,
+				title,
 				summary,
 				relatedTaskIds: existingSrf.relatedTaskIds ?? [],
 				requirementIds: existingSrf.requirementIds ?? [],
@@ -243,6 +248,7 @@ export function useSystemFunctionForm(srfId: string): {
 			designDocNo,
 			category,
 			status,
+			title,
 			summary,
 			systemDesign,
 			codeRefs,
@@ -258,6 +264,7 @@ export function useSystemFunctionForm(srfId: string): {
 			designDocNo,
 			category,
 			status,
+			title,
 			summary,
 			systemDesign,
 			newDesignItem,
@@ -268,6 +275,7 @@ export function useSystemFunctionForm(srfId: string): {
 			setDesignDocNo,
 			setCategory,
 			setStatus,
+			setTitle,
 			setSummary,
 			setNewDesignItem,
 			addDesignItem,

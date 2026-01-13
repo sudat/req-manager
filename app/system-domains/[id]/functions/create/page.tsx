@@ -32,6 +32,7 @@ export default function SystemFunctionCreatePage({ params }: { params: Promise<{
   const router = useRouter();
   const [nextId, setNextId] = useState("SRF-001");
   const [designDocNo, setDesignDocNo] = useState("");
+  const [title, setTitle] = useState("");
   const [summary, setSummary] = useState("");
   const [category, setCategory] = useState<SrfCategory>("screen");
   const [status, setStatus] = useState<SrfStatus>("not_implemented");
@@ -58,7 +59,7 @@ export default function SystemFunctionCreatePage({ params }: { params: Promise<{
     };
   }, []);
 
-  const canSubmit = useMemo(() => summary.trim().length > 0, [summary]);
+  const canSubmit = useMemo(() => title.trim().length > 0, [title]);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -69,6 +70,7 @@ export default function SystemFunctionCreatePage({ params }: { params: Promise<{
       systemDomainId: id,
       designDocNo: designDocNo.trim(),
       category,
+      title: title.trim(),
       summary: summary.trim(),
       status,
       relatedTaskIds: splitCsv(relatedTaskIds),
@@ -107,6 +109,18 @@ export default function SystemFunctionCreatePage({ params }: { params: Promise<{
               <div className="space-y-2">
                 <Label>設計書No</Label>
                 <Input value={designDocNo} onChange={(event) => setDesignDocNo(event.target.value)} placeholder="例: DD-TASK-001-001" />
+              </div>
+
+              <div className="space-y-2">
+                <Label>
+                  機能名<span className="text-rose-500">*</span>
+                </Label>
+                <Input
+                  value={title}
+                  onChange={(event) => setTitle(event.target.value)}
+                  placeholder="例：請求書発行機能"
+                  required
+                />
               </div>
 
               <div className="space-y-2">

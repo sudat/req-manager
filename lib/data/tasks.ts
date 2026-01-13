@@ -97,6 +97,21 @@ export const listTasksByBusinessId = async (businessId: string) => {
   return { data: (data as TaskRow[]).map(toTask), error: null };
 };
 
+export const listTasksByIds = async (ids: string[]) => {
+  const configError = failIfMissingConfig();
+  if (configError) return configError;
+  if (ids.length === 0) return { data: [], error: null };
+
+  const { data, error } = await supabase
+    .from("business_tasks")
+    .select("*")
+    .in("id", ids)
+    .order("id");
+
+  if (error) return { data: null, error: error.message };
+  return { data: (data as TaskRow[]).map(toTask), error: null };
+};
+
 export const getTaskById = async (id: string) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;

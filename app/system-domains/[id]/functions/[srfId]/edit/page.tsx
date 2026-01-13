@@ -78,16 +78,15 @@ function NotFoundState({
 // ============================================
 
 interface PageHeaderProps {
-	systemDomainId: string;
-	srfId: string;
+	srf: SystemFunction;
 }
 
-function PageHeader({ systemDomainId, srfId }: PageHeaderProps) {
+function PageHeader({ srf }: PageHeaderProps) {
 	return (
 		<>
 			<div className="flex items-center justify-between mb-6">
 				<Link
-					href={`/system-domains/${systemDomainId}/functions/${srfId}`}
+					href={`/system-domains/${srf.systemDomainId}/functions/${srf.id}`}
 					className="inline-flex items-center gap-2 text-[14px] font-medium text-slate-600 hover:text-slate-900"
 				>
 					<ArrowLeft className="h-4 w-4" />
@@ -97,7 +96,7 @@ function PageHeader({ systemDomainId, srfId }: PageHeaderProps) {
 
 			<div className="mb-6">
 				<h1 className="text-[32px] font-semibold tracking-tight text-slate-900 mb-2">
-					システム機能編集: {systemDomainId}
+					編集: {srf.title}
 				</h1>
 				<p className="text-[13px] text-slate-500">
 					システム機能の情報を編集します
@@ -177,17 +176,19 @@ export default function SystemFunctionEditPage({
 			<Sidebar />
 			<div className="ml-[280px] flex-1 min-h-screen bg-slate-50">
 				<div className="mx-auto max-w-[1400px] px-8 py-6">
-					<PageHeader systemDomainId={id} srfId={srfId} />
+					<PageHeader srf={state.existingSrf} />
 
 					<BasicInfoSection
 						systemFunctionId={id}
 						designDocNo={state.designDocNo}
 						category={state.category}
 						status={state.status}
+						title={state.title}
 						summary={state.summary}
 						onDesignDocNoChange={actions.setDesignDocNo}
 						onCategoryChange={actions.setCategory}
 						onStatusChange={actions.setStatus}
+						onTitleChange={actions.setTitle}
 						onSummaryChange={actions.setSummary}
 					/>
 

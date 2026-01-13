@@ -22,10 +22,12 @@ interface BasicInfoSectionProps {
 	designDocNo: string;
 	category: SrfCategory;
 	status: SrfStatus;
+	title: string;
 	summary: string;
 	onDesignDocNoChange: (value: string) => void;
 	onCategoryChange: (value: SrfCategory) => void;
 	onStatusChange: (value: SrfStatus) => void;
+	onTitleChange: (value: string) => void;
 	onSummaryChange: (value: string) => void;
 }
 
@@ -38,10 +40,12 @@ export function BasicInfoSection({
 	designDocNo,
 	category,
 	status,
+	title,
 	summary,
 	onDesignDocNoChange,
 	onCategoryChange,
 	onStatusChange,
+	onTitleChange,
 	onSummaryChange,
 }: BasicInfoSectionProps) {
 	return (
@@ -108,6 +112,17 @@ export function BasicInfoSection({
 							</SelectContent>
 						</Select>
 					</div>
+				</div>
+
+				<div className="mt-4 space-y-2">
+					<Label>
+						機能名<span className="text-rose-500">*</span>
+					</Label>
+					<Input
+						value={title}
+						onChange={(e) => onTitleChange(e.target.value)}
+						placeholder="例：請求書発行機能"
+					/>
 				</div>
 
 				<div className="mt-4 space-y-2">

@@ -7,10 +7,13 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { getSrfRelatedRequirements } from "@/lib/mock/data";
 import type { SystemFunction, SystemDesignItem, RelatedRequirementInfo } from "@/lib/mock/data/types";
 import type { CodeRef } from "@/lib/mock/task-knowledge";
+import { listBusinessRequirementsByIds } from "@/lib/data/business-requirements";
+import { listConcepts } from "@/lib/data/concepts";
+import { listSystemRequirementsBySrfId } from "@/lib/data/system-requirements";
 import { getSystemFunctionById, getDesignCategoryLabel } from "@/lib/data/system-functions";
+import { listTasksByIds } from "@/lib/data/tasks";
 
 // ============================================================
 // Sub-components
@@ -63,7 +66,14 @@ function BasicInfoSection({ srf }: BasicInfoSectionProps) {
 					</div>
 
 					<div className="space-y-1.5">
-						<SectionLabel>機能概要</SectionLabel>
+						<SectionLabel>機能名</SectionLabel>
+						<div className="text-[16px] font-semibold text-slate-900">
+							{srf.title}
+						</div>
+					</div>
+
+					<div className="space-y-1.5">
+						<SectionLabel>説明</SectionLabel>
 						<div className="text-[13px] text-slate-700 leading-relaxed">
 							{srf.summary}
 						</div>
@@ -116,18 +126,141 @@ interface SystemRequirementsSectionProps {
 }
 
 function SystemRequirementsSection({ srfId }: SystemRequirementsSectionProps) {
-	const relatedReqs = getSrfRelatedRequirements(srfId);
+	const [relatedReqs, setRelatedReqs] = useState<RelatedRequirementInfo[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
+
+	useEffect(() => {
+		let active = true;
+		async function fetchRelatedRequirements(): Promise<void> {
+			setLoading(true);
+			const { data: systemRequirements, error: sysError } = await listSystemRequirementsBySrfId(srfId);
+			if (!active) return;
+			if (sysError) {
+				setError(sysError);
+				setRelatedReqs([]);
+				setLoading(false);
+				return;
+			}
+
+			const sysReqs = systemRequirements ?? [];
+			if (sysReqs.length === 0) {
+				setError(null);
+				setRelatedReqs([]);
+				setLoading(false);
+				return;
+			}
+
+			const relatedBusinessIds = Array.from(
+				new Set(sysReqs.flatMap((req) => req.relatedBusinessRequirementIds)),
+			);
+			const { data: businessRequirements, error: businessReqError } =
+				await listBusinessRequirementsByIds(relatedBusinessIds);
+			if (!active) return;
+			if (businessReqError) {
+				setError(businessReqError);
+				setRelatedReqs([]);
+				setLoading(false);
+				return;
+			}
+
+			const taskIds = Array.from(
+				new Set([
+					...sysReqs.map((req) => req.taskId),
+					...(businessRequirements ?? []).map((req) => req.taskId),
+				]),
+			);
+			const [taskResult, conceptResult] = await Promise.all([
+				listTasksByIds(taskIds),
+				listConcepts(),
+			]);
+			if (!active) return;
+
+			const fetchError = taskResult.error ?? conceptResult.error;
+			if (fetchError) {
+				setError(fetchError);
+				setRelatedReqs([]);
+				setLoading(false);
+				return;
+			}
+
+			const businessReqMap = new Map(
+				(businessRequirements ?? []).map((req) => [req.id, req]),
+			);
+			const taskBusinessMap = new Map(
+				(taskResult.data ?? []).map((task) => [task.id, task.businessId]),
+			);
+			const conceptMap = new Map(
+				(conceptResult.data ?? []).map((concept) => [concept.id, concept.name]),
+			);
+
+			const next: RelatedRequirementInfo[] = [];
+			for (const sysReq of sysReqs) {
+				const systemReqConcepts = sysReq.conceptIds.map((id) => ({
+					id,
+					name: conceptMap.get(id) ?? id,
+				}));
+
+				if (sysReq.relatedBusinessRequirementIds.length === 0) {
+					next.push({
+						systemReqId: sysReq.id,
+						systemReqTitle: sysReq.title,
+						systemReqSummary: sysReq.summary,
+						systemReqConcepts,
+						systemReqImpacts: sysReq.impacts,
+						systemReqAcceptanceCriteria: sysReq.acceptanceCriteria,
+						businessReqId: "",
+						businessReqTitle: "",
+						businessId: taskBusinessMap.get(sysReq.taskId) ?? "",
+						taskId: sysReq.taskId,
+					});
+					continue;
+				}
+
+				for (const businessReqId of sysReq.relatedBusinessRequirementIds) {
+					const businessReq = businessReqMap.get(businessReqId);
+					if (!businessReq) continue;
+					const businessId = taskBusinessMap.get(businessReq.taskId) ?? "";
+					next.push({
+						systemReqId: sysReq.id,
+						systemReqTitle: sysReq.title,
+						systemReqSummary: sysReq.summary,
+						systemReqConcepts,
+						systemReqImpacts: sysReq.impacts,
+						systemReqAcceptanceCriteria: sysReq.acceptanceCriteria,
+						businessReqId: businessReq.id,
+						businessReqTitle: businessReq.title,
+						businessId,
+						taskId: businessReq.taskId,
+					});
+				}
+			}
+
+			setRelatedReqs(next);
+			setError(null);
+			setLoading(false);
+		}
+		fetchRelatedRequirements();
+		return () => {
+			active = false;
+		};
+	}, [srfId]);
 
 	return (
 		<SectionCard title="システム要件">
-			{relatedReqs.length === 0 ? (
+			{loading && <div className="text-[13px] text-slate-500">読み込み中...</div>}
+			{!loading && error && <div className="text-[13px] text-rose-600">{error}</div>}
+			{!loading && !error && relatedReqs.length === 0 ? (
 				<EmptyState message="まだ登録されていません。" />
 			) : (
-				<div className="space-y-3">
-					{relatedReqs.map((req) => (
-						<RequirementItem key={req.systemReqId} req={req} />
-					))}
-				</div>
+				!loading &&
+				!error && (
+					<div className="space-y-3">
+						{relatedReqs.map((req) => (
+							<RequirementItem key={`${req.systemReqId}:${req.businessReqId || "none"}`} req={req} />
+						))}
+					</div>
+				)
 			)}
 		</SectionCard>
 	);
@@ -207,6 +340,14 @@ function BadgeList({ label, children }: { label: string; children: React.ReactNo
 }
 
 function BusinessRequirementLink({ req }: { req: RelatedRequirementInfo }) {
+	if (!req.businessReqId || !req.businessId || !req.taskId) {
+		return (
+			<div className="ml-1 pl-3 border-l-2 border-slate-200 text-[12px] text-slate-500">
+				関連業務要件が未設定です。
+			</div>
+		);
+	}
+
 	return (
 		<div className="ml-1 pl-3 border-l-2 border-slate-200">
 			<Link
@@ -415,7 +556,7 @@ export default function SystemFunctionDetailPage({
 	return (
 		<PageLayout>
 			<PageHeader domainId={id} srfId={srfId} />
-			<PageTitle srfId={srf.id} />
+			<PageTitle srf={srf} />
 			<BasicInfoSection srf={srf} />
 			<SystemRequirementsSection srfId={srf.id} />
 			<SystemDesignSection systemDesign={srf.systemDesign} />
@@ -449,13 +590,13 @@ function PageHeader({ domainId, srfId }: PageHeaderProps) {
 	);
 }
 
-function PageTitle({ srfId }: { srfId: string }) {
+function PageTitle({ srf }: { srf: SystemFunction }) {
 	return (
 		<div className="mb-4">
 			<h1 className="text-[32px] font-semibold tracking-tight text-slate-900 mb-2">
-				システム機能: {srfId}
+				{srf.title}
 			</h1>
-			<p className="text-[13px] text-slate-500">システム機能の詳細情報</p>
+			<p className="text-[13px] text-slate-500">システム機能: {srf.id}</p>
 		</div>
 	);
 }

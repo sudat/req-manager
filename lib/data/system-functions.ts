@@ -6,6 +6,7 @@ export type SystemFunctionInput = {
   systemDomainId: string | null;
   designDocNo: string;
   category: SrfCategory;
+  title: string;
   summary: string;
   status: SrfStatus;
   relatedTaskIds: string[];
@@ -19,6 +20,7 @@ type SystemFunctionRow = {
   system_domain_id: string | null;
   design_doc_no: string;
   category: string;
+  title: string;
   summary: string;
   status: string;
   related_task_ids: string[] | null;
@@ -34,6 +36,7 @@ const toSystemFunction = (row: SystemFunctionRow): SystemFunction => ({
   systemDomainId: row.system_domain_id ?? null,
   designDocNo: row.design_doc_no,
   category: row.category as SrfCategory,
+  title: row.title,
   summary: row.summary,
   status: row.status as SrfStatus,
   relatedTaskIds: row.related_task_ids ?? [],
@@ -49,6 +52,7 @@ const toSystemFunctionRow = (input: SystemFunctionInput) => ({
   system_domain_id: input.systemDomainId,
   design_doc_no: input.designDocNo,
   category: input.category,
+  title: input.title,
   summary: input.summary,
   status: input.status,
   related_task_ids: input.relatedTaskIds,

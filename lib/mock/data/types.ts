@@ -154,7 +154,8 @@ export interface SystemFunction {
   systemDomainId?: string | null; // システム領域ID（例: AR）
   designDocNo: string;     // DD-TASK-001-001
   category: SrfCategory;   // screen
-  summary: string;         // 機能概要
+  title: string;           // 機能名
+  summary: string;         // 説明
   status: SrfStatus;       // implemented
   relatedTaskIds: string[];  // [TASK-001] (外部キー配列)
   requirementIds: string[];  // [SR-TASK-001-001] (関連要件ID)
