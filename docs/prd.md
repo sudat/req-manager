@@ -65,6 +65,12 @@ LLMが候補を提示する際、根拠は以下を満たすこと。レビュ�
 
 テスト管理ツールとの連携（テストケース管理、テスト実行結果の追跡）は本ツールのスコープ外とする。受入条件のlintは本ツールで行うが、テストケースへの変換・管理は別ツールの責務とする。
 
+### 1.8 データ永続化（モック段階）
+
+- モック段階の正本はSupabaseとする（localStorageは使用しない）
+- 対象テーブル: 業務一覧（business_domains）、業務タスク（business_tasks）、業務要件（business_requirements）、システム領域マスタ（system_domains）、システム機能一覧（system_functions）、概念辞書（concepts）
+- CRUDは匿名キーを使用したSupabaseアクセスで実行（開発用途）
+
 ---
 
 ## 2. 画面構成

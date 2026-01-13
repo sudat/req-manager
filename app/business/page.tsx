@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,13 +15,66 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Eye, Pencil, Trash2, Search } from "lucide-react";
-import { businesses } from "@/lib/mock/data";
+import { listBusinesses, deleteBusiness } from "@/lib/data/businesses";
+import type { Business } from "@/lib/mock/data/types";
+import { confirmDelete } from "@/lib/ui/confirm";
 
 export default function BusinessPage() {
   const router = useRouter();
+  const [items, setItems] = useState<Business[]>([]);
+  const [query, setQuery] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const handleRowClick = (bizId: string) => {
     router.push(`/business/${bizId}/tasks`);
+  };
+
+  useEffect(() => {
+    let active = true;
+    const fetchData = async () => {
+      setLoading(true);
+      const { data, error: fetchError } = await listBusinesses();
+      if (!active) return;
+      if (fetchError) {
+        setError(fetchError);
+        setItems([]);
+      } else {
+        setError(null);
+        setItems(data ?? []);
+      }
+      setLoading(false);
+    };
+    fetchData();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const filtered = useMemo(() => {
+    const normalized = query.trim().toLowerCase();
+    if (!normalized) return items;
+    return items.filter((biz) => {
+      const haystack = [
+        biz.id,
+        biz.name,
+        biz.area,
+        biz.summary,
+      ]
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(normalized);
+    });
+  }, [items, query]);
+
+  const handleDelete = async (biz: Business) => {
+    if (!confirmDelete(`${biz.name}（${biz.id}）`)) return;
+    const { error: deleteError } = await deleteBusiness(biz.id);
+    if (deleteError) {
+      alert(deleteError);
+      return;
+    }
+    setItems((prev) => prev.filter((item) => item.id !== biz.id));
   };
 
   return (
@@ -47,9 +101,16 @@ export default function BusinessPage() {
               <input
                 type="text"
                 placeholder="業務名、ID、領域で検索..."
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
                 className="w-full pl-10 pr-3 py-1.5 bg-transparent border-0 text-[14px] text-slate-900 placeholder:text-slate-400 focus:outline-none"
               />
             </div>
+            <Link href="/business/add">
+              <Button className="h-8 px-4 text-[14px] font-medium bg-slate-900 hover:bg-slate-800">
+                追加
+              </Button>
+            </Link>
           </div>
 
           {/* Table Container */}
@@ -78,7 +139,26 @@ export default function BusinessPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {businesses.map((biz) => (
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="px-4 py-10 text-center text-[14px] text-slate-500">
+                      読み込み中...
+                    </TableCell>
+                  </TableRow>
+                ) : error ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="px-4 py-10 text-center text-[14px] text-rose-600">
+                      {error}
+                    </TableCell>
+                  </TableRow>
+                ) : filtered.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="px-4 py-10 text-center text-[14px] text-slate-500">
+                      該当する業務がありません。
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filtered.map((biz) => (
                   <TableRow
                     key={biz.id}
                     className="cursor-pointer border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition-colors"
@@ -127,6 +207,7 @@ export default function BusinessPage() {
                             <Eye className="h-4 w-4" />
                           </Button>
                         </Link>
+                        <Link href={`/business/${biz.id}/edit`}>
                         <Button
                           size="icon"
                           variant="outline"
@@ -135,18 +216,21 @@ export default function BusinessPage() {
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
+                        </Link>
                         <Button
                           size="icon"
                           variant="outline"
                           title="削除"
                           className="h-8 w-8 rounded-md border-slate-200 hover:bg-slate-900 hover:text-white hover:border-slate-900"
+                          onClick={() => handleDelete(biz)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                ))
+                )}
               </TableBody>
             </Table>
           </div>

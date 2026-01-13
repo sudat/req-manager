@@ -1,0 +1,100 @@
+"use client";
+
+import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
+import type { BusinessRequirement } from "@/lib/data/business-requirements";
+
+type BusinessRequirementCardProps = {
+  requirement: BusinessRequirement;
+  conceptMap: Map<string, string>;
+  systemFunctionMap: Map<string, string>;
+  systemFunctionDomainMap: Map<string, string | null>;
+  systemDomainMap: Map<string, string>;
+  optionsError: string | null;
+};
+
+export function BusinessRequirementCard({
+  requirement,
+  conceptMap,
+  systemFunctionMap,
+  systemFunctionDomainMap,
+  systemDomainMap,
+  optionsError,
+}: BusinessRequirementCardProps) {
+  const srfId = requirement.srfId ?? null;
+  const srfName = srfId ? systemFunctionMap.get(srfId) ?? srfId : null;
+  const srfDomainId = srfId ? systemFunctionDomainMap.get(srfId) : null;
+
+  return (
+    <div className="rounded-md border border-slate-200 p-3">
+      <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
+        <div className="flex-1">
+          <div className="font-mono text-[11px] text-slate-400">{requirement.id}</div>
+          <div className="text-[14px] font-medium text-slate-900 mt-1">{requirement.title}</div>
+          <div className="mt-1 text-[13px] text-slate-600">{requirement.summary}</div>
+        </div>
+        <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] font-medium px-2 py-0.5">
+          業務要件
+        </Badge>
+      </div>
+
+      {optionsError && (
+        <div className="text-[12px] text-rose-600">{optionsError}</div>
+      )}
+
+      {requirement.conceptIds.length > 0 && (
+        <div className="border-t border-slate-100 pt-2 mt-2 space-y-1">
+          <div className="text-[12px] font-medium text-slate-500">関連概念</div>
+          <div className="flex flex-wrap gap-1.5">
+            {requirement.conceptIds.map((conceptId) => (
+              <Link key={conceptId} href={`/ideas/${conceptId}`}>
+                <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] hover:bg-slate-100">
+                  {conceptMap.get(conceptId) ?? conceptId}
+                </Badge>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {srfId && srfName && (
+        <div className="border-t border-slate-100 pt-2 mt-2 space-y-1">
+          <div className="text-[12px] font-medium text-slate-500">関連システム機能</div>
+          <div className="flex flex-wrap gap-1.5">
+            <Link href={srfDomainId ? `/system-domains/${srfDomainId}/functions/${srfId}` : "/system-domains"}>
+              <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] hover:bg-slate-100">
+                {srfName}
+              </Badge>
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {requirement.systemDomainIds.length > 0 && (
+        <div className="border-t border-slate-100 pt-2 mt-2 space-y-1">
+          <div className="text-[12px] font-medium text-slate-500">システム領域</div>
+          <div className="flex flex-wrap gap-1.5">
+            {requirement.systemDomainIds.map((domainId) => (
+              <Badge key={domainId} variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px]">
+                {systemDomainMap.get(domainId) ?? domainId}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="border-t border-slate-100 pt-2 mt-2 space-y-1">
+        <div className="text-[12px] font-medium text-slate-500">受入条件</div>
+        {requirement.acceptanceCriteria.length === 0 ? (
+          <div className="text-[13px] text-slate-400">未登録</div>
+        ) : (
+          <ul className="list-disc pl-5 text-[13px] text-slate-700 space-y-0.5">
+            {requirement.acceptanceCriteria.map((ac, i) => (
+              <li key={i}>{ac}</li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}

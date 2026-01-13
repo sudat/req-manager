@@ -12,7 +12,7 @@ interface SettingsLayoutProps {
 const menuItems = [
   { key: "settings", label: "プロジェクト設定", href: "/settings", icon: Settings },
   { key: "llm", label: "LLM設定", href: "/settings/llm", icon: TrendingUp },
-  { key: "domains", label: "影響領域マスタ", href: "/settings/domains", icon: Grid3x3 },
+  { key: "domains", label: "システム領域マスタ", href: "/settings/system-domains", icon: Grid3x3 },
   { key: "notification", label: "通知設定", href: "/settings/notification", icon: Bell },
 ];
 

@@ -1,0 +1,7 @@
+with seed as (
+  select * from jsonb_to_recordset('[{"id":"BIZ-001","name":"債権管理","area":"AR","summary":"売掛金の管理、請求書発行、入金消込、債権回収を行う","business_req_count":24,"system_req_count":56,"created_at":"2024-01-01T00:00:00Z","updated_at":"2024-01-01T00:00:00Z"},{"id":"BIZ-002","name":"債務管理","area":"AP","summary":"買掛金の管理、支払処理、仕入先管理を行う","business_req_count":20,"system_req_count":48,"created_at":"2024-01-01T00:00:00Z","updated_at":"2024-01-01T00:00:00Z"},{"id":"BIZ-003","name":"一般会計","area":"GL","summary":"仕訳計上、総勘定元帳、財務諸表、決算処理を行う","business_req_count":28,"system_req_count":64,"created_at":"2024-01-01T00:00:00Z","updated_at":"2024-01-01T00:00:00Z"}]'::jsonb)
+    as x(id text, name text, area text, summary text, business_req_count integer, system_req_count integer, created_at timestamptz, updated_at timestamptz)
+)
+insert into public.businesses (id, name, area, summary, business_req_count, system_req_count, created_at, updated_at)
+select id, name, area, summary, business_req_count, system_req_count, created_at, updated_at from seed
+on conflict (id) do update set name = excluded.name, area = excluded.area, summary = excluded.summary, business_req_count = excluded.business_req_count, system_req_count = excluded.system_req_count, created_at = excluded.created_at, updated_at = excluded.updated_at;

@@ -17,7 +17,7 @@ export interface ProjectSettings {
 }
 
 // 領域型
-export type BusinessArea = "AR" | "AP" | "GL";
+export type BusinessArea = string;
 
 // チケットステータス
 export type TicketStatus = "open" | "review" | "approved" | "applied";
@@ -151,6 +151,7 @@ export interface Concept {
 // SystemFunction（システム機能）
 export interface SystemFunction {
   id: string;              // SRF-001
+  systemDomainId?: string | null; // システム領域ID（例: AR）
   designDocNo: string;     // DD-TASK-001-001
   category: SrfCategory;   // screen
   summary: string;         // 機能概要

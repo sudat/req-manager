@@ -1,21 +1,86 @@
+"use client";
+
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { use, useEffect, useMemo, useState } from "react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Pencil, FileText, Plus, Scissors, Trash2 } from "lucide-react";
-import { getConceptById, getRelatedRequirements, type RequirementReference } from "@/lib/mock/data";
+import { getRelatedRequirements, type RequirementReference } from "@/lib/mock/data";
+import type { Concept } from "@/lib/mock/data/types";
+import { getConceptById, deleteConcept } from "@/lib/data/concepts";
+import { confirmDelete } from "@/lib/ui/confirm";
 
-export default async function IdeaDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const concept = getConceptById(id);
+export default function IdeaDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const router = useRouter();
+  const [concept, setConcept] = useState<Concept | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  if (!concept) {
-    notFound();
+  useEffect(() => {
+    let active = true;
+    const fetchData = async () => {
+      setLoading(true);
+      const { data, error: fetchError } = await getConceptById(id);
+      if (!active) return;
+      if (fetchError) {
+        setError(fetchError);
+        setConcept(null);
+      } else {
+        setError(null);
+        setConcept(data ?? null);
+      }
+      setLoading(false);
+    };
+    fetchData();
+    return () => {
+      active = false;
+    };
+  }, [id]);
+
+  const relatedRequirements = useMemo(() => getRelatedRequirements(id), [id]);
+
+  const handleDelete = async () => {
+    if (!concept) return;
+    if (!confirmDelete(`${concept.name}（${concept.id}）`)) return;
+    const { error: deleteError } = await deleteConcept(concept.id);
+    if (deleteError) {
+      alert(deleteError);
+      return;
+    }
+    router.push("/ideas");
+  };
+
+  if (loading) {
+    return (
+      <>
+        <Sidebar />
+        <div className="ml-[280px] flex-1 min-h-screen bg-white">
+          <div className="mx-auto max-w-[1400px] px-8 py-4 text-slate-500">読み込み中...</div>
+        </div>
+      </>
+    );
   }
 
-  const relatedRequirements = getRelatedRequirements(id);
+  if (!concept) {
+    return (
+      <>
+        <Sidebar />
+        <div className="ml-[280px] flex-1 min-h-screen bg-white">
+          <div className="mx-auto max-w-[1400px] px-8 py-4">
+            <p className="text-sm text-rose-600">{error ?? "概念が見つかりません"}</p>
+            <Link href="/ideas" className="inline-flex items-center gap-2 text-[13px] text-slate-500 hover:text-slate-900 mt-4">
+              <ArrowLeft className="h-4 w-4" />
+              概念辞書に戻る
+            </Link>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
@@ -43,7 +108,11 @@ export default async function IdeaDetailPage({ params }: { params: Promise<{ id:
                 <Scissors className="h-4 w-4" />
                 分割
               </Button>
-              <Button variant="ghost" className="h-8 px-4 text-[14px] font-medium text-red-600 hover:bg-red-50 hover:text-red-700 gap-2">
+              <Button
+                variant="ghost"
+                className="h-8 px-4 text-[14px] font-medium text-red-600 hover:bg-red-50 hover:text-red-700 gap-2"
+                onClick={handleDelete}
+              >
                 <Trash2 className="h-4 w-4" />
                 廃止
               </Button>
@@ -84,11 +153,15 @@ export default async function IdeaDetailPage({ params }: { params: Promise<{ id:
                     同義語
                   </div>
                   <div className="flex flex-wrap gap-1.5">
-                    {concept.synonyms.map((synonym) => (
+                    {concept.synonyms.length === 0 ? (
+                      <span className="text-[13px] text-slate-500">未登録</span>
+                    ) : (
+                      concept.synonyms.map((synonym) => (
                       <Badge key={synonym} variant="outline" className="border-slate-200/60 bg-slate-50 text-slate-600 text-[12px] font-medium px-2 py-0.5">
                         {synonym}
                       </Badge>
-                    ))}
+                      ))
+                    )}
                   </div>
                 </div>
 
@@ -97,11 +170,15 @@ export default async function IdeaDetailPage({ params }: { params: Promise<{ id:
                     影響領域
                   </div>
                   <div className="flex flex-wrap gap-1.5">
-                    {concept.areas.map((area) => (
+                    {concept.areas.length === 0 ? (
+                      <span className="text-[13px] text-slate-500">未登録</span>
+                    ) : (
+                      concept.areas.map((area) => (
                       <Badge key={area} variant="outline" className="font-mono border-slate-200/60 bg-slate-50 text-slate-600 text-[12px] font-medium px-2 py-0.5">
                         {area}
                       </Badge>
-                    ))}
+                      ))
+                    )}
                   </div>
                 </div>
 
@@ -110,7 +187,10 @@ export default async function IdeaDetailPage({ params }: { params: Promise<{ id:
                     必読ドキュメント
                   </div>
                   <div className="space-y-1.5">
-                    {concept.relatedDocs.map((doc) => {
+                    {concept.relatedDocs.length === 0 ? (
+                      <span className="text-[13px] text-slate-500">未登録</span>
+                    ) : (
+                      concept.relatedDocs.map((doc) => {
                       const isExternalUrl = doc.startsWith("http://") || doc.startsWith("https://");
                       const displayText = isExternalUrl
                         ? doc.includes("nta.go.jp") ? "国税庁ガイドライン" : doc.split("/").pop()
@@ -126,7 +206,8 @@ export default async function IdeaDetailPage({ params }: { params: Promise<{ id:
                           <span>{displayText}</span>
                         </a>
                       );
-                    })}
+                    })
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -138,36 +219,40 @@ export default async function IdeaDetailPage({ params }: { params: Promise<{ id:
                 <CardTitle className="text-[15px] font-semibold text-slate-900">定義</CardTitle>
               </CardHeader>
               <CardContent className="p-4">
-                <div className="prose prose-sm max-w-none text-[13px] text-slate-700">
-                  {concept.definition.split("\n\n").map((paragraph, idx) => {
-                    if (paragraph.startsWith("###")) {
+                {concept.definition.trim().length === 0 ? (
+                  <div className="text-[13px] text-slate-500">未登録</div>
+                ) : (
+                  <div className="prose prose-sm max-w-none text-[13px] text-slate-700">
+                    {concept.definition.split("\n\n").map((paragraph, idx) => {
+                      if (paragraph.startsWith("###")) {
+                        return (
+                          <h4 key={idx} className="text-[13px] font-semibold text-slate-900 mt-4 mb-2">
+                            {paragraph.replace("### ", "")}
+                          </h4>
+                        );
+                      }
+                      if (paragraph.startsWith("- ")) {
+                        return (
+                          <ul key={idx} className="list-disc list-inside space-y-1 ml-2">
+                            <li>{paragraph.replace("- ", "")}</li>
+                          </ul>
+                        );
+                      }
+                      if (paragraph.startsWith("#### ")) {
+                        return (
+                          <h5 key={idx} className="text-[12px] font-semibold text-slate-700 mt-3 mb-1">
+                            {paragraph.replace("#### ", "")}
+                          </h5>
+                        );
+                      }
                       return (
-                        <h4 key={idx} className="text-[13px] font-semibold text-slate-900 mt-4 mb-2">
-                          {paragraph.replace("### ", "")}
-                        </h4>
+                        <p key={idx} className="mb-2">
+                          {paragraph}
+                        </p>
                       );
-                    }
-                    if (paragraph.startsWith("- ")) {
-                      return (
-                        <ul key={idx} className="list-disc list-inside space-y-1 ml-2">
-                          <li>{paragraph.replace("- ", "")}</li>
-                        </ul>
-                      );
-                    }
-                    if (paragraph.startsWith("#### ")) {
-                      return (
-                        <h5 key={idx} className="text-[12px] font-semibold text-slate-700 mt-3 mb-1">
-                          {paragraph.replace("#### ", "")}
-                        </h5>
-                      );
-                    }
-                    return (
-                      <p key={idx} className="mb-2">
-                        {paragraph}
-                      </p>
-                    );
-                  })}
-                </div>
+                    })}
+                  </div>
+                )}
               </CardContent>
             </Card>
 

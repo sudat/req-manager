@@ -1,287 +1,272 @@
-"use client"
+"use client";
 
-import { use, useMemo, useState } from "react";
+import { use } from "react";
 import Link from "next/link";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Pencil, ExternalLink } from "lucide-react";
-import type { TaskKnowledge } from "@/lib/mock/task-knowledge";
-import { getDefaultTaskKnowledge } from "@/lib/mock/task-knowledge";
-import { getSystemFunctionById } from "@/lib/mock/data";
+import { Card, CardContent } from "@/components/ui/card";
+import { ArrowLeft, Pencil } from "lucide-react";
+import { useTaskDetail } from "./use-task-detail";
+import { BusinessRequirementCard } from "./business-requirement-card";
+import { SystemRequirementCard } from "./system-requirement-card";
 
-export default function TaskDetailPage({ params }: { params: Promise<{ id: string; taskId: string }> }) {
+type PageProps = {
+  params: Promise<{ id: string; taskId: string }>;
+};
+
+export default function TaskDetailPage({ params }: PageProps) {
   const { id, taskId } = use(params);
+  const {
+    task,
+    taskLoading,
+    taskError,
+    businessRequirements,
+    requirementsLoading,
+    requirementsError,
+    optionsError,
+    knowledge,
+    conceptMap,
+    systemFunctionMap,
+    systemFunctionDomainMap,
+    systemDomainMap,
+  } = useTaskDetail({ bizId: id, taskId });
 
-  const storageKey = `task-knowledge:${id}:${taskId}`;
-  const defaultKnowledge = useMemo(
-    () => getDefaultTaskKnowledge({ bizId: id, taskId }),
-    [id, taskId],
-  );
-
-  const [knowledge] = useState<TaskKnowledge>(() => {
-    if (typeof window === "undefined") return defaultKnowledge;
-    try {
-      const raw = window.localStorage.getItem(storageKey);
-      if (!raw) return defaultKnowledge;
-      const parsed = JSON.parse(raw) as TaskKnowledge;
-      if (parsed?.bizId !== id || parsed?.taskId !== taskId) return defaultKnowledge;
-      return parsed;
-    } catch {
-      return defaultKnowledge;
-    }
-  });
+  const displayBizId = task?.businessId ?? knowledge.bizId;
+  const displayTaskName = task?.name ?? knowledge.taskName;
+  const displayTaskSummary = task?.summary ?? knowledge.taskSummary;
+  const displayPerson = task?.person ?? knowledge.person;
+  const displayInput = task?.input ?? knowledge.input;
+  const displayOutput = task?.output ?? knowledge.output;
+  const backBizId = task?.businessId ?? id;
 
   return (
     <>
       <Sidebar />
       <div className="ml-[280px] flex-1 min-h-screen bg-white">
         <div className="mx-auto max-w-[1400px] px-8 py-4">
-          <div className="flex items-center justify-between mb-4">
-            <Link href={`/business/${id}/tasks`} className="inline-flex items-center gap-2 text-[14px] font-medium text-slate-600 hover:text-slate-900">
-              <ArrowLeft className="h-4 w-4" />
-              業務一覧（詳細）に戻る
-            </Link>
-            <Link href={`/business/${id}/tasks/${taskId}/edit`}>
-              <Button variant="outline" className="h-8 gap-2 text-[14px]">
-                <Pencil className="h-4 w-4" />
-                編集
-              </Button>
-            </Link>
-          </div>
+          <Header backBizId={backBizId} id={id} taskId={taskId} />
 
-          <h1 className="text-[32px] font-semibold tracking-tight text-slate-900 mb-4">業務タスク詳細</h1>
+          <h1 className="text-[32px] font-semibold tracking-tight text-slate-900 mb-4">
+            業務タスク詳細
+          </h1>
 
-          <Card className="rounded-md border border-slate-200/60 bg-white hover:border-slate-300/60 transition-colors">
-            <CardContent className="p-3 space-y-2">
-              <div className="flex items-center gap-3 text-[12px] text-slate-500">
-                <span className="font-mono">{knowledge.bizId}</span>
-                <span className="text-slate-300">/</span>
-                <span className="font-mono">{knowledge.taskId}</span>
-              </div>
+          <TaskLoadingStatus loading={taskLoading} error={taskError} task={task} />
 
-              <h2 className="text-[20px] font-semibold text-slate-900 leading-tight">
-                {knowledge.taskName}
-              </h2>
+          <TaskSummaryCard
+            displayBizId={displayBizId}
+            taskId={taskId}
+            displayTaskName={displayTaskName}
+            displayTaskSummary={displayTaskSummary}
+            displayPerson={displayPerson}
+            displayInput={displayInput}
+            displayOutput={displayOutput}
+          />
 
-              <p className="text-[14px] text-slate-700 leading-relaxed">
-                {knowledge.taskSummary}
-              </p>
+          <BusinessRequirementsSection
+            requirements={businessRequirements}
+            loading={requirementsLoading}
+            error={requirementsError}
+            optionsError={optionsError}
+            conceptMap={conceptMap}
+            systemFunctionMap={systemFunctionMap}
+            systemFunctionDomainMap={systemFunctionDomainMap}
+            systemDomainMap={systemDomainMap}
+          />
 
-              <div className="flex flex-wrap gap-x-6 gap-y-2 pt-2 border-t border-slate-100 text-[13px]">
-                <div>
-                  <span className="text-slate-500">担当者</span>
-                  <span className="ml-2 text-slate-900">{knowledge.person ?? "—"}</span>
-                </div>
-                <div>
-                  <span className="text-slate-500">インプット</span>
-                  <span className="ml-2 text-slate-900">{knowledge.input ?? "—"}</span>
-                </div>
-                <div>
-                  <span className="text-slate-500">アウトプット</span>
-                  <span className="ml-2 text-slate-900">{knowledge.output ?? "—"}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="mt-4 rounded-md border border-slate-200/60 bg-white hover:border-slate-300/60 transition-colors">
-            <CardContent className="p-3 space-y-2">
-              <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-                <h3 className="text-[14px] font-semibold text-slate-900">業務要件</h3>
-                <Badge variant="outline" className="font-mono text-[11px] border-slate-200 bg-slate-50 text-slate-600 px-1.5 py-0">
-                  {knowledge.businessRequirements.length}
-                </Badge>
-              </div>
-              {knowledge.businessRequirements.length === 0 ? (
-                <div className="text-[14px] text-slate-500">まだ登録されていません。</div>
-              ) : (
-                knowledge.businessRequirements.map((req) => {
-                  const srfId = req.srfId;
-                  const systemFunction = srfId ? getSystemFunctionById(srfId) : undefined;
-                  const systemFunctionName = systemFunction?.summary?.split("：")[0] || "システム機能";
-
-                  return (
-                  <div key={req.id} className="rounded-md border border-slate-200 p-3">
-                    <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
-                      <div className="flex-1">
-                        <div className="font-mono text-[11px] text-slate-400">{req.id}</div>
-                        <div className="text-[14px] font-medium text-slate-900 mt-1">{req.title}</div>
-                        <div className="mt-1 text-[13px] text-slate-600">{req.summary}</div>
-                      </div>
-                      <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] font-medium px-2 py-0.5">{req.type}</Badge>
-                    </div>
-                    {req.concepts && req.concepts.length > 0 && (
-                      <div className="border-t border-slate-100 pt-2 mt-2 space-y-1">
-                        <div className="text-[12px] font-medium text-slate-500">関連概念</div>
-                        <div className="flex flex-wrap gap-1.5">
-                          {req.concepts.map((concept) => (
-                            <Link key={concept.id} href={`/ideas/${concept.id}`}>
-                              <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] hover:bg-slate-100">
-                                {concept.name}
-                              </Badge>
-                            </Link>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {srfId && systemFunction && (
-                      <div className="border-t border-slate-100 pt-2 mt-2 space-y-1">
-                        <div className="text-[12px] font-medium text-slate-500">関連システム機能</div>
-                        <div className="flex flex-wrap gap-1.5">
-                          <Link href={`/srf/${srfId}`}>
-                            <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] hover:bg-slate-100">
-                              {systemFunctionName}
-                            </Badge>
-                          </Link>
-                        </div>
-                      </div>
-                    )}
-                    {req.impacts && req.impacts.length > 0 && (
-                      <div className="border-t border-slate-100 pt-2 mt-2 space-y-1">
-                        <div className="text-[12px] font-medium text-slate-500">影響領域</div>
-                        <div className="flex flex-wrap gap-1.5">
-                          {req.impacts.map((impact, i) => (
-                            <Badge key={i} variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px]">
-                              {impact}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {req.related && req.related.length > 0 && (
-                      <div className="border-t border-slate-100 pt-2 mt-2 space-y-1">
-                        <div className="text-[12px] font-medium text-slate-500">関連要件</div>
-                        <div className="flex flex-wrap gap-1.5">
-                          {req.related.map((relId, i) => (
-                            <Badge key={i} variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px]">
-                              {relId}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    <div className="border-t border-slate-100 pt-2 mt-2 space-y-1">
-                      <div className="text-[12px] font-medium text-slate-500">受入条件</div>
-                      <ul className="list-disc pl-5 text-[13px] text-slate-700 space-y-0.5">
-                        {req.acceptanceCriteria.map((ac, i) => (
-                          <li key={i}>{ac}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                  );
-                })
-              )}
-            </CardContent>
-          </Card>
-
-          {/* 関連システム要件セクション */}
-          <Card className="mt-4 rounded-md border border-slate-200/60 bg-white hover:border-slate-300/60 transition-colors">
-            <CardContent className="p-3 space-y-2">
-              <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-                <h3 className="text-[14px] font-semibold text-slate-900">関連システム要件</h3>
-                <Badge variant="outline" className="font-mono text-[11px] border-slate-200 bg-slate-50 text-slate-600 px-1.5 py-0">
-                  {knowledge.systemRequirements.length}
-                </Badge>
-              </div>
-              {knowledge.systemRequirements.length === 0 ? (
-                <div className="text-[14px] text-slate-500">まだ登録されていません。</div>
-              ) : (
-                knowledge.systemRequirements.map((sysReq) => {
-                  const srf = sysReq.srfId ? getSystemFunctionById(sysReq.srfId) : undefined;
-                  const srfSummaryShort = srf?.summary?.split("：")[0] || srf?.summary?.split("。")[0] || "";
-
-                  return (
-                    <div key={sysReq.id} className="rounded-md border border-slate-200 bg-slate-50/50 p-3">
-                      {/* システム要件ID + タイトル */}
-                      <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
-                        <div className="flex-1">
-                          <div className="font-mono text-[11px] text-slate-400">{sysReq.id}</div>
-                          <div className="text-[14px] font-medium text-slate-900 mt-1">{sysReq.title}</div>
-                          <div className="mt-1 text-[13px] text-slate-600">{sysReq.summary}</div>
-                        </div>
-                        <Badge variant="outline" className="border-blue-200/60 bg-blue-50 text-blue-700 text-[12px] font-medium px-2 py-0.5">
-                          {sysReq.type}
-                        </Badge>
-                      </div>
-
-                      {/* 関連概念 */}
-                      {sysReq.concepts && sysReq.concepts.length > 0 && (
-                        <div className="border-t border-slate-100 pt-2 mt-2 space-y-1">
-                          <div className="text-[12px] font-medium text-slate-500">関連概念</div>
-                          <div className="flex flex-wrap gap-1.5">
-                            {sysReq.concepts.map((concept) => (
-                              <Link key={concept.id} href={`/ideas/${concept.id}`}>
-                                <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] hover:bg-slate-100">
-                                  {concept.name}
-                                </Badge>
-                              </Link>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* 影響領域 */}
-                      {sysReq.impacts && sysReq.impacts.length > 0 && (
-                        <div className="border-t border-slate-100 pt-2 mt-2 space-y-1">
-                          <div className="text-[12px] font-medium text-slate-500">影響領域</div>
-                          <div className="flex flex-wrap gap-1.5">
-                            {sysReq.impacts.map((impact, i) => (
-                              <Badge key={i} variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px]">
-                                {impact}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* 受入条件 */}
-                      {sysReq.acceptanceCriteria && sysReq.acceptanceCriteria.length > 0 && (
-                        <div className="border-t border-slate-100 pt-2 mt-2 space-y-1">
-                          <div className="text-[12px] font-medium text-slate-500">受入条件</div>
-                          <ul className="list-disc pl-5 text-[13px] text-slate-700 space-y-0.5">
-                            {sysReq.acceptanceCriteria.map((ac, i) => (
-                              <li key={i}>{ac}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      {/* 関連SRFへのリンク */}
-                      {srf && (
-                        <div className="border-t border-slate-100 pt-2 mt-2">
-                          <div className="text-[12px] font-medium text-slate-500 mb-1">関連システム機能</div>
-                          <div className="ml-1 pl-3 border-l-2 border-purple-200">
-                            <Link
-                              href={`/srf/${srf.id}`}
-                              className="block hover:bg-purple-50/50 rounded px-2 py-1 -ml-2 transition-colors"
-                            >
-                              <div className="flex items-center gap-2">
-                                <Badge
-                                  variant="outline"
-                                  className="border-purple-200/60 bg-purple-50 text-purple-700 text-[12px] font-medium px-2 py-0.5"
-                                >
-                                  {srf.id}
-                                </Badge>
-                                <span className="text-[13px] text-slate-700">
-                                  {srfSummaryShort}
-                                </span>
-                                <ExternalLink className="h-3 w-3 text-slate-400 ml-auto" />
-                              </div>
-                            </Link>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })
-              )}
-            </CardContent>
-          </Card>
+          <SystemRequirementsSection
+            requirements={knowledge.systemRequirements}
+            systemFunctionDomainMap={systemFunctionDomainMap}
+          />
         </div>
       </div>
     </>
+  );
+}
+
+type HeaderProps = {
+  backBizId: string;
+  id: string;
+  taskId: string;
+};
+
+function Header({ backBizId, id, taskId }: HeaderProps) {
+  return (
+    <div className="flex items-center justify-between mb-4">
+      <Link
+        href={`/business/${backBizId}/tasks`}
+        className="inline-flex items-center gap-2 text-[14px] font-medium text-slate-600 hover:text-slate-900"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        業務一覧（詳細）に戻る
+      </Link>
+      <Link href={`/business/${id}/tasks/${taskId}/edit`}>
+        <Button variant="outline" className="h-8 gap-2 text-[14px]">
+          <Pencil className="h-4 w-4" />
+          編集
+        </Button>
+      </Link>
+    </div>
+  );
+}
+
+type TaskLoadingStatusProps = {
+  loading: boolean;
+  error: string | null;
+  task: unknown | null;
+};
+
+function TaskLoadingStatus({ loading, error, task }: TaskLoadingStatusProps) {
+  if (loading) {
+    return <p className="text-[13px] text-slate-500 mb-3">業務タスクを読み込み中...</p>;
+  }
+  if (error) {
+    return <p className="text-[13px] text-rose-600 mb-3">{error}</p>;
+  }
+  if (task === null) {
+    return <p className="text-[13px] text-rose-600 mb-3">業務タスクが見つかりません。</p>;
+  }
+  return null;
+}
+
+type TaskSummaryCardProps = {
+  displayBizId: string;
+  taskId: string;
+  displayTaskName: string;
+  displayTaskSummary: string;
+  displayPerson?: string;
+  displayInput?: string;
+  displayOutput?: string;
+};
+
+function TaskSummaryCard({
+  displayBizId,
+  taskId,
+  displayTaskName,
+  displayTaskSummary,
+  displayPerson,
+  displayInput,
+  displayOutput,
+}: TaskSummaryCardProps) {
+  return (
+    <Card className="rounded-md border border-slate-200/60 bg-white hover:border-slate-300/60 transition-colors">
+      <CardContent className="p-3 space-y-2">
+        <div className="flex items-center gap-3 text-[12px] text-slate-500">
+          <span className="font-mono">{displayBizId}</span>
+          <span className="text-slate-300">/</span>
+          <span className="font-mono">{taskId}</span>
+        </div>
+
+        <h2 className="text-[20px] font-semibold text-slate-900 leading-tight">
+          {displayTaskName}
+        </h2>
+
+        <p className="text-[14px] text-slate-700 leading-relaxed">
+          {displayTaskSummary}
+        </p>
+
+        <div className="flex flex-wrap gap-x-6 gap-y-2 pt-2 border-t border-slate-100 text-[13px]">
+          <div>
+            <span className="text-slate-500">担当者</span>
+            <span className="ml-2 text-slate-900">{displayPerson ?? "—"}</span>
+          </div>
+          <div>
+            <span className="text-slate-500">インプット</span>
+            <span className="ml-2 text-slate-900">{displayInput ?? "—"}</span>
+          </div>
+          <div>
+            <span className="text-slate-500">アウトプット</span>
+            <span className="ml-2 text-slate-900">{displayOutput ?? "—"}</span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+type BusinessRequirementsSectionProps = {
+  requirements: import("@/lib/data/business-requirements").BusinessRequirement[];
+  loading: boolean;
+  error: string | null;
+  optionsError: string | null;
+  conceptMap: Map<string, string>;
+  systemFunctionMap: Map<string, string>;
+  systemFunctionDomainMap: Map<string, string | null>;
+  systemDomainMap: Map<string, string>;
+};
+
+function BusinessRequirementsSection({
+  requirements,
+  loading,
+  error,
+  optionsError,
+  conceptMap,
+  systemFunctionMap,
+  systemFunctionDomainMap,
+  systemDomainMap,
+}: BusinessRequirementsSectionProps) {
+  return (
+    <Card className="mt-4 rounded-md border border-slate-200/60 bg-white hover:border-slate-300/60 transition-colors">
+      <CardContent className="p-3 space-y-2">
+        <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+          <h3 className="text-[14px] font-semibold text-slate-900">業務要件</h3>
+          <Badge variant="outline" className="font-mono text-[11px] border-slate-200 bg-slate-50 text-slate-600 px-1.5 py-0">
+            {requirements.length}
+          </Badge>
+        </div>
+
+        {loading && <div className="text-[14px] text-slate-500">読み込み中...</div>}
+        {error && <div className="text-[14px] text-rose-600">{error}</div>}
+        {!loading && !error && requirements.length === 0 && (
+          <div className="text-[14px] text-slate-500">まだ登録されていません。</div>
+        )}
+        {!loading && !error && requirements.map((req) => (
+          <BusinessRequirementCard
+            key={req.id}
+            requirement={req}
+            conceptMap={conceptMap}
+            systemFunctionMap={systemFunctionMap}
+            systemFunctionDomainMap={systemFunctionDomainMap}
+            systemDomainMap={systemDomainMap}
+            optionsError={optionsError}
+          />
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
+type SystemRequirementsSectionProps = {
+  requirements: import("@/lib/mock/task-knowledge").Requirement[];
+  systemFunctionDomainMap: Map<string, string | null>;
+};
+
+function SystemRequirementsSection({
+  requirements,
+  systemFunctionDomainMap,
+}: SystemRequirementsSectionProps) {
+  return (
+    <Card className="mt-4 rounded-md border border-slate-200/60 bg-white hover:border-slate-300/60 transition-colors">
+      <CardContent className="p-3 space-y-2">
+        <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+          <h3 className="text-[14px] font-semibold text-slate-900">関連システム要件</h3>
+          <Badge variant="outline" className="font-mono text-[11px] border-slate-200 bg-slate-50 text-slate-600 px-1.5 py-0">
+            {requirements.length}
+          </Badge>
+        </div>
+
+        {requirements.length === 0 ? (
+          <div className="text-[14px] text-slate-500">まだ登録されていません。</div>
+        ) : (
+          requirements.map((sysReq) => (
+            <SystemRequirementCard
+              key={sysReq.id}
+              requirement={sysReq}
+              systemFunctionDomainMap={systemFunctionDomainMap}
+            />
+          ))
+        )}
+      </CardContent>
+    </Card>
   );
 }

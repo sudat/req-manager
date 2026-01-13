@@ -25,7 +25,7 @@ const primaryItems = [
 
 const managementItems = [
   { key: "ideas", label: "概念辞書", href: "/ideas", icon: Calendar },
-  { key: "srf", label: "システム機能", href: "/srf", icon: Cpu },
+  { key: "system-domains", label: "システム領域一覧", href: "/system-domains", icon: Cpu },
   { key: "settings", label: "設定", href: "/settings", icon: Settings },
 ];
 

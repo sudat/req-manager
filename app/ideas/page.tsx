@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,13 +15,66 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Plus, Eye, Pencil, Trash2, Search } from "lucide-react";
-import { concepts } from "@/lib/mock/data";
+import type { Concept } from "@/lib/mock/data/types";
+import { listConcepts, deleteConcept } from "@/lib/data/concepts";
+import { confirmDelete } from "@/lib/ui/confirm";
 
 export default function IdeasPage() {
   const router = useRouter();
+  const [items, setItems] = useState<Concept[]>([]);
+  const [query, setQuery] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const handleRowClick = (ideaId: string) => {
     router.push(`/ideas/${ideaId}`);
+  };
+
+  useEffect(() => {
+    let active = true;
+    const fetchData = async () => {
+      setLoading(true);
+      const { data, error: fetchError } = await listConcepts();
+      if (!active) return;
+      if (fetchError) {
+        setError(fetchError);
+        setItems([]);
+      } else {
+        setError(null);
+        setItems(data ?? []);
+      }
+      setLoading(false);
+    };
+    fetchData();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const filtered = useMemo(() => {
+    const normalized = query.trim().toLowerCase();
+    if (!normalized) return items;
+    return items.filter((concept) => {
+      const haystack = [
+        concept.id,
+        concept.name,
+        concept.synonyms.join(" "),
+        concept.areas.join(" "),
+      ]
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(normalized);
+    });
+  }, [items, query]);
+
+  const handleDelete = async (concept: Concept) => {
+    if (!confirmDelete(`${concept.name}（${concept.id}）`)) return;
+    const { error: deleteError } = await deleteConcept(concept.id);
+    if (deleteError) {
+      alert(deleteError);
+      return;
+    }
+    setItems((prev) => prev.filter((item) => item.id !== concept.id));
   };
 
   return (
@@ -45,6 +99,8 @@ export default function IdeasPage() {
               <input
                 type="text"
                 placeholder="概念名、同義語、領域で検索..."
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
                 className="w-full pl-10 pr-3 py-1.5 bg-transparent border-0 text-[14px] text-slate-900 placeholder:text-slate-400 focus:outline-none"
               />
             </div>
@@ -82,7 +138,26 @@ export default function IdeasPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {concepts.map((concept) => (
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="px-4 py-10 text-center text-[14px] text-slate-500">
+                      読み込み中...
+                    </TableCell>
+                  </TableRow>
+                ) : error ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="px-4 py-10 text-center text-[14px] text-rose-600">
+                      {error}
+                    </TableCell>
+                  </TableRow>
+                ) : filtered.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="px-4 py-10 text-center text-[14px] text-slate-500">
+                      該当する概念がありません。
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filtered.map((concept) => (
                   <TableRow
                     key={concept.id}
                     className="cursor-pointer border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition-colors"
@@ -159,13 +234,15 @@ export default function IdeasPage() {
                           variant="outline"
                           title="削除"
                           className="h-8 w-8 rounded-md border-slate-200 hover:bg-slate-900 hover:text-white hover:border-slate-900"
+                          onClick={() => handleDelete(concept)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                ))
+                )}
               </TableBody>
             </Table>
           </div>
