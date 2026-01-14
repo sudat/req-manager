@@ -17,6 +17,7 @@ import {
 import { ArrowLeft, Plus, Eye, Pencil, Trash2, Search, Sparkles } from "lucide-react";
 import type { Task } from "@/lib/mock/data/types";
 import { listTasksByBusinessId, deleteTask } from "@/lib/data/tasks";
+import { TableSkeleton } from "@/components/skeleton";
 import { getBusinessById } from "@/lib/data/businesses";
 import { confirmDelete } from "@/lib/ui/confirm";
 
@@ -153,11 +154,7 @@ export default function BusinessTasksPage({ params }: { params: Promise<{ id: st
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="px-4 py-10 text-center text-[14px] text-slate-500">
-                      読み込み中...
-                    </TableCell>
-                  </TableRow>
+                  <TableSkeleton cols={7} rows={5} />
                 ) : error ? (
                   <TableRow>
                     <TableCell colSpan={7} className="px-4 py-10 text-center text-[14px] text-rose-600">
@@ -183,17 +180,25 @@ export default function BusinessTasksPage({ params }: { params: Promise<{ id: st
                       <TableCell className="px-4 py-3">
                         <span className="text-[14px] font-medium text-slate-900">{task.name}</span>
                       </TableCell>
-                      <TableCell className="px-4 py-3 whitespace-normal">
-                        <span className="text-[13px] text-slate-700">{task.summary}</span>
+                      <TableCell className="px-4 py-3">
+                        <div className="max-w-[300px] truncate text-[13px] text-slate-600" title={task.summary}>
+                          {task.summary}
+                        </div>
                       </TableCell>
-                      <TableCell className="px-4 py-3 whitespace-normal">
-                        <span className="text-[13px] text-slate-700">{task.person}</span>
+                      <TableCell className="px-4 py-3">
+                        <div className="max-w-[100px] truncate text-[13px] text-slate-600" title={task.person}>
+                          {task.person}
+                        </div>
                       </TableCell>
-                      <TableCell className="px-4 py-3 whitespace-normal">
-                        <span className="text-[13px] text-slate-700">{task.input}</span>
+                      <TableCell className="px-4 py-3">
+                        <div className="max-w-[150px] truncate text-[13px] text-slate-600" title={task.input}>
+                          {task.input}
+                        </div>
                       </TableCell>
-                      <TableCell className="px-4 py-3 whitespace-normal">
-                        <span className="text-[13px] text-slate-700">{task.output}</span>
+                      <TableCell className="px-4 py-3">
+                        <div className="max-w-[150px] truncate text-[13px] text-slate-600" title={task.output}>
+                          {task.output}
+                        </div>
                       </TableCell>
                       <TableCell className="px-4 py-3">
                         <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>

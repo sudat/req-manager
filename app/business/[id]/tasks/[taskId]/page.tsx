@@ -10,6 +10,7 @@ import { ArrowLeft, Pencil } from "lucide-react";
 import { useTaskDetail } from "./use-task-detail";
 import { BusinessRequirementCard } from "./business-requirement-card";
 import { SystemRequirementCard } from "./system-requirement-card";
+import { CardSkeleton } from "@/components/skeleton";
 
 type PageProps = {
   params: Promise<{ id: string; taskId: string }>;
@@ -221,7 +222,7 @@ function BusinessRequirementsSection({
           </Badge>
         </div>
 
-        {loading && <div className="text-[14px] text-slate-500">読み込み中...</div>}
+        {loading && <CardSkeleton />}
         {error && <div className="text-[14px] text-rose-600">{error}</div>}
         {!loading && !error && requirements.length === 0 && (
           <div className="text-[14px] text-slate-500">まだ登録されていません。</div>
@@ -267,7 +268,7 @@ function SystemRequirementsSection({
 					</Badge>
 				</div>
 
-				{loading && <div className="text-[14px] text-slate-500">読み込み中...</div>}
+				{loading && <CardSkeleton />}
 				{error && <div className="text-[14px] text-rose-600">{error}</div>}
 				{!loading && !error && requirements.length === 0 && (
 					<div className="text-[14px] text-slate-500">まだ登録されていません。</div>

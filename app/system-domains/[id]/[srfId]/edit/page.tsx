@@ -83,7 +83,7 @@ function PageHeader({ srf }: PageHeaderProps) {
     <>
 			<div className="flex items-center justify-between mb-6">
 				<Link
-					href={`/system-domains/${srf.systemDomainId}/functions/${srf.id}`}
+					href={`/system-domains/${srf.systemDomainId}/${srf.id}`}
 					className="inline-flex items-center gap-2 text-[14px] font-medium text-slate-600 hover:text-slate-900"
 				>
 					<ArrowLeft className="h-4 w-4" />
@@ -122,7 +122,7 @@ function ActionButtons({
 }: ActionButtonsProps) {
 	return (
 		<div className="flex gap-3">
-			<Link href={`/system-domains/${systemDomainId}/functions/${srfId}`}>
+			<Link href={`/system-domains/${systemDomainId}/${srfId}`}>
 				<Button type="button" variant="outline">
 					キャンセル
 				</Button>
@@ -164,7 +164,7 @@ export default function SystemFunctionEditPage({
 	async function handleSave(): Promise<void> {
 		const success = await actions.save(id);
 		if (success) {
-			router.push(`/system-domains/${id}/functions/${srfId}`);
+			router.push(`/system-domains/${id}/${srfId}`);
 		}
 	}
 

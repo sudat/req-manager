@@ -11,6 +11,7 @@ import { ArrowLeft, Pencil, FileText, Plus, Scissors, Trash2 } from "lucide-reac
 import { getRelatedRequirements, type RequirementReference } from "@/lib/mock/data";
 import type { Concept } from "@/lib/mock/data/types";
 import { getConceptById, deleteConcept } from "@/lib/data/concepts";
+import { CardSkeleton, PageHeaderSkeleton } from "@/components/skeleton";
 import { confirmDelete } from "@/lib/ui/confirm";
 
 export default function IdeaDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -58,7 +59,12 @@ export default function IdeaDetailPage({ params }: { params: Promise<{ id: strin
     return (
     <>
         <div className="flex-1 min-h-screen bg-white">
-          <div className="mx-auto max-w-[1400px] px-8 py-4 text-slate-500">読み込み中...</div>
+          <div className="mx-auto max-w-[1400px] px-8 py-4">
+            <PageHeaderSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
+          </div>
         </div>
       </>
     );

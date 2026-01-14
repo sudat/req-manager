@@ -12,6 +12,7 @@ import {
 } from "@/components/system-domains";
 import type { SystemFunction } from "@/lib/mock/data/types";
 import { getSystemFunctionById } from "@/lib/data/system-functions";
+import { PageHeaderSkeleton, CardSkeleton } from "@/components/skeleton";
 
 // ============================================================
 // Page Layout Components
@@ -28,7 +29,11 @@ function PageLayout({ children }: { children: React.ReactNode }): React.ReactNod
 function LoadingState(): React.ReactNode {
 	return (
 		<PageLayout>
-			<div className="text-slate-500">読み込み中...</div>
+			<PageHeaderSkeleton />
+			<CardSkeleton />
+			<CardSkeleton />
+			<CardSkeleton />
+			<CardSkeleton />
 		</PageLayout>
 	);
 }
@@ -71,7 +76,7 @@ function PageHeader({ domainId, srfId }: PageHeaderProps): React.ReactNode {
 				<ArrowLeft className="h-4 w-4" />
 				システム機能一覧に戻る
 			</Link>
-			<Link href={`/system-domains/${domainId}/functions/${srfId}/edit`}>
+			<Link href={`/system-domains/${domainId}/${srfId}/edit`}>
 				<Button variant="outline" className="h-8 gap-2 text-[14px]">
 					<Pencil className="h-4 w-4" />
 					編集

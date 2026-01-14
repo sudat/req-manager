@@ -61,7 +61,7 @@ export function BusinessRequirementCard({
         <div className="border-t border-slate-100 pt-2 mt-2 space-y-1">
           <div className="text-[12px] font-medium text-slate-500">関連システム機能</div>
           <div className="flex flex-wrap gap-1.5">
-            <Link href={srfDomainId ? `/system-domains/${srfDomainId}/functions/${srfId}` : "/system-domains"}>
+            <Link href={srfDomainId ? `/system-domains/${srfDomainId}/${srfId}` : "/system-domains"}>
               <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] hover:bg-slate-100">
                 {srfName}
               </Badge>

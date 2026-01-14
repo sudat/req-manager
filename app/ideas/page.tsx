@@ -17,6 +17,7 @@ import {
 import { Plus, Eye, Pencil, Trash2, Search } from "lucide-react";
 import type { Concept } from "@/lib/mock/data/types";
 import { listConcepts, deleteConcept } from "@/lib/data/concepts";
+import { TableSkeleton } from "@/components/skeleton";
 import { confirmDelete } from "@/lib/ui/confirm";
 
 export default function IdeasPage() {
@@ -139,11 +140,7 @@ export default function IdeasPage() {
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="px-4 py-10 text-center text-[14px] text-slate-500">
-                      読み込み中...
-                    </TableCell>
-                  </TableRow>
+                  <TableSkeleton cols={6} rows={5} />
                 ) : error ? (
                   <TableRow>
                     <TableCell colSpan={6} className="px-4 py-10 text-center text-[14px] text-rose-600">

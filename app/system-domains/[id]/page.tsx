@@ -24,6 +24,7 @@ import {
 import { ArrowLeft, Plus, Eye, Pencil, Trash2, Search } from "lucide-react";
 import type { SystemFunction, SrfCategory, SrfStatus } from "@/lib/mock/data/types";
 import { listSystemFunctionsByDomain, deleteSystemFunction } from "@/lib/data/system-functions";
+import { TableSkeleton } from "@/components/skeleton";
 import { confirmDelete } from "@/lib/ui/confirm";
 import { getSystemDomainById } from "@/lib/data/system-domains";
 
@@ -52,7 +53,7 @@ export default function SystemDomainFunctionsPage({ params }: { params: Promise<
   const [loading, setLoading] = useState(true);
 
   const handleRowClick = (srfId: string) => {
-    router.push(`/system-domains/${id}/functions/${srfId}`);
+    router.push(`/system-domains/${id}/${srfId}`);
   };
 
   useEffect(() => {
@@ -199,20 +200,16 @@ export default function SystemDomainFunctionsPage({ params }: { params: Promise<
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="px-4 py-10 text-center text-[14px] text-slate-500">
-                      読み込み中...
-                    </TableCell>
-                  </TableRow>
+                  <TableSkeleton cols={6} rows={5} />
                 ) : error ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="px-4 py-10 text-center text-[14px] text-rose-600">
+                    <TableCell colSpan={6} className="px-4 py-10 text-center text-[14px] text-rose-600">
                       {error}
                     </TableCell>
                   </TableRow>
                 ) : filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="px-4 py-10 text-center text-[14px] text-slate-500">
+                    <TableCell colSpan={6} className="px-4 py-10 text-center text-[14px] text-slate-500">
                       該当するシステム機能がありません。
                     </TableCell>
                   </TableRow>
@@ -246,7 +243,7 @@ export default function SystemDomainFunctionsPage({ params }: { params: Promise<
                       </TableCell>
                       <TableCell className="px-4 py-3">
                         <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
-                          <Link href={`/system-domains/${id}/functions/${srf.id}`}>
+                          <Link href={`/system-domains/${id}/${srf.id}`}>
                             <Button
                               size="icon"
                               variant="outline"
@@ -256,7 +253,7 @@ export default function SystemDomainFunctionsPage({ params }: { params: Promise<
                               <Eye className="h-4 w-4" />
                             </Button>
                           </Link>
-                          <Link href={`/system-domains/${id}/functions/${srf.id}/edit`}>
+                          <Link href={`/system-domains/${id}/${srf.id}/edit`}>
                             <Button
                               size="icon"
                               variant="outline"

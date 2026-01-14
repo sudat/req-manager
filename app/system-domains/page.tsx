@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/table";
 import { Search, Settings } from "lucide-react";
 import { listSystemDomains } from "@/lib/data/system-domains";
+import { TableSkeleton } from "@/components/skeleton";
 import { listSystemFunctions } from "@/lib/data/system-functions";
 import type { SystemDomain } from "@/lib/data/system-domains";
 import type { SystemFunction } from "@/lib/mock/data/types";
@@ -128,11 +129,7 @@ export default function SystemDomainsPage() {
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={4} className="px-4 py-10 text-center text-[14px] text-slate-500">
-                      読み込み中...
-                    </TableCell>
-                  </TableRow>
+                  <TableSkeleton cols={4} rows={5} />
                 ) : error ? (
                   <TableRow>
                     <TableCell colSpan={4} className="px-4 py-10 text-center text-[14px] text-rose-600">

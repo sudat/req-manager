@@ -83,7 +83,7 @@ export function SystemRequirementCard({
           <div className="text-[12px] font-medium text-slate-500 mb-1">関連システム機能</div>
           <div className="ml-1 pl-3 border-l-2 border-purple-200">
             <Link
-              href={systemFunctionDomainMap.get(srf.id) ? `/system-domains/${systemFunctionDomainMap.get(srf.id)}/functions/${srf.id}` : "/system-domains"}
+              href={systemFunctionDomainMap.get(srf.id) ? `/system-domains/${systemFunctionDomainMap.get(srf.id)}/${srf.id}` : "/system-domains"}
               className="block hover:bg-purple-50/50 rounded px-2 py-1 -ml-2 transition-colors"
             >
               <div className="flex items-center gap-2">
