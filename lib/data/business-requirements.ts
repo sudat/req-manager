@@ -1,69 +1,79 @@
 import { supabase, getSupabaseConfigError } from "@/lib/supabase/client";
 
 export type BusinessRequirement = {
-  id: string;
-  taskId: string;
-  title: string;
-  summary: string;
-  conceptIds: string[];
-  srfId: string | null;
-  systemDomainIds: string[];
-  acceptanceCriteria: string[];
-  sortOrder: number;
-  createdAt: string;
-  updatedAt: string;
+	id: string;
+	taskId: string;
+	title: string;
+	summary: string;
+	conceptIds: string[];
+	srfId: string | null;
+	systemDomainIds: string[];
+	impacts: string[];
+	relatedSystemRequirementIds: string[];
+	acceptanceCriteria: string[];
+	sortOrder: number;
+	createdAt: string;
+	updatedAt: string;
 };
 
 export type BusinessRequirementInput = {
-  id: string;
-  taskId: string;
-  title: string;
-  summary: string;
-  conceptIds: string[];
-  srfId: string | null;
-  systemDomainIds: string[];
-  acceptanceCriteria: string[];
-  sortOrder: number;
+	id: string;
+	taskId: string;
+	title: string;
+	summary: string;
+	conceptIds: string[];
+	srfId: string | null;
+	systemDomainIds: string[];
+	impacts: string[];
+	relatedSystemRequirementIds: string[];
+	acceptanceCriteria: string[];
+	sortOrder: number;
 };
 
 type BusinessRequirementRow = {
-  id: string;
-  task_id: string;
-  title: string;
-  summary: string;
-  concept_ids: string[] | null;
-  srf_id: string | null;
-  system_domain_ids: string[] | null;
-  acceptance_criteria: string[] | null;
-  sort_order: number | null;
-  created_at: string;
-  updated_at: string;
+	id: string;
+	task_id: string;
+	title: string;
+	summary: string;
+	concept_ids: string[] | null;
+	srf_id: string | null;
+	system_domain_ids: string[] | null;
+	impacts: string[] | null;
+	related_system_requirement_ids: string[] | null;
+	acceptance_criteria: string[] | null;
+	sort_order: number | null;
+	created_at: string;
+	updated_at: string;
 };
 
 const toBusinessRequirement = (row: BusinessRequirementRow): BusinessRequirement => ({
-  id: row.id,
-  taskId: row.task_id,
-  title: row.title,
-  summary: row.summary,
-  conceptIds: row.concept_ids ?? [],
-  srfId: row.srf_id ?? null,
-  systemDomainIds: row.system_domain_ids ?? [],
-  acceptanceCriteria: row.acceptance_criteria ?? [],
-  sortOrder: row.sort_order ?? 0,
-  createdAt: row.created_at,
-  updatedAt: row.updated_at,
+	id: row.id,
+	taskId: row.task_id,
+	title: row.title,
+	summary: row.summary,
+	conceptIds: row.concept_ids ?? [],
+	srfId: row.srf_id ?? null,
+	systemDomainIds: row.system_domain_ids ?? [],
+	impacts: row.impacts ?? [],
+	relatedSystemRequirementIds: row.related_system_requirement_ids ?? [],
+	acceptanceCriteria: row.acceptance_criteria ?? [],
+	sortOrder: row.sort_order ?? 0,
+	createdAt: row.created_at,
+	updatedAt: row.updated_at,
 });
 
 const toBusinessRequirementRow = (input: BusinessRequirementInput) => ({
-  id: input.id,
-  task_id: input.taskId,
-  title: input.title,
-  summary: input.summary,
-  concept_ids: input.conceptIds,
-  srf_id: input.srfId,
-  system_domain_ids: input.systemDomainIds,
-  acceptance_criteria: input.acceptanceCriteria,
-  sort_order: input.sortOrder,
+	id: input.id,
+	task_id: input.taskId,
+	title: input.title,
+	summary: input.summary,
+	concept_ids: input.conceptIds,
+	srf_id: input.srfId,
+	system_domain_ids: input.systemDomainIds,
+	impacts: input.impacts,
+	related_system_requirement_ids: input.relatedSystemRequirementIds,
+	acceptance_criteria: input.acceptanceCriteria,
+	sort_order: input.sortOrder,
 });
 
 const failIfMissingConfig = () => {
@@ -98,6 +108,23 @@ export const listBusinessRequirementsByIds = async (ids: string[]) => {
     .from("business_requirements")
     .select("*")
     .in("id", ids)
+    .order("id");
+
+  if (error) return { data: null, error: error.message };
+  return { data: (data as BusinessRequirementRow[]).map(toBusinessRequirement), error: null };
+};
+
+export const listBusinessRequirementsByTaskIds = async (taskIds: string[]) => {
+  const configError = failIfMissingConfig();
+  if (configError) return configError;
+  if (taskIds.length === 0) return { data: [], error: null };
+
+  const { data, error } = await supabase
+    .from("business_requirements")
+    .select("*")
+    .in("task_id", taskIds)
+    .order("task_id")
+    .order("sort_order")
     .order("id");
 
   if (error) return { data: null, error: error.message };

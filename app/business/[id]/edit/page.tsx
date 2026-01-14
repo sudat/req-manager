@@ -22,8 +22,6 @@ export default function BusinessEditPage({ params }: { params: Promise<{ id: str
   const [name, setName] = useState("");
   const [area, setArea] = useState("");
   const [summary, setSummary] = useState("");
-  const [businessReqCount, setBusinessReqCount] = useState(0);
-  const [systemReqCount, setSystemReqCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -44,8 +42,6 @@ export default function BusinessEditPage({ params }: { params: Promise<{ id: str
           setName(data.name);
           setArea(data.area ?? "");
           setSummary(data.summary);
-          setBusinessReqCount(data.businessReqCount);
-          setSystemReqCount(data.systemReqCount);
         }
       }
       setLoading(false);
@@ -67,8 +63,6 @@ export default function BusinessEditPage({ params }: { params: Promise<{ id: str
       name: name.trim(),
       area: area.trim(),
       summary: summary.trim(),
-      businessReqCount,
-      systemReqCount,
     });
     setSaving(false);
     if (saveError) {
@@ -151,17 +145,6 @@ export default function BusinessEditPage({ params }: { params: Promise<{ id: str
               <div className="space-y-2">
                 <Label>業務概要</Label>
                 <Textarea value={summary} onChange={(event) => setSummary(event.target.value)} className="min-h-[110px]" />
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>業務要件数</Label>
-                  <Input type="number" min={0} value={businessReqCount} onChange={(event) => setBusinessReqCount(Number(event.target.value))} />
-                </div>
-                <div className="space-y-2">
-                  <Label>システム要件数</Label>
-                  <Input type="number" min={0} value={systemReqCount} onChange={(event) => setSystemReqCount(Number(event.target.value))} />
-                </div>
               </div>
 
               {error && <p className="text-sm text-rose-600">{error}</p>}

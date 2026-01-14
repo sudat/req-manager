@@ -84,8 +84,6 @@ function ManualAddPageContent() {
       input: input.trim(),
       output: output.trim(),
       concepts: [],
-      businessReqCount: requirements.length,
-      systemReqCount: 0,
       sortOrder,
     });
 
@@ -103,7 +101,11 @@ function ManualAddPageContent() {
       conceptIds: req.conceptIds,
       srfId: req.srfId,
       systemDomainIds: req.systemDomainIds,
-      acceptanceCriteria: req.acceptanceCriteria,
+      impacts: [],
+      relatedSystemRequirementIds: [],
+      acceptanceCriteria: req.acceptanceCriteria
+        .map((criteria) => criteria.trim())
+        .filter((criteria) => criteria.length > 0),
       sortOrder: index + 1,
     }));
 

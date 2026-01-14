@@ -1,18 +1,33 @@
 "use client"
 
-import { use, useMemo, useState } from "react";
+import { use, useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Save, RotateCcw, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Save, RotateCcw, Plus, Trash2, Loader2, AlertCircle } from "lucide-react";
 import type { TaskKnowledge, Requirement } from "@/lib/mock/task-knowledge";
 import { getDefaultTaskKnowledge } from "@/lib/mock/task-knowledge";
+import {
+	syncTaskBasicInfo,
+	syncBusinessRequirements,
+	syncSystemRequirements,
+} from "@/lib/data/task-sync";
+import {
+	listBusinessRequirementsByTaskId,
+} from "@/lib/data/business-requirements";
+import {
+	listSystemRequirementsByTaskId,
+} from "@/lib/data/system-requirements";
+import {
+	fromBusinessRequirement,
+	fromSystemRequirement,
+} from "@/lib/data/requirement-mapper";
 
 const splitLines = (value: string) =>
 	value
@@ -21,6 +36,7 @@ const splitLines = (value: string) =>
 		.filter(Boolean);
 
 const joinLines = (values: string[]) => values.join("\n");
+
 
 const splitCsv = (value: string) =>
 	value
@@ -53,18 +69,56 @@ export default function TaskDetailEditPage({
 		[id, taskId],
 	);
 
-	const [knowledge, setKnowledge] = useState<TaskKnowledge>(() => {
-		if (typeof window === "undefined") return defaultKnowledge;
-		try {
-			const raw = window.localStorage.getItem(storageKey);
-			if (!raw) return defaultKnowledge;
-			const parsed = JSON.parse(raw) as TaskKnowledge;
-			if (parsed?.bizId !== id || parsed?.taskId !== taskId) return defaultKnowledge;
-			return parsed;
-		} catch {
-			return defaultKnowledge;
+	// 状態管理
+	const [knowledge, setKnowledge] = useState<TaskKnowledge>(defaultKnowledge);
+	const [isLoading, setIsLoading] = useState(true);
+	const [isSaving, setIsSaving] = useState(false);
+	const [saveError, setSaveError] = useState<string | null>(null);
+
+	// マウント時にDBから既存データを読み込む
+	useEffect(() => {
+		async function loadExistingData() {
+			setIsLoading(true);
+
+			try {
+				// 業務要件を読み込み
+				const { data: businessReqs } = await listBusinessRequirementsByTaskId(taskId);
+				// システム要件を読み込み
+				const { data: systemReqs } = await listSystemRequirementsByTaskId(taskId);
+
+				// 概念マスタを読み込み（名前解決用）
+				const { listConcepts } = await import("@/lib/data/concepts");
+				const { data: concepts } = await listConcepts();
+				const conceptMap = new Map(concepts?.map((c) => [c.id, c.name]) ?? []);
+
+				// DBデータをRequirement型に変換
+				const loadedBusinessRequirements = businessReqs?.map((br) =>
+					fromBusinessRequirement(br, conceptMap)
+				) ?? [];
+
+				const loadedSystemRequirements = systemReqs?.map((sr) =>
+					fromSystemRequirement(sr, conceptMap)
+				) ?? [];
+
+				// DBデータがあれば優先、なければLocalStorageまたはデフォルト
+				setKnowledge((prev) => ({
+					...prev,
+					businessRequirements: loadedBusinessRequirements.length > 0
+						? loadedBusinessRequirements
+						: prev.businessRequirements,
+					systemRequirements: loadedSystemRequirements.length > 0
+						? loadedSystemRequirements
+						: prev.systemRequirements,
+				}));
+			} catch (e) {
+				console.error("データ読み込みエラー:", e);
+			} finally {
+				setIsLoading(false);
+			}
 		}
-	});
+
+		loadExistingData();
+	}, [taskId]);
 
 	const updateRequirement =
 		(listKey: "businessRequirements" | "systemRequirements") =>
@@ -109,14 +163,61 @@ export default function TaskDetailEditPage({
 		});
 	};
 
-	const handleSave = () => {
+	const handleSave = async () => {
+	setIsSaving(true);
+	setSaveError(null);
+
+	try {
+		// LocalStorageにバックアップ
 		try {
 			window.localStorage.setItem(storageKey, JSON.stringify(knowledge));
 		} catch {
-			// noop
+			// LocalStorage保存失敗は無視
 		}
+
+		// タスク基本情報を同期
+		const taskError = await syncTaskBasicInfo(
+			taskId,
+			knowledge.taskName,
+			knowledge.taskSummary,
+			knowledge.person ?? "",
+			knowledge.input ?? "",
+			knowledge.output ?? "",
+		);
+		if (taskError) {
+			setSaveError(taskError);
+			return;
+		}
+
+		// 業務要件を同期
+		const bizError = await syncBusinessRequirements(taskId, knowledge.businessRequirements);
+		if (bizError) {
+			setSaveError(bizError);
+			return;
+		}
+
+		// システム要件を同期
+		const sysError = await syncSystemRequirements(taskId, knowledge.systemRequirements);
+		if (sysError) {
+			setSaveError(sysError);
+			return;
+		}
+
+		// 成功時はLocalStorageをクリア
+		try {
+			window.localStorage.removeItem(storageKey);
+		} catch {
+			// クリア失敗は無視
+		}
+
+		// 詳細ページへ遷移
 		router.push(`/business/${id}/tasks/${taskId}`);
-	};
+	} catch (e) {
+		setSaveError(e instanceof Error ? e.message : String(e));
+	} finally {
+		setIsSaving(false);
+	}
+};
 
 	const handleReset = () => {
 		try {
@@ -125,6 +226,7 @@ export default function TaskDetailEditPage({
 			// noop
 		}
 		setKnowledge(defaultKnowledge);
+		setSaveError(null);
 	};
 
 	return (
@@ -141,21 +243,52 @@ export default function TaskDetailEditPage({
 							業務タスク詳細に戻る
 						</Link>
 						<div className="flex items-center gap-2">
-							<Button variant="outline" className="h-8 gap-2 text-[14px]" onClick={handleReset}>
+							<Button
+								variant="outline"
+								className="h-8 gap-2 text-[14px]"
+								onClick={handleReset}
+								disabled={isLoading || isSaving}
+							>
 								<RotateCcw className="h-4 w-4" />
 								リセット
 							</Button>
-							<Button className="h-8 gap-2 text-[14px] bg-slate-900 hover:bg-slate-800" onClick={handleSave}>
-								<Save className="h-4 w-4" />
-								保存
+							<Button
+								className="h-8 gap-2 text-[14px] bg-slate-900 hover:bg-slate-800"
+								onClick={handleSave}
+								disabled={isLoading || isSaving}
+							>
+								{isSaving ? (
+									<>
+										<Loader2 className="h-4 w-4 animate-spin" />
+										保存中...
+									</>
+								) : (
+									<>
+										<Save className="h-4 w-4" />
+										保存
+									</>
+								)}
 							</Button>
 						</div>
 					</div>
 
 					<h1 className="text-[32px] font-semibold tracking-tight text-slate-900 mb-2">業務タスク編集</h1>
-					<div className="mb-6 text-[13px] text-slate-500">
-						モックのため、保存先はブラウザのLocalStorageです（API/DBは未実装）。
-					</div>
+
+					{/* ローディング表示 */}
+					{isLoading && (
+						<div className="mb-6 flex items-center gap-2 text-[13px] text-slate-500">
+							<Loader2 className="h-4 w-4 animate-spin" />
+							データを読み込み中...
+						</div>
+					)}
+
+					{/* エラー表示 */}
+					{saveError && (
+						<div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-md flex items-start gap-2">
+							<AlertCircle className="h-4 w-4 text-rose-600 mt-0.5" />
+							<div className="text-[13px] text-rose-700">保存エラー: {saveError}</div>
+						</div>
+					)}
 
 					<Card className="rounded-md border border-slate-200">
 						<CardContent className="p-3 space-y-3">

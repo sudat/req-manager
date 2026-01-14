@@ -3,19 +3,13 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { AcceptanceCriteriaInput } from "./AcceptanceCriteriaInput";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Trash2 } from "lucide-react";
 import type { Requirement, SelectionDialogType } from "../types";
 
-const splitLines = (value: string): string[] =>
-  value
-    .split("\n")
-    .map((v) => v.trim())
-    .filter(Boolean);
-
-const joinLines = (values: string[]): string => values.join("\n");
 
 type RequirementCardProps = {
   requirement: Requirement;
@@ -145,18 +139,10 @@ export function RequirementCard({
           onOpenDialog={() => onOpenDialog("domain")}
         />
 
-        <div className="space-y-1.5">
-          <Label className="text-[12px] font-medium text-slate-500">
-            受入条件（1行=1条件）
-          </Label>
-          <Textarea
-            className="min-h-[110px] text-[14px]"
-            value={joinLines(requirement.acceptanceCriteria)}
-            onChange={(e) =>
-              onUpdate({ acceptanceCriteria: splitLines(e.target.value) })
-            }
-          />
-        </div>
+        <AcceptanceCriteriaInput
+          values={requirement.acceptanceCriteria}
+          onChange={(values) => onUpdate({ acceptanceCriteria: values })}
+        />
       </CardContent>
     </Card>
   );

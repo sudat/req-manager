@@ -23,8 +23,6 @@ export default function BusinessAddPage() {
   const defaultArea: BusinessArea = "AR";
   const [area, setArea] = useState<string>(defaultArea);
   const [summary, setSummary] = useState("");
-  const [businessReqCount, setBusinessReqCount] = useState(0);
-  const [systemReqCount, setSystemReqCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -58,8 +56,6 @@ export default function BusinessAddPage() {
       name: name.trim(),
       area: area.trim() as BusinessArea,
       summary: summary.trim(),
-      businessReqCount,
-      systemReqCount,
     });
     setSaving(false);
     if (saveError) {
@@ -119,27 +115,6 @@ export default function BusinessAddPage() {
                   placeholder="業務の概要を入力"
                   className="min-h-[110px]"
                 />
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>業務要件数</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    value={businessReqCount}
-                    onChange={(event) => setBusinessReqCount(Number(event.target.value))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>システム要件数</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    value={systemReqCount}
-                    onChange={(event) => setSystemReqCount(Number(event.target.value))}
-                  />
-                </div>
               </div>
 
               {error && <p className="text-sm text-rose-600">{error}</p>}

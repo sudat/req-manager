@@ -6,8 +6,6 @@ export type BusinessInput = {
   name: string;
   area: BusinessArea;
   summary: string;
-  businessReqCount: number;
-  systemReqCount: number;
 };
 
 type BusinessRow = {
@@ -15,8 +13,6 @@ type BusinessRow = {
   name: string;
   area: string;
   summary: string;
-  business_req_count: number | null;
-  system_req_count: number | null;
   created_at: string;
   updated_at: string;
 };
@@ -26,8 +22,8 @@ const toBusiness = (row: BusinessRow): Business => ({
   name: row.name,
   area: row.area as BusinessArea,
   summary: row.summary,
-  businessReqCount: row.business_req_count ?? 0,
-  systemReqCount: row.system_req_count ?? 0,
+  businessReqCount: 0,
+  systemReqCount: 0,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });
@@ -37,8 +33,6 @@ const toBusinessRow = (input: BusinessInput) => ({
   name: input.name,
   area: input.area,
   summary: input.summary,
-  business_req_count: input.businessReqCount,
-  system_req_count: input.systemReqCount,
 });
 
 const toBusinessRowPartial = (input: Partial<BusinessInput>) => {
@@ -46,8 +40,6 @@ const toBusinessRowPartial = (input: Partial<BusinessInput>) => {
   if (input.name !== undefined) row.name = input.name;
   if (input.area !== undefined) row.area = input.area;
   if (input.summary !== undefined) row.summary = input.summary;
-  if (input.businessReqCount !== undefined) row.business_req_count = input.businessReqCount;
-  if (input.systemReqCount !== undefined) row.system_req_count = input.systemReqCount;
   return row;
 };
 
@@ -140,4 +132,79 @@ export const deleteBusiness = async (id: string) => {
 
   if (error) return { data: null, error: error.message };
   return { data: true, error: null };
+};
+
+export const listBusinessesWithRequirementCounts = async () => {
+  const configError = failIfMissingConfig();
+  if (configError) return configError;
+
+  const { data: businesses, error: bizError } = await supabase
+    .from("business_domains")
+    .select("id")
+    .order("id");
+
+  if (bizError) return { data: null, error: bizError.message };
+  if (!businesses || businesses.length === 0) return { data: [], error: null };
+
+  const businessIds = businesses.map((b) => b.id);
+
+  const { data: tasks, error: taskError } = await supabase
+    .from("business_tasks")
+    .select("id, business_id")
+    .in("business_id", businessIds);
+
+  if (taskError) return { data: null, error: taskError.message };
+
+  const taskIds = tasks?.map((t) => t.id) ?? [];
+
+  const { data: businessReqs, error: brError } = await supabase
+    .from("business_requirements")
+    .select("task_id")
+    .in("task_id", taskIds);
+
+  if (brError) return { data: null, error: brError.message };
+
+  const { data: systemReqs, error: srError } = await supabase
+    .from("system_requirements")
+    .select("task_id")
+    .in("task_id", taskIds);
+
+  if (srError) return { data: null, error: srError.message };
+
+  const taskToBusiness = Object.fromEntries(
+    tasks?.map((t) => [t.id, t.business_id]) ?? []
+  );
+
+  const businessBrCounts: Record<string, number> = {};
+  const businessSrCounts: Record<string, number> = {};
+
+  businessIds.forEach((id) => {
+    businessBrCounts[id] = 0;
+    businessSrCounts[id] = 0;
+  });
+
+  businessReqs?.forEach((req) => {
+    const businessId = taskToBusiness[req.task_id];
+    if (businessId) {
+      businessBrCounts[businessId] = (businessBrCounts[businessId] ?? 0) + 1;
+    }
+  });
+
+  systemReqs?.forEach((req) => {
+    const businessId = taskToBusiness[req.task_id];
+    if (businessId) {
+      businessSrCounts[businessId] = (businessSrCounts[businessId] ?? 0) + 1;
+    }
+  });
+
+  const { data: fullBusinesses, error: fullError } = await listBusinesses();
+  if (fullError || !fullBusinesses) return { data: null, error: fullError ?? "Unknown error" };
+
+  const result = fullBusinesses.map((biz) => ({
+    ...biz,
+    businessReqCount: businessBrCounts[biz.id] ?? 0,
+    systemReqCount: businessSrCounts[biz.id] ?? 0,
+  }));
+
+  return { data: result, error: null };
 };

@@ -15,7 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Eye, Pencil, Trash2, Search } from "lucide-react";
-import { listBusinesses, deleteBusiness } from "@/lib/data/businesses";
+import { listBusinessesWithRequirementCounts, deleteBusiness } from "@/lib/data/businesses";
 import type { Business } from "@/lib/mock/data/types";
 import { confirmDelete } from "@/lib/ui/confirm";
 
@@ -34,7 +34,7 @@ export default function BusinessPage() {
     let active = true;
     const fetchData = async () => {
       setLoading(true);
-      const { data, error: fetchError } = await listBusinesses();
+      const { data, error: fetchError } = await listBusinessesWithRequirementCounts();
       if (!active) return;
       if (fetchError) {
         setError(fetchError);

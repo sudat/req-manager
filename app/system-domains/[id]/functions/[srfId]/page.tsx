@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { SystemFunction, SystemDesignItem, RelatedRequirementInfo } from "@/lib/mock/data/types";
 import type { CodeRef } from "@/lib/mock/task-knowledge";
-import { listBusinessRequirementsByIds } from "@/lib/data/business-requirements";
+import { listBusinessRequirementsByTaskIds } from "@/lib/data/business-requirements";
 import { listConcepts } from "@/lib/data/concepts";
 import { listSystemRequirementsBySrfId } from "@/lib/data/system-requirements";
 import { getSystemFunctionById, getDesignCategoryLabel } from "@/lib/data/system-functions";
@@ -151,11 +151,10 @@ function SystemRequirementsSection({ srfId }: SystemRequirementsSectionProps) {
 				return;
 			}
 
-			const relatedBusinessIds = Array.from(
-				new Set(sysReqs.flatMap((req) => req.relatedBusinessRequirementIds)),
-			);
+			// タスクIDから全 BusinessRequirement を取得
+			const taskIds = Array.from(new Set(sysReqs.map((req) => req.taskId)));
 			const { data: businessRequirements, error: businessReqError } =
-				await listBusinessRequirementsByIds(relatedBusinessIds);
+				await listBusinessRequirementsByTaskIds(taskIds);
 			if (!active) return;
 			if (businessReqError) {
 				setError(businessReqError);
@@ -164,12 +163,17 @@ function SystemRequirementsSection({ srfId }: SystemRequirementsSectionProps) {
 				return;
 			}
 
-			const taskIds = Array.from(
-				new Set([
-					...sysReqs.map((req) => req.taskId),
-					...(businessRequirements ?? []).map((req) => req.taskId),
-				]),
-			);
+			// SystemRequirement ID → BusinessRequirement ID[] の逆引きマッピング作成
+			const sysReqToBizReqsMap = new Map<string, string[]>();
+			for (const bizReq of businessRequirements ?? []) {
+				for (const sysReqId of bizReq.relatedSystemRequirementIds ?? []) {
+					if (!sysReqToBizReqsMap.has(sysReqId)) {
+						sysReqToBizReqsMap.set(sysReqId, []);
+					}
+					sysReqToBizReqsMap.get(sysReqId)!.push(bizReq.id);
+				}
+			}
+
 			const [taskResult, conceptResult] = await Promise.all([
 				listTasksByIds(taskIds),
 				listConcepts(),
@@ -201,7 +205,10 @@ function SystemRequirementsSection({ srfId }: SystemRequirementsSectionProps) {
 					name: conceptMap.get(id) ?? id,
 				}));
 
-				if (sysReq.relatedBusinessRequirementIds.length === 0) {
+				// マッピングから関連 BusinessRequirement を取得
+				const relatedBizReqIds = sysReqToBizReqsMap.get(sysReq.id) ?? [];
+
+				if (relatedBizReqIds.length === 0) {
 					next.push({
 						systemReqId: sysReq.id,
 						systemReqTitle: sysReq.title,
@@ -217,7 +224,7 @@ function SystemRequirementsSection({ srfId }: SystemRequirementsSectionProps) {
 					continue;
 				}
 
-				for (const businessReqId of sysReq.relatedBusinessRequirementIds) {
+				for (const businessReqId of relatedBizReqIds) {
 					const businessReq = businessReqMap.get(businessReqId);
 					if (!businessReq) continue;
 					const businessId = taskBusinessMap.get(businessReq.taskId) ?? "";

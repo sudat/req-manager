@@ -6,28 +6,32 @@ import type { TaskKnowledge } from "@/lib/mock/task-knowledge";
 import { getDefaultTaskKnowledge } from "@/lib/mock/task-knowledge";
 import { getTaskById } from "@/lib/data/tasks";
 import { listBusinessRequirementsByTaskId, type BusinessRequirement } from "@/lib/data/business-requirements";
+import { listSystemRequirementsByTaskId, type SystemRequirement } from "@/lib/data/system-requirements";
 import { listConcepts } from "@/lib/data/concepts";
 import { listSystemFunctions } from "@/lib/data/system-functions";
 import { listSystemDomains, type SystemDomain } from "@/lib/data/system-domains";
 
 type UseTaskDetailParams = {
-  bizId: string;
-  taskId: string;
+	bizId: string;
+	taskId: string;
 };
 
 type UseTaskDetailReturn = {
-  task: Task | null;
-  taskLoading: boolean;
-  taskError: string | null;
-  businessRequirements: BusinessRequirement[];
-  requirementsLoading: boolean;
-  requirementsError: string | null;
-  optionsError: string | null;
-  knowledge: TaskKnowledge;
-  conceptMap: Map<string, string>;
-  systemFunctionMap: Map<string, string>;
-  systemFunctionDomainMap: Map<string, string | null>;
-  systemDomainMap: Map<string, string>;
+	task: Task | null;
+	taskLoading: boolean;
+	taskError: string | null;
+	businessRequirements: BusinessRequirement[];
+	requirementsLoading: boolean;
+	requirementsError: string | null;
+	systemRequirements: SystemRequirement[];
+	systemRequirementsLoading: boolean;
+	systemRequirementsError: string | null;
+	optionsError: string | null;
+	knowledge: TaskKnowledge;
+	conceptMap: Map<string, string>;
+	systemFunctionMap: Map<string, string>;
+	systemFunctionDomainMap: Map<string, string | null>;
+	systemDomainMap: Map<string, string>;
 };
 
 export function useTaskDetail({ bizId, taskId }: UseTaskDetailParams): UseTaskDetailReturn {
@@ -55,8 +59,12 @@ export function useTaskDetail({ bizId, taskId }: UseTaskDetailParams): UseTaskDe
   const [taskLoading, setTaskLoading] = useState(true);
 
   const [businessRequirements, setBusinessRequirements] = useState<BusinessRequirement[]>([]);
-  const [requirementsError, setRequirementsError] = useState<string | null>(null);
-  const [requirementsLoading, setRequirementsLoading] = useState(true);
+	const [requirementsError, setRequirementsError] = useState<string | null>(null);
+	const [requirementsLoading, setRequirementsLoading] = useState(true);
+
+	const [systemRequirements, setSystemRequirements] = useState<SystemRequirement[]>([]);
+	const [systemRequirementsError, setSystemRequirementsError] = useState<string | null>(null);
+	const [systemRequirementsLoading, setSystemRequirementsLoading] = useState(true);
 
   const [concepts, setConcepts] = useState<{ id: string; name: string }[]>([]);
   const [systemFunctions, setSystemFunctions] = useState<{ id: string; name: string; systemDomainId: string | null }[]>([]);
@@ -100,6 +108,27 @@ export function useTaskDetail({ bizId, taskId }: UseTaskDetailParams): UseTaskDe
       setRequirementsLoading(false);
     }
     fetchRequirements();
+    return () => {
+      active = false;
+    };
+  }, [taskId]);
+
+  useEffect(() => {
+    let active = true;
+    async function fetchSystemRequirements(): Promise<void> {
+      setSystemRequirementsLoading(true);
+      const { data, error } = await listSystemRequirementsByTaskId(taskId);
+      if (!active) return;
+      if (error) {
+        setSystemRequirementsError(error);
+        setSystemRequirements([]);
+      } else {
+        setSystemRequirementsError(null);
+        setSystemRequirements(data ?? []);
+      }
+      setSystemRequirementsLoading(false);
+    }
+    fetchSystemRequirements();
     return () => {
       active = false;
     };
@@ -163,6 +192,9 @@ export function useTaskDetail({ bizId, taskId }: UseTaskDetailParams): UseTaskDe
     businessRequirements,
     requirementsLoading,
     requirementsError,
+    systemRequirements,
+    systemRequirementsLoading,
+    systemRequirementsError,
     optionsError,
     knowledge,
     conceptMap,

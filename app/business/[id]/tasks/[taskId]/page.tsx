@@ -24,6 +24,9 @@ export default function TaskDetailPage({ params }: PageProps) {
     businessRequirements,
     requirementsLoading,
     requirementsError,
+    systemRequirements,
+    systemRequirementsLoading,
+    systemRequirementsError,
     optionsError,
     knowledge,
     conceptMap,
@@ -75,7 +78,10 @@ export default function TaskDetailPage({ params }: PageProps) {
           />
 
           <SystemRequirementsSection
-            requirements={knowledge.systemRequirements}
+            requirements={systemRequirements}
+            loading={systemRequirementsLoading}
+            error={systemRequirementsError}
+            conceptMap={conceptMap}
             systemFunctionDomainMap={systemFunctionDomainMap}
           />
         </div>
@@ -237,36 +243,44 @@ function BusinessRequirementsSection({
 }
 
 type SystemRequirementsSectionProps = {
-  requirements: import("@/lib/mock/task-knowledge").Requirement[];
-  systemFunctionDomainMap: Map<string, string | null>;
+	requirements: import("@/lib/data/system-requirements").SystemRequirement[];
+	loading: boolean;
+	error: string | null;
+	conceptMap: Map<string, string>;
+	systemFunctionDomainMap: Map<string, string | null>;
 };
 
 function SystemRequirementsSection({
-  requirements,
-  systemFunctionDomainMap,
+	requirements,
+	loading,
+	error,
+	conceptMap,
+	systemFunctionDomainMap,
 }: SystemRequirementsSectionProps) {
-  return (
-    <Card className="mt-4 rounded-md border border-slate-200/60 bg-white hover:border-slate-300/60 transition-colors">
-      <CardContent className="p-3 space-y-2">
-        <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-          <h3 className="text-[14px] font-semibold text-slate-900">関連システム要件</h3>
-          <Badge variant="outline" className="font-mono text-[11px] border-slate-200 bg-slate-50 text-slate-600 px-1.5 py-0">
-            {requirements.length}
-          </Badge>
-        </div>
+	return (
+		<Card className="mt-4 rounded-md border border-slate-200/60 bg-white hover:border-slate-300/60 transition-colors">
+			<CardContent className="p-3 space-y-2">
+				<div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+					<h3 className="text-[14px] font-semibold text-slate-900">関連システム要件</h3>
+					<Badge variant="outline" className="font-mono text-[11px] border-slate-200 bg-slate-50 text-slate-600 px-1.5 py-0">
+						{requirements.length}
+					</Badge>
+				</div>
 
-        {requirements.length === 0 ? (
-          <div className="text-[14px] text-slate-500">まだ登録されていません。</div>
-        ) : (
-          requirements.map((sysReq) => (
-            <SystemRequirementCard
-              key={sysReq.id}
-              requirement={sysReq}
-              systemFunctionDomainMap={systemFunctionDomainMap}
-            />
-          ))
-        )}
-      </CardContent>
-    </Card>
-  );
+				{loading && <div className="text-[14px] text-slate-500">読み込み中...</div>}
+				{error && <div className="text-[14px] text-rose-600">{error}</div>}
+				{!loading && !error && requirements.length === 0 && (
+					<div className="text-[14px] text-slate-500">まだ登録されていません。</div>
+				)}
+				{!loading && !error && requirements.map((sysReq) => (
+					<SystemRequirementCard
+						key={sysReq.id}
+						requirement={sysReq}
+						conceptMap={conceptMap}
+						systemFunctionDomainMap={systemFunctionDomainMap}
+					/>
+				))}
+			</CardContent>
+		</Card>
+	);
 }

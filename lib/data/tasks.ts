@@ -10,8 +10,6 @@ export type TaskInput = {
   input: string;
   output: string;
   concepts: string[];
-  businessReqCount: number;
-  systemReqCount: number;
   sortOrder: number;
 };
 
@@ -24,8 +22,6 @@ type TaskRow = {
   input: string | null;
   output: string | null;
   concepts: string[] | null;
-  business_req_count: number | null;
-  system_req_count: number | null;
   sort_order: number | null;
   created_at: string;
   updated_at: string;
@@ -40,8 +36,8 @@ const toTask = (row: TaskRow): Task => ({
   input: row.input ?? "",
   output: row.output ?? "",
   concepts: row.concepts ?? [],
-  businessReqCount: row.business_req_count ?? 0,
-  systemReqCount: row.system_req_count ?? 0,
+  businessReqCount: 0,
+  systemReqCount: 0,
   sortOrder: row.sort_order ?? 0,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
@@ -56,8 +52,6 @@ const toTaskRow = (input: TaskInput) => ({
   input: input.input,
   output: input.output,
   concepts: input.concepts,
-  business_req_count: input.businessReqCount,
-  system_req_count: input.systemReqCount,
   sort_order: input.sortOrder,
 });
 
