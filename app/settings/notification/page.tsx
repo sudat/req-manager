@@ -1,6 +1,6 @@
 "use client"
 
-import { Sidebar } from "@/components/layout/sidebar";
+import { MobileHeader } from "@/components/layout/mobile-header";
 import { SettingsLayout } from "@/components/layout/settings-layout";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -17,8 +17,8 @@ function SectionHeader({ title, description }: { title: string; description?: st
 export default function NotificationSettingsPage() {
   return (
     <>
-      <Sidebar />
-      <div className="ml-[280px] flex-1 min-h-screen bg-white">
+      <MobileHeader />
+      <div className="flex-1 min-h-screen bg-white">
         <div className="mx-auto max-w-[1200px] px-8 py-6">
           {/* Page Header */}
           <div className="mb-6">

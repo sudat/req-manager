@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Sidebar } from "@/components/layout/sidebar";
+import { MobileHeader } from "@/components/layout/mobile-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -47,8 +47,8 @@ export default function TicketsPage() {
 
   return (
     <>
-      <Sidebar />
-      <div className="ml-[280px] flex-1 min-h-screen bg-white">
+      <MobileHeader />
+      <div className="flex-1 min-h-screen bg-white">
         <div className="mx-auto max-w-[1400px] px-8 py-4">
           {/* Page Header */}
           <div className="mb-4">

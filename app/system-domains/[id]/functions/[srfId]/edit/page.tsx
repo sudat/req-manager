@@ -4,7 +4,7 @@ import { use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { Sidebar } from "@/components/layout/sidebar";
+import { MobileHeader } from "@/components/layout/mobile-header";
 import { Button } from "@/components/ui/button";
 import type { SystemFunction } from "@/lib/mock/data/types";
 import { useSystemFunctionForm } from "./hooks/useSystemFunctionForm";
@@ -28,14 +28,11 @@ interface PageProps {
 
 function LoadingState() {
 	return (
-		<>
-			<Sidebar />
-			<div className="ml-[280px] flex-1 min-h-screen bg-white">
-				<div className="mx-auto max-w-[1400px] px-8 py-6 text-slate-500">
-					読み込み中...
-				</div>
+		<div className="flex-1 min-h-screen bg-white">
+			<div className="mx-auto max-w-[1400px] px-8 py-6 text-slate-500">
+				読み込み中...
 			</div>
-		</>
+		</div>
 	);
 }
 
@@ -53,9 +50,8 @@ function NotFoundState({
 	error,
 }: NotFoundStateProps) {
 	return (
-		<>
-			<Sidebar />
-			<div className="ml-[280px] flex-1 min-h-screen bg-white">
+    <>
+			<div className="flex-1 min-h-screen bg-white">
 				<div className="mx-auto max-w-[1400px] px-8 py-6">
 					<div className="text-center py-20">
 						<h1 className="text-[32px] font-semibold tracking-tight text-slate-900 mb-4">
@@ -84,7 +80,7 @@ interface PageHeaderProps {
 
 function PageHeader({ srf }: PageHeaderProps) {
 	return (
-		<>
+    <>
 			<div className="flex items-center justify-between mb-6">
 				<Link
 					href={`/system-domains/${srf.systemDomainId}/functions/${srf.id}`}
@@ -173,9 +169,8 @@ export default function SystemFunctionEditPage({
 	}
 
 	return (
-		<>
-			<Sidebar />
-			<div className="ml-[280px] flex-1 min-h-screen bg-slate-50">
+    <>
+			<div className="flex-1 min-h-screen bg-slate-50">
 				<div className="mx-auto max-w-[1400px] px-8 py-6">
 					<PageHeader srf={state.existingSrf} />
 

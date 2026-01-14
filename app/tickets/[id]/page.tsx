@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Sidebar } from "@/components/layout/sidebar";
+import { MobileHeader } from "@/components/layout/mobile-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -46,8 +46,8 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
 
   return (
     <>
-      <Sidebar />
-      <div className="ml-[280px] flex-1 min-h-screen bg-white">
+      <MobileHeader />
+      <div className="flex-1 min-h-screen bg-white">
         <div className="mx-auto max-w-[1400px] px-8 py-4">
           <div className="flex items-center justify-between mb-4">
             <Link href="/tickets" className="inline-flex items-center gap-2 text-[14px] font-medium text-slate-600 hover:text-slate-900">

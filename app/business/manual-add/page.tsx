@@ -3,7 +3,7 @@
 import { Suspense, useMemo, useState, type FormEvent } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Sidebar } from "@/components/layout/sidebar";
+import { MobileHeader } from "@/components/layout/mobile-header";
 import { ArrowLeft } from "lucide-react";
 import { createTask, deleteTask } from "@/lib/data/tasks";
 import { createBusinessRequirements } from "@/lib/data/business-requirements";
@@ -128,9 +128,8 @@ function ManualAddPageContent() {
 
   if (!bizId) {
     return (
-      <>
-        <Sidebar />
-        <div className="ml-[280px] flex-1 min-h-screen bg-white">
+    <>
+        <div className="flex-1 min-h-screen bg-white">
           <div className="mx-auto max-w-[1400px] px-8 py-6">
             <p className="text-sm text-rose-600">
               業務IDが指定されていません。
@@ -150,8 +149,8 @@ function ManualAddPageContent() {
 
   return (
     <>
-      <Sidebar />
-      <div className="ml-[280px] flex-1 min-h-screen bg-white">
+      <MobileHeader />
+      <div className="flex-1 min-h-screen bg-white">
         <div className="mx-auto max-w-[1400px] px-8 py-6">
           <Link
             href={`/business/${bizId}/tasks`}
@@ -216,8 +215,11 @@ function ManualAddPageContent() {
 
 export default function ManualAddPage() {
   return (
-    <Suspense fallback={<div className="p-8">読み込み中...</div>}>
-      <ManualAddPageContent />
-    </Suspense>
+    <>
+      <MobileHeader />
+      <Suspense fallback={<div className="p-8">読み込み中...</div>}>
+        <ManualAddPageContent />
+      </Suspense>
+    </>
   );
 }

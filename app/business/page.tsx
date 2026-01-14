@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { Sidebar } from "@/components/layout/sidebar";
+import { MobileHeader } from "@/components/layout/mobile-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -79,8 +79,8 @@ export default function BusinessPage() {
 
   return (
     <>
-      <Sidebar />
-      <div className="ml-[280px] flex-1 min-h-screen bg-white">
+      <MobileHeader />
+      <div className="flex-1 min-h-screen bg-white">
         <div className="mx-auto max-w-[1400px] px-8 py-4">
           {/* Page Header */}
           <div className="mb-4">
@@ -128,6 +128,9 @@ export default function BusinessPage() {
                     領域
                   </TableHead>
                   <TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">
+                    業務概要
+                  </TableHead>
+                  <TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">
                     業務要件数
                   </TableHead>
                   <TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">
@@ -141,19 +144,19 @@ export default function BusinessPage() {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="px-4 py-10 text-center text-[14px] text-slate-500">
+                    <TableCell colSpan={7} className="px-4 py-10 text-center text-[14px] text-slate-500">
                       読み込み中...
                     </TableCell>
                   </TableRow>
                 ) : error ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="px-4 py-10 text-center text-[14px] text-rose-600">
+                    <TableCell colSpan={7} className="px-4 py-10 text-center text-[14px] text-rose-600">
                       {error}
                     </TableCell>
                   </TableRow>
                 ) : filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="px-4 py-10 text-center text-[14px] text-slate-500">
+                    <TableCell colSpan={7} className="px-4 py-10 text-center text-[14px] text-slate-500">
                       該当する業務がありません。
                     </TableCell>
                   </TableRow>
@@ -178,6 +181,11 @@ export default function BusinessPage() {
                       <Badge variant="outline" className="font-mono text-[12px] font-medium border-slate-200 bg-slate-50 text-slate-600 px-2 py-0.5">
                         {biz.area}
                       </Badge>
+                    </TableCell>
+                    <TableCell className="px-4 py-3">
+                      <div className="max-w-[200px] truncate text-[13px] text-slate-600" title={biz.summary}>
+                        {biz.summary}
+                      </div>
                     </TableCell>
                     <TableCell className="px-4 py-3">
                       <div className="flex items-baseline gap-1.5">

@@ -1,4 +1,4 @@
-import { Sidebar } from "@/components/layout/sidebar";
+import { MobileHeader } from "@/components/layout/mobile-header";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,8 +7,8 @@ import { FileText, Download } from "lucide-react";
 export default function ExportPage() {
   return (
     <>
-      <Sidebar />
-      <div className="ml-[280px] flex-1 min-h-screen bg-slate-50">
+      <MobileHeader />
+      <div className="flex-1 min-h-screen bg-slate-50">
         <div className="mx-auto max-w-[1400px] p-8">
           <PageHeader
             title="エクスポート"

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useEffect, useMemo, useState } from "react";
-import { Sidebar } from "@/components/layout/sidebar";
+import { MobileHeader } from "@/components/layout/mobile-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -56,9 +56,8 @@ export default function IdeaDetailPage({ params }: { params: Promise<{ id: strin
 
   if (loading) {
     return (
-      <>
-        <Sidebar />
-        <div className="ml-[280px] flex-1 min-h-screen bg-white">
+    <>
+        <div className="flex-1 min-h-screen bg-white">
           <div className="mx-auto max-w-[1400px] px-8 py-4 text-slate-500">読み込み中...</div>
         </div>
       </>
@@ -67,9 +66,8 @@ export default function IdeaDetailPage({ params }: { params: Promise<{ id: strin
 
   if (!concept) {
     return (
-      <>
-        <Sidebar />
-        <div className="ml-[280px] flex-1 min-h-screen bg-white">
+    <>
+        <div className="flex-1 min-h-screen bg-white">
           <div className="mx-auto max-w-[1400px] px-8 py-4">
             <p className="text-sm text-rose-600">{error ?? "概念が見つかりません"}</p>
             <Link href="/ideas" className="inline-flex items-center gap-2 text-[13px] text-slate-500 hover:text-slate-900 mt-4">
@@ -84,8 +82,7 @@ export default function IdeaDetailPage({ params }: { params: Promise<{ id: strin
 
   return (
     <>
-      <Sidebar />
-      <div className="ml-[280px] flex-1 min-h-screen bg-white">
+      <div className="flex-1 min-h-screen bg-white">
         <div className="mx-auto max-w-[1400px] px-8 py-4">
           <div className="flex items-center justify-between mb-4">
             <Link href="/ideas" className="inline-flex items-center gap-2 text-[13px] text-slate-500 hover:text-slate-900">

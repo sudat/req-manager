@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Sidebar } from "@/components/layout/sidebar";
+import { MobileHeader } from "@/components/layout/mobile-header";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Mic, Search } from "lucide-react";
@@ -7,8 +7,8 @@ import { Mic, Search } from "lucide-react";
 export default function QueryPage() {
   return (
     <>
-      <Sidebar />
-      <div className="ml-[280px] flex-1 min-h-screen bg-white">
+      <MobileHeader />
+      <div className="flex-1 min-h-screen bg-white">
         {/* Hero Search Section */}
         <div className="mx-auto max-w-[900px] px-6 pt-16 pb-12">
           {/* Page Header */}

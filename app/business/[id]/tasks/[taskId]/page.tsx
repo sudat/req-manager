@@ -2,7 +2,7 @@
 
 import { use } from "react";
 import Link from "next/link";
-import { Sidebar } from "@/components/layout/sidebar";
+import { MobileHeader } from "@/components/layout/mobile-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -45,8 +45,8 @@ export default function TaskDetailPage({ params }: PageProps) {
 
   return (
     <>
-      <Sidebar />
-      <div className="ml-[280px] flex-1 min-h-screen bg-white">
+      <MobileHeader />
+      <div className="flex-1 min-h-screen bg-white">
         <div className="mx-auto max-w-[1400px] px-8 py-4">
           <Header backBizId={backBizId} id={id} taskId={taskId} />
 
@@ -212,7 +212,7 @@ function BusinessRequirementsSection({
   systemDomainMap,
 }: BusinessRequirementsSectionProps) {
   return (
-    <Card className="mt-4 rounded-md border border-slate-200/60 bg-white hover:border-slate-300/60 transition-colors">
+		<Card className="mt-4 rounded-md border border-slate-200/60 bg-white hover:border-slate-300/60 transition-colors">
       <CardContent className="p-3 space-y-2">
         <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
           <h3 className="text-[14px] font-semibold text-slate-900">業務要件</h3>

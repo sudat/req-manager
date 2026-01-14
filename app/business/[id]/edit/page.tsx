@@ -4,7 +4,7 @@ import { use, useEffect, useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { Sidebar } from "@/components/layout/sidebar";
+import { MobileHeader } from "@/components/layout/mobile-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -74,9 +74,8 @@ export default function BusinessEditPage({ params }: { params: Promise<{ id: str
 
   if (loading) {
     return (
-      <>
-        <Sidebar />
-        <div className="ml-[280px] flex-1 min-h-screen bg-slate-50">
+    <>
+        <div className="flex-1 min-h-screen bg-slate-50">
           <div className="mx-auto max-w-[1200px] p-8 text-slate-500">読み込み中...</div>
         </div>
       </>
@@ -85,9 +84,8 @@ export default function BusinessEditPage({ params }: { params: Promise<{ id: str
 
   if (!business) {
     return (
-      <>
-        <Sidebar />
-        <div className="ml-[280px] flex-1 min-h-screen bg-slate-50">
+    <>
+        <div className="flex-1 min-h-screen bg-slate-50">
           <div className="mx-auto max-w-[1200px] p-8">
             <p className="text-sm text-rose-600">{error ?? "業務が見つかりません"}</p>
             <Link href="/business" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900 mt-4">
@@ -102,8 +100,7 @@ export default function BusinessEditPage({ params }: { params: Promise<{ id: str
 
   return (
     <>
-      <Sidebar />
-      <div className="ml-[280px] flex-1 min-h-screen bg-slate-50">
+      <div className="flex-1 min-h-screen bg-slate-50">
         <div className="mx-auto max-w-[1200px] p-8">
           <Link href="/business" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900 mb-4">
             <ArrowLeft className="h-4 w-4" />

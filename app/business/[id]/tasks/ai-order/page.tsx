@@ -4,7 +4,7 @@ import { use } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useState } from "react"
-import { Sidebar } from "@/components/layout/sidebar"
+import { MobileHeader } from "@/components/layout/mobile-header"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -98,8 +98,7 @@ export default function AiOrderPage({
 
   return (
     <>
-      <Sidebar />
-      <div className="ml-[280px] flex-1 min-h-screen bg-white">
+      <div className="flex-1 min-h-screen bg-white">
         <div className="mx-auto max-w-[1400px] px-8 py-4">
           {/* ヘッダー */}
           <div className="flex items-center gap-3 mb-6">

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { use } from "react";
 import Link from "next/link";
 import { ArrowLeft, Info } from "lucide-react";
-import { Sidebar } from "@/components/layout/sidebar";
+import { MobileHeader } from "@/components/layout/mobile-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -85,9 +85,8 @@ export default function TicketEditPage({ params }: { params: Promise<{ id: strin
 
   if (!existingTicket) {
     return (
-      <>
-        <Sidebar />
-        <div className="ml-[280px] flex-1 min-h-screen bg-white">
+    <>
+        <div className="flex-1 min-h-screen bg-white">
           <div className="mx-auto max-w-[1400px] px-8 py-4">
             <p className="text-slate-600">チケットが見つかりません</p>
           </div>
@@ -98,8 +97,7 @@ export default function TicketEditPage({ params }: { params: Promise<{ id: strin
 
   return (
     <>
-      <Sidebar />
-      <div className="ml-[280px] flex-1 min-h-screen bg-slate-50">
+      <div className="flex-1 min-h-screen bg-slate-50">
         <div className="mx-auto max-w-[1400px] p-8">
           <Link href={`/tickets/${id}`} className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900 mb-4">
             <ArrowLeft className="h-4 w-4" />

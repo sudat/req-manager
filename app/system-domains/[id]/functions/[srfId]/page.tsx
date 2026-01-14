@@ -1,492 +1,31 @@
 "use client";
 
-import { ArrowLeft, ExternalLink, Github, Pencil } from "lucide-react";
+import { ArrowLeft, Pencil } from "lucide-react";
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
-import { Sidebar } from "@/components/layout/sidebar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import type { SystemFunction, SystemDesignItem, RelatedRequirementInfo } from "@/lib/mock/data/types";
-import type { CodeRef } from "@/lib/mock/task-knowledge";
-import { listBusinessRequirementsByTaskIds } from "@/lib/data/business-requirements";
-import { listConcepts } from "@/lib/data/concepts";
-import { listSystemRequirementsBySrfId } from "@/lib/data/system-requirements";
-import { getSystemFunctionById, getDesignCategoryLabel } from "@/lib/data/system-functions";
-import { listTasksByIds } from "@/lib/data/tasks";
-
-// ============================================================
-// Sub-components
-// ============================================================
-
-interface SectionCardProps {
-	title: string;
-	children: React.ReactNode;
-}
-
-function SectionCard({ title, children }: SectionCardProps) {
-	return (
-		<Card className="mt-4 rounded-md border border-slate-200/60 bg-white hover:border-slate-300/60 transition-colors">
-			<div className="px-4 py-2.5 border-b border-slate-100">
-				<h2 className="text-[15px] font-semibold text-slate-900">{title}</h2>
-			</div>
-			<CardContent className="p-4">{children}</CardContent>
-		</Card>
-	);
-}
-
-function EmptyState({ message }: { message: string }) {
-	return <div className="text-[13px] text-slate-500">{message}</div>;
-}
-
-// ------------------------------------------------------------
-// Basic Info Section
-// ------------------------------------------------------------
-
-interface BasicInfoSectionProps {
-	srf: SystemFunction;
-}
-
-function BasicInfoSection({ srf }: BasicInfoSectionProps) {
-	return (
-		<Card className="rounded-md border border-slate-200/60 bg-white hover:border-slate-300/60 transition-colors">
-			<CardContent className="p-0">
-				<div className="px-4 py-2.5 border-b border-slate-100">
-					<h2 className="text-[15px] font-semibold text-slate-900">基本情報</h2>
-				</div>
-				<div className="p-4 space-y-4">
-					<div className="grid gap-4 md:grid-cols-2">
-						<InfoBox label="システム機能ID" value={srf.id} mono />
-						<InfoBox label="設計書No" value={srf.designDocNo} />
-					</div>
-
-					<div className="flex gap-3">
-						<LabeledBadge label="機能分類" value={srf.category} />
-						<LabeledBadge label="ステータス" value={srf.status} />
-					</div>
-
-					<div className="space-y-1.5">
-						<SectionLabel>機能名</SectionLabel>
-						<div className="text-[16px] font-semibold text-slate-900">
-							{srf.title}
-						</div>
-					</div>
-
-					<div className="space-y-1.5">
-						<SectionLabel>説明</SectionLabel>
-						<div className="text-[13px] text-slate-700 leading-relaxed">
-							{srf.summary}
-						</div>
-					</div>
-				</div>
-			</CardContent>
-		</Card>
-	);
-}
-
-function InfoBox({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
-	return (
-		<div className="rounded-md border border-slate-200 bg-slate-50/50 p-3">
-			<SectionLabel>{label}</SectionLabel>
-			<div className={`mt-1 text-[${mono ? "14" : "13"}px] font-semibold text-slate-900 ${mono ? "font-mono" : ""}`}>
-				{value}
-			</div>
-		</div>
-	);
-}
-
-function LabeledBadge({ label, value }: { label: string; value: string }) {
-	return (
-		<div>
-			<SectionLabel className="mb-1.5">{label}</SectionLabel>
-			<Badge
-				variant="outline"
-				className="border-slate-200/60 bg-slate-50 text-slate-600 text-[12px] font-medium px-2 py-0.5"
-			>
-				{value}
-			</Badge>
-		</div>
-	);
-}
-
-function SectionLabel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-	return (
-		<div className={`text-[11px] font-semibold text-slate-400 uppercase tracking-wide ${className}`}>
-			{children}
-		</div>
-	);
-}
-
-// ------------------------------------------------------------
-// System Requirements Section
-// ------------------------------------------------------------
-
-interface SystemRequirementsSectionProps {
-	srfId: string;
-}
-
-function SystemRequirementsSection({ srfId }: SystemRequirementsSectionProps) {
-	const [relatedReqs, setRelatedReqs] = useState<RelatedRequirementInfo[]>([]);
-	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
-
-	useEffect(() => {
-		let active = true;
-		async function fetchRelatedRequirements(): Promise<void> {
-			setLoading(true);
-			const { data: systemRequirements, error: sysError } = await listSystemRequirementsBySrfId(srfId);
-			if (!active) return;
-			if (sysError) {
-				setError(sysError);
-				setRelatedReqs([]);
-				setLoading(false);
-				return;
-			}
-
-			const sysReqs = systemRequirements ?? [];
-			if (sysReqs.length === 0) {
-				setError(null);
-				setRelatedReqs([]);
-				setLoading(false);
-				return;
-			}
-
-			// タスクIDから全 BusinessRequirement を取得
-			const taskIds = Array.from(new Set(sysReqs.map((req) => req.taskId)));
-			const { data: businessRequirements, error: businessReqError } =
-				await listBusinessRequirementsByTaskIds(taskIds);
-			if (!active) return;
-			if (businessReqError) {
-				setError(businessReqError);
-				setRelatedReqs([]);
-				setLoading(false);
-				return;
-			}
-
-			// SystemRequirement ID → BusinessRequirement ID[] の逆引きマッピング作成
-			const sysReqToBizReqsMap = new Map<string, string[]>();
-			for (const bizReq of businessRequirements ?? []) {
-				for (const sysReqId of bizReq.relatedSystemRequirementIds ?? []) {
-					if (!sysReqToBizReqsMap.has(sysReqId)) {
-						sysReqToBizReqsMap.set(sysReqId, []);
-					}
-					sysReqToBizReqsMap.get(sysReqId)!.push(bizReq.id);
-				}
-			}
-
-			const [taskResult, conceptResult] = await Promise.all([
-				listTasksByIds(taskIds),
-				listConcepts(),
-			]);
-			if (!active) return;
-
-			const fetchError = taskResult.error ?? conceptResult.error;
-			if (fetchError) {
-				setError(fetchError);
-				setRelatedReqs([]);
-				setLoading(false);
-				return;
-			}
-
-			const businessReqMap = new Map(
-				(businessRequirements ?? []).map((req) => [req.id, req]),
-			);
-			const taskBusinessMap = new Map(
-				(taskResult.data ?? []).map((task) => [task.id, task.businessId]),
-			);
-			const conceptMap = new Map(
-				(conceptResult.data ?? []).map((concept) => [concept.id, concept.name]),
-			);
-
-			const next: RelatedRequirementInfo[] = [];
-			for (const sysReq of sysReqs) {
-				const systemReqConcepts = sysReq.conceptIds.map((id) => ({
-					id,
-					name: conceptMap.get(id) ?? id,
-				}));
-
-				// マッピングから関連 BusinessRequirement を取得
-				const relatedBizReqIds = sysReqToBizReqsMap.get(sysReq.id) ?? [];
-
-				if (relatedBizReqIds.length === 0) {
-					next.push({
-						systemReqId: sysReq.id,
-						systemReqTitle: sysReq.title,
-						systemReqSummary: sysReq.summary,
-						systemReqConcepts,
-						systemReqImpacts: sysReq.impacts,
-						systemReqAcceptanceCriteria: sysReq.acceptanceCriteria,
-						businessReqId: "",
-						businessReqTitle: "",
-						businessId: taskBusinessMap.get(sysReq.taskId) ?? "",
-						taskId: sysReq.taskId,
-					});
-					continue;
-				}
-
-				for (const businessReqId of relatedBizReqIds) {
-					const businessReq = businessReqMap.get(businessReqId);
-					if (!businessReq) continue;
-					const businessId = taskBusinessMap.get(businessReq.taskId) ?? "";
-					next.push({
-						systemReqId: sysReq.id,
-						systemReqTitle: sysReq.title,
-						systemReqSummary: sysReq.summary,
-						systemReqConcepts,
-						systemReqImpacts: sysReq.impacts,
-						systemReqAcceptanceCriteria: sysReq.acceptanceCriteria,
-						businessReqId: businessReq.id,
-						businessReqTitle: businessReq.title,
-						businessId,
-						taskId: businessReq.taskId,
-					});
-				}
-			}
-
-			setRelatedReqs(next);
-			setError(null);
-			setLoading(false);
-		}
-		fetchRelatedRequirements();
-		return () => {
-			active = false;
-		};
-	}, [srfId]);
-
-	return (
-		<SectionCard title="システム要件">
-			{loading && <div className="text-[13px] text-slate-500">読み込み中...</div>}
-			{!loading && error && <div className="text-[13px] text-rose-600">{error}</div>}
-			{!loading && !error && relatedReqs.length === 0 ? (
-				<EmptyState message="まだ登録されていません。" />
-			) : (
-				!loading &&
-				!error && (
-					<div className="space-y-3">
-						{relatedReqs.map((req) => (
-							<RequirementItem key={`${req.systemReqId}:${req.businessReqId || "none"}`} req={req} />
-						))}
-					</div>
-				)
-			)}
-		</SectionCard>
-	);
-}
-
-interface RequirementItemProps {
-	req: RelatedRequirementInfo;
-}
-
-function RequirementItem({ req }: RequirementItemProps) {
-	return (
-		<div className="rounded-md border border-slate-200 bg-slate-50/50 p-3">
-			<div className="flex items-center gap-2 mb-2">
-				<Badge className="border-blue-200/60 bg-blue-50 text-blue-700 text-[12px] font-medium px-2 py-0.5">
-					{req.systemReqId}
-				</Badge>
-				<span className="text-[13px] font-medium text-slate-900">
-					{req.systemReqTitle}
-				</span>
-			</div>
-
-			{req.systemReqSummary && (
-				<div className="text-[13px] text-slate-600 mb-2 ml-1">
-					{req.systemReqSummary}
-				</div>
-			)}
-
-			{req.systemReqConcepts && req.systemReqConcepts.length > 0 && (
-				<BadgeList label="関連概念">
-					{req.systemReqConcepts.map((concept) => (
-						<Link key={concept.id} href={`/ideas/${concept.id}`}>
-							<Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] hover:bg-slate-100">
-								{concept.name}
-							</Badge>
-						</Link>
-					))}
-				</BadgeList>
-			)}
-
-			{req.systemReqImpacts && req.systemReqImpacts.length > 0 && (
-				<BadgeList label="影響領域">
-					{req.systemReqImpacts.map((impact, i) => (
-						<Badge key={i} variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px]">
-							{impact}
-						</Badge>
-					))}
-				</BadgeList>
-			)}
-
-			{req.systemReqAcceptanceCriteria && req.systemReqAcceptanceCriteria.length > 0 && (
-				<div className="ml-1 mb-2">
-					<div className="text-[11px] font-medium text-slate-400 uppercase tracking-wide mb-1">
-						受入条件
-					</div>
-					<ul className="list-disc pl-5 text-[13px] text-slate-700 space-y-0.5">
-						{req.systemReqAcceptanceCriteria.map((ac, i) => (
-							<li key={i}>{ac}</li>
-						))}
-					</ul>
-				</div>
-			)}
-
-			<BusinessRequirementLink req={req} />
-		</div>
-	);
-}
-
-function BadgeList({ label, children }: { label: string; children: React.ReactNode }) {
-	return (
-		<div className="ml-1 mb-2">
-			<div className="text-[11px] font-medium text-slate-400 uppercase tracking-wide mb-1">
-				{label}
-			</div>
-			<div className="flex flex-wrap gap-1.5">{children}</div>
-		</div>
-	);
-}
-
-function BusinessRequirementLink({ req }: { req: RelatedRequirementInfo }) {
-	if (!req.businessReqId || !req.businessId || !req.taskId) {
-		return (
-			<div className="ml-1 pl-3 border-l-2 border-slate-200 text-[12px] text-slate-500">
-				関連業務要件が未設定です。
-			</div>
-		);
-	}
-
-	return (
-		<div className="ml-1 pl-3 border-l-2 border-slate-200">
-			<Link
-				href={`/business/${req.businessId}/tasks/${req.taskId}`}
-				className="block hover:bg-slate-100/50 rounded px-2 py-1 -ml-2 transition-colors"
-			>
-				<div className="flex items-center gap-2">
-					<Badge
-						variant="outline"
-						className="border-emerald-200/60 bg-emerald-50 text-emerald-700 text-[12px] font-medium px-2 py-0.5"
-					>
-						{req.businessReqId}
-					</Badge>
-					<span className="text-[13px] text-slate-700">
-						{req.businessReqTitle}
-					</span>
-					<ExternalLink className="h-3 w-3 text-slate-400 ml-auto" />
-				</div>
-			</Link>
-		</div>
-	);
-}
-
-// ------------------------------------------------------------
-// System Design Section
-// ------------------------------------------------------------
-
-interface SystemDesignSectionProps {
-	systemDesign: SystemDesignItem[];
-}
-
-function SystemDesignSection({ systemDesign }: SystemDesignSectionProps) {
-	return (
-		<SectionCard title="システム設計">
-			{systemDesign.length === 0 ? (
-				<EmptyState message="まだ登録されていません。" />
-			) : (
-				<div className="space-y-3">
-					{systemDesign.map((item) => (
-						<DesignItem key={item.id} item={item} />
-					))}
-				</div>
-			)}
-		</SectionCard>
-	);
-}
-
-function DesignItem({ item }: { item: SystemDesignItem }) {
-	return (
-		<div className="rounded-md border border-slate-200 bg-slate-50/50 p-3">
-			<div className="flex items-center gap-2 mb-2">
-				<Badge
-					variant="outline"
-					className="border-slate-200/60 bg-slate-50 text-slate-600 text-[12px] font-medium px-2 py-0.5"
-				>
-					{getDesignCategoryLabel(item.category)}
-				</Badge>
-				<span className="text-[11px] text-slate-400 font-mono">{item.id}</span>
-				{item.priority === "high" && (
-					<Badge className="border-red-200/60 bg-red-50 text-red-700 text-[11px] font-medium px-2 py-0.5">
-						重要
-					</Badge>
-				)}
-			</div>
-			<div className="text-[13px] font-medium text-slate-900 mb-1">
-				{item.title}
-			</div>
-			<div className="text-[13px] text-slate-600 leading-relaxed">
-				{item.description}
-			</div>
-		</div>
-	);
-}
-
-// ------------------------------------------------------------
-// Implementation Section
-// ------------------------------------------------------------
-
-interface ImplementationSectionProps {
-	codeRefs: CodeRef[];
-}
-
-function ImplementationSection({ codeRefs }: ImplementationSectionProps) {
-	return (
-		<SectionCard title="実装">
-			{codeRefs.length === 0 ? (
-				<EmptyState message="まだ登録されていません。" />
-			) : (
-				<div className="space-y-3">
-					{codeRefs.map((ref, index) => (
-						<CodeRefItem key={index} codeRef={ref} />
-					))}
-				</div>
-			)}
-		</SectionCard>
-	);
-}
-
-function CodeRefItem({ codeRef }: { codeRef: CodeRef }) {
-	return (
-		<div className="rounded-md border border-slate-200 bg-white p-3">
-			<div className="space-y-2">
-				{codeRef.paths.map((path, i) => (
-					<div key={i} className="rounded-md bg-slate-50 p-3">
-						<code className="text-[13px] text-slate-800 font-mono">{path}</code>
-					</div>
-				))}
-			</div>
-		</div>
-	);
-}
+import {
+	BasicInfoSection,
+	SystemRequirementsSection,
+	SystemDesignSection,
+	ImplementationSection,
+} from "@/components/system-domains";
+import type { SystemFunction } from "@/lib/mock/data/types";
+import { getSystemFunctionById } from "@/lib/data/system-functions";
 
 // ============================================================
 // Page Layout Components
 // ============================================================
 
-interface PageLayoutProps {
-	children: React.ReactNode;
-}
-
-function PageLayout({ children }: PageLayoutProps) {
+function PageLayout({ children }: { children: React.ReactNode }): React.ReactNode {
 	return (
-		<>
-			<Sidebar />
-			<div className="ml-[280px] flex-1 min-h-screen bg-white">
-				<div className="mx-auto max-w-[1400px] px-8 py-4">{children}</div>
-			</div>
-		</>
+		<div className="flex-1 min-h-screen bg-white">
+			<div className="mx-auto max-w-[1400px] px-8 py-4">{children}</div>
+		</div>
 	);
 }
 
-function LoadingState() {
+function LoadingState(): React.ReactNode {
 	return (
 		<PageLayout>
 			<div className="text-slate-500">読み込み中...</div>
@@ -499,7 +38,7 @@ interface NotFoundStateProps {
 	error: string | null;
 }
 
-function NotFoundState({ domainId, error }: NotFoundStateProps) {
+function NotFoundState({ domainId, error }: NotFoundStateProps): React.ReactNode {
 	return (
 		<PageLayout>
 			<div className="text-center py-20">
@@ -517,6 +56,42 @@ function NotFoundState({ domainId, error }: NotFoundStateProps) {
 	);
 }
 
+interface PageHeaderProps {
+	domainId: string;
+	srfId: string;
+}
+
+function PageHeader({ domainId, srfId }: PageHeaderProps): React.ReactNode {
+	return (
+		<div className="flex items-center justify-between mb-4">
+			<Link
+				href={`/system-domains/${domainId}`}
+				className="inline-flex items-center gap-2 text-[14px] font-medium text-slate-600 hover:text-slate-900"
+			>
+				<ArrowLeft className="h-4 w-4" />
+				システム機能一覧に戻る
+			</Link>
+			<Link href={`/system-domains/${domainId}/functions/${srfId}/edit`}>
+				<Button variant="outline" className="h-8 gap-2 text-[14px]">
+					<Pencil className="h-4 w-4" />
+					編集
+				</Button>
+			</Link>
+		</div>
+	);
+}
+
+function PageTitle({ srf }: { srf: SystemFunction }): React.ReactNode {
+	return (
+		<div className="mb-4">
+			<h1 className="text-[32px] font-semibold tracking-tight text-slate-900 mb-2">
+				{srf.title}
+			</h1>
+			<p className="text-[13px] text-slate-500">システム機能: {srf.id}</p>
+		</div>
+	);
+}
+
 // ============================================================
 // Main Page Component
 // ============================================================
@@ -525,7 +100,7 @@ export default function SystemFunctionDetailPage({
 	params,
 }: {
 	params: Promise<{ id: string; srfId: string }>;
-}) {
+}): React.ReactNode {
 	const { id, srfId } = use(params);
 	const [srf, setSrf] = useState<SystemFunction | null>(null);
 	const [error, setError] = useState<string | null>(null);
@@ -533,10 +108,12 @@ export default function SystemFunctionDetailPage({
 
 	useEffect(() => {
 		let active = true;
+
 		async function fetchData(): Promise<void> {
 			setLoading(true);
 			const { data, error: fetchError } = await getSystemFunctionById(srfId);
 			if (!active) return;
+
 			if (fetchError) {
 				setError(fetchError);
 				setSrf(null);
@@ -546,6 +123,7 @@ export default function SystemFunctionDetailPage({
 			}
 			setLoading(false);
 		}
+
 		fetchData();
 		return () => {
 			active = false;
@@ -569,41 +147,5 @@ export default function SystemFunctionDetailPage({
 			<SystemDesignSection systemDesign={srf.systemDesign} />
 			<ImplementationSection codeRefs={srf.codeRefs} />
 		</PageLayout>
-	);
-}
-
-interface PageHeaderProps {
-	domainId: string;
-	srfId: string;
-}
-
-function PageHeader({ domainId, srfId }: PageHeaderProps) {
-	return (
-		<div className="flex items-center justify-between mb-4">
-			<Link
-				href={`/system-domains/${domainId}`}
-				className="inline-flex items-center gap-2 text-[14px] font-medium text-slate-600 hover:text-slate-900"
-			>
-				<ArrowLeft className="h-4 w-4" />
-				システム機能一覧に戻る
-			</Link>
-			<Link href={`/system-domains/${domainId}/functions/${srfId}/edit`}>
-				<Button variant="outline" className="h-8 gap-2 text-[14px]">
-					<Pencil className="h-4 w-4" />
-					編集
-				</Button>
-			</Link>
-		</div>
-	);
-}
-
-function PageTitle({ srf }: { srf: SystemFunction }) {
-	return (
-		<div className="mb-4">
-			<h1 className="text-[32px] font-semibold tracking-tight text-slate-900 mb-2">
-				{srf.title}
-			</h1>
-			<p className="text-[13px] text-slate-500">システム機能: {srf.id}</p>
-		</div>
 	);
 }
