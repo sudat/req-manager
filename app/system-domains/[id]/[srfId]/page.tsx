@@ -5,7 +5,7 @@ import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
-	BasicInfoSection,
+	FunctionSummaryCard,
 	SystemRequirementsSection,
 	SystemDesignSection,
 	ImplementationSection,
@@ -86,14 +86,11 @@ function PageHeader({ domainId, srfId }: PageHeaderProps): React.ReactNode {
 	);
 }
 
-function PageTitle({ srf }: { srf: SystemFunction }): React.ReactNode {
+function PageTitle(): React.ReactNode {
 	return (
-		<div className="mb-4">
-			<h1 className="text-[32px] font-semibold tracking-tight text-slate-900 mb-2">
-				{srf.title}
-			</h1>
-			<p className="text-[13px] text-slate-500">システム機能: {srf.id}</p>
-		</div>
+		<h1 className="text-[32px] font-semibold tracking-tight text-slate-900 mb-4">
+			システム機能詳細
+		</h1>
 	);
 }
 
@@ -146,8 +143,8 @@ export default function SystemFunctionDetailPage({
 	return (
 		<PageLayout>
 			<PageHeader domainId={id} srfId={srfId} />
-			<PageTitle srf={srf} />
-			<BasicInfoSection srf={srf} />
+			<PageTitle />
+			<FunctionSummaryCard srf={srf} domainId={id} />
 			<SystemRequirementsSection srfId={srf.id} />
 			<SystemDesignSection systemDesign={srf.systemDesign} />
 			<ImplementationSection codeRefs={srf.codeRefs} />

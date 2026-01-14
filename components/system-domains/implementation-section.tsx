@@ -8,21 +8,17 @@ interface ImplementationSectionProps {
 }
 
 export function ImplementationSection({ codeRefs }: ImplementationSectionProps): React.ReactNode {
-	if (codeRefs.length === 0) {
-		return (
-			<SectionCard title="実装">
-				<EmptyState message="まだ登録されていません。" />
-			</SectionCard>
-		);
-	}
-
 	return (
-		<SectionCard title="実装">
-			<div className="space-y-3">
-				{codeRefs.map((ref, index) => (
-					<CodeRefItem key={index} codeRef={ref} />
-				))}
-			</div>
+		<SectionCard title="実装" count={codeRefs.length}>
+			{codeRefs.length === 0 ? (
+				<EmptyState message="まだ登録されていません。" />
+			) : (
+				<div className="space-y-3">
+					{codeRefs.map((ref, index) => (
+						<CodeRefItem key={index} codeRef={ref} />
+					))}
+				</div>
+			)}
 		</SectionCard>
 	);
 }

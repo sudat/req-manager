@@ -147,7 +147,13 @@ function buildRelatedRequirements(
 
 		const relatedBizReqIds = sysReqToBizReqsMap.get(sysReq.id) ?? [];
 
-		if (relatedBizReqIds.length === 0) {
+		// 関連業務要件をまとめて取得
+		const relatedBusinessReqs = relatedBizReqIds
+			.map((id) => businessReqMap.get(id))
+			.filter((req): req is BusinessRequirement => req !== undefined);
+
+		// 関連業務要件がない場合、1つだけ表示
+		if (relatedBusinessReqs.length === 0) {
 			result.push({
 				systemReqId: sysReq.id,
 				systemReqTitle: sysReq.title,
@@ -159,27 +165,35 @@ function buildRelatedRequirements(
 				businessReqTitle: "",
 				businessId: taskBusinessMap.get(sysReq.taskId) ?? "",
 				taskId: sysReq.taskId,
+				relatedBusinessReqs: [],
 			});
 			continue;
 		}
 
-		for (const businessReqId of relatedBizReqIds) {
-			const businessReq = businessReqMap.get(businessReqId);
-			if (!businessReq) continue;
-			const businessId = taskBusinessMap.get(businessReq.taskId) ?? "";
-			result.push({
-				systemReqId: sysReq.id,
-				systemReqTitle: sysReq.title,
-				systemReqSummary: sysReq.summary,
-				systemReqConcepts,
-				systemReqImpacts: sysReq.impacts,
-				systemReqAcceptanceCriteria: sysReq.acceptanceCriteria,
-				businessReqId: businessReq.id,
-				businessReqTitle: businessReq.title,
-				businessId,
-				taskId: businessReq.taskId,
-			});
-		}
+		// 1つのシステム要件に対して、関連するすべての業務要件の情報を含める
+		// メインの業務要件（最初のもの）を表示用に使用
+		const mainBizReq = relatedBusinessReqs[0];
+		const mainBusinessId = taskBusinessMap.get(mainBizReq.taskId) ?? "";
+
+		result.push({
+			systemReqId: sysReq.id,
+			systemReqTitle: sysReq.title,
+			systemReqSummary: sysReq.summary,
+			systemReqConcepts,
+			systemReqImpacts: sysReq.impacts,
+			systemReqAcceptanceCriteria: sysReq.acceptanceCriteria,
+			businessReqId: mainBizReq.id,
+			businessReqTitle: mainBizReq.title,
+			businessId: mainBusinessId,
+			taskId: mainBizReq.taskId,
+			// 関連業務要件のリスト（UI側で使用可能）
+			relatedBusinessReqs: relatedBusinessReqs.map((req) => ({
+				id: req.id,
+				title: req.title,
+				taskId: req.taskId,
+				businessId: taskBusinessMap.get(req.taskId) ?? "",
+			})),
+		});
 	}
 
 	return result;

@@ -204,7 +204,7 @@ export function SystemDesignSection({
 	return (
 		<Card className="rounded-md border border-slate-200/60 bg-white mb-4">
 			<CardContent className="p-6">
-				<h2 className="text-[15px] font-semibold text-slate-900 mb-4">
+				<h2 className="text-[20px] font-semibold text-slate-900 mb-4">
 					システム設計
 				</h2>
 

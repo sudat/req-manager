@@ -10,21 +10,17 @@ interface SystemDesignSectionProps {
 }
 
 export function SystemDesignSection({ systemDesign }: SystemDesignSectionProps): React.ReactNode {
-	if (systemDesign.length === 0) {
-		return (
-			<SectionCard title="システム設計">
-				<EmptyState message="まだ登録されていません。" />
-			</SectionCard>
-		);
-	}
-
 	return (
-		<SectionCard title="システム設計">
-			<div className="space-y-3">
-				{systemDesign.map((item) => (
-					<DesignItem key={item.id} item={item} />
-				))}
-			</div>
+		<SectionCard title="システム設計" count={systemDesign.length}>
+			{systemDesign.length === 0 ? (
+				<EmptyState message="まだ登録されていません。" />
+			) : (
+				<div className="space-y-3">
+					{systemDesign.map((item) => (
+						<DesignItem key={item.id} item={item} />
+					))}
+				</div>
+			)}
 		</SectionCard>
 	);
 }

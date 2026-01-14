@@ -62,6 +62,12 @@ export interface RelatedRequirementInfo {
   businessReqTitle: string;
   businessId: string;        // BIZ-001
   taskId: string;            // TASK-003
+  relatedBusinessReqs?: Array<{    // 関連する業務要件のリスト（複数の場合）
+    id: string;
+    title: string;
+    taskId: string;
+    businessId: string;
+  }>;
 }
 
 // Business（業務）

@@ -216,7 +216,7 @@ function BusinessRequirementsSection({
 		<Card className="mt-4 rounded-md border border-slate-200/60 bg-white hover:border-slate-300/60 transition-colors">
       <CardContent className="p-3 space-y-2">
         <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-          <h3 className="text-[14px] font-semibold text-slate-900">業務要件</h3>
+          <h3 className="text-[20px] font-semibold text-slate-900">業務要件</h3>
           <Badge variant="outline" className="font-mono text-[11px] border-slate-200 bg-slate-50 text-slate-600 px-1.5 py-0">
             {requirements.length}
           </Badge>
@@ -262,7 +262,7 @@ function SystemRequirementsSection({
 		<Card className="mt-4 rounded-md border border-slate-200/60 bg-white hover:border-slate-300/60 transition-colors">
 			<CardContent className="p-3 space-y-2">
 				<div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-					<h3 className="text-[14px] font-semibold text-slate-900">関連システム要件</h3>
+					<h3 className="text-[20px] font-semibold text-slate-900">関連システム要件</h3>
 					<Badge variant="outline" className="font-mono text-[11px] border-slate-200 bg-slate-50 text-slate-600 px-1.5 py-0">
 						{requirements.length}
 					</Badge>

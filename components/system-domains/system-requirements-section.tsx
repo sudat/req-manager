@@ -30,21 +30,17 @@ export function SystemRequirementsSection({ srfId }: SystemRequirementsSectionPr
 		);
 	}
 
-	if (relatedReqs.length === 0) {
-		return (
-			<SectionCard title="システム要件">
-				<EmptyState message="まだ登録されていません。" />
-			</SectionCard>
-		);
-	}
-
 	return (
-		<SectionCard title="システム要件">
-			<div className="space-y-3">
-				{relatedReqs.map((req) => (
-					<RequirementItem key={`${req.systemReqId}:${req.businessReqId || "none"}`} req={req} />
-				))}
-			</div>
+		<SectionCard title="システム要件" count={relatedReqs.length}>
+			{relatedReqs.length === 0 ? (
+				<EmptyState message="まだ登録されていません。" />
+			) : (
+				<div className="space-y-3">
+					{relatedReqs.map((req) => (
+						<RequirementItem key={`${req.systemReqId}:${req.businessReqId || "none"}`} req={req} />
+					))}
+				</div>
+			)}
 		</SectionCard>
 	);
 }
