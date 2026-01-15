@@ -114,8 +114,11 @@ export interface Ticket {
   updatedAt: string;
 
   // 詳細ページ用フィールド
+  changeSummary?: string;  // 変更要約（1行）
+  expectedBenefit?: string; // 期待効果（1行）
   background?: string;     // 背景・目的の詳細
   impactRequirements?: TicketRequirementReference[];  // 影響要件
+  changeItems?: TicketChangeItem[]; // 変更内容（要件ごと）
   relatedConcepts?: TicketConceptReference[];         // 関連概念（AI候補）
   versionHistory?: TicketVersionApplication[];        // 版適用履歴
 }
@@ -125,6 +128,20 @@ export interface TicketRequirementReference {
   id: string;      // "BR-TASK-003-001" or "BR-TICKET-CR-004-001"
   title: string;   // "適格請求書（インボイス）形式で請求書を発行する"
   type: "業務要件" | "システム要件";
+  businessName?: string; // 例: 債権管理
+  area?: BusinessArea;   // 例: AR
+}
+
+export interface TicketChangeItem {
+  refId: string;     // 要件ID
+  refTitle: string;  // 要件タイトル
+  refType: "業務要件" | "システム要件";
+  changeType: "追加" | "変更" | "削除";
+  beforeText: string;
+  afterText: string;
+  acceptanceCriteria: string[];
+  businessName?: string; // 例: 債権管理
+  area?: BusinessArea;   // 例: AR
 }
 
 // チケット詳細用：概念参照

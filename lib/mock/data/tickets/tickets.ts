@@ -14,27 +14,67 @@ export const tickets: Ticket[] = [
     requestedBy: "経理部長",
     createdAt: "2024-01-15T00:00:00Z",
     updatedAt: "2024-02-01T00:00:00Z",
+    changeSummary: "請求書の必須記載項目と税率別内訳の表示・計算を更新する",
+    expectedBenefit: "法令対応と税額計算ミスの削減",
     background: "2023年10月より開始されるインボイス制度（適格請求書等保存方式）により、請求書には登録番号の記載および税率ごとの区分記載が義務付けられる。現行の請求書フォーマットではこれらの要件を満たしていないため、法令対応に向けた緊急の改修が必要。また、複数税率（10%、8%）に対応した税額計算ロジックの見直しもあわせて実施する。",
     impactRequirements: [
       {
         id: "BR-TASK-003-001",
         title: "適格請求書（インボイス）形式で請求書を発行する",
-        type: "業務要件"
+        type: "業務要件",
+        businessName: "債権管理",
+        area: "AR"
       },
       {
         id: "BR-TASK-003-002",
         title: "電子請求書を顧客ポータルへ送信する",
-        type: "業務要件"
+        type: "業務要件",
+        businessName: "債権管理",
+        area: "AR"
       },
       {
         id: "SR-TASK-003-001",
         title: "税率別内訳を集計し、帳票出力へ反映する",
-        type: "システム要件"
+        type: "システム要件",
+        businessName: "債権管理",
+        area: "AR"
       },
       {
         id: "SR-TASK-003-002",
         title: "税率別内訳集計機能",
-        type: "システム要件"
+        type: "システム要件",
+        businessName: "債権管理",
+        area: "AR"
+      }
+    ],
+    changeItems: [
+      {
+        refId: "BR-TASK-003-001",
+        refTitle: "適格請求書（インボイス）形式で請求書を発行する",
+        refType: "業務要件",
+        changeType: "変更",
+        beforeText: "請求書に登録番号と税率別内訳は記載していない。",
+        afterText: "登録番号と税率別内訳を必須表示とし、税率ごとに区分して出力する。",
+        acceptanceCriteria: [
+          "登録番号が請求書に表示される",
+          "税率（10%/8%）ごとに内訳が分かれて表示される"
+        ],
+        businessName: "債権管理",
+        area: "AR"
+      },
+      {
+        refId: "SR-TASK-003-001",
+        refTitle: "税率別内訳を集計し、帳票出力へ反映する",
+        refType: "システム要件",
+        changeType: "変更",
+        beforeText: "税率別の集計は行わず、合計税額のみ出力している。",
+        afterText: "税率別に集計し、帳票出力の税額欄へ反映する。",
+        acceptanceCriteria: [
+          "税率別の税額が帳票出力に反映される",
+          "税率別の合計と総合計が一致する"
+        ],
+        businessName: "債権管理",
+        area: "AR"
       }
     ],
     relatedConcepts: [

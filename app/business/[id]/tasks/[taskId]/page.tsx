@@ -11,6 +11,7 @@ import { useTaskDetail } from "./use-task-detail";
 import { BusinessRequirementCard } from "./business-requirement-card";
 import { SystemRequirementCard } from "./system-requirement-card";
 import { CardSkeleton } from "@/components/skeleton";
+import { MarkdownRenderer } from "@/components/markdown/markdown-renderer";
 
 type PageProps = {
   params: Promise<{ id: string; taskId: string }>;
@@ -168,9 +169,7 @@ function TaskSummaryCard({
           {displayTaskName}
         </h2>
 
-        <p className="text-[14px] text-slate-700 leading-relaxed">
-          {displayTaskSummary}
-        </p>
+        <MarkdownRenderer content={displayTaskSummary} />
 
         <div className="flex flex-wrap gap-x-6 gap-y-2 pt-2 border-t border-slate-100 text-[13px]">
           <div>
