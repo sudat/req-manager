@@ -1,5 +1,5 @@
 import { supabase, getSupabaseConfigError } from "@/lib/supabase/client";
-import type { Concept, BusinessArea } from "@/lib/mock/data/types";
+import type { Concept, BusinessArea } from "@/lib/domain";
 
 export type ConceptInput = {
   id: string;

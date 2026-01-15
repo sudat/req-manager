@@ -2,7 +2,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { SectionCard, EmptyState } from "./section-card";
-import type { SystemDesignItem } from "@/lib/mock/data/types";
+import type { SystemDesignItem } from "@/lib/domain";
 import { getDesignCategoryLabel } from "@/lib/data/system-functions";
 
 interface SystemDesignSectionProps {

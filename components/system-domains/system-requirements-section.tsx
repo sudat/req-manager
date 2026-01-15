@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { SectionCard, EmptyState } from "./section-card";
 import { useRelatedRequirements } from "@/hooks/use-related-requirements";
-import type { RelatedRequirementInfo } from "@/lib/mock/data/types";
+import type { RelatedRequirementInfo } from "@/lib/domain";
 
 interface SystemRequirementsSectionProps {
 	srfId: string;

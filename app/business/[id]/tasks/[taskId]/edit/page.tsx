@@ -1,39 +1,24 @@
-"use client"
+"use client";
 
-import { use, useMemo, useState, useEffect } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Save, RotateCcw, Loader2, AlertCircle } from "lucide-react";
-import { FormField } from "@/components/forms/form-field";
+import { use, useEffect, useMemo, useState } from "react";
 import { RequirementListSection } from "@/components/forms/requirement-list-section";
-import type { TaskKnowledge, Requirement } from "@/lib/mock/task-knowledge";
-import { getDefaultTaskKnowledge } from "@/lib/mock/task-knowledge";
-import {
-	syncTaskBasicInfo,
-	syncBusinessRequirements,
-	syncSystemRequirements,
-} from "@/lib/data/task-sync";
-import {
-	listBusinessRequirementsByTaskId,
-} from "@/lib/data/business-requirements";
-import {
-	listSystemRequirementsByTaskId,
-} from "@/lib/data/system-requirements";
-import {
-	fromBusinessRequirement,
-	fromSystemRequirement,
-} from "@/lib/data/requirement-mapper";
+import { SelectionDialog } from "@/components/forms/SelectionDialog";
+import type { TaskKnowledge, SelectionDialogType } from "@/lib/domain";
+import { getDefaultTaskKnowledge } from "@/lib/domain";
+import { listBusinessRequirementsByTaskId } from "@/lib/data/business-requirements";
+import { listSystemRequirementsByTaskId } from "@/lib/data/system-requirements";
+import { fromBusinessRequirement, fromSystemRequirement } from "@/lib/data/requirement-mapper";
+import { removeFromStorage } from "@/lib/utils/local-storage";
 
-function nextSequentialId(prefix: string, existingIds: string[]): string {
-	const used = new Set(existingIds);
-	for (let i = 1; i < 1000; i++) {
-		const candidate = `${prefix}-${String(i).padStart(3, "0")}`;
-		if (!used.has(candidate)) return candidate;
-	}
-	return `${prefix}-${Date.now()}`;
-}
+// Hooks
+import { useMasterData } from "./hooks/useMasterData";
+import { useTaskSave } from "./hooks/useTaskSave";
+import { useTaskEditForm } from "./hooks/useTaskEditForm";
+
+// Components
+import { TaskEditHeader } from "./components/TaskEditHeader";
+import { TaskBasicInfoCard } from "./components/TaskBasicInfoCard";
+import { SaveStatusAlert } from "./components/SaveStatusAlert";
 
 export default function TaskDetailEditPage({
 	params,
@@ -41,18 +26,43 @@ export default function TaskDetailEditPage({
 	params: Promise<{ id: string; taskId: string }>;
 }): React.ReactElement {
 	const { id, taskId } = use(params);
-	const router = useRouter();
-
 	const storageKey = `task-knowledge:${id}:${taskId}`;
+
 	const defaultKnowledge = useMemo(
 		() => getDefaultTaskKnowledge({ bizId: id, taskId }),
-		[id, taskId],
+		[id, taskId]
 	);
 
-	const [knowledge, setKnowledge] = useState<TaskKnowledge>(defaultKnowledge);
+	// データロード状態
 	const [isLoading, setIsLoading] = useState(true);
-	const [isSaving, setIsSaving] = useState(false);
-	const [saveError, setSaveError] = useState<string | null>(null);
+
+	// マスターデータ取得
+	const {
+		concepts,
+		systemFunctions,
+		systemDomains,
+		conceptMap,
+		systemFunctionMap,
+		systemDomainMap,
+	} = useMasterData();
+
+	// フォーム状態管理
+	const { knowledge, updateField, updateRequirement, removeRequirement, addRequirement, reset } =
+		useTaskEditForm({
+			defaultKnowledge,
+			taskId,
+			onReset: () => {
+				clearError();
+				removeFromStorage(storageKey);
+			},
+		});
+
+	// 保存処理
+	const { handleSave, isSaving, saveError, clearError } = useTaskSave({
+		bizId: id,
+		taskId,
+		storageKey,
+	});
 
 	// マウント時にDBから既存データを読み込む
 	useEffect(() => {
@@ -63,27 +73,15 @@ export default function TaskDetailEditPage({
 				const { data: businessReqs } = await listBusinessRequirementsByTaskId(taskId);
 				const { data: systemReqs } = await listSystemRequirementsByTaskId(taskId);
 
-				const { listConcepts } = await import("@/lib/data/concepts");
-				const { data: concepts } = await listConcepts();
-				const conceptMap = new Map(concepts?.map((c) => [c.id, c.name]) ?? []);
+				const loadedBusinessRequirements =
+					businessReqs?.map((br) => fromBusinessRequirement(br)) ?? [];
+				const loadedSystemRequirements =
+					systemReqs?.map((sr) => fromSystemRequirement(sr)) ?? [];
 
-				const loadedBusinessRequirements = businessReqs?.map((br) =>
-					fromBusinessRequirement(br, conceptMap)
-				) ?? [];
-
-				const loadedSystemRequirements = systemReqs?.map((sr) =>
-					fromSystemRequirement(sr, conceptMap)
-				) ?? [];
-
-				setKnowledge((prev) => ({
-					...prev,
-					businessRequirements: loadedBusinessRequirements.length > 0
-						? loadedBusinessRequirements
-						: prev.businessRequirements,
-					systemRequirements: loadedSystemRequirements.length > 0
-						? loadedSystemRequirements
-						: prev.systemRequirements,
-				}));
+				if (loadedBusinessRequirements.length > 0 || loadedSystemRequirements.length > 0) {
+					updateField("businessRequirements", loadedBusinessRequirements);
+					updateField("systemRequirements", loadedSystemRequirements);
+				}
 			} catch (e) {
 				console.error("データ読み込みエラー:", e);
 			} finally {
@@ -94,252 +92,54 @@ export default function TaskDetailEditPage({
 		loadExistingData();
 	}, [taskId]);
 
-	const updateField = <K extends keyof TaskKnowledge>(key: K, value: TaskKnowledge[K]): void => {
-		setKnowledge((prev) => ({ ...prev, [key]: value }));
-	};
+	// ダイアログ状態管理
+	const [dialogState, setDialogState] = useState<{
+		type: SelectionDialogType;
+		reqId: string;
+	} | null>(null);
 
-	const updateRequirement = (
-		listKey: "businessRequirements" | "systemRequirements",
-		reqId: string,
-		patch: Partial<Requirement>
-	): void => {
-		setKnowledge((prev) => ({
-			...prev,
-			[listKey]: prev[listKey].map((r) => (r.id === reqId ? { ...r, ...patch } : r)),
-		}));
-	};
+	// アクティブな要件
+	const activeRequirement = useMemo(
+		() =>
+			dialogState
+				? [...knowledge.businessRequirements, ...knowledge.systemRequirements].find(
+						(r) => r.id === dialogState.reqId
+				  ) ?? null
+				: null,
+		[dialogState, knowledge.businessRequirements, knowledge.systemRequirements]
+	);
 
-	const removeRequirement = (
-		listKey: "businessRequirements" | "systemRequirements",
-		reqId: string
-	): void => {
-		setKnowledge((prev) => ({
-			...prev,
-			[listKey]: prev[listKey].filter((r) => r.id !== reqId),
-		}));
-	};
+	// ダイアログハンドラー
+	function handleOpenDialog(type: SelectionDialogType, reqId: string): void {
+		setDialogState({ type, reqId });
+	}
 
-	const addRequirement = (type: Requirement["type"]): void => {
-		setKnowledge((prev) => {
-			const listKey = type === "業務要件" ? "businessRequirements" : "systemRequirements";
-			const existingIds = [...prev.businessRequirements, ...prev.systemRequirements].map((r) => r.id);
-			const prefix = type === "業務要件" ? `BR-${taskId}` : `SR-${taskId}`;
-			const newId = nextSequentialId(prefix, existingIds);
-
-			const nextReq: Requirement = {
-				id: newId,
-				type,
-				title: "",
-				summary: "",
-				concepts: [],
-				impacts: [],
-				acceptanceCriteria: [],
-				related: [],
-			};
-
-			return {
-				...prev,
-				[listKey]: [...prev[listKey], nextReq],
-			};
-		});
-	};
-
-	const handleSave = async (): Promise<void> => {
-		setIsSaving(true);
-		setSaveError(null);
-
-		try {
-			// LocalStorageにバックアップ
-			try {
-				window.localStorage.setItem(storageKey, JSON.stringify(knowledge));
-			} catch {
-				// LocalStorage保存失敗は無視
-			}
-
-			// タスク基本情報を同期
-			const taskError = await syncTaskBasicInfo(
-				taskId,
-				knowledge.taskName,
-				knowledge.taskSummary,
-				knowledge.person ?? "",
-				knowledge.input ?? "",
-				knowledge.output ?? "",
-			);
-			if (taskError) {
-				setSaveError(taskError);
-				return;
-			}
-
-			// 業務要件を同期
-			const bizError = await syncBusinessRequirements(taskId, knowledge.businessRequirements);
-			if (bizError) {
-				setSaveError(bizError);
-				return;
-			}
-
-			// システム要件を同期
-			const sysError = await syncSystemRequirements(taskId, knowledge.systemRequirements);
-			if (sysError) {
-				setSaveError(sysError);
-				return;
-			}
-
-			// 成功時はLocalStorageをクリア
-			try {
-				window.localStorage.removeItem(storageKey);
-			} catch {
-				// クリア失敗は無視
-			}
-
-			router.push(`/business/${id}/tasks/${taskId}`);
-		} catch (e) {
-			setSaveError(e instanceof Error ? e.message : String(e));
-		} finally {
-			setIsSaving(false);
-		}
-	};
-
-	const handleReset = (): void => {
-		try {
-			window.localStorage.removeItem(storageKey);
-		} catch {
-			// noop
-		}
-		setKnowledge(defaultKnowledge);
-		setSaveError(null);
-	};
+	function handleCloseDialog(): void {
+		setDialogState(null);
+	}
 
 	return (
 		<div className="flex-1 min-h-screen bg-white">
 			<div className="mx-auto max-w-[1400px] px-8 py-6">
-				{/* ヘッダー: 戻るリンク・アクションボタン */}
-				<div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-					<Link
-						href={`/business/${id}/tasks/${taskId}`}
-						className="inline-flex items-center gap-2 text-[14px] font-medium text-slate-600 hover:text-slate-900"
-					>
-						<ArrowLeft className="h-4 w-4" />
-						業務タスク詳細に戻る
-					</Link>
-					<div className="flex items-center gap-2">
-						<Button
-							variant="outline"
-							className="h-8 gap-2 text-[14px]"
-							onClick={handleReset}
-							disabled={isLoading || isSaving}
-						>
-							<RotateCcw className="h-4 w-4" />
-							リセット
-						</Button>
-						<Button
-							className="h-8 gap-2 text-[14px] bg-slate-900 hover:bg-slate-800"
-							onClick={handleSave}
-							disabled={isLoading || isSaving}
-						>
-							{isSaving ? (
-								<>
-									<Loader2 className="h-4 w-4 animate-spin" />
-									保存中...
-								</>
-							) : (
-								<>
-									<Save className="h-4 w-4" />
-									保存
-								</>
-							)}
-						</Button>
-					</div>
-				</div>
+				{/* ヘッダー */}
+				<TaskEditHeader
+					bizId={id}
+					taskId={taskId}
+					isLoading={isLoading}
+					isSaving={isSaving}
+					onReset={reset}
+					onSave={() => handleSave(knowledge)}
+				/>
 
-				<h1 className="text-[32px] font-semibold tracking-tight text-slate-900 mb-2">業務タスク編集</h1>
+				<h1 className="text-[32px] font-semibold tracking-tight text-slate-900 mb-2">
+					業務タスク編集
+				</h1>
 
-				{/* ローディング表示 */}
-				{isLoading && (
-					<div className="mb-6 flex items-center gap-2 text-[13px] text-slate-500">
-						<Loader2 className="h-4 w-4 animate-spin" />
-						データを読み込み中...
-					</div>
-				)}
-
-				{/* エラー表示 */}
-				{saveError && (
-					<div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-md flex items-start gap-2">
-						<AlertCircle className="h-4 w-4 text-rose-600 mt-0.5" />
-						<div className="text-[13px] text-rose-700">保存エラー: {saveError}</div>
-					</div>
-				)}
+				{/* ローディング・エラー表示 */}
+				<SaveStatusAlert isLoading={isLoading} saveError={saveError} />
 
 				{/* 基本情報カード */}
-				<Card className="rounded-md border border-slate-200">
-					<CardContent className="p-3 space-y-3">
-						<div className="flex items-center gap-3 text-[12px] text-slate-500">
-							<span className="font-mono">{knowledge.bizId}</span>
-							<span className="text-slate-300">/</span>
-							<span className="font-mono">{knowledge.taskId}</span>
-						</div>
-
-						<FormField
-							type="input"
-							label="業務タスク"
-							value={knowledge.taskName}
-							onChange={(v) => updateField("taskName", v)}
-							inputClassName="text-[16px] font-semibold"
-						/>
-
-						<FormField
-							type="textarea"
-							label="業務概要"
-							value={knowledge.taskSummary}
-							onChange={(v) => updateField("taskSummary", v)}
-						/>
-
-						{/* Markdownガイドライン */}
-						<div className="p-2 bg-slate-50 border border-slate-200 rounded-md">
-							<div className="text-[11px] font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
-								Markdown記法ガイド
-							</div>
-							<div className="text-[12px] text-slate-600 space-y-1">
-								<p><strong>見出し:</strong> ## 見出し2 ### 見出し3</p>
-								<p><strong>箇条書き:</strong> - 項目1</p>
-								<p><strong>番号付き:</strong> 1. 項目1</p>
-								<p><strong>強調:</strong> **太字** *斜体*</p>
-							</div>
-							<div className="mt-2 pt-2 border-t border-slate-200">
-								<div className="text-[11px] font-semibold text-slate-600 mb-1">記載例:</div>
-								<div className="text-[11px] text-slate-500 bg-white p-2 rounded border border-slate-200 font-mono whitespace-pre-wrap">## プロセス概要
-
-- **担当者**が**タイミング**で**アクション**を実行
-  1. 最初の手順
-  2. 次の手順
-
-## 注意事項
-
-* 重要なポイントは箇条書きで</div>
-							</div>
-						</div>
-
-						<div className="grid gap-3 md:grid-cols-3">
-							<FormField
-								type="input"
-								label="担当者"
-								value={knowledge.person ?? ""}
-								onChange={(v) => updateField("person", v)}
-							/>
-							<FormField
-								type="input"
-								label="インプット"
-								value={knowledge.input ?? ""}
-								onChange={(v) => updateField("input", v)}
-							/>
-							<FormField
-								type="input"
-								label="アウトプット"
-								value={knowledge.output ?? ""}
-								onChange={(v) => updateField("output", v)}
-							/>
-						</div>
-					</CardContent>
-				</Card>
+				<TaskBasicInfoCard knowledge={knowledge} onFieldChange={updateField} />
 
 				{/* 業務要件セクション */}
 				<RequirementListSection
@@ -348,8 +148,43 @@ export default function TaskDetailEditPage({
 					onAdd={() => addRequirement("業務要件")}
 					onUpdate={(reqId, patch) => updateRequirement("businessRequirements", reqId, patch)}
 					onRemove={(reqId) => removeRequirement("businessRequirements", reqId)}
+					conceptMap={conceptMap}
+					systemFunctionMap={systemFunctionMap}
+					systemDomainMap={systemDomainMap}
+					onOpenDialog={handleOpenDialog}
+				/>
+
+				{/* システム要件セクション */}
+				<RequirementListSection
+					title="システム要件"
+					requirements={knowledge.systemRequirements}
+					onAdd={() => addRequirement("システム要件")}
+					onUpdate={(reqId, patch) =>
+						updateRequirement("systemRequirements", reqId, patch)
+					}
+					onRemove={(reqId) => removeRequirement("systemRequirements", reqId)}
+					conceptMap={conceptMap}
+					systemFunctionMap={systemFunctionMap}
+					systemDomainMap={systemDomainMap}
+					onOpenDialog={handleOpenDialog}
 				/>
 			</div>
+
+			{/* 選択ダイアログ */}
+			<SelectionDialog
+				dialogState={dialogState}
+				onClose={handleCloseDialog}
+				activeRequirement={activeRequirement}
+				concepts={concepts}
+				systemFunctions={systemFunctions}
+				systemDomains={systemDomains}
+				onUpdateRequirement={(reqId, patch) => {
+					const listKey = knowledge.businessRequirements.find((r) => r.id === reqId)
+						? "businessRequirements"
+						: "systemRequirements";
+					updateRequirement(listKey, reqId, patch);
+				}}
+			/>
 		</div>
 	);
 }

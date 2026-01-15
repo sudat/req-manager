@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import type { SystemFunction } from "@/lib/mock/data/types";
+import type { SystemFunction } from "@/lib/domain";
 
 interface FunctionSummaryCardProps {
 	srf: SystemFunction;

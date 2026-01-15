@@ -11,7 +11,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import type { SrfCategory, SrfStatus } from "@/lib/mock/data/types";
+import type { SrfCategory, SrfStatus } from "@/lib/domain";
 
 // ============================================
 // 型定義

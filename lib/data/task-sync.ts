@@ -1,4 +1,4 @@
-import type { Requirement } from "@/lib/mock/task-knowledge";
+import type { Requirement } from "@/lib/domain";
 import {
 	listBusinessRequirementsByTaskId,
 	createBusinessRequirements,
@@ -15,6 +15,30 @@ import {
 	toBusinessRequirementInput,
 	toSystemRequirementInput,
 } from "@/lib/data/requirement-mapper";
+
+/**
+ * 要件の変更を検出する（ジェネリック版）
+ * @param req 編集後の要件
+ * @param existing DBから取得した既存要件
+ * @returns 変更がある場合はtrue
+ */
+export function hasRequirementChanged<T extends {
+	title: string;
+	summary: string;
+	conceptIds: string[];
+	srfId: string | null;
+	systemDomainIds: string[];
+	acceptanceCriteria: string[];
+}>(req: T, existing: T): boolean {
+	return !(
+		req.title === existing.title &&
+		req.summary === existing.summary &&
+		JSON.stringify(req.conceptIds) === JSON.stringify(existing.conceptIds) &&
+		req.srfId === existing.srfId &&
+		JSON.stringify(req.systemDomainIds) === JSON.stringify(existing.systemDomainIds ?? []) &&
+		JSON.stringify(req.acceptanceCriteria) === JSON.stringify(existing.acceptanceCriteria)
+	);
+}
 
 /**
  * 業務要件をDBに同期する
@@ -63,15 +87,8 @@ export async function syncBusinessRequirements(
 			const existing = existingReqs?.find((r) => r.id === req.id);
 			if (!existing) continue;
 
-			// 変更がなければスキップ
-			if (
-				req.title === existing.title &&
-				req.summary === existing.summary &&
-				JSON.stringify(req.concepts.map((c) => c.id)) === JSON.stringify(existing.conceptIds) &&
-				(req.srfId ?? null) === existing.srfId &&
-				JSON.stringify(req.impacts) === JSON.stringify(existing.impacts) &&
-				JSON.stringify(req.acceptanceCriteria) === JSON.stringify(existing.acceptanceCriteria)
-			) {
+			// 変更がなければスキップ（型キャストを使用）
+			if (!hasRequirementChanged(req as unknown as Requirement, existing as unknown as Requirement)) {
 				continue;
 			}
 
@@ -133,15 +150,8 @@ export async function syncSystemRequirements(
 			const existing = existingReqs?.find((r) => r.id === req.id);
 			if (!existing) continue;
 
-			// 変更がなければスキップ
-			if (
-				req.title === existing.title &&
-				req.summary === existing.summary &&
-				JSON.stringify(req.concepts.map((c) => c.id)) === JSON.stringify(existing.conceptIds) &&
-				(req.srfId ?? null) === existing.srfId &&
-				JSON.stringify(req.impacts) === JSON.stringify(existing.impacts) &&
-				JSON.stringify(req.acceptanceCriteria) === JSON.stringify(existing.acceptanceCriteria)
-			) {
+			// 変更がなければスキップ（型キャストを使用）
+			if (!hasRequirementChanged(req as unknown as Requirement, existing as unknown as Requirement)) {
 				continue;
 			}
 

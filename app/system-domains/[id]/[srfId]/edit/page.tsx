@@ -6,7 +6,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { MobileHeader } from "@/components/layout/mobile-header";
 import { Button } from "@/components/ui/button";
-import type { SystemFunction } from "@/lib/mock/data/types";
+import type { SystemFunction } from "@/lib/domain";
 import { useSystemFunctionForm } from "./hooks/useSystemFunctionForm";
 import {
 	BasicInfoSection,

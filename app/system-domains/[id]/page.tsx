@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ArrowLeft, Plus, Eye, Pencil, Trash2, Search } from "lucide-react";
-import type { SystemFunction, SrfCategory, SrfStatus } from "@/lib/mock/data/types";
+import type { SystemFunction, SrfCategory, SrfStatus } from "@/lib/domain";
 import { listSystemFunctionsByDomain, deleteSystemFunction } from "@/lib/data/system-functions";
 import { TableSkeleton } from "@/components/skeleton";
 import { confirmDelete } from "@/lib/ui/confirm";

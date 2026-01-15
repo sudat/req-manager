@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import type { TicketChangeItem } from "@/lib/mock/data/types";
+import type { TicketChangeItem } from "@/lib/domain";
 
 interface TicketChangeItemsCardProps {
   changeItems: TicketChangeItem[];

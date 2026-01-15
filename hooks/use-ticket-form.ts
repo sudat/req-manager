@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Ticket, TicketStatus, TicketPriority, BusinessArea, TicketChangeItem } from "@/lib/mock/data/types";
+import type { Ticket, TicketStatus, TicketPriority, BusinessArea, TicketChangeItem } from "@/lib/domain";
 
 export function useTicketForm(existingTicket?: Ticket) {
   const [title, setTitle] = useState(existingTicket?.title || "");

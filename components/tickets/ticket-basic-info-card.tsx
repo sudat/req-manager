@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { statusLabels, priorityLabels, formatDate } from "@/lib/utils/ticket-labels";
-import type { Ticket } from "@/lib/mock/data/types";
+import type { Ticket } from "@/lib/domain";
 
 interface TicketBasicInfoCardProps {
   ticket: Ticket;

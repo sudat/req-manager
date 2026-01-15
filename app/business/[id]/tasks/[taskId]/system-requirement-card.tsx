@@ -4,21 +4,22 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink } from "lucide-react";
 import type { SystemRequirement } from "@/lib/data/system-requirements";
-import { getSystemFunctionById } from "@/lib/mock/data";
 
 type SystemRequirementCardProps = {
 	requirement: SystemRequirement;
 	conceptMap: Map<string, string>;
+	systemFunctions: { id: string; name: string; systemDomainId: string | null }[];
 	systemFunctionDomainMap: Map<string, string | null>;
 };
 
 export function SystemRequirementCard({
 	requirement,
 	conceptMap,
+	systemFunctions,
 	systemFunctionDomainMap,
 }: SystemRequirementCardProps) {
-	const srf = requirement.srfId ? getSystemFunctionById(requirement.srfId) : undefined;
-	const srfSummaryShort = srf?.summary?.split(":")[0] || srf?.summary?.split("。")[0] || "";
+	const srf = requirement.srfId ? systemFunctions.find((srf) => srf.id === requirement.srfId) : undefined;
+	const srfSummaryShort = srf?.name ?? "";
 
 	// conceptIdsからconceptsに変換
 	const concepts = requirement.conceptIds.map((id) => ({
@@ -29,11 +30,22 @@ export function SystemRequirementCard({
   return (
     <div className="rounded-md border border-slate-200 bg-slate-50/50 p-3">
       <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
-        <div className="flex-1">
-          <div className="font-mono text-[11px] text-slate-400">{requirement.id}</div>
-          <div className="text-[14px] font-medium text-slate-900 mt-1">{requirement.title}</div>
-          <div className="mt-1 text-[13px] text-slate-600">{requirement.summary}</div>
-        </div>
+        {srf ? (
+          <Link
+            href={systemFunctionDomainMap.get(srf.id) ? `/system-domains/${systemFunctionDomainMap.get(srf.id)}/${srf.id}` : "/system-domains"}
+            className="flex-1 hover:bg-white/50 rounded p-2 -m-2 transition-colors"
+          >
+            <div className="font-mono text-[11px] text-slate-400">{requirement.id}</div>
+            <div className="text-[14px] font-medium text-slate-900 mt-1">{requirement.title}</div>
+            <div className="mt-1 text-[13px] text-slate-600">{requirement.summary}</div>
+          </Link>
+        ) : (
+          <div className="flex-1">
+            <div className="font-mono text-[11px] text-slate-400">{requirement.id}</div>
+            <div className="text-[14px] font-medium text-slate-900 mt-1">{requirement.title}</div>
+            <div className="mt-1 text-[13px] text-slate-600">{requirement.summary}</div>
+          </div>
+        )}
         <Badge variant="outline" className="border-blue-200/60 bg-blue-50 text-blue-700 text-[12px] font-medium px-2 py-0.5">
           システム要件
         </Badge>

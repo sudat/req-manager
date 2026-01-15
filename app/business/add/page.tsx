@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { listBusinesses, createBusiness } from "@/lib/data/businesses";
 import { nextSequentialId } from "@/lib/data/id";
-import type { BusinessArea } from "@/lib/mock/data/types";
+import type { BusinessArea } from "@/lib/domain";
 
 const areaPattern = /^[A-Z_-]+$/;
 

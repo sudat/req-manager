@@ -1,4 +1,4 @@
-import type { TicketStatus, TicketPriority } from "@/lib/mock/data/types";
+import type { TicketStatus, TicketPriority } from "@/lib/domain";
 
 export const statusLabels: Record<TicketStatus, string> = {
   open: "未対応",

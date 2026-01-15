@@ -1,5 +1,5 @@
 import { supabase, getSupabaseConfigError } from "@/lib/supabase/client";
-import type { SystemFunction, DesignItemCategory, SrfCategory, SrfStatus } from "@/lib/mock/data/types";
+import type { SystemFunction, DesignItemCategory, SrfCategory, SrfStatus } from "@/lib/domain";
 
 export type SystemFunctionInput = {
   id: string;

@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Pencil, FileText, Plus, Scissors, Trash2 } from "lucide-react";
 import { getRelatedRequirements, type RequirementReference } from "@/lib/mock/data";
-import type { Concept } from "@/lib/mock/data/types";
+import type { Concept } from "@/lib/domain";
 import { getConceptById, deleteConcept } from "@/lib/data/concepts";
 import { CardSkeleton, PageHeaderSkeleton } from "@/components/skeleton";
 import { confirmDelete } from "@/lib/ui/confirm";

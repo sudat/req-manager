@@ -11,7 +11,7 @@ import type {
 	SrfStatus,
 	DesignItemCategory,
 	SystemDesignItem,
-} from "@/lib/mock/data/types";
+} from "@/lib/domain";
 
 // ============================================
 // 型定義

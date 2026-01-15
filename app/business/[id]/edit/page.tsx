@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { getBusinessById, updateBusiness } from "@/lib/data/businesses";
-import type { Business } from "@/lib/mock/data/types";
+import type { Business } from "@/lib/domain";
 
 const areaPattern = /^[A-Z_-]+$/;
 

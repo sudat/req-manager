@@ -10,7 +10,7 @@ import {
 	SystemDesignSection,
 	ImplementationSection,
 } from "@/components/system-domains";
-import type { SystemFunction } from "@/lib/mock/data/types";
+import type { SystemFunction } from "@/lib/domain";
 import { getSystemFunctionById } from "@/lib/data/system-functions";
 import { PageHeaderSkeleton, CardSkeleton } from "@/components/skeleton";
 

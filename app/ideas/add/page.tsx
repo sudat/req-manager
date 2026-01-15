@@ -12,7 +12,7 @@ import { Card } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
 import { listConcepts, createConcept } from "@/lib/data/concepts";
 import { nextSequentialId } from "@/lib/data/id";
-import type { BusinessArea } from "@/lib/mock/data/types";
+import type { BusinessArea } from "@/lib/domain";
 
 const areaOptions: BusinessArea[] = ["AR", "AP", "GL"];
 

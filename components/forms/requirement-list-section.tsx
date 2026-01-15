@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus } from "lucide-react";
 import { RequirementCard } from "./requirement-card";
-import type { Requirement } from "@/lib/mock/task-knowledge";
+import type { Requirement, SelectionDialogType } from "@/lib/domain";
 
 type RequirementListSectionProps = {
 	title: string;
@@ -13,6 +13,10 @@ type RequirementListSectionProps = {
 	onAdd: () => void;
 	onUpdate: (id: string, patch: Partial<Requirement>) => void;
 	onRemove: (id: string) => void;
+	conceptMap: Map<string, string>;
+	systemFunctionMap: Map<string, string>;
+	systemDomainMap: Map<string, string>;
+	onOpenDialog: (type: SelectionDialogType, reqId: string) => void;
 };
 
 export function RequirementListSection({
@@ -21,6 +25,10 @@ export function RequirementListSection({
 	onAdd,
 	onUpdate,
 	onRemove,
+	conceptMap,
+	systemFunctionMap,
+	systemDomainMap,
+	onOpenDialog,
 }: RequirementListSectionProps): React.ReactElement {
 	return (
 		<Card className="mt-4 rounded-md border border-slate-200">
@@ -55,8 +63,12 @@ export function RequirementListSection({
 						<RequirementCard
 							key={req.id}
 							requirement={req}
+							conceptMap={conceptMap}
+							systemFunctionMap={systemFunctionMap}
+							systemDomainMap={systemDomainMap}
 							onUpdate={(patch) => onUpdate(req.id, patch)}
 							onRemove={() => onRemove(req.id)}
+							onOpenDialog={(type) => onOpenDialog(type, req.id)}
 						/>
 					))
 				)}

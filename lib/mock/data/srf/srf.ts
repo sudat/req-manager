@@ -1426,23 +1426,8 @@ export const getRelatedRequirements = (srfId: string): RelatedRequirementInfo[] 
       const sysReq = knowledge.systemRequirements.find(sr => sr.id === sysReqId);
       if (!sysReq) continue;
 
-      for (const bizReqId of sysReq.related || []) {
-        const bizReq = knowledge.businessRequirements.find(br => br.id === bizReqId);
-        if (!bizReq) continue;
-
-        results.push({
-          systemReqId: sysReq.id,
-          systemReqTitle: sysReq.title,
-          systemReqSummary: sysReq.summary,
-          systemReqConcepts: sysReq.concepts,
-          systemReqImpacts: sysReq.impacts,
-          systemReqAcceptanceCriteria: sysReq.acceptanceCriteria,
-          businessReqId: bizReq.id,
-          businessReqTitle: bizReq.title,
-          businessId: task.businessId,
-          taskId: task.id
-        });
-      }
+      // relatedフィールドは廃止されたため、関連要件は紐付けなし
+      // 将来的に別の紐付け方法が実装されるまで空ループ
     }
   }
 

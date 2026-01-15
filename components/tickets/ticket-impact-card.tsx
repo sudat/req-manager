@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Globe } from "lucide-react";
-import type { Ticket } from "@/lib/mock/data/types";
+import type { Ticket } from "@/lib/domain";
 
 interface TicketImpactCardProps {
   ticket: Ticket;

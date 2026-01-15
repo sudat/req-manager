@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import type { SystemFunction } from "@/lib/mock/data/types";
+import type { SystemFunction } from "@/lib/domain";
 import type { CodeRef } from "../hooks/useSystemFunctionForm";
 
 // ============================================

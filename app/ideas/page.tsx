@@ -15,7 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Plus, Eye, Pencil, Trash2, Search } from "lucide-react";
-import type { Concept } from "@/lib/mock/data/types";
+import type { Concept } from "@/lib/domain";
 import { listConcepts, deleteConcept } from "@/lib/data/concepts";
 import { TableSkeleton } from "@/components/skeleton";
 import { confirmDelete } from "@/lib/ui/confirm";

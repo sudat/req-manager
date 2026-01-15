@@ -1,5 +1,5 @@
 import { supabase, getSupabaseConfigError } from "@/lib/supabase/client";
-import type { Task } from "@/lib/mock/data/types";
+import type { Task } from "@/lib/domain";
 
 export type TaskInput = {
   id: string;

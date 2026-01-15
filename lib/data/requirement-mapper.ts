@@ -1,4 +1,4 @@
-import type { Requirement } from "@/lib/mock/task-knowledge";
+import type { Requirement } from "@/lib/domain";
 import type { BusinessRequirementInput } from "@/lib/data/business-requirements";
 import type { SystemRequirementInput } from "@/lib/data/system-requirements";
 
@@ -13,11 +13,10 @@ export function toBusinessRequirementInput(
 		taskId,
 		title: requirement.title,
 		summary: requirement.summary,
-		conceptIds: requirement.concepts.map((c) => c.id),
-		srfId: requirement.srfId ?? null,
-		systemDomainIds: [],
-		impacts: requirement.impacts,
-		// 関連システム要件はまだDBスキーマにないため、無視
+		conceptIds: requirement.conceptIds,
+		srfId: requirement.srfId,
+		systemDomainIds: requirement.systemDomainIds,
+		impacts: [], // 影響領域は廃止
 		relatedSystemRequirementIds: [],
 		acceptanceCriteria: requirement.acceptanceCriteria,
 		sortOrder,
@@ -27,21 +26,16 @@ export function toBusinessRequirementInput(
 // 業務要件: BusinessRequirement → Requirement
 export function fromBusinessRequirement(
 	br: import("@/lib/data/business-requirements").BusinessRequirement,
-	conceptMap: Map<string, string>, // id → name
 ): Requirement {
 	return {
 		id: br.id,
 		type: "業務要件",
 		title: br.title,
 		summary: br.summary,
-		concepts: br.conceptIds.map((id) => ({
-			id,
-			name: conceptMap.get(id) ?? id,
-		})),
-		impacts: br.impacts,
+		conceptIds: br.conceptIds,
+		srfId: br.srfId,
+		systemDomainIds: br.systemDomainIds ?? [],
 		acceptanceCriteria: br.acceptanceCriteria,
-		related: br.relatedSystemRequirementIds,
-		srfId: br.srfId ?? undefined,
 	};
 }
 
@@ -54,13 +48,13 @@ export function toSystemRequirementInput(
 	return {
 		id: requirement.id,
 		taskId,
-		srfId: requirement.srfId ?? null,
+		srfId: requirement.srfId,
 		title: requirement.title,
 		summary: requirement.summary,
-		conceptIds: requirement.concepts.map((c) => c.id),
-		impacts: requirement.impacts,
+		conceptIds: requirement.conceptIds,
+		impacts: [], // 影響領域は廃止
 		acceptanceCriteria: requirement.acceptanceCriteria,
-		systemDomainIds: [],
+		systemDomainIds: requirement.systemDomainIds,
 		sortOrder,
 	};
 }
@@ -68,20 +62,15 @@ export function toSystemRequirementInput(
 // システム要件: SystemRequirement → Requirement
 export function fromSystemRequirement(
 	sr: import("@/lib/data/system-requirements").SystemRequirement,
-	conceptMap: Map<string, string>, // id → name
 ): Requirement {
 	return {
 		id: sr.id,
 		type: "システム要件",
 		title: sr.title,
 		summary: sr.summary,
-		concepts: sr.conceptIds.map((id) => ({
-			id,
-			name: conceptMap.get(id) ?? id,
-		})),
-		impacts: sr.impacts,
+		conceptIds: sr.conceptIds,
+		srfId: sr.srfId,
+		systemDomainIds: sr.systemDomainIds ?? [],
 		acceptanceCriteria: sr.acceptanceCriteria,
-		related: [], // 関連業務要件はまだDBスキーマにない
-		srfId: sr.srfId ?? undefined,
 	};
 }

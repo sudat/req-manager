@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { RelatedRequirementInfo } from "@/lib/mock/data/types";
+import type { RelatedRequirementInfo } from "@/lib/domain";
 import { listBusinessRequirementsByTaskIds } from "@/lib/data/business-requirements";
 import { listConcepts } from "@/lib/data/concepts";
 import { listSystemRequirementsBySrfId } from "@/lib/data/system-requirements";

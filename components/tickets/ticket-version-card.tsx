@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import type { Ticket } from "@/lib/mock/data/types";
+import type { Ticket } from "@/lib/domain";
 
 interface TicketVersionCardProps {
   ticket: Ticket;

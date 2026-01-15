@@ -185,3 +185,18 @@ export const deleteBusinessRequirement = async (id: string) => {
   if (error) return { data: null, error: error.message };
   return { data: true, error: null };
 };
+
+export const listBusinessRequirements = async () => {
+  const configError = failIfMissingConfig();
+  if (configError) return configError;
+
+  const { data, error } = await supabase
+    .from("business_requirements")
+    .select("*")
+    .order("task_id")
+    .order("sort_order")
+    .order("id");
+
+  if (error) return { data: null, error: error.message };
+  return { data: (data as BusinessRequirementRow[]).map(toBusinessRequirement), error: null };
+};

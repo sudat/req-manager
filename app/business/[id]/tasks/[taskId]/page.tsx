@@ -35,6 +35,7 @@ export default function TaskDetailPage({ params }: PageProps) {
     systemFunctionMap,
     systemFunctionDomainMap,
     systemDomainMap,
+    systemFunctions,
   } = useTaskDetail({ bizId: id, taskId });
 
   const displayBizId = task?.businessId ?? knowledge.bizId;
@@ -84,6 +85,7 @@ export default function TaskDetailPage({ params }: PageProps) {
             loading={systemRequirementsLoading}
             error={systemRequirementsError}
             conceptMap={conceptMap}
+            systemFunctions={systemFunctions}
             systemFunctionDomainMap={systemFunctionDomainMap}
           />
         </div>
@@ -247,6 +249,7 @@ type SystemRequirementsSectionProps = {
 	loading: boolean;
 	error: string | null;
 	conceptMap: Map<string, string>;
+	systemFunctions: { id: string; name: string; systemDomainId: string | null }[];
 	systemFunctionDomainMap: Map<string, string | null>;
 };
 
@@ -255,6 +258,7 @@ function SystemRequirementsSection({
 	loading,
 	error,
 	conceptMap,
+	systemFunctions,
 	systemFunctionDomainMap,
 }: SystemRequirementsSectionProps) {
 	return (
@@ -277,6 +281,7 @@ function SystemRequirementsSection({
 						key={sysReq.id}
 						requirement={sysReq}
 						conceptMap={conceptMap}
+						systemFunctions={systemFunctions}
 						systemFunctionDomainMap={systemFunctionDomainMap}
 					/>
 				))}

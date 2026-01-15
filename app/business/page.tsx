@@ -17,7 +17,7 @@ import {
 import { Eye, Pencil, Trash2, Search } from "lucide-react";
 import { listBusinessesWithRequirementCounts, deleteBusiness } from "@/lib/data/businesses";
 import { TableSkeleton } from "@/components/skeleton";
-import type { Business } from "@/lib/mock/data/types";
+import type { Business } from "@/lib/domain";
 import { confirmDelete } from "@/lib/ui/confirm";
 
 export default function BusinessPage() {

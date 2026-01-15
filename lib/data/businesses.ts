@@ -1,5 +1,5 @@
 import { supabase, getSupabaseConfigError } from "@/lib/supabase/client";
-import type { Business, BusinessArea } from "@/lib/mock/data/types";
+import type { Business, BusinessArea } from "@/lib/domain";
 
 export type BusinessInput = {
   id: string;
@@ -156,6 +156,19 @@ export const listBusinessesWithRequirementCounts = async () => {
   if (taskError) return { data: null, error: taskError.message };
 
   const taskIds = tasks?.map((t) => t.id) ?? [];
+
+  if (taskIds.length === 0) {
+    const { data: fullBusinesses, error: fullError } = await listBusinesses();
+    if (fullError || !fullBusinesses) return { data: null, error: fullError ?? "Unknown error" };
+
+    const result = fullBusinesses.map((biz) => ({
+      ...biz,
+      businessReqCount: 0,
+      systemReqCount: 0,
+    }));
+
+    return { data: result, error: null };
+  }
 
   const { data: businessReqs, error: brError } = await supabase
     .from("business_requirements")

@@ -19,7 +19,7 @@ import { listSystemDomains } from "@/lib/data/system-domains";
 import { TableSkeleton } from "@/components/skeleton";
 import { listSystemFunctions } from "@/lib/data/system-functions";
 import type { SystemDomain } from "@/lib/data/system-domains";
-import type { SystemFunction } from "@/lib/mock/data/types";
+import type { SystemFunction } from "@/lib/domain";
 
 export default function SystemDomainsPage() {
   const router = useRouter();

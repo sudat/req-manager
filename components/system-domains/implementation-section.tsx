@@ -1,7 +1,7 @@
 "use client";
 
 import { SectionCard, EmptyState } from "./section-card";
-import type { CodeRef } from "@/lib/mock/task-knowledge";
+import type { CodeRef } from "@/lib/domain";
 
 interface ImplementationSectionProps {
 	codeRefs: CodeRef[];

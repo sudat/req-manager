@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { businesses } from "@/lib/mock/data";
-import type { BusinessArea } from "@/lib/mock/data/types";
+import type { BusinessArea } from "@/lib/domain";
 
 const areaConfig = [
   { key: "AR", label: "AR", class: "border-slate-400 bg-slate-100" },

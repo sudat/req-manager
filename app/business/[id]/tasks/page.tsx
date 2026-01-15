@@ -15,7 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ArrowLeft, Plus, Eye, Pencil, Trash2, Search, Sparkles } from "lucide-react";
-import type { Task } from "@/lib/mock/data/types";
+import type { Task } from "@/lib/domain";
 import { listTasksByBusinessId, deleteTask } from "@/lib/data/tasks";
 import { TableSkeleton } from "@/components/skeleton";
 import { getBusinessById } from "@/lib/data/businesses";

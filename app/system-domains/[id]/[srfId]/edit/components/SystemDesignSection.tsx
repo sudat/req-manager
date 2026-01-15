@@ -17,7 +17,7 @@ import { getDesignCategoryLabel } from "@/lib/data/system-functions";
 import type {
 	DesignItemCategory,
 	SystemDesignItem,
-} from "@/lib/mock/data/types";
+} from "@/lib/domain";
 import type { NewDesignItem } from "../hooks/useSystemFunctionForm";
 
 // ============================================
