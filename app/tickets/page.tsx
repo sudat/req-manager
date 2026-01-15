@@ -144,7 +144,7 @@ export default function TicketsPage() {
                     </TableCell>
                     <TableCell className="px-4 py-3">
                       <div className="flex flex-wrap gap-1.5">
-                        {ticket.areas.map((area, i) => (
+                        {ticket.areas.map((area: string, i: number) => (
                           <Badge
                             key={i}
                             variant="outline"
@@ -163,7 +163,7 @@ export default function TicketsPage() {
                     <TableCell className="px-4 py-3">
                       <div className="flex flex-wrap gap-1.5">
                         {ticket.targetVersions.length > 0 ? (
-                          ticket.targetVersions.map((v, i) => (
+                          ticket.targetVersions.map((v: string, i: number) => (
                             <Badge key={i} variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px]">
                               {v}
                             </Badge>

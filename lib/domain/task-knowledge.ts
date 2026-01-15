@@ -1,30 +1,4 @@
-export type SelectionDialogType = "concepts" | "system" | "domain";
-
-export type RequirementType = "業務要件" | "システム要件";
-
-export type Requirement = {
-	id: string;
-	type: RequirementType;
-	title: string;
-	summary: string;
-	conceptIds: string[];
-	srfId: string | null;
-	systemDomainIds: string[];
-	acceptanceCriteria: string[];
-};
-
-export type DesignDoc = {
-	id: string;
-	title: string;
-	category: "画面" | "データ" | "IF" | "業務ルール" | "その他";
-	source: "内部" | "外部リンク";
-	content: string;
-	url?: string;
-};
-
-export type CodeRef = {
-	paths: string[];
-};
+import type { SelectionDialogType, RequirementType, Requirement, DesignDoc, CodeRef } from './forms';
 
 export type TaskKnowledge = {
 	bizId: string;

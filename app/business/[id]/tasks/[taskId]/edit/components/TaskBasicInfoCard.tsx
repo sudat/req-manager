@@ -16,7 +16,7 @@ type TaskBasicInfoCardProps = {
 export function TaskBasicInfoCard({ knowledge, onFieldChange }: TaskBasicInfoCardProps) {
 	return (
 		<Card className="rounded-md border border-slate-200">
-			<CardContent className="p-3 space-y-3">
+			<CardContent className="p-5 space-y-3">
 				<div className="flex items-center gap-3 text-[12px] text-slate-500">
 					<span className="font-mono">{knowledge.bizId}</span>
 					<span className="text-slate-300">/</span>

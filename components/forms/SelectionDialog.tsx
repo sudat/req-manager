@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import type { Requirement, SelectionDialogState, SelectableItem, SelectionDialogType } from "./types";
+import type { Requirement, SelectionDialogState, SelectableItem, SelectionDialogType } from "@/lib/domain/forms";
 import { useFilteredItems } from "./hooks/useFilteredItems";
 import { useToggleHandlers } from "./hooks/useToggleHandlers";
 

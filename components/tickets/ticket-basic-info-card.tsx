@@ -19,12 +19,12 @@ export function TicketBasicInfoCard({ ticket }: TicketBasicInfoCardProps) {
           <div>
             <span className="text-slate-500">ステータス</span>
             <Badge variant="outline" className="ml-2 border-slate-200 bg-slate-50 text-slate-600 text-[12px]">
-              {statusLabels[ticket.status] || ticket.status}
+              {statusLabels[ticket.status as keyof typeof statusLabels] || ticket.status}
             </Badge>
           </div>
           <div>
             <span className="text-slate-500">優先度</span>
-            <span className="ml-2 text-slate-900">{priorityLabels[ticket.priority] || ticket.priority}</span>
+            <span className="ml-2 text-slate-900">{priorityLabels[ticket.priority as keyof typeof priorityLabels] || ticket.priority}</span>
           </div>
           <div>
             <span className="text-slate-500">起票者</span>

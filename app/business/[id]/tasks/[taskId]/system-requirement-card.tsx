@@ -1,8 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import { ChevronDown, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import type { SystemRequirement } from "@/lib/data/system-requirements";
 
 type SystemRequirementCardProps = {
@@ -18,6 +24,7 @@ export function SystemRequirementCard({
 	systemFunctions,
 	systemFunctionDomainMap,
 }: SystemRequirementCardProps) {
+	const [isOpen, setIsOpen] = useState(true);
 	const srf = requirement.srfId ? systemFunctions.find((srf) => srf.id === requirement.srfId) : undefined;
 	const srfSummaryShort = srf?.name ?? "";
 
@@ -28,29 +35,26 @@ export function SystemRequirementCard({
 	}));
 
   return (
-    <div className="rounded-md border border-slate-200 bg-slate-50/50 p-3">
-      <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
-        {srf ? (
-          <Link
-            href={systemFunctionDomainMap.get(srf.id) ? `/system-domains/${systemFunctionDomainMap.get(srf.id)}/${srf.id}` : "/system-domains"}
-            className="flex-1 hover:bg-white/50 rounded p-2 -m-2 transition-colors"
-          >
-            <div className="font-mono text-[11px] text-slate-400">{requirement.id}</div>
-            <div className="text-[14px] font-medium text-slate-900 mt-1">{requirement.title}</div>
-            <div className="mt-1 text-[13px] text-slate-600">{requirement.summary}</div>
-          </Link>
-        ) : (
-          <div className="flex-1">
-            <div className="font-mono text-[11px] text-slate-400">{requirement.id}</div>
-            <div className="text-[14px] font-medium text-slate-900 mt-1">{requirement.title}</div>
-            <div className="mt-1 text-[13px] text-slate-600">{requirement.summary}</div>
-          </div>
-        )}
-        <Badge variant="outline" className="border-blue-200/60 bg-blue-50 text-blue-700 text-[12px] font-medium px-2 py-0.5">
-          システム要件
-        </Badge>
-      </div>
+    <Collapsible
+      open={isOpen}
+      onOpenChange={setIsOpen}
+      className="rounded-md border border-slate-200 bg-slate-50/50 p-3"
+    >
+      <CollapsibleTrigger className="flex flex-wrap items-start justify-between gap-2 mb-2 w-full text-left hover:bg-white/50 rounded px-2 -mx-2 py-1 transition-colors cursor-pointer">
+        <div className="flex-1">
+          <div className="font-mono text-[11px] text-slate-400">{requirement.id}</div>
+          <div className="text-[14px] font-medium text-slate-900 mt-1">{requirement.title}</div>
+          <div className="mt-1 text-[13px] text-slate-600">{requirement.summary}</div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="border-blue-200/60 bg-blue-50 text-blue-700 text-[12px] font-medium px-2 py-0.5">
+            システム要件
+          </Badge>
+          <ChevronDown strokeWidth={1} className={`h-8 w-8 text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+        </div>
+      </CollapsibleTrigger>
 
+      <CollapsibleContent className="space-y-2">
       {concepts && concepts.length > 0 && (
         <div className="border-t border-slate-100 pt-2 mt-2 space-y-1">
           <div className="text-[12px] font-medium text-slate-500">関連概念</div>
@@ -114,6 +118,7 @@ export function SystemRequirementCard({
           </div>
         </div>
       )}
-    </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }

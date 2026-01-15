@@ -7,6 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Pencil } from "lucide-react";
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { useTaskDetail } from "./use-task-detail";
 import { BusinessRequirementCard } from "./business-requirement-card";
 import { SystemRequirementCard } from "./system-requirement-card";
@@ -51,11 +59,39 @@ export default function TaskDetailPage({ params }: PageProps) {
       <MobileHeader />
       <div className="flex-1 min-h-screen bg-white">
         <div className="mx-auto max-w-[1400px] px-8 py-4">
-          <Header backBizId={backBizId} id={id} taskId={taskId} />
+          {/* パンくずリスト */}
+          <Breadcrumb className="mb-4">
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link href="/business">業務領域一覧</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link href={`/business/${id}/tasks`}>業務一覧（詳細）</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>業務タスク詳細</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
 
-          <h1 className="text-[32px] font-semibold tracking-tight text-slate-900 mb-4">
-            業務タスク詳細
-          </h1>
+          {/* タイトルと編集ボタン */}
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-[32px] font-semibold tracking-tight text-slate-900">
+              業務タスク詳細
+            </h1>
+            <Link href={`/business/${id}/tasks/${taskId}/edit`}>
+              <Button variant="outline" className="h-8 gap-2 text-[14px]">
+                <Pencil className="h-4 w-4" />
+                編集
+              </Button>
+            </Link>
+          </div>
 
           <TaskLoadingStatus loading={taskLoading} error={taskError} task={task} />
 
@@ -91,32 +127,6 @@ export default function TaskDetailPage({ params }: PageProps) {
         </div>
       </div>
     </>
-  );
-}
-
-type HeaderProps = {
-  backBizId: string;
-  id: string;
-  taskId: string;
-};
-
-function Header({ backBizId, id, taskId }: HeaderProps) {
-  return (
-    <div className="flex items-center justify-between mb-4">
-      <Link
-        href={`/business/${backBizId}/tasks`}
-        className="inline-flex items-center gap-2 text-[14px] font-medium text-slate-600 hover:text-slate-900"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        業務一覧（詳細）に戻る
-      </Link>
-      <Link href={`/business/${id}/tasks/${taskId}/edit`}>
-        <Button variant="outline" className="h-8 gap-2 text-[14px]">
-          <Pencil className="h-4 w-4" />
-          編集
-        </Button>
-      </Link>
-    </div>
   );
 }
 
@@ -160,7 +170,7 @@ function TaskSummaryCard({
 }: TaskSummaryCardProps) {
   return (
     <Card className="rounded-md border border-slate-200/60 bg-white hover:border-slate-300/60 transition-colors">
-      <CardContent className="p-3 space-y-2">
+      <CardContent className="p-5 space-y-2">
         <div className="flex items-center gap-3 text-[12px] text-slate-500">
           <span className="font-mono">{displayBizId}</span>
           <span className="text-slate-300">/</span>
@@ -192,6 +202,44 @@ function TaskSummaryCard({
   );
 }
 
+type RequirementsSectionProps<T> = {
+  title: string;
+  items: T[];
+  loading: boolean;
+  error: string | null;
+  emptyMessage?: string;
+  renderItem: (item: T) => React.ReactNode;
+};
+
+function RequirementsSection<T extends { id: string }>({
+  title,
+  items,
+  loading,
+  error,
+  emptyMessage = "まだ登録されていません。",
+  renderItem,
+}: RequirementsSectionProps<T>) {
+  return (
+    <Card className="mt-4 rounded-md border border-slate-200/60 bg-white hover:border-slate-300/60 transition-colors">
+      <CardContent className="p-3 space-y-2">
+        <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+          <h3 className="text-[20px] font-semibold text-slate-900">{title}</h3>
+          <Badge variant="outline" className="font-mono text-[11px] border-slate-200 bg-slate-50 text-slate-600 px-1.5 py-0">
+            {items.length}
+          </Badge>
+        </div>
+
+        {loading && <CardSkeleton />}
+        {error && <div className="text-[14px] text-rose-600">{error}</div>}
+        {!loading && !error && items.length === 0 && (
+          <div className="text-[14px] text-slate-500">{emptyMessage}</div>
+        )}
+        {!loading && !error && items.map(renderItem)}
+      </CardContent>
+    </Card>
+  );
+}
+
 type BusinessRequirementsSectionProps = {
   requirements: import("@/lib/data/business-requirements").BusinessRequirement[];
   loading: boolean;
@@ -203,44 +251,25 @@ type BusinessRequirementsSectionProps = {
   systemDomainMap: Map<string, string>;
 };
 
-function BusinessRequirementsSection({
-  requirements,
-  loading,
-  error,
-  optionsError,
-  conceptMap,
-  systemFunctionMap,
-  systemFunctionDomainMap,
-  systemDomainMap,
-}: BusinessRequirementsSectionProps) {
+function BusinessRequirementsSection(props: BusinessRequirementsSectionProps) {
   return (
-		<Card className="mt-4 rounded-md border border-slate-200/60 bg-white hover:border-slate-300/60 transition-colors">
-      <CardContent className="p-3 space-y-2">
-        <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-          <h3 className="text-[20px] font-semibold text-slate-900">業務要件</h3>
-          <Badge variant="outline" className="font-mono text-[11px] border-slate-200 bg-slate-50 text-slate-600 px-1.5 py-0">
-            {requirements.length}
-          </Badge>
-        </div>
-
-        {loading && <CardSkeleton />}
-        {error && <div className="text-[14px] text-rose-600">{error}</div>}
-        {!loading && !error && requirements.length === 0 && (
-          <div className="text-[14px] text-slate-500">まだ登録されていません。</div>
-        )}
-        {!loading && !error && requirements.map((req) => (
-          <BusinessRequirementCard
-            key={req.id}
-            requirement={req}
-            conceptMap={conceptMap}
-            systemFunctionMap={systemFunctionMap}
-            systemFunctionDomainMap={systemFunctionDomainMap}
-            systemDomainMap={systemDomainMap}
-            optionsError={optionsError}
-          />
-        ))}
-      </CardContent>
-    </Card>
+    <RequirementsSection
+      title="業務要件"
+      items={props.requirements}
+      loading={props.loading}
+      error={props.error}
+      renderItem={(req) => (
+        <BusinessRequirementCard
+          key={req.id}
+          requirement={req}
+          conceptMap={props.conceptMap}
+          systemFunctionMap={props.systemFunctionMap}
+          systemFunctionDomainMap={props.systemFunctionDomainMap}
+          systemDomainMap={props.systemDomainMap}
+          optionsError={props.optionsError}
+        />
+      )}
+    />
   );
 }
 
@@ -253,39 +282,22 @@ type SystemRequirementsSectionProps = {
 	systemFunctionDomainMap: Map<string, string | null>;
 };
 
-function SystemRequirementsSection({
-	requirements,
-	loading,
-	error,
-	conceptMap,
-	systemFunctions,
-	systemFunctionDomainMap,
-}: SystemRequirementsSectionProps) {
-	return (
-		<Card className="mt-4 rounded-md border border-slate-200/60 bg-white hover:border-slate-300/60 transition-colors">
-			<CardContent className="p-3 space-y-2">
-				<div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-					<h3 className="text-[20px] font-semibold text-slate-900">関連システム要件</h3>
-					<Badge variant="outline" className="font-mono text-[11px] border-slate-200 bg-slate-50 text-slate-600 px-1.5 py-0">
-						{requirements.length}
-					</Badge>
-				</div>
-
-				{loading && <CardSkeleton />}
-				{error && <div className="text-[14px] text-rose-600">{error}</div>}
-				{!loading && !error && requirements.length === 0 && (
-					<div className="text-[14px] text-slate-500">まだ登録されていません。</div>
-				)}
-				{!loading && !error && requirements.map((sysReq) => (
-					<SystemRequirementCard
-						key={sysReq.id}
-						requirement={sysReq}
-						conceptMap={conceptMap}
-						systemFunctions={systemFunctions}
-						systemFunctionDomainMap={systemFunctionDomainMap}
-					/>
-				))}
-			</CardContent>
-		</Card>
-	);
+function SystemRequirementsSection(props: SystemRequirementsSectionProps) {
+  return (
+    <RequirementsSection
+      title="関連システム要件"
+      items={props.requirements}
+      loading={props.loading}
+      error={props.error}
+      renderItem={(sysReq) => (
+        <SystemRequirementCard
+          key={sysReq.id}
+          requirement={sysReq}
+          conceptMap={props.conceptMap}
+          systemFunctions={props.systemFunctions}
+          systemFunctionDomainMap={props.systemFunctionDomainMap}
+        />
+      )}
+    />
+  );
 }

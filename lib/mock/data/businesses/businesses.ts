@@ -1,4 +1,4 @@
-import { Business } from '../types';
+import type { Business } from '@/lib/domain';
 
 export const businesses: Business[] = [
   {

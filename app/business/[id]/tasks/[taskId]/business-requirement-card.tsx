@@ -1,7 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import { ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import type { BusinessRequirement } from "@/lib/data/business-requirements";
 
 type BusinessRequirementCardProps = {
@@ -21,26 +28,35 @@ export function BusinessRequirementCard({
   systemDomainMap,
   optionsError,
 }: BusinessRequirementCardProps) {
+  const [isOpen, setIsOpen] = useState(true);
   const srfId = requirement.srfId ?? null;
   const srfName = srfId ? systemFunctionMap.get(srfId) ?? srfId : null;
   const srfDomainId = srfId ? systemFunctionDomainMap.get(srfId) : null;
 
   return (
-    <div className="rounded-md border border-slate-200 p-3">
-      <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
+    <Collapsible
+      open={isOpen}
+      onOpenChange={setIsOpen}
+      className="rounded-md border border-slate-200 p-3"
+    >
+      <CollapsibleTrigger className="flex flex-wrap items-start justify-between gap-2 mb-2 w-full text-left hover:bg-slate-50/50 rounded px-2 -mx-2 py-1 transition-colors cursor-pointer">
         <div className="flex-1">
           <div className="font-mono text-[11px] text-slate-400">{requirement.id}</div>
           <div className="text-[14px] font-medium text-slate-900 mt-1">{requirement.title}</div>
           <div className="mt-1 text-[13px] text-slate-600">{requirement.summary}</div>
         </div>
-        <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] font-medium px-2 py-0.5">
-          業務要件
-        </Badge>
-      </div>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] font-medium px-2 py-0.5">
+            業務要件
+          </Badge>
+          <ChevronDown strokeWidth={1} className={`h-8 w-8 text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+        </div>
+      </CollapsibleTrigger>
 
-      {optionsError && (
-        <div className="text-[12px] text-rose-600">{optionsError}</div>
-      )}
+      <CollapsibleContent className="space-y-2">
+        {optionsError && (
+          <div className="text-[12px] text-rose-600">{optionsError}</div>
+        )}
 
       {requirement.conceptIds.length > 0 && (
         <div className="border-t border-slate-100 pt-2 mt-2 space-y-1">
@@ -95,6 +111,7 @@ export function BusinessRequirementCard({
           </ul>
         )}
       </div>
-    </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }

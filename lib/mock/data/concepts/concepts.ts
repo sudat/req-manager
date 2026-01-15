@@ -1,4 +1,4 @@
-import { Concept } from '../types';
+import type { Concept } from '@/lib/domain';
 import { tasks } from '../tasks';
 import { systemFunctions } from '../srf';
 

@@ -1,4 +1,4 @@
-import { Ticket } from '../types';
+import type { Ticket } from '@/lib/domain';
 
 export const tickets: Ticket[] = [
   // AR関連（10件）

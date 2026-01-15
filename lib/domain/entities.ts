@@ -1,4 +1,6 @@
 // ドメインエンティティ型定義
+import type { BusinessArea, TicketStatus, TicketPriority, SrfCategory, SrfStatus, SystemDesignItem } from './enums';
+import type { TicketRequirementReference, TicketChangeItem, TicketConceptReference, TicketVersionApplication } from './value-objects';
 
 /**
  * Business（業務）

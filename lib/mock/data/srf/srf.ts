@@ -1,5 +1,5 @@
-import { SystemFunction, RelatedRequirementInfo, DesignItemCategory } from '../types';
-import { getDefaultTaskKnowledge } from '../../task-knowledge';
+import { SystemFunction, RelatedRequirementInfo, DesignItemCategory } from '@/lib/domain';
+import { getDefaultTaskKnowledge } from '@/lib/domain/task-knowledge';
 import { tasks } from '../tasks/tasks';
 
 export const systemFunctions: SystemFunction[] = [

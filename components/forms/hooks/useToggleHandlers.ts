@@ -1,6 +1,6 @@
 "use client";
 
-import type { Requirement } from "../types";
+import type { Requirement } from "@/lib/domain/forms";
 
 /**
  * 選択ダイアログのトグルハンドラーを生成するフック

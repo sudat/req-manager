@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import type { SelectableItem } from "../types";
+import type { SelectableItem } from "@/lib/domain/forms";
 
 /**
  * アイテムリストのフィルタリングを行うフック

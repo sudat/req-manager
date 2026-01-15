@@ -1,6 +1,14 @@
 "use client";
 
 import { ArrowLeft, Pencil } from "lucide-react";
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -61,39 +69,6 @@ function NotFoundState({ domainId, error }: NotFoundStateProps): React.ReactNode
 	);
 }
 
-interface PageHeaderProps {
-	domainId: string;
-	srfId: string;
-}
-
-function PageHeader({ domainId, srfId }: PageHeaderProps): React.ReactNode {
-	return (
-		<div className="flex items-center justify-between mb-4">
-			<Link
-				href={`/system-domains/${domainId}`}
-				className="inline-flex items-center gap-2 text-[14px] font-medium text-slate-600 hover:text-slate-900"
-			>
-				<ArrowLeft className="h-4 w-4" />
-				システム機能一覧に戻る
-			</Link>
-			<Link href={`/system-domains/${domainId}/${srfId}/edit`}>
-				<Button variant="outline" className="h-8 gap-2 text-[14px]">
-					<Pencil className="h-4 w-4" />
-					編集
-				</Button>
-			</Link>
-		</div>
-	);
-}
-
-function PageTitle(): React.ReactNode {
-	return (
-		<h1 className="text-[32px] font-semibold tracking-tight text-slate-900 mb-4">
-			システム機能詳細
-		</h1>
-	);
-}
-
 // ============================================================
 // Main Page Component
 // ============================================================
@@ -142,8 +117,40 @@ export default function SystemFunctionDetailPage({
 
 	return (
 		<PageLayout>
-			<PageHeader domainId={id} srfId={srfId} />
-			<PageTitle />
+			{/* パンくずリスト */}
+			<Breadcrumb className="mb-4">
+				<BreadcrumbList>
+					<BreadcrumbItem>
+						<BreadcrumbLink asChild>
+							<Link href="/system-domains">システム領域一覧</Link>
+						</BreadcrumbLink>
+					</BreadcrumbItem>
+					<BreadcrumbSeparator />
+					<BreadcrumbItem>
+						<BreadcrumbLink asChild>
+							<Link href={`/system-domains/${id}`}>システム機能一覧</Link>
+						</BreadcrumbLink>
+					</BreadcrumbItem>
+					<BreadcrumbSeparator />
+					<BreadcrumbItem>
+						<BreadcrumbPage>システム機能詳細</BreadcrumbPage>
+					</BreadcrumbItem>
+				</BreadcrumbList>
+			</Breadcrumb>
+
+			{/* タイトルと編集ボタン */}
+			<div className="flex items-center justify-between mb-4">
+				<h1 className="text-[32px] font-semibold tracking-tight text-slate-900">
+					システム機能詳細
+				</h1>
+				<Link href={`/system-domains/${id}/${srf.id}/edit`}>
+					<Button variant="outline" className="h-8 gap-2 text-[14px]">
+						<Pencil className="h-4 w-4" />
+						編集
+					</Button>
+				</Link>
+			</div>
+
 			<FunctionSummaryCard srf={srf} domainId={id} />
 			<SystemRequirementsSection srfId={srf.id} />
 			<SystemDesignSection systemDesign={srf.systemDesign} />

@@ -1,4 +1,4 @@
-import { Task } from '../types';
+import type { Task } from '@/lib/domain';
 
 export const tasks: Task[] = [
   // AR領域（6件）

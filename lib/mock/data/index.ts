@@ -1,5 +1,5 @@
 // 共通型定義
-export * from './types';
+export type { RelatedRequirementInfo, DesignItemCategory } from '@/lib/domain';
 
 // Businessデータ
 export { businesses, getBusinessById, getBusinessesByArea } from './businesses/businesses';
@@ -16,7 +16,6 @@ export type { RequirementReference } from './concepts/concepts';
 
 // SystemFunctionデータ
 export { systemFunctions, getSystemFunctionById, getSystemFunctionsByStatus, getSystemFunctionsByTaskId, getRelatedRequirements as getSrfRelatedRequirements, getDesignCategoryLabel } from './srf/srf';
-export type { RelatedRequirementInfo } from './types';
 
 // ユーティリティ関数：複数エンティティにまたがる検索
 export const getTicketsByBusinessId = (businessId: string) => {
