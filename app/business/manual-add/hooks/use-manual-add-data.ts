@@ -7,7 +7,7 @@ import { listConcepts } from "@/lib/data/concepts";
 import { listSystemFunctions } from "@/lib/data/system-functions";
 import { listSystemDomains, type SystemDomain } from "@/lib/data/system-domains";
 import { nextSequentialId } from "@/lib/data/id";
-import type { SelectableItem } from "../types";
+import type { SelectableItem } from "@/lib/domain/forms";
 
 type UseManualAddDataResult = {
   loading: boolean;

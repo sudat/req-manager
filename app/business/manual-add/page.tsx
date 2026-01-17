@@ -11,8 +11,8 @@ import { useManualAddData } from "./hooks/use-manual-add-data";
 import { useRequirements } from "./hooks/use-requirements";
 import { TaskForm } from "./components/TaskForm";
 import { RequirementsSection } from "./components/RequirementsSection";
-import { SelectionDialog } from "./components/SelectionDialog";
-import type { SelectionDialogState, SelectionDialogType } from "./types";
+import { SelectionDialog } from "@/components/forms/SelectionDialog";
+import type { SelectionDialogState, SelectionDialogType } from "@/lib/domain/forms";
 
 function ManualAddPageContent() {
   const searchParams = useSearchParams();

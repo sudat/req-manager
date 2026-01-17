@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus } from "lucide-react";
-import { RequirementCard } from "./RequirementCard";
-import type { Requirement, SelectionDialogType, SelectableItem } from "../types";
+import { RequirementCard } from "@/components/forms/requirement-card";
+import type { Requirement, SelectionDialogType, SelectableItem } from "@/lib/domain/forms";
 import type { SystemDomain } from "@/lib/data/system-domains";
 
 type RequirementsSectionProps = {

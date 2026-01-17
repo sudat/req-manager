@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { nextSequentialId } from "@/lib/data/id";
-import type { Requirement } from "../types";
+import type { Requirement } from "@/lib/domain/forms";
 
 type UseRequirementsResult = {
   requirements: Requirement[];
