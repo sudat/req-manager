@@ -6,7 +6,7 @@ import { MobileHeader } from "@/components/layout/mobile-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Pencil } from "lucide-react";
+import { Pencil } from "lucide-react";
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -52,7 +52,6 @@ export default function TaskDetailPage({ params }: PageProps) {
   const displayPerson = task?.person ?? knowledge.person;
   const displayInput = task?.input ?? knowledge.input;
   const displayOutput = task?.output ?? knowledge.output;
-  const backBizId = task?.businessId ?? id;
 
   return (
     <>
@@ -138,7 +137,7 @@ type TaskLoadingStatusProps = {
 
 function TaskLoadingStatus({ loading, error, task }: TaskLoadingStatusProps) {
   if (loading) {
-    return <p className="text-[13px] text-slate-500 mb-3">業務タスクを読み込み中...</p>;
+    return null;
   }
   if (error) {
     return <p className="text-[13px] text-rose-600 mb-3">{error}</p>;

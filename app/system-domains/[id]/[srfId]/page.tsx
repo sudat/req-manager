@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Pencil } from "lucide-react";
+import { Pencil } from "lucide-react";
 import {
   Breadcrumb,
   BreadcrumbList,

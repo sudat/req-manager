@@ -1,6 +1,4 @@
 import { SystemFunction, RelatedRequirementInfo, DesignItemCategory } from '@/lib/domain';
-import { getDefaultTaskKnowledge } from '@/lib/domain/task-knowledge';
-import { tasks } from '../tasks/tasks';
 
 export const systemFunctions: SystemFunction[] = [
   // AR関連（7件 → 6件に統合）
@@ -1414,24 +1412,8 @@ export const getRelatedRequirements = (srfId: string): RelatedRequirementInfo[] 
   const srf = getSystemFunctionById(srfId);
   if (!srf) return [];
 
-  const results: RelatedRequirementInfo[] = [];
-
-  for (const taskId of srf.relatedTaskIds) {
-    const task = tasks.find(t => t.id === taskId);
-    if (!task) continue;
-
-    const knowledge = getDefaultTaskKnowledge({ bizId: task.businessId, taskId });
-
-    for (const sysReqId of srf.requirementIds) {
-      const sysReq = knowledge.systemRequirements.find(sr => sr.id === sysReqId);
-      if (!sysReq) continue;
-
-      // relatedフィールドは廃止されたため、関連要件は紐付けなし
-      // 将来的に別の紐付け方法が実装されるまで空ループ
-    }
-  }
-
-  return results;
+  // モックでは関連要件の紐付けデータを持たないため空配列を返す
+  return [];
 };
 
 // 設計カテゴリのラベルを取得

@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { SectionCard, EmptyState } from "./section-card";
 import { useRelatedRequirements } from "@/hooks/use-related-requirements";
 import type { RelatedRequirementInfo } from "@/lib/domain";
+import { CardSkeleton } from "@/components/skeleton";
 
 interface SystemRequirementsSectionProps {
 	srfId: string;
@@ -17,7 +18,7 @@ export function SystemRequirementsSection({ srfId }: SystemRequirementsSectionPr
 	if (loading) {
 		return (
 			<SectionCard title="システム要件">
-				<div className="text-[13px] text-slate-500">読み込み中...</div>
+				<CardSkeleton />
 			</SectionCard>
 		);
 	}

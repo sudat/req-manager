@@ -33,15 +33,19 @@ export function useManualAddData(bizId: string | null): UseManualAddDataResult {
   const [systemDomains, setSystemDomains] = useState<SystemDomain[]>([]);
 
   useEffect(() => {
-    if (!bizId) {
-      setLoading(false);
-      setBusinessName(null);
-      return;
-    }
-
     let active = true;
 
     async function fetchTaskData(): Promise<void> {
+      if (!bizId) {
+        if (!active) return;
+        setLoading(false);
+        setBusinessName(null);
+        setError(null);
+        setTaskId("TASK-001");
+        setSortOrder(1);
+        return;
+      }
+
       setLoading(true);
 
       const [

@@ -1070,7 +1070,7 @@ export const getConceptById = (id: string): Concept | undefined => {
 };
 
 export const getConceptsByArea = (area: string): Concept[] => {
-  return concepts.filter(c => c.areas.includes(area as any));
+  return concepts.filter(c => c.areas.includes(area));
 };
 
 export const getConceptsByName = (name: string): Concept[] => {

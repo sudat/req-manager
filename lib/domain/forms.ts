@@ -1,5 +1,5 @@
 // フォーム関連型定義
-// components/forms/types.ts と lib/mock/task-knowledge.ts の型を統合
+// components/forms/types.ts と TaskKnowledge で使う型を統合
 
 /**
  * 選択ダイアログタイプ

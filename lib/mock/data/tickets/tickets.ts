@@ -899,7 +899,7 @@ export const getTicketById = (id: string): Ticket | undefined => {
 };
 
 export const getTicketsByArea = (area: string): Ticket[] => {
-  return tickets.filter(t => t.areas.includes(area as any));
+  return tickets.filter(t => t.areas.includes(area));
 };
 
 export const getTicketsByStatus = (status: string): Ticket[] => {

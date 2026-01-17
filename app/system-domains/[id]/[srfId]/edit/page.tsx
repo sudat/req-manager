@@ -4,7 +4,6 @@ import { use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { MobileHeader } from "@/components/layout/mobile-header";
 import { Button } from "@/components/ui/button";
 import type { SystemFunction } from "@/lib/domain";
 import { useSystemFunctionForm } from "./hooks/useSystemFunctionForm";
@@ -29,8 +28,12 @@ interface PageProps {
 function LoadingState() {
 	return (
 		<div className="flex-1 min-h-screen bg-white">
-			<div className="mx-auto max-w-[1400px] px-8 py-6 text-slate-500">
-				読み込み中...
+			<div className="mx-auto max-w-[1400px] px-8 py-6">
+				<div className="animate-pulse space-y-3">
+					<div className="h-4 bg-slate-200 rounded w-20" />
+					<div className="h-8 bg-slate-200 rounded w-32" />
+					<div className="h-96 bg-slate-200 rounded" />
+				</div>
 			</div>
 		</div>
 	);

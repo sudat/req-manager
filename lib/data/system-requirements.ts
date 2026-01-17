@@ -199,3 +199,16 @@ export const deleteSystemRequirement = async (id: string) => {
   if (error) return { data: null, error: error.message };
   return { data: true, error: null };
 };
+
+export const deleteSystemRequirementsBySrfId = async (srfId: string) => {
+  const configError = failIfMissingConfig();
+  if (configError) return configError;
+
+  const { error } = await supabase
+    .from("system_requirements")
+    .delete()
+    .eq("srf_id", srfId);
+
+  if (error) return { data: null, error: error.message };
+  return { data: true, error: null };
+};

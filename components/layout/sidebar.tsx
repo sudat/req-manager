@@ -18,7 +18,6 @@ import {
 import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { useSidebar } from "./sidebar-context"
-import { useMediaQuery } from "@/hooks/use-media-query"
 import { cn } from "@/lib/utils"
 
 const primaryItems = [
@@ -38,7 +37,6 @@ const managementItems = [
 
 export function Sidebar() {
   const { isCollapsed, isMobileOpen, setIsMobileOpen, toggleCollapsed } = useSidebar()
-  const isDesktop = useMediaQuery("(min-width: 768px)")
   const pathname = usePathname()
 
   const isActive = (href: string) => {
@@ -49,7 +47,7 @@ export function Sidebar() {
   }
 
   const handleLinkClick = () => {
-    if (!isDesktop && isMobileOpen) {
+    if (isMobileOpen) {
       setIsMobileOpen(false)
     }
   }
@@ -116,23 +114,20 @@ export function Sidebar() {
     </>
   )
 
-  // モバイル: Sheetでオーバーレイ表示
-  if (!isDesktop) {
-    return (
+  return (
+    <>
       <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
-        <SheetContent side="left" className="w-[80%] max-w-[300px] p-0 bg-white">
+        <SheetContent
+          side="left"
+          className="w-[80%] max-w-[300px] p-0 bg-white md:hidden"
+          overlayClassName="md:hidden"
+        >
           {menuContent}
         </SheetContent>
       </Sheet>
-    )
-  }
-
-  // デスクトップ: 固定サイドバー
-  return (
-    <>
       <aside
         className={cn(
-          "fixed left-0 top-0 h-screen overflow-hidden border-r border-slate-200 bg-white/95 backdrop-blur transition-all duration-300",
+          "fixed left-0 top-0 hidden h-screen overflow-hidden border-r border-slate-200 bg-white/95 backdrop-blur transition-all duration-300 md:block",
           isCollapsed ? "w-[64px]" : "w-[280px]"
         )}
       >

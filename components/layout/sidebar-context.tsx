@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react"
+import { createContext, useContext, useState, ReactNode } from "react"
 
 interface SidebarContextValue {
   isCollapsed: boolean
@@ -14,14 +14,11 @@ interface SidebarContextValue {
 const SidebarContext = createContext<SidebarContextValue | undefined>(undefined)
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
-  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false
+    return window.localStorage.getItem("sidebar-collapsed") === "true"
+  })
   const [isMobileOpen, setIsMobileOpen] = useState(false)
-
-  // ハイドレーション後にlocalStorageから読み込む
-  useEffect(() => {
-    setIsCollapsed(localStorage.getItem('sidebar-collapsed') === 'true')
-    setIsMobileOpen(localStorage.getItem('sidebar-mobile-open') === 'true')
-  }, [])
 
   const handleSetIsCollapsed = (value: boolean) => {
     setIsCollapsed(value)
@@ -32,9 +29,6 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
 
   const handleSetIsMobileOpen = (value: boolean) => {
     setIsMobileOpen(value)
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('sidebar-mobile-open', String(value))
-    }
   }
 
   const toggleCollapsed = () => setIsCollapsed((prev) => !prev)

@@ -4,7 +4,6 @@ import { use, useEffect, useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { MobileHeader } from "@/components/layout/mobile-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -76,7 +75,13 @@ export default function BusinessEditPage({ params }: { params: Promise<{ id: str
     return (
     <>
         <div className="flex-1 min-h-screen bg-slate-50">
-          <div className="mx-auto max-w-[1200px] p-8 text-slate-500">読み込み中...</div>
+          <div className="mx-auto max-w-[1200px] p-8">
+            <div className="space-y-4">
+              <div className="h-8 bg-slate-200 rounded w-32 animate-pulse" />
+              <div className="h-10 bg-slate-200 rounded w-48 animate-pulse" />
+              <div className="h-96 bg-slate-200 rounded animate-pulse" />
+            </div>
+          </div>
         </div>
       </>
     );

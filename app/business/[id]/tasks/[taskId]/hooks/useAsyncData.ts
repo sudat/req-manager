@@ -9,8 +9,7 @@ import { useEffect, useState } from "react";
  * @returns データ・ローディング状態・エラー状態
  */
 export function useAsyncData<T>(
-	fetchFn: () => Promise<{ data: T[] | null; error: string | null }>,
-	deps: any[] = []
+	fetchFn: () => Promise<{ data: T[] | null; error: string | null }>
 ): {
 	data: T[];
 	loading: boolean;
@@ -42,7 +41,7 @@ export function useAsyncData<T>(
 		return () => {
 			active = false;
 		};
-	}, deps);
+	}, [fetchFn]);
 
 	return { data, loading, error };
 }
@@ -54,8 +53,7 @@ export function useAsyncData<T>(
  * @returns データ・ローディング状態・エラー状態
  */
 export function useAsyncDataItem<T>(
-	fetchFn: () => Promise<{ data: T | null; error: string | null }>,
-	deps: any[] = []
+	fetchFn: () => Promise<{ data: T | null; error: string | null }>
 ): {
 	data: T | null;
 	loading: boolean;
@@ -87,7 +85,7 @@ export function useAsyncDataItem<T>(
 		return () => {
 			active = false;
 		};
-	}, deps);
+	}, [fetchFn]);
 
 	return { data, loading, error };
 }

@@ -74,10 +74,12 @@ export function SystemRequirementCard({
         <div className="border-t border-slate-100 pt-2 mt-2 space-y-1">
           <div className="text-[12px] font-medium text-slate-500">影響領域</div>
           <div className="flex flex-wrap gap-1.5">
-            {requirement.impacts.map((impact, i) => (
-              <Badge key={i} variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px]">
-                {impact}
-              </Badge>
+            {requirement.impacts.map((impact) => (
+              <Link key={impact} href={`/system-domains/${impact}`}>
+                <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] hover:bg-slate-100">
+                  {impact}
+                </Badge>
+              </Link>
             ))}
           </div>
         </div>

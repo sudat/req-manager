@@ -12,8 +12,8 @@ export function TableSkeleton({ cols, rows = 5 }: TableSkeletonProps) {
       {Array.from({ length: rows }).map((_, i) => (
         <TableRow key={i}>
           {Array.from({ length: cols }).map((_, j) => (
-            <TableCell key={j}>
-              <Skeleton className="h-6 w-full" />
+            <TableCell key={j} className="px-4 py-3">
+              <Skeleton className="h-4 w-full" />
             </TableCell>
           ))}
         </TableRow>

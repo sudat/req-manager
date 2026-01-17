@@ -11,6 +11,7 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { confirmDelete } from "@/lib/ui/confirm";
 import { createSystemDomain, deleteSystemDomain, listSystemDomains, updateSystemDomain, type SystemDomain } from "@/lib/data/system-domains";
+import { CardSkeleton } from "@/components/skeleton";
 
 const domainCodePattern = /^[A-Z_-]+$/;
 
@@ -171,7 +172,7 @@ export default function DomainsSettingsPage() {
               <div className="space-y-4">
                 {error && <p className="text-[13px] text-rose-600">{error}</p>}
                 {loading ? (
-                  <div className="text-[13px] text-slate-500">読み込み中...</div>
+                  <CardSkeleton />
                 ) : domains.length === 0 ? (
                   <div className="text-[13px] text-slate-500">まだ登録されていません。</div>
                 ) : (

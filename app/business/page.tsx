@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/table";
 import { Eye, Pencil, Trash2, Search } from "lucide-react";
 import { listBusinessesWithRequirementCounts, deleteBusiness } from "@/lib/data/businesses";
+import { stripMarkdown } from "@/lib/utils";
 import { TableSkeleton } from "@/components/skeleton";
 import type { Business } from "@/lib/domain";
 import { confirmDelete } from "@/lib/ui/confirm";
@@ -180,8 +181,8 @@ export default function BusinessPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="px-4 py-3">
-                      <div className="max-w-[300px] truncate text-[13px] text-slate-600" title={biz.summary}>
-                        {biz.summary}
+                      <div className="max-w-[300px] truncate text-[13px] text-slate-600" title={stripMarkdown(biz.summary)}>
+                        {stripMarkdown(biz.summary)}
                       </div>
                     </TableCell>
                     <TableCell className="px-4 py-3">

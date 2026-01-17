@@ -4,11 +4,12 @@ import { use, useEffect, useMemo, useState } from "react";
 import { RequirementListSection } from "@/components/forms/requirement-list-section";
 import { SelectionDialog } from "@/components/forms/SelectionDialog";
 import type { TaskKnowledge, SelectionDialogType } from "@/lib/domain";
-import { getDefaultTaskKnowledge } from "@/lib/domain";
 import { listBusinessRequirementsByTaskId } from "@/lib/data/business-requirements";
 import { listSystemRequirementsByTaskId } from "@/lib/data/system-requirements";
 import { fromBusinessRequirement, fromSystemRequirement } from "@/lib/data/requirement-mapper";
+import { getTaskById } from "@/lib/data/tasks";
 import { removeFromStorage } from "@/lib/utils/local-storage";
+import { createEmptyTaskKnowledge } from "@/lib/utils/task-knowledge";
 
 // Hooks
 import { useMasterData } from "./hooks/useMasterData";
@@ -28,9 +29,8 @@ export default function TaskDetailEditPage({
 	const { id, taskId } = use(params);
 	const storageKey = `task-knowledge:${id}:${taskId}`;
 
-	const defaultKnowledge = useMemo(
-		() => getDefaultTaskKnowledge({ bizId: id, taskId }),
-		[id, taskId]
+	const [defaultKnowledge, setDefaultKnowledge] = useState<TaskKnowledge>(() =>
+		createEmptyTaskKnowledge(id, taskId)
 	);
 
 	// データロード状態
@@ -47,15 +47,22 @@ export default function TaskDetailEditPage({
 	} = useMasterData();
 
 	// フォーム状態管理
-	const { knowledge, updateField, updateRequirement, removeRequirement, addRequirement, reset } =
-		useTaskEditForm({
-			defaultKnowledge,
-			taskId,
-			onReset: () => {
-				clearError();
-				removeFromStorage(storageKey);
-			},
-		});
+	const {
+		knowledge,
+		setKnowledge,
+		updateField,
+		updateRequirement,
+		removeRequirement,
+		addRequirement,
+		reset,
+	} = useTaskEditForm({
+		defaultKnowledge,
+		taskId,
+		onReset: () => {
+			clearError();
+			removeFromStorage(storageKey);
+		},
+	});
 
 	// 保存処理
 	const { handleSave, isSaving, saveError, clearError } = useTaskSave({
@@ -66,31 +73,67 @@ export default function TaskDetailEditPage({
 
 	// マウント時にDBから既存データを読み込む
 	useEffect(() => {
+		let active = true;
+
 		async function loadExistingData(): Promise<void> {
 			setIsLoading(true);
 
 			try {
-				const { data: businessReqs } = await listBusinessRequirementsByTaskId(taskId);
-				const { data: systemReqs } = await listSystemRequirementsByTaskId(taskId);
+				const [taskResult, businessReqResult, systemReqResult] = await Promise.all([
+					getTaskById(taskId),
+					listBusinessRequirementsByTaskId(taskId),
+					listSystemRequirementsByTaskId(taskId),
+				]);
+
+				if (!active) return;
+
+				const task = taskResult.data;
+				if (taskResult.error) {
+					console.error("タスク読み込みエラー:", taskResult.error);
+				}
+				if (businessReqResult.error) {
+					console.error("業務要件読み込みエラー:", businessReqResult.error);
+				}
+				if (systemReqResult.error) {
+					console.error("システム要件読み込みエラー:", systemReqResult.error);
+				}
 
 				const loadedBusinessRequirements =
-					businessReqs?.map((br) => fromBusinessRequirement(br)) ?? [];
+					businessReqResult.data?.map((br) => fromBusinessRequirement(br)) ?? [];
 				const loadedSystemRequirements =
-					systemReqs?.map((sr) => fromSystemRequirement(sr)) ?? [];
+					systemReqResult.data?.map((sr) => fromSystemRequirement(sr)) ?? [];
 
-				if (loadedBusinessRequirements.length > 0 || loadedSystemRequirements.length > 0) {
-					updateField("businessRequirements", loadedBusinessRequirements);
-					updateField("systemRequirements", loadedSystemRequirements);
-				}
+				const loadedKnowledge: TaskKnowledge = {
+					bizId: task?.businessId ?? id,
+					taskId,
+					taskName: task?.name ?? "",
+					taskSummary: task?.summary ?? "",
+					person: task?.person ?? "",
+					input: task?.input ?? "",
+					output: task?.output ?? "",
+					businessRequirements: loadedBusinessRequirements,
+					systemRequirements: loadedSystemRequirements,
+					designDocs: [],
+					codeRefs: [],
+				};
+
+				setDefaultKnowledge(loadedKnowledge);
+				setKnowledge(loadedKnowledge);
 			} catch (e) {
 				console.error("データ読み込みエラー:", e);
 			} finally {
-				setIsLoading(false);
+				if (active) {
+					setIsLoading(false);
+				}
 			}
 		}
 
 		loadExistingData();
-	}, [taskId]);
+
+		return () => {
+			active = false;
+		};
+	}, [id, taskId, setKnowledge, setDefaultKnowledge]);
 
 	// ダイアログ状態管理
 	const [dialogState, setDialogState] = useState<{

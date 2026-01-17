@@ -3,7 +3,6 @@
 import { use, useEffect, useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { MobileHeader } from "@/components/layout/mobile-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -106,7 +105,12 @@ export default function IdeaEditPage({ params }: { params: Promise<{ id: string 
     return (
     <>
         <div className="flex-1 min-h-screen bg-slate-50">
-          <div className="mx-auto max-w-[1400px] p-8 text-slate-500">読み込み中...</div>
+          <div className="mx-auto max-w-[1400px] p-8">
+            <div className="animate-pulse space-y-3">
+              <div className="h-4 bg-slate-200 rounded w-24" />
+              <div className="h-32 bg-slate-200 rounded" />
+            </div>
+          </div>
         </div>
       </>
     );

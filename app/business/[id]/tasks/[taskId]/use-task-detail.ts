@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState, useEffect, useCallback } from "react";
 import type { Task } from "@/lib/domain";
 import type { TaskKnowledge } from "@/lib/domain";
-import { getDefaultTaskKnowledge } from "@/lib/domain";
+import { createEmptyTaskKnowledge } from "@/lib/utils/task-knowledge";
 import { listBusinessRequirementsByTaskId, type BusinessRequirement } from "@/lib/data/business-requirements";
 import { listSystemRequirementsByTaskId, type SystemRequirement } from "@/lib/data/system-requirements";
+import { getTaskById } from "@/lib/data/tasks";
 import { listConcepts } from "@/lib/data/concepts";
 import { listSystemFunctions } from "@/lib/data/system-functions";
 import { listSystemDomains, type SystemDomain } from "@/lib/data/system-domains";
@@ -38,7 +39,7 @@ type UseTaskDetailReturn = {
 export function useTaskDetail({ bizId, taskId }: UseTaskDetailParams): UseTaskDetailReturn {
 	const storageKey = `task-knowledge:${bizId}:${taskId}`;
 	const defaultKnowledge = useMemo(
-		() => getDefaultTaskKnowledge({ bizId, taskId }),
+		() => createEmptyTaskKnowledge(bizId, taskId),
 		[bizId, taskId],
 	);
 
@@ -56,33 +57,32 @@ export function useTaskDetail({ bizId, taskId }: UseTaskDetailParams): UseTaskDe
 	});
 
 	// タスク取得
+	const fetchTask = useCallback(() => getTaskById(taskId), [taskId]);
 	const { data: task, loading: taskLoading, error: taskError } = useAsyncDataItem<Task>(
-		() => {
-			const { getTaskById } = require("@/lib/data/tasks");
-			return getTaskById(taskId);
-		},
-		[taskId]
+		fetchTask
 	);
 
 	// 業務要件取得
+	const fetchBusinessRequirements = useCallback(
+		() => listBusinessRequirementsByTaskId(taskId),
+		[taskId]
+	);
 	const {
 		data: businessRequirements,
 		loading: requirementsLoading,
 		error: requirementsError,
-	} = useAsyncData<BusinessRequirement>(
-		() => listBusinessRequirementsByTaskId(taskId),
-		[taskId]
-	);
+	} = useAsyncData<BusinessRequirement>(fetchBusinessRequirements);
 
 	// システム要件取得
+	const fetchSystemRequirements = useCallback(
+		() => listSystemRequirementsByTaskId(taskId),
+		[taskId]
+	);
 	const {
 		data: systemRequirements,
 		loading: systemRequirementsLoading,
 		error: systemRequirementsError,
-	} = useAsyncData<SystemRequirement>(
-		() => listSystemRequirementsByTaskId(taskId),
-		[taskId]
-	);
+	} = useAsyncData<SystemRequirement>(fetchSystemRequirements);
 
 	// オプションデータ（コンセプト・システム機能・システムドメイン）取得
 	const [optionsError, setOptionsError] = useState<string | null>(null);
@@ -91,10 +91,11 @@ export function useTaskDetail({ bizId, taskId }: UseTaskDetailParams): UseTaskDe
 		{ id: string; name: string; systemDomainId: string | null }[]
 	>([]);
 	const [systemDomains, setSystemDomains] = useState<SystemDomain[]>([]);
+	const optionsActiveRef = useRef(true);
 
 	// オプションデータの取得はPromise.allパターンのため、独自のuseEffectを使用
-	useMemo(() => {
-		let active = true;
+	useEffect(() => {
+		optionsActiveRef.current = true;
 
 		async function fetchOptions(): Promise<void> {
 			const [conceptResult, srfResult, domainResult] = await Promise.all([
@@ -102,7 +103,7 @@ export function useTaskDetail({ bizId, taskId }: UseTaskDetailParams): UseTaskDe
 				listSystemFunctions(),
 				listSystemDomains(),
 			]);
-			if (!active) return;
+			if (!optionsActiveRef.current) return;
 
 			const fetchError = conceptResult.error ?? srfResult.error ?? domainResult.error;
 			if (fetchError) {
@@ -125,7 +126,7 @@ export function useTaskDetail({ bizId, taskId }: UseTaskDetailParams): UseTaskDe
 		fetchOptions();
 
 		return () => {
-			active = false;
+			optionsActiveRef.current = false;
 		};
 	}, []);
 

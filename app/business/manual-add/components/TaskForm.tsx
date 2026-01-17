@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type TaskFormProps = {
   bizId: string;
@@ -58,7 +59,7 @@ export function TaskForm({
           <span className="font-mono">{bizId}</span>
           <span className="text-slate-300">/</span>
           <span className="font-mono">
-            {loading ? "読み込み中..." : taskId}
+            {loading ? <Skeleton className="h-4 w-16 inline-block align-middle" /> : taskId}
           </span>
           {businessName && (
             <>

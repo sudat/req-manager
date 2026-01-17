@@ -1,3 +1,7 @@
+import { tickets } from "./tickets/tickets";
+import { tasks } from "./tasks/tasks";
+import { concepts } from "./concepts/concepts";
+
 // 共通型定義
 export type { RelatedRequirementInfo, DesignItemCategory } from '@/lib/domain';
 
@@ -19,14 +23,11 @@ export { systemFunctions, getSystemFunctionById, getSystemFunctionsByStatus, get
 
 // ユーティリティ関数：複数エンティティにまたがる検索
 export const getTicketsByBusinessId = (businessId: string) => {
-  const { tickets } = require('./tickets/tickets');
-  return tickets.filter((t: any) => t.businessIds.includes(businessId));
+  return tickets.filter((t) => t.businessIds.includes(businessId));
 };
 
 export const getConceptsByTaskId = (taskId: string) => {
-  const { tasks } = require('./tasks/tasks');
-  const { concepts } = require('./concepts/concepts');
-  const task = tasks.find((t: any) => t.id === taskId);
+  const task = tasks.find((t) => t.id === taskId);
   if (!task) return [];
-  return concepts.filter((c: any) => task.concepts.includes(c.id));
+  return concepts.filter((c) => task.concepts.includes(c.id));
 };

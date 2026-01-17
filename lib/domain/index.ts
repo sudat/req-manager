@@ -14,4 +14,4 @@ export * from "./value-objects";
 export * from "./forms";
 
 // タスク知識型
-export * from "./task-knowledge";
+export type { TaskKnowledge } from "./task-knowledge.types";

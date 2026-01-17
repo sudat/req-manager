@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useEffect, useMemo, useState } from "react";
-import { MobileHeader } from "@/components/layout/mobile-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -21,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Plus, Eye, Pencil, Trash2, Search } from "lucide-react";
+import { Plus, Eye, Pencil, Trash2, Search } from "lucide-react";
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -32,6 +31,8 @@ import {
 } from "@/components/ui/breadcrumb";
 import type { SystemFunction, SrfCategory, SrfStatus } from "@/lib/domain";
 import { listSystemFunctionsByDomain, deleteSystemFunction } from "@/lib/data/system-functions";
+import { deleteSystemRequirementsBySrfId } from "@/lib/data/system-requirements";
+import { stripMarkdown } from "@/lib/utils";
 import { TableSkeleton } from "@/components/skeleton";
 import { confirmDelete } from "@/lib/ui/confirm";
 import { getSystemDomainById } from "@/lib/data/system-domains";
@@ -105,6 +106,11 @@ export default function SystemDomainFunctionsPage({ params }: { params: Promise<
 
   const handleDelete = async (srf: SystemFunction) => {
     if (!confirmDelete(`${srf.title}（${srf.id}）`)) return;
+    const { error: requirementDeleteError } = await deleteSystemRequirementsBySrfId(srf.id);
+    if (requirementDeleteError) {
+      alert(requirementDeleteError);
+      return;
+    }
     const { error: deleteError } = await deleteSystemFunction(srf.id);
     if (deleteError) {
       alert(deleteError);
@@ -275,8 +281,8 @@ function FunctionTableRow({ srf, domainId, onRowClick, onDelete }: FunctionTable
         </Badge>
       </TableCell>
       <TableCell className="px-4 py-3">
-        <span className="text-[13px] text-slate-600 truncate max-w-[300px] block" title={srf.summary}>
-          {srf.summary}
+        <span className="text-[13px] text-slate-600 truncate max-w-[300px] block" title={stripMarkdown(srf.summary)}>
+          {stripMarkdown(srf.summary)}
         </span>
       </TableCell>
       <TableCell className="px-4 py-3">

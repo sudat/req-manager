@@ -3,7 +3,6 @@
 import { use, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { MobileHeader } from "@/components/layout/mobile-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -14,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Plus, Eye, Pencil, Trash2, Search, Sparkles } from "lucide-react";
+import { Plus, Eye, Pencil, Trash2, Search, Sparkles } from "lucide-react";
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -25,6 +24,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import type { Task } from "@/lib/domain";
 import { listTasksByBusinessId, deleteTask } from "@/lib/data/tasks";
+import { stripMarkdown } from "@/lib/utils";
 import { TableSkeleton } from "@/components/skeleton";
 import { getBusinessById } from "@/lib/data/businesses";
 import { confirmDelete } from "@/lib/ui/confirm";
@@ -224,8 +224,8 @@ function TaskTableRow({ task, businessId, onRowClick, onDelete }: TaskTableRowPr
         <span className="text-[14px] font-medium text-slate-900">{task.name}</span>
       </TableCell>
       <TableCell className="px-4 py-3">
-        <div className="max-w-[300px] truncate text-[13px] text-slate-600" title={task.summary}>
-          {task.summary}
+        <div className="max-w-[300px] truncate text-[13px] text-slate-600" title={stripMarkdown(task.summary)}>
+          {stripMarkdown(task.summary)}
         </div>
       </TableCell>
       <TableCell className="px-4 py-3">
