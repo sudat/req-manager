@@ -9,11 +9,11 @@
 ※細部は次フェーズで詰める。依存関係の都合で「DB → データ層 → 画面 → 品質監視」の順を推奨。
 
 ### 1) DBテーブル修正（Supabase）
-- [ ] `business_requirements` に `priority` を追加
-- [ ] `business_requirements.acceptance_criteria` を構造化（JSONB）へ移行
-- [ ] `system_requirements` に `category` と `business_requirement_ids` を追加
-- [ ] `system_requirements.acceptance_criteria` を構造化（JSONB）へ移行
-- [ ] `system_functions` に `entry_points`（path/type/responsibility）を追加（既存 `code_refs` との整理含む）
+- [x] `business_requirements` に `priority` を追加
+- [x] 業務要件の受入条件を構造化（Phase 1: `acceptance_criteria_json` 追加で段階移行、legacy `acceptance_criteria(text[])` は残置）
+- [x] `system_requirements` に `category` と `business_requirement_ids` を追加
+- [x] システム要件の受入条件を構造化（Phase 1: `acceptance_criteria_json` 追加で段階移行、legacy `acceptance_criteria(text[])` は残置）
+- [x] `system_functions` に `entry_points`（path/type/responsibility）を追加（Phase 1: `code_refs.paths` から `path` を暫定移行、`type/responsibility` は後続で入力）
 
 ### 2) データアクセス層修正（`lib/data/*`）
 - [ ] `BusinessRequirement`/`SystemRequirement`/`SystemFunction` の型・Row変換・CRUDを新スキーマに追従
@@ -29,8 +29,8 @@
 - [ ] ダッシュボード等に警告・スコア表示（まずは一覧/カード表示でOK）
 
 ### 5) 既存データ移行・seed整備
-- [ ] 既存 `acceptance_criteria: text[]` を新形式に変換して移行
-- [ ] `code_refs` 由来のパスを `entry_points` に暫定移行（type/responsibilityは手入力 or 既定値）
+- [x] 既存 `acceptance_criteria: text[]` を新形式に変換して移行（Phase 1: `acceptance_criteria_json` へバックフィル）
+- [x] `code_refs` 由来のパスを `entry_points` に暫定移行（type/responsibilityは手入力 or 既定値）
 - [ ] `lib/mock/data/*` の形式更新（必要なら）
 
 ### 6) 動作確認（E2E優先）
@@ -40,4 +40,4 @@
 ---
 
 ## 直近詳細計画
-- [ ] [Phase 1: DBテーブル修正（Supabase）](2026-01-19-prd-v1-3-phase1-db-schema.md)
+- [x] [Phase 1: DBテーブル修正（Supabase）](2026-01-19-prd-v1-3-phase1-db-schema.md)

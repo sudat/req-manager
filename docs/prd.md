@@ -334,13 +334,16 @@ AI提案の漏れ/過検知をこの正解データで評価し、継続改善�
   - 業務要件（business_requirements）
     - priority（優先度）を追加
     - acceptance_criteria を構造化（確認状態・検証手段・確認者・確認日時・確認根拠を含む）
+    - （移行メモ）既存 `acceptance_criteria(text[])` との互換のため、MVP段階では `acceptance_criteria_json(jsonb)` を併設して段階移行する
   - システム領域マスタ（system_domains）
   - システム機能一覧（system_functions）
     - entry_points を構造化（path / type / responsibility を含む）
+    - （移行メモ）既存 `code_refs.paths` から `entry_points[].path` を暫定移行する（type/responsibility は後で入力）
   - システム要件（system_requirements）
     - category（観点種別: function / data / exception / auth / non_functional）を追加
     - business_requirement_ids（紐づく業務要件ID）を追加
     - acceptance_criteria を構造化（確認状態・検証手段・確認者・確認日時・確認根拠を含む）
+    - （移行メモ）既存 `acceptance_criteria(text[])` との互換のため、MVP段階では `acceptance_criteria_json(jsonb)` を併設して段階移行する
   - 概念辞書（concepts）
   - 変更要求（change_requests）
   - 影響範囲（impact_scopes：業務要件・システム要件・システム機能・設計/UX/ファイル）
@@ -672,21 +675,21 @@ concept_ids と impacts が空の場合、影響分析のマッチングが効�
 
 システム機能は業務単位で管理し、エントリポイントに種別と責務を持たせる。
 影響分析の絞り込みはエントリポイントの type と responsibility で行う。
+
+（DB表現）entry_points は jsonb の配列として保持する（default `[]`）。
 ```json
-{
-  "entry_points": [
-    {
-      "path": "/app/billing/invoice/page.tsx",
-      "type": "screen",
-      "responsibility": "発行指示、一覧表示"
-    },
-    {
-      "path": "/jobs/invoice-pdf-batch.ts",
-      "type": "batch",
-      "responsibility": "PDF生成、税計算、登録番号出力"
-    }
-  ]
-}
+[
+  {
+    "path": "/app/billing/invoice/page.tsx",
+    "type": "screen",
+    "responsibility": "発行指示、一覧表示"
+  },
+  {
+    "path": "/jobs/invoice-pdf-batch.ts",
+    "type": "batch",
+    "responsibility": "PDF生成、税計算、登録番号出力"
+  }
+]
 ```
 
 | 属性 | 必須 | 説明 |
@@ -751,21 +754,21 @@ business_requirement_ids が空の場合、「なぜこのシステム要件が�
 
 #### 受入条件の構造（共通）
 
-業務要件・システム要件の acceptance_criteria は以下の構造で保持する。
+業務要件・システム要件の acceptance_criteria は「オブジェクト配列」として保持する。
+
+（DB表現）acceptance_criteria は jsonb の配列として保持する（default `[]`）。
 ```json
-{
-  "acceptance_criteria": [
-    {
-      "id": "AC-001",
-      "description": "請求書に登録番号が表示されること",
-      "verification_method": "目視確認",
-      "status": "unverified",
-      "verified_by": null,
-      "verified_at": null,
-      "evidence": null
-    }
-  ]
-}
+[
+  {
+    "id": "AC-001",
+    "description": "請求書に登録番号が表示されること",
+    "verification_method": "目視確認",
+    "status": "unverified",
+    "verified_by": null,
+    "verified_at": null,
+    "evidence": null
+  }
+]
 ```
 
 | 属性 | 必須 | 説明 |
@@ -1043,7 +1046,7 @@ AI影響分析や自動差分は後追いでよい。
 | 業務タスク 手動追加 | `/business/manual-add?id={bizId}` | Supabase | 実装済 | タスク＋業務要件の一括登録 |
 | 業務タスク 詳細 | `/business/{bizId}/tasks/{taskId}` | Supabase | 実装済 | 業務要件/関連システム要件の参照 |
 | 業務タスク 編集 | `/business/{bizId}/tasks/{taskId}/edit` | Supabase | 実装済 | タスク基本情報＋要件（同期保存） |
-| 受入条件（要件に保持） | 上記の要件編集 | Supabase | 実装済 | 業務要件/システム要件に配列で保持 |
+| 受入条件（要件に保持） | 上記の要件編集 | Supabase | 実装済 | 業務要件/システム要件に構造化配列で保持（Phase 1: jsonb配列へ段階移行） |
 | AI修正指示（差分候補） | `/business/{bizId}/tasks/ai-order` | 静的 | 部分実装 | LLM連携なしのデモ |
 | 概念辞書一覧 | `/ideas` | Supabase | 実装済 | 一覧/検索/削除 |
 | 概念 追加 | `/ideas/add` | Supabase | 実装済 | 自動採番して作成 |
@@ -1113,6 +1116,7 @@ docs/requirements/
 ### 5.2 業務タスクファイルフォーマット
 
 `business/{業務分類ID}/{業務タスクID}.md`
+※受入条件はMVPでは description のみを箇条書きで出力する（status/verification_method/根拠等のメタデータは将来拡張）。
 ```yaml
 ---
 id: BT-BIL-001
@@ -1151,8 +1155,12 @@ title: 請求書出力バッチ
 system_domain_id: SD-BIL
 system_domain_name: SD請求
 entry_points:
-  - /app/billing/invoice/InvoicePdfGenerator.ts
-  - /app/billing/invoice/
+  - path: /app/billing/invoice/InvoicePdfGenerator.ts
+    type: job
+    responsibility: 請求書PDF生成
+  - path: /app/billing/invoice/
+    type: template
+    responsibility: 帳票テンプレート群
 ---
 
 ## 概要

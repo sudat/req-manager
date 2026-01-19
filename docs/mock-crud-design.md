@@ -8,6 +8,10 @@
 - 開発用途のため、RLSは「匿名アクセス可」のポリシーを設定（本番では必ず見直す）
 - ID採番はアプリ側で行う（例: `BIZ-001`, `SRF-001`, `C001`）
 
+## PRD v1.3 対応メモ
+- 参照: `docs/prd.md` の 1.8 / 2.7.1 / 2.8.1
+- 段階導入のため、既存の legacy 列（`acceptance_criteria: text[]`, `code_refs`）は残しつつ、新列を追加して移行する（KISS）。
+
 ## 環境変数
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
@@ -32,13 +36,34 @@
 | id | text | PK（例: SRF-001） |
 | system_domain_id | text | FK（system_domains.id） |
 | design_doc_no | text | 設計書No |
-| category | text | screen / internal / interface |
+| category | text | screen / internal / interface（PRD v1.3では screen / batch / api / job / interface へ拡張予定） |
+| title | text | 機能名 |
 | summary | text | 機能概要 |
 | status | text | not_implemented / implementing / testing / implemented |
 | related_task_ids | text[] | 関連タスクID |
 | requirement_ids | text[] | 関連要件ID |
 | system_design | jsonb | システム設計項目配列 |
-| code_refs | jsonb | 実装参照配列 |
+| code_refs | jsonb | 実装参照配列（legacy: paths配列） |
+| entry_points | jsonb | エントリポイント配列（構造化: path/type/responsibility） |
+| created_at | timestamptz | default now() |
+| updated_at | timestamptz | default now() |
+
+### system_requirements
+| カラム | 型 | 備考 |
+| --- | --- | --- |
+| id | text | PK（例: SR-TASK-001-001） |
+| task_id | text | FK（business_tasks.id） |
+| srf_id | text | FK（system_functions.id） |
+| category | text | 観点種別（function / data / exception / auth / non_functional） |
+| title | text | システム要件タイトル |
+| summary | text | システム要件概要 |
+| concept_ids | text[] | 関連概念ID配列 |
+| impacts | text[] | 影響するシステム領域ID配列 |
+| system_domain_ids | text[] | システム領域ID配列（補助） |
+| acceptance_criteria | text[] | 受入条件（legacy） |
+| acceptance_criteria_json | jsonb | 受入条件（構造化: jsonb配列） |
+| business_requirement_ids | text[] | 紐づく業務要件ID配列（Phase 1では空配列で初期化） |
+| sort_order | integer | 表示順 |
 | created_at | timestamptz | default now() |
 | updated_at | timestamptz | default now() |
 
@@ -69,7 +94,11 @@
 | concept_ids | text[] | 関連概念ID配列 |
 | srf_id | text | 関連システム機能ID |
 | system_domain_ids | text[] | システム領域ID配列 |
-| acceptance_criteria | text[] | 受入条件 |
+| impacts | text[] | 影響するシステム領域ID配列 |
+| related_system_requirement_ids | text[] | 関連システム要件ID配列 |
+| priority | text | 優先度（Must / Should / Could） |
+| acceptance_criteria | text[] | 受入条件（legacy） |
+| acceptance_criteria_json | jsonb | 受入条件（構造化: jsonb配列） |
 | sort_order | integer | 表示順 |
 | created_at | timestamptz | default now() |
 | updated_at | timestamptz | default now() |
@@ -101,6 +130,7 @@
 - business_domains: (area), (name)
 - system_functions: (category), (status)
 - system_functions: (system_domain_id)
+- system_requirements: (task_id), (srf_id), (category)
 - business_tasks: (business_id), (sort_order)
 - business_requirements: (task_id), (srf_id)
 - system_domains: (sort_order)
@@ -114,6 +144,10 @@
 1. `apply_migration` でDDLを適用
 2. `execute_sql` でseed投入
 
+補足（KISS）:
+- 段階導入用のmigrationは `supabase/migrations/` に置く
+- WSL環境などでMCP/CLIのDB操作が難しい場合、`DATABASE_URL` を設定して `bun scripts/db/apply-phase1-migrations.ts` でPhase 1のDDL＋バックフィルを適用できる
+
 ## DDLサンプル
 ```sql
 create table if not exists public.business_domains (
@@ -123,21 +157,6 @@ create table if not exists public.business_domains (
   summary text not null,
   business_req_count integer not null default 0,
   system_req_count integer not null default 0,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
-create table if not exists public.system_functions (
-  id text primary key,
-  system_domain_id text references public.system_domains(id),
-  design_doc_no text,
-  category text not null,
-  summary text not null,
-  status text not null,
-  related_task_ids text[] not null default '{}',
-  requirement_ids text[] not null default '{}',
-  system_design jsonb not null default '[]',
-  code_refs jsonb not null default '[]',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -167,6 +186,23 @@ create table if not exists public.system_domains (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.system_functions (
+  id text primary key,
+  system_domain_id text references public.system_domains(id),
+  design_doc_no text,
+  category text not null,
+  title text not null default '',
+  summary text not null,
+  status text not null,
+  related_task_ids text[] not null default '{}',
+  requirement_ids text[] not null default '{}',
+  system_design jsonb not null default '[]',
+  code_refs jsonb not null default '[]',
+  entry_points jsonb not null default '[]',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create table if not exists public.business_requirements (
   id text primary key,
   task_id text not null references public.business_tasks(id) on delete cascade,
@@ -175,7 +211,29 @@ create table if not exists public.business_requirements (
   concept_ids text[] not null default '{}',
   srf_id text,
   system_domain_ids text[] not null default '{}',
+  impacts text[] default '{}',
+  related_system_requirement_ids text[] default '{}',
+  priority text not null default 'Must' check (priority in ('Must', 'Should', 'Could')),
   acceptance_criteria text[] not null default '{}',
+  acceptance_criteria_json jsonb not null default '[]',
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.system_requirements (
+  id text primary key,
+  task_id text not null references public.business_tasks(id) on delete cascade,
+  srf_id text references public.system_functions(id),
+  category text not null default 'function' check (category in ('function', 'data', 'exception', 'auth', 'non_functional')),
+  title text not null,
+  summary text not null,
+  concept_ids text[] not null default '{}',
+  impacts text[] not null default '{}',
+  system_domain_ids text[] default '{}',
+  acceptance_criteria text[] not null default '{}',
+  acceptance_criteria_json jsonb not null default '[]',
+  business_requirement_ids text[] not null default '{}',
   sort_order integer not null default 0,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -198,6 +256,7 @@ create table if not exists public.concepts (
 ```sql
 alter table public.business_domains enable row level security;
 alter table public.system_functions enable row level security;
+alter table public.system_requirements enable row level security;
 alter table public.business_tasks enable row level security;
 alter table public.system_domains enable row level security;
 alter table public.business_requirements enable row level security;
@@ -212,6 +271,11 @@ create policy "anon_read_system_functions" on public.system_functions for select
 create policy "anon_write_system_functions" on public.system_functions for insert with check (true);
 create policy "anon_update_system_functions" on public.system_functions for update using (true);
 create policy "anon_delete_system_functions" on public.system_functions for delete using (true);
+
+create policy "anon_read_system_requirements" on public.system_requirements for select using (true);
+create policy "anon_write_system_requirements" on public.system_requirements for insert with check (true);
+create policy "anon_update_system_requirements" on public.system_requirements for update using (true);
+create policy "anon_delete_system_requirements" on public.system_requirements for delete using (true);
 
 create policy "anon_read_business_tasks" on public.business_tasks for select using (true);
 create policy "anon_write_business_tasks" on public.business_tasks for insert with check (true);
