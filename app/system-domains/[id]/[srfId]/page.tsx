@@ -1,17 +1,10 @@
 "use client";
 
 import { Pencil } from "lucide-react";
-import {
-  Breadcrumb,
-  BreadcrumbList,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { HealthScoreCard } from "@/components/health-score/health-score-card";
+import { CardSkeleton, PageHeaderSkeleton } from "@/components/skeleton";
 import {
 	FunctionSummaryCard,
 	SystemRequirementsSection,
@@ -19,15 +12,33 @@ import {
 	ImplementationSection,
 	EntryPointsSection,
 } from "@/components/system-domains";
-import type { SystemFunction } from "@/lib/domain";
+import {
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { Button } from "@/components/ui/button";
+import { listConcepts } from "@/lib/data/concepts";
 import { getSystemFunctionById } from "@/lib/data/system-functions";
-import { PageHeaderSkeleton, CardSkeleton } from "@/components/skeleton";
+import { listSystemRequirementsBySrfId } from "@/lib/data/system-requirements";
+import type { SystemFunction } from "@/lib/domain";
+import {
+	buildHealthScoreSummary,
+	type HealthScoreSummary,
+} from "@/lib/health-score";
 
 // ============================================================
 // Page Layout Components
 // ============================================================
 
-function PageLayout({ children }: { children: React.ReactNode }): React.ReactNode {
+function PageLayout({
+	children,
+}: {
+	children: React.ReactNode;
+}): React.ReactNode {
 	return (
 		<div className="flex-1 min-h-screen bg-white">
 			<div className="mx-auto max-w-[1400px] px-8 py-4">{children}</div>
@@ -52,7 +63,10 @@ interface NotFoundStateProps {
 	error: string | null;
 }
 
-function NotFoundState({ domainId, error }: NotFoundStateProps): React.ReactNode {
+function NotFoundState({
+	domainId,
+	error,
+}: NotFoundStateProps): React.ReactNode {
 	return (
 		<PageLayout>
 			<div className="text-center py-20">
@@ -83,6 +97,11 @@ export default function SystemFunctionDetailPage({
 	const [srf, setSrf] = useState<SystemFunction | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(true);
+	const [healthSummary, setHealthSummary] = useState<HealthScoreSummary | null>(
+		null,
+	);
+	const [healthLoading, setHealthLoading] = useState(true);
+	const [healthError, setHealthError] = useState<string | null>(null);
 
 	useEffect(() => {
 		let active = true;
@@ -107,6 +126,45 @@ export default function SystemFunctionDetailPage({
 			active = false;
 		};
 	}, [srfId]);
+
+	useEffect(() => {
+		if (!srf) return;
+		let active = true;
+
+		async function fetchHealth(): Promise<void> {
+			setHealthLoading(true);
+			const [systemReqResult, conceptResult] = await Promise.all([
+				listSystemRequirementsBySrfId(srf.id),
+				listConcepts(),
+			]);
+
+			if (!active) return;
+
+			const fetchError = systemReqResult.error ?? conceptResult.error;
+			if (fetchError) {
+				setHealthError(fetchError);
+				setHealthSummary(null);
+				setHealthLoading(false);
+				return;
+			}
+
+			const summary = buildHealthScoreSummary({
+				businessRequirements: [],
+				systemRequirements: systemReqResult.data ?? [],
+				systemFunctions: [srf],
+				concepts: conceptResult.data ?? [],
+			});
+
+			setHealthSummary(summary);
+			setHealthError(null);
+			setHealthLoading(false);
+		}
+
+		fetchHealth();
+		return () => {
+			active = false;
+		};
+	}, [srf]);
 
 	if (loading) {
 		return <LoadingState />;
@@ -153,6 +211,16 @@ export default function SystemFunctionDetailPage({
 			</div>
 
 			<FunctionSummaryCard srf={srf} domainId={id} />
+			<div className="mt-4">
+				<HealthScoreCard
+					title="システム機能ヘルススコア"
+					summary={healthSummary}
+					loading={healthLoading}
+					error={healthError}
+					maxIssues={5}
+					showStats
+				/>
+			</div>
 			<SystemRequirementsSection srfId={srf.id} />
 			<SystemDesignSection systemDesign={srf.systemDesign} />
 			<EntryPointsSection entryPoints={srf.entryPoints ?? []} />

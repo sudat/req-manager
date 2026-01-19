@@ -17,6 +17,7 @@ export type SystemRequirement = {
 	conceptIds: string[];
 	impacts: string[];
 	category: SystemRequirementCategory;
+	categoryRaw?: string | null;
 	businessRequirementIds: string[];
 	acceptanceCriteriaJson: AcceptanceCriterionJson[];
 	acceptanceCriteria: string[];
@@ -89,6 +90,7 @@ const toSystemRequirement = (row: SystemRequirementRow): SystemRequirement => {
 		conceptIds: row.concept_ids ?? [],
 		impacts: row.impacts ?? [],
 		category: normalizeCategory(row.category),
+		categoryRaw: row.category,
 		businessRequirementIds: row.business_requirement_ids ?? [],
 		acceptanceCriteriaJson,
 		acceptanceCriteria: acceptanceCriteriaJsonToLegacy(acceptanceCriteriaJson),
@@ -143,6 +145,21 @@ export const listSystemRequirementsByIds = async (ids: string[]) => {
 		.from("system_requirements")
 		.select("*")
 		.in("id", ids)
+		.order("id");
+
+	if (error) return { data: null, error: error.message };
+	return { data: (data as SystemRequirementRow[]).map(toSystemRequirement), error: null };
+};
+
+export const listSystemRequirements = async () => {
+	const configError = failIfMissingConfig();
+	if (configError) return configError;
+
+	const { data, error } = await supabase
+		.from("system_requirements")
+		.select("*")
+		.order("task_id")
+		.order("sort_order")
 		.order("id");
 
 	if (error) return { data: null, error: error.message };

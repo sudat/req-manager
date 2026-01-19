@@ -1,15 +1,28 @@
 "use client";
 
 import { useMemo, useRef, useState, useEffect, useCallback } from "react";
-import type { Task } from "@/lib/domain";
-import type { TaskKnowledge } from "@/lib/domain";
-import { createEmptyTaskKnowledge } from "@/lib/utils/task-knowledge";
-import { listBusinessRequirementsByTaskId, type BusinessRequirement } from "@/lib/data/business-requirements";
-import { listSystemRequirementsByTaskId, type SystemRequirement } from "@/lib/data/system-requirements";
-import { getTaskById } from "@/lib/data/tasks";
+import {
+	type BusinessRequirement,
+	listBusinessRequirementsByTaskId,
+} from "@/lib/data/business-requirements";
 import { listConcepts } from "@/lib/data/concepts";
+import {
+	listSystemDomains,
+	type SystemDomain,
+} from "@/lib/data/system-domains";
 import { listSystemFunctions } from "@/lib/data/system-functions";
-import { listSystemDomains, type SystemDomain } from "@/lib/data/system-domains";
+import {
+	listSystemRequirementsByTaskId,
+	type SystemRequirement,
+} from "@/lib/data/system-requirements";
+import { getTaskById } from "@/lib/data/tasks";
+import type {
+	Concept,
+	SystemFunction,
+	Task,
+	TaskKnowledge,
+} from "@/lib/domain";
+import { createEmptyTaskKnowledge } from "@/lib/utils/task-knowledge";
 import { useAsyncData, useAsyncDataItem } from "./hooks/useAsyncData";
 
 type UseTaskDetailParams = {
@@ -28,15 +41,25 @@ type UseTaskDetailReturn = {
 	systemRequirementsLoading: boolean;
 	systemRequirementsError: string | null;
 	optionsError: string | null;
+	optionsLoading: boolean;
 	knowledge: TaskKnowledge;
+	concepts: Concept[];
 	conceptMap: Map<string, string>;
 	systemFunctionMap: Map<string, string>;
 	systemFunctionDomainMap: Map<string, string | null>;
 	systemDomainMap: Map<string, string>;
-	systemFunctions: { id: string; name: string; systemDomainId: string | null }[];
+	systemFunctions: {
+		id: string;
+		name: string;
+		systemDomainId: string | null;
+	}[];
+	systemFunctionsFull: SystemFunction[];
 };
 
-export function useTaskDetail({ bizId, taskId }: UseTaskDetailParams): UseTaskDetailReturn {
+export function useTaskDetail({
+	bizId,
+	taskId,
+}: UseTaskDetailParams): UseTaskDetailReturn {
 	const storageKey = `task-knowledge:${bizId}:${taskId}`;
 	const defaultKnowledge = useMemo(
 		() => createEmptyTaskKnowledge(bizId, taskId),
@@ -49,7 +72,8 @@ export function useTaskDetail({ bizId, taskId }: UseTaskDetailParams): UseTaskDe
 			const raw = window.localStorage.getItem(storageKey);
 			if (!raw) return defaultKnowledge;
 			const parsed = JSON.parse(raw) as TaskKnowledge;
-			if (parsed?.bizId !== bizId || parsed?.taskId !== taskId) return defaultKnowledge;
+			if (parsed?.bizId !== bizId || parsed?.taskId !== taskId)
+				return defaultKnowledge;
 			return parsed;
 		} catch {
 			return defaultKnowledge;
@@ -58,14 +82,16 @@ export function useTaskDetail({ bizId, taskId }: UseTaskDetailParams): UseTaskDe
 
 	// タスク取得
 	const fetchTask = useCallback(() => getTaskById(taskId), [taskId]);
-	const { data: task, loading: taskLoading, error: taskError } = useAsyncDataItem<Task>(
-		fetchTask
-	);
+	const {
+		data: task,
+		loading: taskLoading,
+		error: taskError,
+	} = useAsyncDataItem<Task>(fetchTask);
 
 	// 業務要件取得
 	const fetchBusinessRequirements = useCallback(
 		() => listBusinessRequirementsByTaskId(taskId),
-		[taskId]
+		[taskId],
 	);
 	const {
 		data: businessRequirements,
@@ -76,7 +102,7 @@ export function useTaskDetail({ bizId, taskId }: UseTaskDetailParams): UseTaskDe
 	// システム要件取得
 	const fetchSystemRequirements = useCallback(
 		() => listSystemRequirementsByTaskId(taskId),
-		[taskId]
+		[taskId],
 	);
 	const {
 		data: systemRequirements,
@@ -86,10 +112,9 @@ export function useTaskDetail({ bizId, taskId }: UseTaskDetailParams): UseTaskDe
 
 	// オプションデータ（コンセプト・システム機能・システムドメイン）取得
 	const [optionsError, setOptionsError] = useState<string | null>(null);
-	const [concepts, setConcepts] = useState<{ id: string; name: string }[]>([]);
-	const [systemFunctions, setSystemFunctions] = useState<
-		{ id: string; name: string; systemDomainId: string | null }[]
-	>([]);
+	const [optionsLoading, setOptionsLoading] = useState(true);
+	const [concepts, setConcepts] = useState<Concept[]>([]);
+	const [systemFunctions, setSystemFunctions] = useState<SystemFunction[]>([]);
 	const [systemDomains, setSystemDomains] = useState<SystemDomain[]>([]);
 	const optionsActiveRef = useRef(true);
 
@@ -105,22 +130,19 @@ export function useTaskDetail({ bizId, taskId }: UseTaskDetailParams): UseTaskDe
 			]);
 			if (!optionsActiveRef.current) return;
 
-			const fetchError = conceptResult.error ?? srfResult.error ?? domainResult.error;
+			const fetchError =
+				conceptResult.error ?? srfResult.error ?? domainResult.error;
 			if (fetchError) {
 				setOptionsError(fetchError);
+				setOptionsLoading(false);
 				return;
 			}
 
-			setConcepts((conceptResult.data ?? []).map((c) => ({ id: c.id, name: c.name })));
-			setSystemFunctions(
-				(srfResult.data ?? []).map((srf) => ({
-					id: srf.id,
-					name: srf.summary?.split(":")[0] ?? srf.summary,
-					systemDomainId: srf.systemDomainId ?? null,
-				}))
-			);
+			setConcepts(conceptResult.data ?? []);
+			setSystemFunctions(srfResult.data ?? []);
 			setSystemDomains(domainResult.data ?? []);
 			setOptionsError(null);
+			setOptionsLoading(false);
 		}
 
 		fetchOptions();
@@ -132,22 +154,38 @@ export function useTaskDetail({ bizId, taskId }: UseTaskDetailParams): UseTaskDe
 
 	const conceptMap = useMemo(
 		() => new Map(concepts.map((c) => [c.id, c.name])),
-		[concepts]
+		[concepts],
 	);
 
 	const systemFunctionMap = useMemo(
-		() => new Map(systemFunctions.map((srf) => [srf.id, srf.name])),
-		[systemFunctions]
+		() =>
+			new Map(
+				systemFunctions.map((srf) => [
+					srf.id,
+					srf.summary?.split(":")[0] ?? srf.summary ?? srf.title,
+				]),
+			),
+		[systemFunctions],
 	);
 
 	const systemFunctionDomainMap = useMemo(
 		() => new Map(systemFunctions.map((srf) => [srf.id, srf.systemDomainId])),
-		[systemFunctions]
+		[systemFunctions],
+	);
+
+	const systemFunctionOptions = useMemo(
+		() =>
+			systemFunctions.map((srf) => ({
+				id: srf.id,
+				name: srf.summary?.split(":")[0] ?? srf.summary ?? srf.title,
+				systemDomainId: srf.systemDomainId ?? null,
+			})),
+		[systemFunctions],
 	);
 
 	const systemDomainMap = useMemo(
 		() => new Map(systemDomains.map((domain) => [domain.id, domain.name])),
-		[systemDomains]
+		[systemDomains],
 	);
 
 	return {
@@ -161,11 +199,14 @@ export function useTaskDetail({ bizId, taskId }: UseTaskDetailParams): UseTaskDe
 		systemRequirementsLoading,
 		systemRequirementsError,
 		optionsError,
+		optionsLoading,
 		knowledge,
+		concepts,
 		conceptMap,
 		systemFunctionMap,
 		systemFunctionDomainMap,
 		systemDomainMap,
-		systemFunctions,
+		systemFunctions: systemFunctionOptions,
+		systemFunctionsFull: systemFunctions,
 	};
 }
