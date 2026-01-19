@@ -1,6 +1,6 @@
 // ドメインエンティティ型定義
 import type { BusinessArea, TicketStatus, TicketPriority, SrfCategory, SrfStatus, SystemDesignItem } from './enums';
-import type { TicketRequirementReference, TicketChangeItem, TicketConceptReference, TicketVersionApplication } from './value-objects';
+import type { TicketRequirementReference, TicketChangeItem, TicketConceptReference, TicketVersionApplication, EntryPoint } from './value-objects';
 
 /**
  * Business（業務）
@@ -90,6 +90,7 @@ export interface SystemFunction {
   relatedTaskIds: string[];  // [TASK-001] (外部キー配列)
   requirementIds: string[];  // [SR-TASK-001-001] (関連要件ID)
   systemDesign: SystemDesignItem[];  // システム設計項目配列
+  entryPoints?: EntryPoint[];  // PRD v1.3（DB: system_functions.entry_points）
   codeRefs: {
     githubUrl?: string;
     paths: string[];

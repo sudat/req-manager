@@ -77,5 +77,14 @@ export interface ProjectSettings {
   githubRepositoryUrl?: string;
 }
 
+/**
+ * システム機能のエントリポイント（PRD v1.3）
+ */
+export interface EntryPoint {
+  path: string;
+  type: string | null;
+  responsibility: string | null;
+}
+
 // Import types used in value objects
 import type { BusinessArea } from "./enums";

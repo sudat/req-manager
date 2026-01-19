@@ -1,7 +1,7 @@
 # PRD v1.3 実装（スキーマ拡張・受入条件構造化・ヘルススコア）チェックリスト
 
 ## 作業概要
-`docs/prd.md`（最終更新: 2026-01-17）の追加・変更点（優先度/受入条件の構造化/エントリポイント/ヘルススコア）を、既存のSupabase + Next.js実装に段階導入で反映する。
+`docs/prd.md`（最終更新: 2026-01-19）の追加・変更点（優先度/受入条件の構造化/エントリポイント/ヘルススコア）を、既存のSupabase + Next.js実装に段階導入で反映する。
 
 ---
 
@@ -16,8 +16,8 @@
 - [x] `system_functions` に `entry_points`（path/type/responsibility）を追加（Phase 1: `code_refs.paths` から `path` を暫定移行、`type/responsibility` は後続で入力）
 
 ### 2) データアクセス層修正（`lib/data/*`）
-- [ ] `BusinessRequirement`/`SystemRequirement`/`SystemFunction` の型・Row変換・CRUDを新スキーマに追従
-- [ ] 既存UIが壊れないように暫定互換（旧データの読み取り/表示）方針を決める
+- [x] `BusinessRequirement`/`SystemRequirement`/`SystemFunction` の型・Row変換・CRUDを新スキーマに追従
+- [x] 既存UIが壊れないように暫定互換（旧データの読み取り/表示）方針を決める
 
 ### 3) 画面修正（フォーム・詳細表示）
 - [ ] 業務要件: `priority` 入力、受入条件（構造化）の表示/編集
@@ -41,3 +41,5 @@
 
 ## 直近詳細計画
 - [x] [Phase 1: DBテーブル修正（Supabase）](2026-01-19-prd-v1-3-phase1-db-schema.md)
+- [x] [Phase 2: データアクセス層修正（lib/data/*）](2026-01-19-prd-v1-3-phase2-data-layer.md)
+- [ ] [Phase 3: 画面修正（フォーム・詳細表示）](2026-01-19-prd-v1-3-phase3-ui-forms.md)

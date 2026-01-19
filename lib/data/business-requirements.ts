@@ -1,4 +1,12 @@
 import { supabase, getSupabaseConfigError } from "@/lib/supabase/client";
+import type { BusinessRequirementPriority } from "@/lib/domain";
+import {
+	acceptanceCriteriaJsonToLegacy,
+	legacyAcceptanceCriteriaToJson,
+	mergeAcceptanceCriteriaJsonWithLegacy,
+	normalizeAcceptanceCriteriaJson,
+	type AcceptanceCriterionJson,
+} from "@/lib/data/structured";
 
 export type BusinessRequirement = {
 	id: string;
@@ -10,6 +18,8 @@ export type BusinessRequirement = {
 	systemDomainIds: string[];
 	impacts: string[];
 	relatedSystemRequirementIds: string[];
+	priority: BusinessRequirementPriority;
+	acceptanceCriteriaJson: AcceptanceCriterionJson[];
 	acceptanceCriteria: string[];
 	sortOrder: number;
 	createdAt: string;
@@ -26,6 +36,8 @@ export type BusinessRequirementInput = {
 	systemDomainIds: string[];
 	impacts: string[];
 	relatedSystemRequirementIds: string[];
+	priority?: BusinessRequirementPriority;
+	acceptanceCriteriaJson?: AcceptanceCriterionJson[];
 	acceptanceCriteria: string[];
 	sortOrder: number;
 };
@@ -40,29 +52,46 @@ type BusinessRequirementRow = {
 	system_domain_ids: string[] | null;
 	impacts: string[] | null;
 	related_system_requirement_ids: string[] | null;
+	priority: string | null;
+	acceptance_criteria_json: unknown | null;
 	acceptance_criteria: string[] | null;
 	sort_order: number | null;
 	created_at: string;
 	updated_at: string;
 };
 
-const toBusinessRequirement = (row: BusinessRequirementRow): BusinessRequirement => ({
-	id: row.id,
-	taskId: row.task_id,
-	title: row.title,
-	summary: row.summary,
-	conceptIds: row.concept_ids ?? [],
-	srfId: row.srf_id ?? null,
-	systemDomainIds: row.system_domain_ids ?? [],
-	impacts: row.impacts ?? [],
-	relatedSystemRequirementIds: row.related_system_requirement_ids ?? [],
-	acceptanceCriteria: row.acceptance_criteria ?? [],
-	sortOrder: row.sort_order ?? 0,
-	createdAt: row.created_at,
-	updatedAt: row.updated_at,
-});
+const normalizePriority = (value: unknown): BusinessRequirementPriority => {
+	if (value === "Must" || value === "Should" || value === "Could") return value;
+	return "Must";
+};
 
-const toBusinessRequirementRow = (input: BusinessRequirementInput) => ({
+const toBusinessRequirement = (row: BusinessRequirementRow): BusinessRequirement => {
+	const normalizedJson = normalizeAcceptanceCriteriaJson(row.acceptance_criteria_json);
+	const acceptanceCriteriaJson =
+		normalizedJson.length > 0
+			? normalizedJson
+			: legacyAcceptanceCriteriaToJson(row.acceptance_criteria ?? []);
+
+	return {
+		id: row.id,
+		taskId: row.task_id,
+		title: row.title,
+		summary: row.summary,
+		conceptIds: row.concept_ids ?? [],
+		srfId: row.srf_id ?? null,
+		systemDomainIds: row.system_domain_ids ?? [],
+		impacts: row.impacts ?? [],
+		relatedSystemRequirementIds: row.related_system_requirement_ids ?? [],
+		priority: normalizePriority(row.priority),
+		acceptanceCriteriaJson,
+		acceptanceCriteria: acceptanceCriteriaJsonToLegacy(acceptanceCriteriaJson),
+		sortOrder: row.sort_order ?? 0,
+		createdAt: row.created_at,
+		updatedAt: row.updated_at,
+	};
+};
+
+const toBusinessRequirementRowBase = (input: BusinessRequirementInput) => ({
 	id: input.id,
 	task_id: input.taskId,
 	title: input.title,
@@ -72,7 +101,6 @@ const toBusinessRequirementRow = (input: BusinessRequirementInput) => ({
 	system_domain_ids: input.systemDomainIds,
 	impacts: input.impacts,
 	related_system_requirement_ids: input.relatedSystemRequirementIds,
-	acceptance_criteria: input.acceptanceCriteria,
 	sort_order: input.sortOrder,
 });
 
@@ -137,11 +165,20 @@ export const createBusinessRequirements = async (inputs: BusinessRequirementInpu
   if (inputs.length === 0) return { data: [], error: null };
 
   const now = new Date().toISOString();
-  const payload = inputs.map((input) => ({
-    ...toBusinessRequirementRow(input),
+  const payload = inputs.map((input) => {
+		const acceptanceCriteriaJson = normalizeAcceptanceCriteriaJson(
+			input.acceptanceCriteriaJson ?? legacyAcceptanceCriteriaToJson(input.acceptanceCriteria)
+		);
+
+		return {
+			...toBusinessRequirementRowBase(input),
+		priority: input.priority ?? "Must",
+		acceptance_criteria_json: acceptanceCriteriaJson,
+		acceptance_criteria: acceptanceCriteriaJsonToLegacy(acceptanceCriteriaJson),
     created_at: now,
     updated_at: now,
-  }));
+		};
+	});
 
   const { data, error } = await supabase
     .from("business_requirements")
@@ -156,9 +193,31 @@ export const updateBusinessRequirement = async (id: string, input: Omit<Business
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
+	const { data: existing, error: fetchError } = await supabase
+		.from("business_requirements")
+		.select("priority, acceptance_criteria_json")
+		.eq("id", id)
+		.maybeSingle();
+
+	if (fetchError) return { data: null, error: fetchError.message };
+
   const now = new Date().toISOString();
+	const acceptanceCriteriaJson =
+		input.acceptanceCriteriaJson !== undefined
+			? normalizeAcceptanceCriteriaJson(input.acceptanceCriteriaJson)
+			: mergeAcceptanceCriteriaJsonWithLegacy(
+					(existing as Pick<BusinessRequirementRow, "acceptance_criteria_json"> | null)
+						?.acceptance_criteria_json,
+					input.acceptanceCriteria
+			  );
+
   const payload = {
-    ...toBusinessRequirementRow({ ...input, id }),
+    ...toBusinessRequirementRowBase({ ...input, id }),
+		...(input.priority !== undefined
+			? { priority: input.priority }
+			: { priority: normalizePriority((existing as BusinessRequirementRow | null)?.priority) }),
+		acceptance_criteria_json: acceptanceCriteriaJson,
+		acceptance_criteria: acceptanceCriteriaJsonToLegacy(acceptanceCriteriaJson),
     updated_at: now,
   };
 

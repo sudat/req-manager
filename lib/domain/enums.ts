@@ -16,6 +16,21 @@ export type TicketStatus = "open" | "review" | "approved" | "applied";
 export type TicketPriority = "low" | "medium" | "high";
 
 /**
+ * 業務要件の優先度（PRD v1.3）
+ */
+export type BusinessRequirementPriority = "Must" | "Should" | "Could";
+
+/**
+ * システム要件カテゴリ（PRD v1.3）
+ */
+export type SystemRequirementCategory =
+  | "function"
+  | "data"
+  | "exception"
+  | "auth"
+  | "non_functional";
+
+/**
  * SRFステータス
  */
 export type SrfStatus = "not_implemented" | "implementing" | "testing" | "implemented";

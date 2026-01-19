@@ -1,6 +1,6 @@
 # LLM支援型要件管理ツール 要件定義書 v1.3
 
-- 最終更新: 2026-01-17
+- 最終更新: 2026-01-19
 
 ## 1. 目的と設計思想
 
@@ -698,6 +698,9 @@ concept_ids と impacts が空の場合、影響分析のマッチングが効�
 | type | ○ | 種別（screen / batch / api / job / template / service） |
 | responsibility | ○ | このエントリポイントが担う処理（20字程度） |
 
+（MVP移行メモ）Phase 1の暫定移行では `code_refs.paths` から `entry_points[].path` のみを移行するため、`type` / `responsibility` が未入力（null/空）になりうる。
+後続フェーズ（Phase 3）で入力UIを追加し、ヘルススコア（2.8.1）で欠損を可視化する。
+
 ##### 粒度判断基準
 
 システム機能は業務単位で管理する（画面/バッチ/APIごとに分割しない）。
@@ -756,7 +759,10 @@ business_requirement_ids が空の場合、「なぜこのシステム要件が�
 
 業務要件・システム要件の acceptance_criteria は「オブジェクト配列」として保持する。
 
-（DB表現）acceptance_criteria は jsonb の配列として保持する（default `[]`）。
+（MVP実装メモ）既存互換のため、DBには legacy `acceptance_criteria: text[]` を残し、構造化版は `acceptance_criteria_json: jsonb`（配列、default `[]`）に保持する。
+アプリ側は `acceptance_criteria_json` を優先して読み取り、更新時は両方を同期する（KISS）。
+
+（DB表現）acceptance_criteria_json は jsonb の配列として保持する（default `[]`）。
 ```json
 [
   {
@@ -780,6 +786,9 @@ business_requirement_ids が空の場合、「なぜこのシステム要件が�
 | verified_by | - | 確認者 |
 | verified_at | - | 確認日時 |
 | evidence | - | 確認根拠（スクリーンショットURL、テスト結果リンク等） |
+
+（MVP移行メモ）既存の `acceptance_criteria(text[])` からの暫定移行では、まず description を埋めて `verification_method` / `status` / `verified_*` / `evidence` は未入力（null）として開始してよい。
+後続フェーズで入力UIを追加し、ヘルススコア（2.8.1）で欠損を可視化する。
 
 ---
 
@@ -825,7 +834,7 @@ LLM候補生成を「思考」ではなく「差分提案」として運用に�
 | 業務要件にシステム要件が紐づいていない | 高 | related_system_requirement_ids が空 |
 | システム要件に業務要件が紐づいていない | 高 | business_requirement_ids が空 |
 | システム機能にエントリポイントが未設定 | 高 | entry_points が空 |
-| エントリポイントに responsibility がない | 中 | responsibility が空文字 |
+| エントリポイントに responsibility がない | 中 | responsibility が null または空文字 |
 | 概念辞書の用語が要件文中に出現するのにリンクがない | 中 | テキストマッチ |
 | suspect linkが一定期間放置されている | 中 | 最終確認日時 |
 | 変更要求で確定した影響範囲と、正本上のつながりに矛盾がある | 中 | 差分検出 |
@@ -837,7 +846,7 @@ LLM候補生成を「思考」ではなく「差分提案」として運用に�
 | 業務要件に concept_ids がない | 高 | 配列が空 |
 | 業務要件に impacts がない | 高 | 配列が空 |
 | システム要件に category（観点種別）がない | 高 | null または未設定 |
-| 受入条件が0件 | 高 | acceptance_criteria が空 |
+| 受入条件が0件 | 高 | acceptance_criteria_json が空（legacy互換の場合は acceptance_criteria も考慮） |
 | 受入条件がlint警告を受けている（検証可能性が低い） | 高 | lint結果 |
 
 ヘルススコアは「正本の信頼性」を可視化するものであり、100%を目指すものではない。変更要求を回しながら徐々に改善する。

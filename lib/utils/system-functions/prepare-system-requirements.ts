@@ -30,6 +30,8 @@ export function prepareSystemRequirementInputs(
 			summary: sr.summary.trim(),
 			conceptIds: [],
 			impacts: [],
+			category: "function",
+			businessRequirementIds: sr.businessRequirementIds,
 			acceptanceCriteria: [],
 			systemDomainIds: [],
 			sortOrder: index + 1,

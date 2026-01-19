@@ -1,4 +1,12 @@
 import { supabase, getSupabaseConfigError } from "@/lib/supabase/client";
+import type { SystemRequirementCategory } from "@/lib/domain";
+import {
+	acceptanceCriteriaJsonToLegacy,
+	legacyAcceptanceCriteriaToJson,
+	mergeAcceptanceCriteriaJsonWithLegacy,
+	normalizeAcceptanceCriteriaJson,
+	type AcceptanceCriterionJson,
+} from "@/lib/data/structured";
 
 export type SystemRequirement = {
 	id: string;
@@ -8,6 +16,9 @@ export type SystemRequirement = {
 	summary: string;
 	conceptIds: string[];
 	impacts: string[];
+	category: SystemRequirementCategory;
+	businessRequirementIds: string[];
+	acceptanceCriteriaJson: AcceptanceCriterionJson[];
 	acceptanceCriteria: string[];
 	systemDomainIds: string[];
 	sortOrder: number;
@@ -23,6 +34,9 @@ export type SystemRequirementInput = {
 	summary: string;
 	conceptIds: string[];
 	impacts: string[];
+	category?: SystemRequirementCategory;
+	businessRequirementIds?: string[];
+	acceptanceCriteriaJson?: AcceptanceCriterionJson[];
 	acceptanceCriteria: string[];
 	systemDomainIds: string[];
 	sortOrder: number;
@@ -36,6 +50,9 @@ type SystemRequirementRow = {
 	summary: string;
 	concept_ids: string[] | null;
 	impacts: string[] | null;
+	category: string | null;
+	business_requirement_ids: string[] | null;
+	acceptance_criteria_json: unknown | null;
 	acceptance_criteria: string[] | null;
 	system_domain_ids: string[] | null;
 	sort_order: number | null;
@@ -43,22 +60,46 @@ type SystemRequirementRow = {
 	updated_at: string;
 };
 
-const toSystemRequirement = (row: SystemRequirementRow): SystemRequirement => ({
-	id: row.id,
-	taskId: row.task_id,
-	srfId: row.srf_id ?? null,
-	title: row.title,
-	summary: row.summary,
-	conceptIds: row.concept_ids ?? [],
-	impacts: row.impacts ?? [],
-	acceptanceCriteria: row.acceptance_criteria ?? [],
-	systemDomainIds: row.system_domain_ids ?? [],
-	sortOrder: row.sort_order ?? 0,
-	createdAt: row.created_at,
-	updatedAt: row.updated_at,
-});
+const normalizeCategory = (value: unknown): SystemRequirementCategory => {
+	if (
+		value === "function" ||
+		value === "data" ||
+		value === "exception" ||
+		value === "auth" ||
+		value === "non_functional"
+	) {
+		return value;
+	}
+	return "function";
+};
 
-const toSystemRequirementRow = (input: SystemRequirementInput) => ({
+const toSystemRequirement = (row: SystemRequirementRow): SystemRequirement => {
+	const normalizedJson = normalizeAcceptanceCriteriaJson(row.acceptance_criteria_json);
+	const acceptanceCriteriaJson =
+		normalizedJson.length > 0
+			? normalizedJson
+			: legacyAcceptanceCriteriaToJson(row.acceptance_criteria ?? []);
+
+	return {
+		id: row.id,
+		taskId: row.task_id,
+		srfId: row.srf_id ?? null,
+		title: row.title,
+		summary: row.summary,
+		conceptIds: row.concept_ids ?? [],
+		impacts: row.impacts ?? [],
+		category: normalizeCategory(row.category),
+		businessRequirementIds: row.business_requirement_ids ?? [],
+		acceptanceCriteriaJson,
+		acceptanceCriteria: acceptanceCriteriaJsonToLegacy(acceptanceCriteriaJson),
+		systemDomainIds: row.system_domain_ids ?? [],
+		sortOrder: row.sort_order ?? 0,
+		createdAt: row.created_at,
+		updatedAt: row.updated_at,
+	};
+};
+
+const toSystemRequirementRowBase = (input: SystemRequirementInput) => ({
 	id: input.id,
 	task_id: input.taskId,
 	srf_id: input.srfId,
@@ -66,7 +107,6 @@ const toSystemRequirementRow = (input: SystemRequirementInput) => ({
 	summary: input.summary,
 	concept_ids: input.conceptIds,
 	impacts: input.impacts,
-	acceptance_criteria: input.acceptanceCriteria,
 	system_domain_ids: input.systemDomainIds,
 	sort_order: input.sortOrder,
 });
@@ -115,11 +155,21 @@ export const createSystemRequirements = async (inputs: SystemRequirementInput[])
 	if (inputs.length === 0) return { data: [], error: null };
 
 	const now = new Date().toISOString();
-	const payload = inputs.map((input) => ({
-		...toSystemRequirementRow(input),
+	const payload = inputs.map((input) => {
+		const acceptanceCriteriaJson = normalizeAcceptanceCriteriaJson(
+			input.acceptanceCriteriaJson ?? legacyAcceptanceCriteriaToJson(input.acceptanceCriteria)
+		);
+
+		return {
+			...toSystemRequirementRowBase(input),
+		category: input.category ?? "function",
+		business_requirement_ids: input.businessRequirementIds ?? [],
+		acceptance_criteria_json: acceptanceCriteriaJson,
+		acceptance_criteria: acceptanceCriteriaJsonToLegacy(acceptanceCriteriaJson),
 		created_at: now,
 		updated_at: now,
-	}));
+		};
+	});
 
 	const { data, error } = await supabase
 		.from("system_requirements")
@@ -150,8 +200,15 @@ export const createSystemRequirement = async (input: SystemRequirementInput) => 
   if (configError) return configError;
 
   const now = new Date().toISOString();
+	const acceptanceCriteriaJson = normalizeAcceptanceCriteriaJson(
+		input.acceptanceCriteriaJson ?? legacyAcceptanceCriteriaToJson(input.acceptanceCriteria)
+	);
   const payload = {
-    ...toSystemRequirementRow(input),
+    ...toSystemRequirementRowBase(input),
+		category: input.category ?? "function",
+		business_requirement_ids: input.businessRequirementIds ?? [],
+		acceptance_criteria_json: acceptanceCriteriaJson,
+		acceptance_criteria: acceptanceCriteriaJsonToLegacy(acceptanceCriteriaJson),
     created_at: now,
     updated_at: now,
   };
@@ -170,9 +227,36 @@ export const updateSystemRequirement = async (id: string, input: Omit<SystemRequ
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
+	const { data: existing, error: fetchError } = await supabase
+		.from("system_requirements")
+		.select("category, business_requirement_ids, acceptance_criteria_json")
+		.eq("id", id)
+		.maybeSingle();
+
+	if (fetchError) return { data: null, error: fetchError.message };
+
   const now = new Date().toISOString();
+	const acceptanceCriteriaJson =
+		input.acceptanceCriteriaJson !== undefined
+			? normalizeAcceptanceCriteriaJson(input.acceptanceCriteriaJson)
+			: mergeAcceptanceCriteriaJsonWithLegacy(
+					(existing as Pick<SystemRequirementRow, "acceptance_criteria_json"> | null)
+						?.acceptance_criteria_json,
+					input.acceptanceCriteria
+			  );
+
   const payload = {
-    ...toSystemRequirementRow({ ...input, id }),
+    ...toSystemRequirementRowBase({ ...input, id }),
+		category:
+			input.category !== undefined
+				? input.category
+				: normalizeCategory((existing as SystemRequirementRow | null)?.category),
+		business_requirement_ids:
+			input.businessRequirementIds !== undefined
+				? input.businessRequirementIds
+				: ((existing as SystemRequirementRow | null)?.business_requirement_ids ?? []),
+		acceptance_criteria_json: acceptanceCriteriaJson,
+		acceptance_criteria: acceptanceCriteriaJsonToLegacy(acceptanceCriteriaJson),
     updated_at: now,
   };
 
