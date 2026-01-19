@@ -17,6 +17,7 @@ import {
 	SystemRequirementsSection,
 	SystemDesignSection,
 	ImplementationSection,
+	EntryPointsSection,
 } from "@/components/system-domains";
 import type { SystemFunction } from "@/lib/domain";
 import { getSystemFunctionById } from "@/lib/data/system-functions";
@@ -154,6 +155,7 @@ export default function SystemFunctionDetailPage({
 			<FunctionSummaryCard srf={srf} domainId={id} />
 			<SystemRequirementsSection srfId={srf.id} />
 			<SystemDesignSection systemDesign={srf.systemDesign} />
+			<EntryPointsSection entryPoints={srf.entryPoints ?? []} />
 			<ImplementationSection codeRefs={srf.codeRefs} />
 		</PageLayout>
 	);

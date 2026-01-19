@@ -13,14 +13,16 @@ export function useToggleHandlers(
 	onUpdateRequirement: (reqId: string, patch: Partial<Requirement>) => void
 ) {
 	// 複数選択トグルハンドラー生成
-	const createMultiToggle = (key: "conceptIds" | "systemDomainIds") => {
+	const createMultiToggle = (
+		key: "conceptIds" | "systemDomainIds" | "businessRequirementIds"
+	) => {
 		return (itemId: string, checked: boolean) => {
 			if (!activeRequirement) return;
 			const currentIds = activeRequirement[key];
 			const next = checked
 				? [...currentIds, itemId]
 				: currentIds.filter((id) => id !== itemId);
-			onUpdateRequirement(activeRequirement.id, { [key]: next });
+			onUpdateRequirement(activeRequirement.id, { [key]: next } as Partial<Requirement>);
 		};
 	};
 
@@ -36,5 +38,6 @@ export function useToggleHandlers(
 		handleConceptToggle: createMultiToggle("conceptIds"),
 		handleSystemFunctionToggle: createSingleToggle("srfId"),
 		handleDomainToggle: createMultiToggle("systemDomainIds"),
+		handleBusinessRequirementToggle: createMultiToggle("businessRequirementIds"),
 	};
 }

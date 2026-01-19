@@ -12,6 +12,7 @@ import {
 	SystemDesignSection,
 	CodeRefsSection,
 } from "./components";
+import { EntryPointsEditor } from "@/components/forms/EntryPointsEditor";
 
 // ============================================
 // 型定義
@@ -197,6 +198,11 @@ export default function SystemFunctionEditPage({
 						onNewDesignItemChange={actions.setNewDesignItem}
 						onAddDesignItem={actions.addDesignItem}
 						onRemoveDesignItem={actions.removeDesignItem}
+					/>
+
+					<EntryPointsEditor
+						entryPoints={state.entryPoints}
+						onChange={actions.setEntryPoints}
 					/>
 
 					<CodeRefsSection

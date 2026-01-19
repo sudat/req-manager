@@ -29,6 +29,11 @@ export function hasRequirementChanged<T extends {
 	srfId: string | null;
 	systemDomainIds: string[];
 	acceptanceCriteria: string[];
+	acceptanceCriteriaJson?: unknown;
+	priority?: string | null;
+	category?: string | null;
+	businessRequirementIds?: string[];
+	relatedSystemRequirementIds?: string[];
 }>(req: T, existing: T): boolean {
 	return !(
 		req.title === existing.title &&
@@ -36,7 +41,15 @@ export function hasRequirementChanged<T extends {
 		JSON.stringify(req.conceptIds) === JSON.stringify(existing.conceptIds) &&
 		req.srfId === existing.srfId &&
 		JSON.stringify(req.systemDomainIds) === JSON.stringify(existing.systemDomainIds ?? []) &&
-		JSON.stringify(req.acceptanceCriteria) === JSON.stringify(existing.acceptanceCriteria)
+		JSON.stringify(req.acceptanceCriteria) === JSON.stringify(existing.acceptanceCriteria) &&
+		JSON.stringify(req.acceptanceCriteriaJson ?? []) ===
+			JSON.stringify(existing.acceptanceCriteriaJson ?? []) &&
+		(req.priority ?? null) === (existing.priority ?? null) &&
+		(req.category ?? null) === (existing.category ?? null) &&
+		JSON.stringify(req.businessRequirementIds ?? []) ===
+			JSON.stringify(existing.businessRequirementIds ?? []) &&
+		JSON.stringify(req.relatedSystemRequirementIds ?? []) ===
+			JSON.stringify(existing.relatedSystemRequirementIds ?? [])
 	);
 }
 

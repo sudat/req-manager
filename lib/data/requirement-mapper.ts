@@ -1,6 +1,10 @@
 import type { Requirement } from "@/lib/domain";
 import type { BusinessRequirementInput } from "@/lib/data/business-requirements";
 import type { SystemRequirementInput } from "@/lib/data/system-requirements";
+import {
+	acceptanceCriteriaJsonToLegacy,
+	mergeAcceptanceCriteriaJsonWithLegacy,
+} from "@/lib/data/structured";
 
 // 業務要件: Requirement → BusinessRequirementInput
 export function toBusinessRequirementInput(
@@ -8,6 +12,10 @@ export function toBusinessRequirementInput(
 	taskId: string,
 	sortOrder: number,
 ): BusinessRequirementInput {
+	const acceptanceCriteriaJson = mergeAcceptanceCriteriaJsonWithLegacy(
+		requirement.acceptanceCriteriaJson,
+		requirement.acceptanceCriteria
+	);
 	return {
 		id: requirement.id,
 		taskId,
@@ -17,8 +25,10 @@ export function toBusinessRequirementInput(
 		srfId: requirement.srfId,
 		systemDomainIds: requirement.systemDomainIds,
 		impacts: [], // 影響領域は廃止
-		relatedSystemRequirementIds: [],
-		acceptanceCriteria: requirement.acceptanceCriteria,
+		relatedSystemRequirementIds: requirement.relatedSystemRequirementIds ?? [],
+		priority: requirement.priority,
+		acceptanceCriteriaJson,
+		acceptanceCriteria: acceptanceCriteriaJsonToLegacy(acceptanceCriteriaJson),
 		sortOrder,
 	};
 }
@@ -36,6 +46,11 @@ export function fromBusinessRequirement(
 		srfId: br.srfId,
 		systemDomainIds: br.systemDomainIds ?? [],
 		acceptanceCriteria: br.acceptanceCriteria,
+		acceptanceCriteriaJson: br.acceptanceCriteriaJson,
+		priority: br.priority,
+		category: undefined,
+		businessRequirementIds: [],
+		relatedSystemRequirementIds: br.relatedSystemRequirementIds ?? [],
 	};
 }
 
@@ -45,6 +60,10 @@ export function toSystemRequirementInput(
 	taskId: string,
 	sortOrder: number,
 ): SystemRequirementInput {
+	const acceptanceCriteriaJson = mergeAcceptanceCriteriaJsonWithLegacy(
+		requirement.acceptanceCriteriaJson,
+		requirement.acceptanceCriteria
+	);
 	return {
 		id: requirement.id,
 		taskId,
@@ -53,7 +72,10 @@ export function toSystemRequirementInput(
 		summary: requirement.summary,
 		conceptIds: requirement.conceptIds,
 		impacts: [], // 影響領域は廃止
-		acceptanceCriteria: requirement.acceptanceCriteria,
+		category: requirement.category,
+		businessRequirementIds: requirement.businessRequirementIds ?? [],
+		acceptanceCriteriaJson,
+		acceptanceCriteria: acceptanceCriteriaJsonToLegacy(acceptanceCriteriaJson),
 		systemDomainIds: requirement.systemDomainIds,
 		sortOrder,
 	};
@@ -72,5 +94,10 @@ export function fromSystemRequirement(
 		srfId: sr.srfId,
 		systemDomainIds: sr.systemDomainIds ?? [],
 		acceptanceCriteria: sr.acceptanceCriteria,
+		acceptanceCriteriaJson: sr.acceptanceCriteriaJson,
+		priority: undefined,
+		category: sr.category,
+		businessRequirementIds: sr.businessRequirementIds ?? [],
+		relatedSystemRequirementIds: [],
 	};
 }

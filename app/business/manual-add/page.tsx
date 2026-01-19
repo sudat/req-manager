@@ -7,12 +7,13 @@ import { MobileHeader } from "@/components/layout/mobile-header";
 import { ArrowLeft } from "lucide-react";
 import { createTask, deleteTask } from "@/lib/data/tasks";
 import { createBusinessRequirements } from "@/lib/data/business-requirements";
+import { acceptanceCriteriaJsonToLegacy, mergeAcceptanceCriteriaJsonWithLegacy } from "@/lib/data/structured";
 import { useManualAddData } from "./hooks/use-manual-add-data";
 import { useRequirements } from "./hooks/use-requirements";
 import { TaskForm } from "./components/TaskForm";
 import { RequirementsSection } from "./components/RequirementsSection";
 import { SelectionDialog } from "@/components/forms/SelectionDialog";
-import type { SelectionDialogState, SelectionDialogType } from "@/lib/domain/forms";
+import type { SelectionDialogState, SelectionDialogType, SelectableItem } from "@/lib/domain/forms";
 
 function ManualAddPageContent() {
   const searchParams = useSearchParams();
@@ -60,6 +61,15 @@ function ManualAddPageContent() {
     [dialogState, requirements]
   );
 
+  const businessRequirementItems: SelectableItem[] = useMemo(
+    () =>
+      requirements.map((req) => ({
+        id: req.id,
+        name: req.title || req.id,
+      })),
+    [requirements]
+  );
+
   function handleOpenDialog(type: SelectionDialogType, reqId: string): void {
     setDialogState({ type, reqId });
   }
@@ -93,21 +103,30 @@ function ManualAddPageContent() {
       return;
     }
 
-    const requirementPayload = requirements.map((req, index) => ({
-      id: req.id,
-      taskId,
-      title: req.title.trim(),
-      summary: req.summary.trim(),
-      conceptIds: req.conceptIds,
-      srfId: req.srfId,
-      systemDomainIds: req.systemDomainIds,
-      impacts: [],
-      relatedSystemRequirementIds: [],
-      acceptanceCriteria: req.acceptanceCriteria
-        .map((criteria) => criteria.trim())
-        .filter((criteria) => criteria.length > 0),
-      sortOrder: index + 1,
-    }));
+    const requirementPayload = requirements.map((req, index) => {
+      const acceptanceCriteriaJson = mergeAcceptanceCriteriaJsonWithLegacy(
+        req.acceptanceCriteriaJson,
+        req.acceptanceCriteria
+          .map((criteria) => criteria.trim())
+          .filter((criteria) => criteria.length > 0)
+      );
+
+      return {
+        id: req.id,
+        taskId,
+        title: req.title.trim(),
+        summary: req.summary.trim(),
+        conceptIds: req.conceptIds,
+        srfId: req.srfId,
+        systemDomainIds: req.systemDomainIds,
+        impacts: [],
+        relatedSystemRequirementIds: req.relatedSystemRequirementIds ?? [],
+        priority: req.priority,
+        acceptanceCriteriaJson,
+        acceptanceCriteria: acceptanceCriteriaJsonToLegacy(acceptanceCriteriaJson),
+        sortOrder: index + 1,
+      };
+    });
 
     const { error: requirementError } = await createBusinessRequirements(
       requirementPayload
@@ -207,6 +226,7 @@ function ManualAddPageContent() {
         concepts={concepts}
         systemFunctions={systemFunctions}
         systemDomains={systemDomains}
+        businessRequirements={businessRequirementItems}
         onUpdateRequirement={updateRequirement}
       />
     </>

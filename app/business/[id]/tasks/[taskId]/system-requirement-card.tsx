@@ -9,6 +9,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { AcceptanceCriteriaDisplay } from "@/components/forms/AcceptanceCriteriaDisplay";
 import type { SystemRequirement } from "@/lib/data/system-requirements";
 
 type SystemRequirementCardProps = {
@@ -16,6 +17,7 @@ type SystemRequirementCardProps = {
 	conceptMap: Map<string, string>;
 	systemFunctions: { id: string; name: string; systemDomainId: string | null }[];
 	systemFunctionDomainMap: Map<string, string | null>;
+	businessRequirementMap: Map<string, string>;
 };
 
 export function SystemRequirementCard({
@@ -23,10 +25,14 @@ export function SystemRequirementCard({
 	conceptMap,
 	systemFunctions,
 	systemFunctionDomainMap,
+	businessRequirementMap,
 }: SystemRequirementCardProps) {
 	const [isOpen, setIsOpen] = useState(true);
 	const srf = requirement.srfId ? systemFunctions.find((srf) => srf.id === requirement.srfId) : undefined;
 	const srfSummaryShort = srf?.name ?? "";
+	const missingBusinessRequirementIds = requirement.businessRequirementIds.filter(
+		(id) => !businessRequirementMap.has(id)
+	);
 
 	// conceptIdsからconceptsに変換
 	const concepts = requirement.conceptIds.map((id) => ({
@@ -55,6 +61,13 @@ export function SystemRequirementCard({
       </CollapsibleTrigger>
 
       <CollapsibleContent className="space-y-2">
+      <div className="border-t border-slate-100 pt-2 mt-2 space-y-1">
+        <div className="text-[12px] font-medium text-slate-500">カテゴリ</div>
+        <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px]">
+          {requirement.category ?? "function"}
+        </Badge>
+      </div>
+
       {concepts && concepts.length > 0 && (
         <div className="border-t border-slate-100 pt-2 mt-2 space-y-1">
           <div className="text-[12px] font-medium text-slate-500">関連概念</div>
@@ -85,16 +98,46 @@ export function SystemRequirementCard({
         </div>
       )}
 
-      {requirement.acceptanceCriteria && requirement.acceptanceCriteria.length > 0 && (
-        <div className="border-t border-slate-100 pt-2 mt-2 space-y-1">
-          <div className="text-[12px] font-medium text-slate-500">受入条件</div>
-          <ul className="list-disc pl-5 text-[13px] text-slate-700 space-y-0.5">
-            {requirement.acceptanceCriteria.map((ac, i) => (
-              <li key={i}>{ac}</li>
-            ))}
-          </ul>
-        </div>
-      )}
+      <div className="border-t border-slate-100 pt-2 mt-2 space-y-1">
+        <div className="text-[12px] font-medium text-slate-500">受入条件</div>
+        <AcceptanceCriteriaDisplay
+          items={requirement.acceptanceCriteriaJson}
+          emptyMessage="未登録"
+        />
+      </div>
+
+      <div className="border-t border-slate-100 pt-2 mt-2 space-y-1">
+        <div className="text-[12px] font-medium text-slate-500">関連業務要件</div>
+        {requirement.businessRequirementIds.length === 0 ? (
+          <div className="text-[13px] text-slate-400">未設定</div>
+        ) : (
+          <div className="flex flex-wrap gap-1.5">
+            {requirement.businessRequirementIds.map((bizId) => {
+              const label = businessRequirementMap.get(bizId);
+              return label ? (
+                <Link key={bizId} href={`#${bizId}`}>
+                  <Badge variant="outline" className="border-emerald-200/60 bg-emerald-50 text-emerald-700 text-[12px] hover:bg-emerald-100/60">
+                    {label}
+                  </Badge>
+                </Link>
+              ) : (
+                <Badge
+                  key={bizId}
+                  variant="outline"
+                  className="border-rose-200/60 bg-rose-50 text-rose-700 text-[12px]"
+                >
+                  未解決: {bizId}
+                </Badge>
+              );
+            })}
+          </div>
+        )}
+        {missingBusinessRequirementIds.length > 0 && (
+          <div className="text-[12px] text-rose-600">
+            存在しない業務要件ID: {missingBusinessRequirementIds.join(", ")}
+          </div>
+        )}
+      </div>
 
       {srf && (
         <div className="border-t border-slate-100 pt-2 mt-2">

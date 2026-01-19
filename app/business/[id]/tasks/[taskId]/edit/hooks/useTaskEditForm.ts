@@ -83,6 +83,11 @@ export function useTaskEditForm({
 				srfId: null,
 				systemDomainIds: [],
 				acceptanceCriteria: [],
+				acceptanceCriteriaJson: [],
+				priority: type === "業務要件" ? "Must" : undefined,
+				category: type === "システム要件" ? "function" : undefined,
+				businessRequirementIds: [],
+				relatedSystemRequirementIds: [],
 			};
 
 			return {

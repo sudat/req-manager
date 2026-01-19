@@ -29,6 +29,11 @@ export function useRequirements(): UseRequirementsResult {
         srfId: null,
         systemDomainIds: [],
         acceptanceCriteria: [],
+        acceptanceCriteriaJson: [],
+        priority: "Must",
+        category: undefined,
+        businessRequirementIds: [],
+        relatedSystemRequirementIds: [],
       };
 
       return [...prev, nextReq];

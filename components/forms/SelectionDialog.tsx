@@ -14,6 +14,7 @@ type SelectionDialogProps = {
 	concepts: SelectableItem[];
 	systemFunctions: SelectableItem[];
 	systemDomains: SelectableItem[];
+	businessRequirements: SelectableItem[];
 	onUpdateRequirement: (reqId: string, patch: Partial<Requirement>) => void;
 };
 
@@ -25,6 +26,8 @@ function getDialogTitle(type: SelectionDialogType): string {
 			return "関連システム機能を選択";
 		case "domain":
 			return "システム領域を選択";
+		case "business":
+			return "業務要件を選択";
 		default:
 			return "";
 	}
@@ -75,6 +78,7 @@ export function SelectionDialog({
 	concepts,
 	systemFunctions,
 	systemDomains,
+	businessRequirements,
 	onUpdateRequirement,
 }: SelectionDialogProps) {
 	const [searchQuery, setSearchQuery] = useState("");
@@ -83,10 +87,15 @@ export function SelectionDialog({
 	const filteredConcepts = useFilteredItems(concepts, searchQuery);
 	const filteredSystemFunctions = useFilteredItems(systemFunctions, searchQuery);
 	const filteredSystemDomains = useFilteredItems(systemDomains, searchQuery);
+	const filteredBusinessRequirements = useFilteredItems(businessRequirements, searchQuery);
 
 	// トグルハンドラー
-	const { handleConceptToggle, handleSystemFunctionToggle, handleDomainToggle } =
-		useToggleHandlers(activeRequirement, onUpdateRequirement);
+	const {
+		handleConceptToggle,
+		handleSystemFunctionToggle,
+		handleDomainToggle,
+		handleBusinessRequirementToggle,
+	} = useToggleHandlers(activeRequirement, onUpdateRequirement);
 
 	function handleOpenChange(open: boolean): void {
 		if (!open) {
@@ -136,6 +145,15 @@ export function SelectionDialog({
 								emptyMessage="該当するシステム領域がありません。"
 								isChecked={(id) => activeRequirement.systemDomainIds.includes(id)}
 								onToggle={handleDomainToggle}
+							/>
+						)}
+
+						{dialogState?.type === "business" && activeRequirement && (
+							<CheckboxList
+								items={filteredBusinessRequirements}
+								emptyMessage="該当する業務要件がありません。"
+								isChecked={(id) => activeRequirement.businessRequirementIds.includes(id)}
+								onToggle={handleBusinessRequirementToggle}
 							/>
 						)}
 					</div>

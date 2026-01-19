@@ -52,7 +52,8 @@ export function useRelatedRequirements(srfId: string): UseRelatedRequirementsRes
 				return;
 			}
 
-			const sysReqToBizReqsMap = buildSysReqToBizReqsMap(businessRequirements ?? []);
+			const legacyMap = buildSysReqToBizReqsMap(businessRequirements ?? []);
+			const sysReqToBizReqsMap = buildSysReqToBizReqsMapFromSystemReqs(sysReqs, legacyMap);
 
 			const [taskResult, conceptResult] = await Promise.all([
 				listTasksByIds(taskIds),
@@ -111,10 +112,12 @@ function buildSysReqToBizReqsMap(businessRequirements: BusinessRequirement[]): M
 	const map = new Map<string, string[]>();
 	for (const bizReq of businessRequirements) {
 		for (const sysReqId of bizReq.relatedSystemRequirementIds ?? []) {
-			if (!map.has(sysReqId)) {
-				map.set(sysReqId, []);
+			const list = map.get(sysReqId);
+			if (list) {
+				list.push(bizReq.id);
+			} else {
+				map.set(sysReqId, [bizReq.id]);
 			}
-			map.get(sysReqId)!.push(bizReq.id);
 		}
 	}
 	return map;
@@ -128,6 +131,25 @@ interface SystemRequirement {
 	conceptIds: string[];
 	impacts: string[];
 	acceptanceCriteria: string[];
+	businessRequirementIds: string[];
+}
+
+function buildSysReqToBizReqsMapFromSystemReqs(
+	systemRequirements: SystemRequirement[],
+	legacyMap: Map<string, string[]>
+): Map<string, string[]> {
+	const map = new Map<string, string[]>();
+	for (const req of systemRequirements) {
+		if (req.businessRequirementIds.length > 0) {
+			map.set(req.id, req.businessRequirementIds);
+			continue;
+		}
+		const legacy = legacyMap.get(req.id);
+		if (legacy) {
+			map.set(req.id, legacy);
+		}
+	}
+	return map;
 }
 
 function buildRelatedRequirements(

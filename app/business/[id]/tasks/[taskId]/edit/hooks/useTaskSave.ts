@@ -23,6 +23,38 @@ type UseTaskSaveResult = {
 	clearError: () => void;
 };
 
+const syncLegacyBusinessRequirementLinks = (
+	businessRequirements: TaskKnowledge["businessRequirements"],
+	systemRequirements: TaskKnowledge["systemRequirements"]
+): TaskKnowledge["businessRequirements"] => {
+	const links = new Map<string, Set<string>>(
+		businessRequirements.map((br) => [
+			br.id,
+			new Set(br.relatedSystemRequirementIds ?? []),
+		])
+	);
+
+	for (const sysReq of systemRequirements) {
+		if (sysReq.businessRequirementIds.length === 0) continue;
+
+		for (const set of links.values()) {
+			set.delete(sysReq.id);
+		}
+
+		for (const bizId of sysReq.businessRequirementIds) {
+			if (!links.has(bizId)) {
+				links.set(bizId, new Set());
+			}
+			links.get(bizId)?.add(sysReq.id);
+		}
+	}
+
+	return businessRequirements.map((br) => ({
+		...br,
+		relatedSystemRequirementIds: Array.from(links.get(br.id) ?? []),
+	}));
+};
+
 /**
  * タスク保存処理を行うカスタムフック
  * - LocalStorageへのバックアップ
@@ -61,10 +93,15 @@ export function useTaskSave({
 					return;
 				}
 
+				const syncedBusinessRequirements = syncLegacyBusinessRequirementLinks(
+					knowledge.businessRequirements,
+					knowledge.systemRequirements
+				);
+
 				// 業務要件を同期
 				const bizError = await syncBusinessRequirements(
 					taskId,
-					knowledge.businessRequirements
+					syncedBusinessRequirements
 				);
 				if (bizError) {
 					setSaveError(bizError);

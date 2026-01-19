@@ -3,7 +3,7 @@
 import { use, useEffect, useMemo, useState } from "react";
 import { RequirementListSection } from "@/components/forms/requirement-list-section";
 import { SelectionDialog } from "@/components/forms/SelectionDialog";
-import type { TaskKnowledge, SelectionDialogType } from "@/lib/domain";
+import type { TaskKnowledge, SelectionDialogType, SelectableItem } from "@/lib/domain";
 import { listBusinessRequirementsByTaskId } from "@/lib/data/business-requirements";
 import { listSystemRequirementsByTaskId } from "@/lib/data/system-requirements";
 import { fromBusinessRequirement, fromSystemRequirement } from "@/lib/data/requirement-mapper";
@@ -152,6 +152,26 @@ export default function TaskDetailEditPage({
 		[dialogState, knowledge.businessRequirements, knowledge.systemRequirements]
 	);
 
+	const businessRequirementMap = useMemo(
+		() =>
+			new Map(
+				knowledge.businessRequirements.map((req) => [
+					req.id,
+					req.title || req.id,
+				])
+			),
+		[knowledge.businessRequirements]
+	);
+
+	const businessRequirementItems: SelectableItem[] = useMemo(
+		() =>
+			knowledge.businessRequirements.map((req) => ({
+				id: req.id,
+				name: req.title || req.id,
+			})),
+		[knowledge.businessRequirements]
+	);
+
 	// ダイアログハンドラー
 	function handleOpenDialog(type: SelectionDialogType, reqId: string): void {
 		setDialogState({ type, reqId });
@@ -194,6 +214,7 @@ export default function TaskDetailEditPage({
 					conceptMap={conceptMap}
 					systemFunctionMap={systemFunctionMap}
 					systemDomainMap={systemDomainMap}
+					businessRequirementMap={businessRequirementMap}
 					onOpenDialog={handleOpenDialog}
 				/>
 
@@ -209,6 +230,7 @@ export default function TaskDetailEditPage({
 					conceptMap={conceptMap}
 					systemFunctionMap={systemFunctionMap}
 					systemDomainMap={systemDomainMap}
+					businessRequirementMap={businessRequirementMap}
 					onOpenDialog={handleOpenDialog}
 				/>
 			</div>
@@ -221,6 +243,7 @@ export default function TaskDetailEditPage({
 				concepts={concepts}
 				systemFunctions={systemFunctions}
 				systemDomains={systemDomains}
+				businessRequirements={businessRequirementItems}
 				onUpdateRequirement={(reqId, patch) => {
 					const listKey = knowledge.businessRequirements.find((r) => r.id === reqId)
 						? "businessRequirements"

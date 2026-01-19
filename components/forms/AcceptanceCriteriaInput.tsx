@@ -9,12 +9,14 @@ import { cn } from "@/lib/utils";
 type AcceptanceCriteriaInputProps = {
   values: string[];
   onChange: (values: string[]) => void;
+  label?: string;
   className?: string;
 };
 
 export function AcceptanceCriteriaInput({
   values,
   onChange,
+  label = "受入条件",
   className,
 }: AcceptanceCriteriaInputProps) {
   const handleAdd = () => onChange([...values, ""]);
@@ -28,7 +30,7 @@ export function AcceptanceCriteriaInput({
 
   return (
     <div className={cn("space-y-2", className)}>
-      <Label className="text-[12px] font-medium text-slate-500">受入条件</Label>
+      <Label className="text-[12px] font-medium text-slate-500">{label}</Label>
       {values.map((value, index) => (
         <div key={index} className="flex gap-2 items-center">
           <Input

@@ -9,6 +9,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { AcceptanceCriteriaDisplay } from "@/components/forms/AcceptanceCriteriaDisplay";
 import type { BusinessRequirement } from "@/lib/data/business-requirements";
 
 type BusinessRequirementCardProps = {
@@ -35,6 +36,7 @@ export function BusinessRequirementCard({
 
   return (
     <Collapsible
+      id={requirement.id}
       open={isOpen}
       onOpenChange={setIsOpen}
       className="rounded-md border border-slate-200 p-3"
@@ -48,6 +50,9 @@ export function BusinessRequirementCard({
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] font-medium px-2 py-0.5">
             業務要件
+          </Badge>
+          <Badge variant="outline" className="border-emerald-200/60 bg-emerald-50 text-emerald-700 text-[12px] font-medium px-2 py-0.5">
+            {requirement.priority ?? "Must"}
           </Badge>
           <ChevronDown strokeWidth={1} className={`h-8 w-8 text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
         </div>
@@ -101,15 +106,10 @@ export function BusinessRequirementCard({
 
       <div className="border-t border-slate-100 pt-2 mt-2 space-y-1">
         <div className="text-[12px] font-medium text-slate-500">受入条件</div>
-        {requirement.acceptanceCriteria.length === 0 ? (
-          <div className="text-[13px] text-slate-400">未登録</div>
-        ) : (
-          <ul className="list-disc pl-5 text-[13px] text-slate-700 space-y-0.5">
-            {requirement.acceptanceCriteria.map((ac, i) => (
-              <li key={i}>{ac}</li>
-            ))}
-          </ul>
-        )}
+        <AcceptanceCriteriaDisplay
+          items={requirement.acceptanceCriteriaJson}
+          emptyMessage="未登録"
+        />
       </div>
       </CollapsibleContent>
     </Collapsible>

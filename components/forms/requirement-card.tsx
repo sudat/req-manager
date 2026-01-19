@@ -4,11 +4,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { AcceptanceCriteriaInput } from "./AcceptanceCriteriaInput";
+import { StructuredAcceptanceCriteriaInput } from "./StructuredAcceptanceCriteriaInput";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Trash2 } from "lucide-react";
 import type { Requirement, SelectionDialogType } from "@/lib/domain";
+import {
+	acceptanceCriteriaJsonToLegacy,
+	mergeAcceptanceCriteriaJsonWithLegacy,
+} from "@/lib/data/structured";
 
 
 type RequirementCardProps = {
@@ -16,6 +28,7 @@ type RequirementCardProps = {
   conceptMap: Map<string, string>;
   systemFunctionMap: Map<string, string>;
   systemDomainMap: Map<string, string>;
+  businessRequirementMap?: Map<string, string>;
   onUpdate: (patch: Partial<Requirement>) => void;
   onRemove: () => void;
   onOpenDialog: (type: SelectionDialogType) => void;
@@ -69,10 +82,31 @@ export function RequirementCard({
   conceptMap,
   systemFunctionMap,
   systemDomainMap,
+  businessRequirementMap,
   onUpdate,
   onRemove,
   onOpenDialog,
 }: RequirementCardProps) {
+  const acceptanceCriteriaJson = mergeAcceptanceCriteriaJsonWithLegacy(
+    requirement.acceptanceCriteriaJson,
+    requirement.acceptanceCriteria
+  );
+
+  const handleStructuredChange = (values: typeof acceptanceCriteriaJson) => {
+    onUpdate({
+      acceptanceCriteriaJson: values,
+      acceptanceCriteria: acceptanceCriteriaJsonToLegacy(values),
+    });
+  };
+
+  const handleLegacyChange = (values: string[]) => {
+    const merged = mergeAcceptanceCriteriaJsonWithLegacy(
+      requirement.acceptanceCriteriaJson,
+      values
+    );
+    onUpdate({ acceptanceCriteria: values, acceptanceCriteriaJson: merged });
+  };
+
   return (
     <Card className="rounded-md border border-slate-200">
       <CardContent className="p-3 space-y-3">
@@ -117,6 +151,50 @@ export function RequirementCard({
           />
         </div>
 
+        {requirement.type === "業務要件" && (
+          <div className="space-y-1.5">
+            <Label className="text-[12px] font-medium text-slate-500">優先度</Label>
+            <Select
+              value={requirement.priority ?? "Must"}
+              onValueChange={(value) =>
+                onUpdate({ priority: value as Requirement["priority"] })
+              }
+            >
+              <SelectTrigger className="h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Must">Must</SelectItem>
+                <SelectItem value="Should">Should</SelectItem>
+                <SelectItem value="Could">Could</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {requirement.type === "システム要件" && (
+          <div className="space-y-1.5">
+            <Label className="text-[12px] font-medium text-slate-500">カテゴリ</Label>
+            <Select
+              value={requirement.category ?? "function"}
+              onValueChange={(value) =>
+                onUpdate({ category: value as Requirement["category"] })
+              }
+            >
+              <SelectTrigger className="h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="function">function</SelectItem>
+                <SelectItem value="data">data</SelectItem>
+                <SelectItem value="exception">exception</SelectItem>
+                <SelectItem value="auth">auth</SelectItem>
+                <SelectItem value="non_functional">non_functional</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
         <div className="grid gap-3 md:grid-cols-2">
           <SelectionField
             label="関連概念"
@@ -132,6 +210,15 @@ export function RequirementCard({
           />
         </div>
 
+        {requirement.type === "システム要件" && businessRequirementMap && (
+          <SelectionField
+            label="業務要件"
+            selectedIds={requirement.businessRequirementIds}
+            nameMap={businessRequirementMap}
+            onOpenDialog={() => onOpenDialog("business")}
+          />
+        )}
+
         <SelectionField
           label="システム領域"
           selectedIds={requirement.systemDomainIds}
@@ -139,9 +226,15 @@ export function RequirementCard({
           onOpenDialog={() => onOpenDialog("domain")}
         />
 
+        <StructuredAcceptanceCriteriaInput
+          values={acceptanceCriteriaJson}
+          onChange={handleStructuredChange}
+        />
+
         <AcceptanceCriteriaInput
           values={requirement.acceptanceCriteria}
-          onChange={(values) => onUpdate({ acceptanceCriteria: values })}
+          label="受入条件（旧形式）"
+          onChange={handleLegacyChange}
         />
       </CardContent>
     </Card>

@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useMemo } from "react";
 import Link from "next/link";
 import { MobileHeader } from "@/components/layout/mobile-header";
 import { Button } from "@/components/ui/button";
@@ -52,6 +52,13 @@ export default function TaskDetailPage({ params }: PageProps) {
   const displayPerson = task?.person ?? knowledge.person;
   const displayInput = task?.input ?? knowledge.input;
   const displayOutput = task?.output ?? knowledge.output;
+  const businessRequirementMap = useMemo(
+    () =>
+      new Map(
+        businessRequirements.map((req) => [req.id, req.title || req.id])
+      ),
+    [businessRequirements]
+  );
 
   return (
     <>
@@ -122,6 +129,7 @@ export default function TaskDetailPage({ params }: PageProps) {
             conceptMap={conceptMap}
             systemFunctions={systemFunctions}
             systemFunctionDomainMap={systemFunctionDomainMap}
+            businessRequirementMap={businessRequirementMap}
           />
         </div>
       </div>
@@ -279,6 +287,7 @@ type SystemRequirementsSectionProps = {
 	conceptMap: Map<string, string>;
 	systemFunctions: { id: string; name: string; systemDomainId: string | null }[];
 	systemFunctionDomainMap: Map<string, string | null>;
+	businessRequirementMap: Map<string, string>;
 };
 
 function SystemRequirementsSection(props: SystemRequirementsSectionProps) {
@@ -295,6 +304,7 @@ function SystemRequirementsSection(props: SystemRequirementsSectionProps) {
           conceptMap={props.conceptMap}
           systemFunctions={props.systemFunctions}
           systemFunctionDomainMap={props.systemFunctionDomainMap}
+          businessRequirementMap={props.businessRequirementMap}
         />
       )}
     />

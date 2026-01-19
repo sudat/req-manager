@@ -11,6 +11,7 @@ import type {
 	SrfStatus,
 	DesignItemCategory,
 	SystemDesignItem,
+	EntryPoint,
 } from "@/lib/domain";
 
 // ============================================
@@ -51,6 +52,9 @@ export interface SystemFunctionFormState {
 	// コード参照
 	codeRefs: SystemFunction["codeRefs"];
 	newCodeRef: CodeRef;
+
+	// エントリポイント
+	entryPoints: EntryPoint[];
 }
 
 export interface SystemFunctionFormActions {
@@ -74,6 +78,9 @@ export interface SystemFunctionFormActions {
 	updatePath: (index: number, value: string) => void;
 	removePath: (index: number) => void;
 
+	// エントリポイント操作
+	setEntryPoints: (entryPoints: EntryPoint[]) => void;
+
 	// 保存
 	save: (systemDomainId: string) => Promise<boolean>;
 }
@@ -93,6 +100,21 @@ const INITIAL_CODE_REF: CodeRef = {
 	githubUrl: "",
 	paths: [""],
 	note: "",
+};
+
+const validateEntryPoints = (entryPoints: EntryPoint[]): string | null => {
+	const trimmed = entryPoints.map((entry) => entry.path.trim());
+	if (trimmed.some((path) => path.length === 0)) {
+		return "エントリポイントのパスは必須です。";
+	}
+	const seen = new Set<string>();
+	for (const path of trimmed) {
+		if (seen.has(path)) {
+			return "エントリポイントのパスが重複しています。";
+		}
+		seen.add(path);
+	}
+	return null;
 };
 
 // ============================================
@@ -125,6 +147,9 @@ export function useSystemFunctionForm(srfId: string): {
 	const [codeRefs, setCodeRefs] = useState<SystemFunction["codeRefs"]>([]);
 	const [newCodeRef, setNewCodeRef] = useState<CodeRef>(INITIAL_CODE_REF);
 
+	// エントリポイント
+	const [entryPoints, setEntryPoints] = useState<EntryPoint[]>([]);
+
 	// データ読み込み
 	useEffect(() => {
 		let active = true;
@@ -149,6 +174,7 @@ export function useSystemFunctionForm(srfId: string): {
 					setSummary(data.summary);
 					setSystemDesign(data.systemDesign ?? []);
 					setCodeRefs(data.codeRefs ?? []);
+					setEntryPoints(data.entryPoints ?? []);
 				}
 			}
 			setLoading(false);
@@ -221,7 +247,19 @@ export function useSystemFunctionForm(srfId: string): {
 		async (systemDomainId: string): Promise<boolean> => {
 			if (!existingSrf) return false;
 
+			const entryValidationError = validateEntryPoints(entryPoints);
+			if (entryValidationError) {
+				setError(entryValidationError);
+				return false;
+			}
+
 			setSaving(true);
+			const normalizedEntryPoints = entryPoints.map((entry) => ({
+				path: entry.path.trim(),
+				type: entry.type?.trim() || null,
+				responsibility: entry.responsibility?.trim() || null,
+			}));
+
 			const { error: saveError } = await updateSystemFunction(srfId, {
 				systemDomainId,
 				designDocNo,
@@ -232,6 +270,7 @@ export function useSystemFunctionForm(srfId: string): {
 				relatedTaskIds: existingSrf.relatedTaskIds ?? [],
 				requirementIds: existingSrf.requirementIds ?? [],
 				systemDesign,
+				entryPoints: normalizedEntryPoints,
 				codeRefs,
 			});
 			setSaving(false);
@@ -251,6 +290,7 @@ export function useSystemFunctionForm(srfId: string): {
 			title,
 			summary,
 			systemDesign,
+			entryPoints,
 			codeRefs,
 		],
 	);
@@ -270,6 +310,7 @@ export function useSystemFunctionForm(srfId: string): {
 			newDesignItem,
 			codeRefs,
 			newCodeRef,
+			entryPoints,
 		},
 		actions: {
 			setDesignDocNo,
@@ -286,6 +327,7 @@ export function useSystemFunctionForm(srfId: string): {
 			addPath,
 			updatePath,
 			removePath,
+			setEntryPoints,
 			save,
 		},
 	};
