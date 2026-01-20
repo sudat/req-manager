@@ -35,25 +35,28 @@
 ### 5) 既存データ移行・seed整備
 - [x] 既存 `acceptance_criteria: text[]` を新形式に変換して移行（Phase 1: `acceptance_criteria_json` へバックフィル）
 - [x] `code_refs` 由来のパスを `entry_points` に暫定移行（type/responsibilityは手入力 or 既定値）
-- [ ] 必要性判定（YAGNI: `lib/mock/data` がseed/画面で使われている範囲だけ更新する）
-- [ ] 参照箇所棚卸し（`lib/mock/data/*` をimportしている画面/seed導線）
-- [ ] 追加スキーマとの差分確認（KISS: default列で吸収できるなら無理に埋めない）
-- [ ] （必要な場合のみ）`lib/mock/data/*` を最小更新（SystemFunctionの `entryPoints` など）
+- [x] 必要性判定（YAGNI: `lib/mock/data` がseed/画面で使われている範囲だけ更新する）
+- [x] 参照箇所棚卸し（`lib/mock/data/*` をimportしている画面/seed導線）
+- [x] 追加スキーマとの差分確認（KISS: default列で吸収できるなら無理に埋めない）
+- [x] （必要な場合のみ）`lib/mock/data/*` を最小更新（SystemFunctionの `entryPoints` など）
 
 ### 6) 動作確認（E2E優先）
-- [ ] 実行環境確認（dev server起動、認証/ENV、テスト用データ方針、cleanup）
-- [ ] シナリオ: 業務要件CRUD（`priority`/受入条件の表示・編集・再読込）
-- [ ] シナリオ: システム要件CRUD（`category`/`business_requirement_ids`/受入条件の表示・編集・再読込）
-- [ ] シナリオ: システム機能CRUD（`entry_points` の表示・編集・再読込）
-- [ ] シナリオ: 互換（legacyのみのデータ表示→保存で破綻しない）
-- [ ] 証跡（スクショ/ログ/再現手順）を残す（Playwright MCP）
-  - ※Phase 3範囲の確認は実施済み。Phase 5完了後に再実施。
+- [x] 実行環境確認（dev server起動、認証/ENV、テスト用データ方針、cleanup）
+- [x] シナリオ: 業務要件CRUD（`priority`/受入条件の表示・編集・再読込）
+- [x] シナリオ: システム要件CRUD（`category`/`business_requirement_ids`/受入条件の表示・編集・再読込）
+- [x] シナリオ: システム機能CRUD（`entry_points` の表示・編集・再読込）
+- [x] シナリオ: 互換（legacyのみのデータ表示→保存で破綻しない）
+- [x] 証跡（スクショ/ログ/再現手順）を残す（Playwright MCP）
+  - 実施メモ: `.playwright-mcp/phase6-20260119-notes.md`
+  - スクショ: `.playwright-mcp/phase6-20260119-*.png`
+  - 詳細チェックリスト: [Phase 6: 動作確認（E2E優先）](2026-01-19-prd-v1-3-phase6-e2e.md)
 - [ ] （任意）自動テスト/CI化（YAGNI: まずは手動E2Eで十分なら後回し）
 
 ### 7) 運用ガードレール（目的に対する積み残し）
-- [ ] 受入条件lint（検証可能性の警告）を実装し、UIに表示する（KISS: 警告のみでブロックしない）
-- [ ] ヘルススコアにlint警告を反映する（DRY: lint結果をスコア/一覧/詳細で再利用）
+- [x] 受入条件lint（検証可能性の警告）を実装し、UIに表示する（KISS: 警告のみでブロックしない）
+- [x] ヘルススコアにlint警告を反映する（DRY: lint結果をスコア/一覧/詳細で再利用）
 - [ ] 互換列の収束方針を決める（`acceptance_criteria` / `code_refs` の二重書きの終了条件とタイミング）（YAGNI: すぐ削除しない）
+  - 詳細: [Phase 7: 運用ガードレール（lint/互換収束）](2026-01-19-prd-v1-3-phase7-guardrails.md)
 
 ---
 
@@ -62,4 +65,6 @@
 - [x] [Phase 2: データアクセス層修正（lib/data/*）](2026-01-19-prd-v1-3-phase2-data-layer.md)
 - [x] [Phase 3: 画面修正（フォーム・詳細表示）](2026-01-19-prd-v1-3-phase3-ui-forms.md)
 - [x] [Phase 4: ヘルススコア（品質監視）](2026-01-19-prd-v1-3-phase4-health-score.md)
-- [ ] [Phase 5: 既存データ移行・seed整備](2026-01-19-prd-v1-3-phase5-seed-mock-data.md)
+- [x] [Phase 5: 既存データ移行・seed整備](2026-01-19-prd-v1-3-phase5-seed-mock-data.md)
+- [x] [Phase 6: 動作確認（E2E優先）](2026-01-19-prd-v1-3-phase6-e2e.md)
+- [ ] [Phase 7: 運用ガードレール（lint/互換収束）](2026-01-19-prd-v1-3-phase7-guardrails.md)

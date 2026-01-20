@@ -10,7 +10,6 @@ import { useSystemFunctionForm } from "./hooks/useSystemFunctionForm";
 import {
 	BasicInfoSection,
 	SystemDesignSection,
-	CodeRefsSection,
 } from "./components";
 import { EntryPointsEditor } from "@/components/forms/EntryPointsEditor";
 
@@ -203,17 +202,6 @@ export default function SystemFunctionEditPage({
 					<EntryPointsEditor
 						entryPoints={state.entryPoints}
 						onChange={actions.setEntryPoints}
-					/>
-
-					<CodeRefsSection
-						codeRefs={state.codeRefs}
-						newCodeRef={state.newCodeRef}
-						onNewCodeRefChange={actions.setNewCodeRef}
-						onAddCodeRef={actions.addCodeRef}
-						onRemoveCodeRef={actions.removeCodeRef}
-						onAddPath={actions.addPath}
-						onUpdatePath={actions.updatePath}
-						onRemovePath={actions.removePath}
 					/>
 
 					{state.error && (

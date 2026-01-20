@@ -3,7 +3,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { AcceptanceCriteriaInput } from "./AcceptanceCriteriaInput";
 import { StructuredAcceptanceCriteriaInput } from "./StructuredAcceptanceCriteriaInput";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
@@ -66,9 +65,10 @@ function SelectionField({
             <Badge
               key={id}
               variant="outline"
-              className="border-slate-200 bg-slate-50 text-slate-600 text-[11px]"
+              className="border-slate-200 bg-slate-50 text-slate-600 text-[11px] max-w-[200px] truncate"
+              title={`${id}: ${nameMap.get(id) ?? id}`}
             >
-              {nameMap.get(id) ?? id}
+              {id}: {nameMap.get(id) ?? id}
             </Badge>
           ))
         )}
@@ -97,14 +97,6 @@ export function RequirementCard({
       acceptanceCriteriaJson: values,
       acceptanceCriteria: acceptanceCriteriaJsonToLegacy(values),
     });
-  };
-
-  const handleLegacyChange = (values: string[]) => {
-    const merged = mergeAcceptanceCriteriaJsonWithLegacy(
-      requirement.acceptanceCriteriaJson,
-      values
-    );
-    onUpdate({ acceptanceCriteria: values, acceptanceCriteriaJson: merged });
   };
 
   return (
@@ -229,12 +221,6 @@ export function RequirementCard({
         <StructuredAcceptanceCriteriaInput
           values={acceptanceCriteriaJson}
           onChange={handleStructuredChange}
-        />
-
-        <AcceptanceCriteriaInput
-          values={requirement.acceptanceCriteria}
-          label="受入条件（旧形式）"
-          onChange={handleLegacyChange}
         />
       </CardContent>
     </Card>

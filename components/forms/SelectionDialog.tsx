@@ -63,8 +63,10 @@ function CheckboxList({
 						onChange={(e) => onToggle(item.id, e.target.checked)}
 						className="h-4 w-4 rounded border-slate-300"
 					/>
-					<span className="font-mono text-[11px] text-slate-500">{item.id}</span>
-					<span>{item.name}</span>
+					<span className="font-mono text-[11px] text-slate-500 shrink-0">{item.id}</span>
+					<span className="truncate" title={`${item.id}: ${item.name}`}>
+						{item.name}
+					</span>
 				</label>
 			))}
 		</>

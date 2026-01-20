@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { Plus, X, ChevronDown } from "lucide-react";
+import { parseISO, format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { DatePicker } from "@/components/ui/date-picker";
 import type { AcceptanceCriterionJson } from "@/lib/data/structured";
 import { cn } from "@/lib/utils";
 
@@ -170,15 +172,14 @@ export function StructuredAcceptanceCriteriaInput({
 									</div>
 									<div className="space-y-1">
 										<Label className="text-[11px] text-slate-500">確認日</Label>
-										<Input
-											value={item.verified_at ?? ""}
-											onChange={(e) =>
+										<DatePicker
+											value={item.verified_at ? parseISO(item.verified_at) : undefined}
+											onChange={(date) =>
 												updateItem(index, {
-													verified_at: normalizeOptional(e.target.value),
+													verified_at: date ? format(date, "yyyy-MM-dd") : null,
 												})
 											}
 											placeholder="例: 2026-01-19"
-											className="h-9 text-[13px]"
 										/>
 									</div>
 									<div className="space-y-1 md:col-span-2">

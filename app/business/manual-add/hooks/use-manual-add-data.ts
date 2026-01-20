@@ -128,7 +128,7 @@ export function useManualAddData(bizId: string | null): UseManualAddDataResult {
       setSystemFunctions(
         (srfRows ?? []).map((srf) => ({
           id: srf.id,
-          name: srf.summary?.split("：")[0] ?? srf.summary,
+          name: srf.title ?? srf.id,
         }))
       );
       setSystemDomains(domainRows ?? []);

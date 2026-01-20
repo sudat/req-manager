@@ -1125,7 +1125,7 @@ docs/requirements/
 ### 5.2 業務タスクファイルフォーマット
 
 `business/{業務分類ID}/{業務タスクID}.md`
-※受入条件はMVPでは description のみを箇条書きで出力する（status/verification_method/根拠等のメタデータは将来拡張）。
+※受入条件はMVPでも構造化形式（status/verification_method/verified_*/evidence 等）を保持する。出力は description を箇条書きにし、メタデータが入力されている場合は併記する（未入力は省略可）。
 ```yaml
 ---
 id: BT-BIL-001

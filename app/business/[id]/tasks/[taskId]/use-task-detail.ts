@@ -160,16 +160,13 @@ export function useTaskDetail({
 	const systemFunctionMap = useMemo(
 		() =>
 			new Map(
-				systemFunctions.map((srf) => [
-					srf.id,
-					srf.summary?.split(":")[0] ?? srf.summary ?? srf.title,
-				]),
+				systemFunctions.map((srf) => [srf.id, srf.title ?? srf.id]),
 			),
 		[systemFunctions],
 	);
 
 	const systemFunctionDomainMap = useMemo(
-		() => new Map(systemFunctions.map((srf) => [srf.id, srf.systemDomainId])),
+		() => new Map(systemFunctions.map((srf) => [srf.id, srf.systemDomainId ?? null])),
 		[systemFunctions],
 	);
 
@@ -177,7 +174,7 @@ export function useTaskDetail({
 		() =>
 			systemFunctions.map((srf) => ({
 				id: srf.id,
-				name: srf.summary?.split(":")[0] ?? srf.summary ?? srf.title,
+				name: srf.title ?? srf.id,
 				systemDomainId: srf.systemDomainId ?? null,
 			})),
 		[systemFunctions],

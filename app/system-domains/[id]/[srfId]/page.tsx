@@ -9,7 +9,6 @@ import {
 	FunctionSummaryCard,
 	SystemRequirementsSection,
 	SystemDesignSection,
-	ImplementationSection,
 	EntryPointsSection,
 } from "@/components/system-domains";
 import {
@@ -129,12 +128,13 @@ export default function SystemFunctionDetailPage({
 
 	useEffect(() => {
 		if (!srf) return;
+		const currentSrf = srf;
 		let active = true;
 
 		async function fetchHealth(): Promise<void> {
 			setHealthLoading(true);
 			const [systemReqResult, conceptResult] = await Promise.all([
-				listSystemRequirementsBySrfId(srf.id),
+				listSystemRequirementsBySrfId(currentSrf.id),
 				listConcepts(),
 			]);
 
@@ -151,7 +151,7 @@ export default function SystemFunctionDetailPage({
 			const summary = buildHealthScoreSummary({
 				businessRequirements: [],
 				systemRequirements: systemReqResult.data ?? [],
-				systemFunctions: [srf],
+				systemFunctions: [currentSrf],
 				concepts: conceptResult.data ?? [],
 			});
 
@@ -224,7 +224,6 @@ export default function SystemFunctionDetailPage({
 			<SystemRequirementsSection srfId={srf.id} />
 			<SystemDesignSection systemDesign={srf.systemDesign} />
 			<EntryPointsSection entryPoints={srf.entryPoints ?? []} />
-			<ImplementationSection codeRefs={srf.codeRefs} />
 		</PageLayout>
 	);
 }

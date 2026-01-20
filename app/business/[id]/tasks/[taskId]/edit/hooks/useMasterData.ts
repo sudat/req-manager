@@ -48,7 +48,7 @@ export function useMasterData(): UseMasterDataResult {
 				setSystemFunctions(
 					(srfResult.data ?? []).map((srf) => ({
 						id: srf.id,
-						name: srf.summary?.split("：")[0] ?? srf.summary,
+						name: srf.title,
 					}))
 				);
 				setSystemDomains(
