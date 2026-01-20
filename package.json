@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:remove-legacy-only": "bun scripts/db/remove-legacy-only-text.ts",
+    "db:remove-legacy": "bun scripts/db/remove-legacy-text.ts"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",

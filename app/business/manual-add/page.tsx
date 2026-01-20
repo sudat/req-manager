@@ -7,6 +7,7 @@ import { MobileHeader } from "@/components/layout/mobile-header";
 import { ArrowLeft } from "lucide-react";
 import { createTask, deleteTask } from "@/lib/data/tasks";
 import { createBusinessRequirements } from "@/lib/data/business-requirements";
+import { listSystemRequirementsByIds, updateSystemRequirement } from "@/lib/data/system-requirements";
 import { acceptanceCriteriaJsonToLegacy, mergeAcceptanceCriteriaJsonWithLegacy } from "@/lib/data/structured";
 import { useManualAddData } from "./hooks/use-manual-add-data";
 import { useRequirements } from "./hooks/use-requirements";
@@ -30,6 +31,7 @@ function ManualAddPageContent() {
     concepts,
     systemFunctions,
     systemDomains,
+    systemRequirements,
   } = useManualAddData(bizId);
 
   const {
@@ -142,6 +144,47 @@ function ManualAddPageContent() {
       return;
     }
 
+    // 業務要件のrelatedSystemRequirementIdsからシステム要件を更新
+    const allSystemReqIds = new Set<string>();
+    const bizReqIdsBySystemReq = new Map<string, Set<string>>();
+    
+    for (const bizReq of requirementPayload) {
+      for (const sysReqId of bizReq.relatedSystemRequirementIds ?? []) {
+        allSystemReqIds.add(sysReqId);
+        if (!bizReqIdsBySystemReq.has(sysReqId)) {
+          bizReqIdsBySystemReq.set(sysReqId, new Set());
+        }
+        bizReqIdsBySystemReq.get(sysReqId)?.add(bizReq.id);
+      }
+    }
+
+    if (allSystemReqIds.size > 0) {
+      const { data: existingSystemReqs } = await listSystemRequirementsByIds(Array.from(allSystemReqIds));
+      
+      if (existingSystemReqs) {
+        for (const sysReq of existingSystemReqs) {
+          const newBizReqIds = bizReqIdsBySystemReq.get(sysReq.id) ?? new Set();
+          const existingBizReqIds = new Set(sysReq.businessRequirementIds);
+          const mergedBizReqIds = Array.from(new Set([...existingBizReqIds, ...newBizReqIds]));
+          
+          await updateSystemRequirement(sysReq.id, {
+            taskId: sysReq.taskId,
+            srfId: sysReq.srfId,
+            title: sysReq.title,
+            summary: sysReq.summary,
+            conceptIds: sysReq.conceptIds,
+            impacts: sysReq.impacts,
+            category: sysReq.category,
+            businessRequirementIds: mergedBizReqIds,
+            acceptanceCriteriaJson: sysReq.acceptanceCriteriaJson,
+            acceptanceCriteria: sysReq.acceptanceCriteria,
+            systemDomainIds: sysReq.systemDomainIds,
+            sortOrder: sysReq.sortOrder,
+          });
+        }
+      }
+    }
+
     router.push(`/business/${bizId}/tasks`);
   }
 
@@ -210,6 +253,7 @@ function ManualAddPageContent() {
             concepts={concepts}
             systemFunctions={systemFunctions}
             systemDomains={systemDomains}
+            systemRequirements={systemRequirements}
             loading={loading}
             onAddRequirement={() => addRequirement(taskId)}
             onUpdateRequirement={updateRequirement}
@@ -227,6 +271,7 @@ function ManualAddPageContent() {
         systemFunctions={systemFunctions}
         systemDomains={systemDomains}
         businessRequirements={businessRequirementItems}
+        systemRequirements={systemRequirements}
         onUpdateRequirement={updateRequirement}
       />
     </>

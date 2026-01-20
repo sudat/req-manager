@@ -64,6 +64,13 @@ Phase 2で整備した新カラム（`priority` / `acceptance_criteria_json` / `
 - [x] 編集ページ: `entry_points` の編集UIを追加
   - [x] 追加/削除/並び替え（最低限: 追加/削除）
   - [x] 保存時は `entry_points` を更新し、必要に応じて `code_refs` と同期する（KISS）
+- [x] システム要件のCRUD（追加/編集/削除）機能を追加
+  - [x] 編集ページ: システム要件セクションを追加（RequirementListSectionコンポーネントを再利用）
+  - [x] システム要件の追加/編集/削除ができる状態
+  - [x] 構造化された受入条件の入力（StructuredAcceptanceCriteriaInput）
+- [x] システム要件の構造化された受入条件表示
+  - [x] 詳細ページ: システム要件カードで受入条件が構造化表示されている（AcceptanceCriteriaDisplay）
+  - [x] legacy `acceptance_criteria(text[])` との互換（mergeAcceptanceCriteriaJsonWithLegacy）
 - [x] 既存の `code_refs` UIの扱いを決める（残置/廃止/参照専用化）
 
 ## 5. `business_requirement_ids` の表示元の統一（互換）
@@ -75,12 +82,16 @@ Phase 2で整備した新カラム（`priority` / `acceptance_criteria_json` / `
 - [x] タスク編集: 業務要件（priority/受入条件）→保存→再読込で反映される
 - [x] タスク編集: システム要件（category/業務要件リンク/受入条件）→保存→再読込で反映される
 - [x] システム機能編集: entry_points 編集→保存→再読込で反映される
+- [x] システム機能編集: システム要件の追加/編集/削除→保存→再読込で反映される
+- [x] システム機能詳細: システム要件の受入条件が構造化表示されていること
 - [x] 既存データ（legacyのみ）が表示崩れしない（空/NULL/欠損の許容）
 
 ---
 
 ## 完了基準（Phase 3）
 - [x] UIで `priority/category/business_requirement_ids/entry_points/acceptance_criteria_json` を編集できる
+- [x] システム機能編集ページでシステム要件のCRUD（追加/編集/削除）ができる
+- [x] システム機能詳細ページで受入条件が構造化表示されている
 - [x] 保存後にDBの新カラムに値が入る（段階移行の土台ができている）
 - [x] 既存導線（タスク編集/システム機能編集）が破綻しない
 

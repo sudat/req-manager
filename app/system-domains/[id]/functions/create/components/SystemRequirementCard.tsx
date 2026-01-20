@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Trash2 } from "lucide-react";
+import { StructuredAcceptanceCriteriaInput } from "@/components/forms/StructuredAcceptanceCriteriaInput";
 import type { SystemRequirementCard } from "../types";
 
 type SystemRequirementCardProps = {
@@ -111,6 +112,11 @@ export function SystemRequirementCard({
           selectedIds={systemRequirement.businessRequirementIds}
           nameMap={businessRequirementMap}
           onOpenDialog={onOpenBusinessRequirementDialog}
+        />
+
+        <StructuredAcceptanceCriteriaInput
+          values={systemRequirement.acceptanceCriteriaJson}
+          onChange={(values) => onUpdate({ acceptanceCriteriaJson: values })}
         />
       </CardContent>
     </Card>

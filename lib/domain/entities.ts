@@ -82,7 +82,6 @@ export interface Concept {
 export interface SystemFunction {
   id: string;              // SRF-001
   systemDomainId?: string | null; // システム領域ID（例: AR）
-  designDocNo: string;     // DD-TASK-001-001
   category: SrfCategory;   // screen
   title: string;           // 機能名
   summary: string;         // 説明

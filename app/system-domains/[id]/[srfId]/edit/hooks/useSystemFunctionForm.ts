@@ -5,6 +5,9 @@ import {
 	getSystemFunctionById,
 	updateSystemFunction,
 } from "@/lib/data/system-functions";
+import { listSystemRequirementsBySrfId } from "@/lib/data/system-requirements";
+import { fromSystemRequirement } from "@/lib/data/requirement-mapper";
+import { deleteSystemRequirementsBySrfId, createSystemRequirements, updateSystemRequirement } from "@/lib/data/system-requirements";
 import type {
 	SystemFunction,
 	SrfCategory,
@@ -13,6 +16,7 @@ import type {
 	SystemDesignItem,
 	EntryPoint,
 } from "@/lib/domain";
+import type { Requirement } from "@/lib/domain/forms";
 
 // ============================================
 // 型定義
@@ -39,7 +43,6 @@ export interface SystemFunctionFormState {
 	existingSrf: SystemFunction | null;
 
 	// 基本情報
-	designDocNo: string;
 	category: SrfCategory;
 	status: SrfStatus;
 	title: string;
@@ -55,11 +58,13 @@ export interface SystemFunctionFormState {
 
 	// エントリポイント
 	entryPoints: EntryPoint[];
+
+	// システム要件
+	systemRequirements: Requirement[];
 }
 
 export interface SystemFunctionFormActions {
 	// 基本情報の更新
-	setDesignDocNo: (value: string) => void;
 	setCategory: (value: SrfCategory) => void;
 	setStatus: (value: SrfStatus) => void;
 	setTitle: (value: string) => void;
@@ -80,6 +85,11 @@ export interface SystemFunctionFormActions {
 
 	// エントリポイント操作
 	setEntryPoints: (entryPoints: EntryPoint[]) => void;
+
+	// システム要件操作
+	addSystemRequirement: () => void;
+	updateSystemRequirement: (reqId: string, patch: Partial<Requirement>) => void;
+	removeSystemRequirement: (reqId: string) => void;
 
 	// 保存
 	save: (systemDomainId: string) => Promise<boolean>;
@@ -132,7 +142,6 @@ export function useSystemFunctionForm(srfId: string): {
 	const [existingSrf, setExistingSrf] = useState<SystemFunction | null>(null);
 
 	// 基本情報
-	const [designDocNo, setDesignDocNo] = useState("");
 	const [category, setCategory] = useState<SrfCategory>("screen");
 	const [status, setStatus] = useState<SrfStatus>("not_implemented");
 	const [title, setTitle] = useState("");
@@ -149,6 +158,9 @@ export function useSystemFunctionForm(srfId: string): {
 
 	// エントリポイント
 	const [entryPoints, setEntryPoints] = useState<EntryPoint[]>([]);
+
+	// システム要件
+	const [systemRequirements, setSystemRequirements] = useState<Requirement[]>([]);
 
 	// データ読み込み
 	useEffect(() => {
@@ -167,7 +179,6 @@ export function useSystemFunctionForm(srfId: string): {
 				setError(null);
 				setExistingSrf(data ?? null);
 				if (data) {
-					setDesignDocNo(data.designDocNo);
 					setCategory(data.category);
 					setStatus(data.status);
 					setTitle(data.title);
@@ -177,6 +188,17 @@ export function useSystemFunctionForm(srfId: string): {
 					setEntryPoints(data.entryPoints ?? []);
 				}
 			}
+
+			// システム要件をロード
+			const { data: sysReqs, error: sysReqError } = await listSystemRequirementsBySrfId(srfId);
+			if (!active) return;
+
+			if (sysReqError) {
+				console.error("システム要件読み込みエラー:", sysReqError);
+			} else {
+				setSystemRequirements(sysReqs?.map((sr) => fromSystemRequirement(sr)) ?? []);
+			}
+
 			setLoading(false);
 		}
 
@@ -242,6 +264,40 @@ export function useSystemFunctionForm(srfId: string): {
 		}));
 	}, []);
 
+	// システム要件を追加
+	const addSystemRequirement = useCallback((): void => {
+		const newId = `SR-${srfId}-${String(systemRequirements.length + 1).padStart(3, "0")}`;
+		setSystemRequirements((prev) => [
+			...prev,
+			{
+				id: newId,
+				type: "システム要件",
+				title: "",
+				summary: "",
+				conceptIds: [],
+				srfId: srfId,
+				systemDomainIds: [],
+				acceptanceCriteria: [],
+				acceptanceCriteriaJson: [],
+				category: "function",
+				businessRequirementIds: [],
+				relatedSystemRequirementIds: [],
+			},
+		]);
+	}, [srfId, systemRequirements.length]);
+
+	// システム要件を更新
+	const updateSystemRequirement = useCallback((reqId: string, patch: Partial<Requirement>): void => {
+		setSystemRequirements((prev) =>
+			prev.map((req) => (req.id === reqId ? { ...req, ...patch } : req))
+		);
+	}, []);
+
+	// システム要件を削除
+	const removeSystemRequirement = useCallback((reqId: string): void => {
+		setSystemRequirements((prev) => prev.filter((req) => req.id !== reqId));
+	}, []);
+
 	// 保存
 	const save = useCallback(
 		async (systemDomainId: string): Promise<boolean> => {
@@ -260,9 +316,9 @@ export function useSystemFunctionForm(srfId: string): {
 				responsibility: entry.responsibility?.trim() || null,
 			}));
 
+			// システム機能を更新
 			const { error: saveError } = await updateSystemFunction(srfId, {
 				systemDomainId,
-				designDocNo,
 				category,
 				status,
 				title,
@@ -273,18 +329,47 @@ export function useSystemFunctionForm(srfId: string): {
 				entryPoints: normalizedEntryPoints,
 				codeRefs,
 			});
-			setSaving(false);
 
 			if (saveError) {
 				setError(saveError);
+				setSaving(false);
 				return false;
 			}
+
+			// システム要件を保存：一旦削除して再作成
+			await deleteSystemRequirementsBySrfId(srfId);
+
+			if (systemRequirements.length > 0) {
+				const sysReqInputs = systemRequirements.map((req, index) => ({
+					id: req.id,
+					taskId: "", // システム機能はタスクを持たない
+					srfId: srfId,
+					title: req.title,
+					summary: req.summary,
+					conceptIds: req.conceptIds,
+					impacts: [],
+					category: req.category,
+					businessRequirementIds: req.businessRequirementIds ?? [],
+					acceptanceCriteriaJson: req.acceptanceCriteriaJson,
+					acceptanceCriteria: req.acceptanceCriteria,
+					systemDomainIds: req.systemDomainIds,
+					sortOrder: index,
+				}));
+
+				const { error: sysReqError } = await createSystemRequirements(sysReqInputs);
+				if (sysReqError) {
+					setError(sysReqError);
+					setSaving(false);
+					return false;
+				}
+			}
+
+			setSaving(false);
 			return true;
 		},
 		[
 			existingSrf,
 			srfId,
-			designDocNo,
 			category,
 			status,
 			title,
@@ -292,6 +377,7 @@ export function useSystemFunctionForm(srfId: string): {
 			systemDesign,
 			entryPoints,
 			codeRefs,
+			systemRequirements,
 		],
 	);
 
@@ -301,7 +387,6 @@ export function useSystemFunctionForm(srfId: string): {
 			saving,
 			error,
 			existingSrf,
-			designDocNo,
 			category,
 			status,
 			title,
@@ -311,9 +396,9 @@ export function useSystemFunctionForm(srfId: string): {
 			codeRefs,
 			newCodeRef,
 			entryPoints,
+			systemRequirements,
 		},
 		actions: {
-			setDesignDocNo,
 			setCategory,
 			setStatus,
 			setTitle,
@@ -328,6 +413,9 @@ export function useSystemFunctionForm(srfId: string): {
 			updatePath,
 			removePath,
 			setEntryPoints,
+			addSystemRequirement,
+			updateSystemRequirement,
+			removeSystemRequirement,
 			save,
 		},
 	};

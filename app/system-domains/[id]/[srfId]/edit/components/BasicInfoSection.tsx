@@ -19,12 +19,10 @@ import type { SrfCategory, SrfStatus } from "@/lib/domain";
 
 interface BasicInfoSectionProps {
 	systemFunctionId: string;
-	designDocNo: string;
 	category: SrfCategory;
 	status: SrfStatus;
 	title: string;
 	summary: string;
-	onDesignDocNoChange: (value: string) => void;
 	onCategoryChange: (value: SrfCategory) => void;
 	onStatusChange: (value: SrfStatus) => void;
 	onTitleChange: (value: string) => void;
@@ -37,12 +35,10 @@ interface BasicInfoSectionProps {
 
 export function BasicInfoSection({
 	systemFunctionId,
-	designDocNo,
 	category,
 	status,
 	title,
 	summary,
-	onDesignDocNoChange,
 	onCategoryChange,
 	onStatusChange,
 	onTitleChange,
@@ -59,17 +55,6 @@ export function BasicInfoSection({
 						<Label>システム機能ID</Label>
 						<Input value={systemFunctionId} disabled />
 						<p className="text-xs text-slate-500">IDは変更できません</p>
-					</div>
-
-					<div className="space-y-2">
-						<Label>
-							設計書No<span className="text-rose-500">*</span>
-						</Label>
-						<Input
-							value={designDocNo}
-							onChange={(e) => onDesignDocNoChange(e.target.value)}
-							placeholder="DD-TASK-001-001"
-						/>
 					</div>
 
 					<div className="space-y-2">

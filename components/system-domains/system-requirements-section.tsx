@@ -7,6 +7,8 @@ import { SectionCard, EmptyState } from "./section-card";
 import { useRelatedRequirements } from "@/hooks/use-related-requirements";
 import type { RelatedRequirementInfo } from "@/lib/domain";
 import { CardSkeleton } from "@/components/skeleton";
+import { AcceptanceCriteriaDisplay } from "@/components/forms/AcceptanceCriteriaDisplay";
+import { mergeAcceptanceCriteriaJsonWithLegacy } from "@/lib/data/structured";
 
 interface SystemRequirementsSectionProps {
 	srfId: string;
@@ -91,11 +93,13 @@ function RequirementItem({ req }: { req: RelatedRequirementInfo }): React.ReactN
 					<div className="text-[11px] font-medium text-slate-400 uppercase tracking-wide mb-1">
 						受入条件
 					</div>
-					<ul className="list-disc pl-5 text-[13px] text-slate-700 space-y-0.5">
-						{req.systemReqAcceptanceCriteria.map((ac, i) => (
-							<li key={i}>{ac}</li>
-						))}
-					</ul>
+					<AcceptanceCriteriaDisplay
+						items={mergeAcceptanceCriteriaJsonWithLegacy(
+							req.systemReqAcceptanceCriteriaJson,
+							req.systemReqAcceptanceCriteria
+						)}
+						emptyMessage="未登録"
+					/>
 				</div>
 			)}
 

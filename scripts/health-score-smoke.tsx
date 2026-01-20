@@ -8,10 +8,6 @@ const buildCriteria = (description: string): AcceptanceCriterionJson[] => [
     id: "AC-001",
     description,
     verification_method: null,
-    status: null,
-    verified_by: null,
-    verified_at: null,
-    evidence: null,
   },
 ];
 

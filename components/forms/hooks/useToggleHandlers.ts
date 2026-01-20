@@ -14,7 +14,7 @@ export function useToggleHandlers(
 ) {
 	// 複数選択トグルハンドラー生成
 	const createMultiToggle = (
-		key: "conceptIds" | "systemDomainIds" | "businessRequirementIds"
+		key: "conceptIds" | "systemDomainIds" | "businessRequirementIds" | "relatedSystemRequirementIds"
 	) => {
 		return (itemId: string, checked: boolean) => {
 			if (!activeRequirement) return;
@@ -39,5 +39,6 @@ export function useToggleHandlers(
 		handleSystemFunctionToggle: createSingleToggle("srfId"),
 		handleDomainToggle: createMultiToggle("systemDomainIds"),
 		handleBusinessRequirementToggle: createMultiToggle("businessRequirementIds"),
+		handleSystemRequirementToggle: createMultiToggle("relatedSystemRequirementIds"),
 	};
 }

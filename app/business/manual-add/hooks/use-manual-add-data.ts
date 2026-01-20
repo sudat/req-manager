@@ -6,6 +6,7 @@ import { getBusinessById } from "@/lib/data/businesses";
 import { listConcepts } from "@/lib/data/concepts";
 import { listSystemFunctions } from "@/lib/data/system-functions";
 import { listSystemDomains, type SystemDomain } from "@/lib/data/system-domains";
+import { listSystemRequirements } from "@/lib/data/system-requirements";
 import { nextSequentialId } from "@/lib/data/id";
 import type { SelectableItem } from "@/lib/domain/forms";
 
@@ -19,6 +20,7 @@ type UseManualAddDataResult = {
   concepts: SelectableItem[];
   systemFunctions: SelectableItem[];
   systemDomains: SystemDomain[];
+  systemRequirements: SelectableItem[];
 };
 
 export function useManualAddData(bizId: string | null): UseManualAddDataResult {
@@ -31,6 +33,7 @@ export function useManualAddData(bizId: string | null): UseManualAddDataResult {
   const [concepts, setConcepts] = useState<SelectableItem[]>([]);
   const [systemFunctions, setSystemFunctions] = useState<SelectableItem[]>([]);
   const [systemDomains, setSystemDomains] = useState<SystemDomain[]>([]);
+  const [systemRequirements, setSystemRequirements] = useState<SelectableItem[]>([]);
 
   useEffect(() => {
     let active = true;
@@ -108,15 +111,17 @@ export function useManualAddData(bizId: string | null): UseManualAddDataResult {
         { data: conceptRows, error: conceptError },
         { data: srfRows, error: srfError },
         { data: domainRows, error: domainError },
+        { data: sysReqRows, error: sysReqError },
       ] = await Promise.all([
         listConcepts(),
         listSystemFunctions(),
         listSystemDomains(),
+        listSystemRequirements(),
       ]);
 
       if (!active) return;
 
-      const fetchError = conceptError ?? srfError ?? domainError;
+      const fetchError = conceptError ?? srfError ?? domainError ?? sysReqError;
       if (fetchError) {
         setOptionsError(fetchError);
         return;
@@ -132,6 +137,12 @@ export function useManualAddData(bizId: string | null): UseManualAddDataResult {
         }))
       );
       setSystemDomains(domainRows ?? []);
+      setSystemRequirements(
+        (sysReqRows ?? []).map((sr) => ({
+          id: sr.id,
+          name: sr.title ?? sr.id,
+        }))
+      );
       setOptionsError(null);
     }
 
@@ -152,5 +163,6 @@ export function useManualAddData(bizId: string | null): UseManualAddDataResult {
     concepts,
     systemFunctions,
     systemDomains,
+    systemRequirements,
   };
 }

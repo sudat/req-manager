@@ -4,7 +4,6 @@ export const systemFunctions: SystemFunction[] = [
   // AR関連（7件 → 6件に統合）
   {
     id: "SRF-001",
-    designDocNo: "DD-TASK-003-001",
     category: "screen",
     title: "請求書発行",
     summary: `## 概要
@@ -84,7 +83,6 @@ export const systemFunctions: SystemFunction[] = [
   },
   {
     id: "SRF-002",
-    designDocNo: "DD-TASK-003-002",
     category: "internal",
     title: "税率別内訳集計機能",
     summary: `## 概要
@@ -157,7 +155,6 @@ export const systemFunctions: SystemFunction[] = [
   },
   {
     id: "SRF-003",
-    designDocNo: "DD-TASK-004-001",
     category: "internal",
     title: "入金データ取り込み機能",
     summary: `## 概要
@@ -230,7 +227,6 @@ export const systemFunctions: SystemFunction[] = [
   },
   {
     id: "SRF-004",
-    designDocNo: "DD-TASK-004-002",
     category: "internal",
     title: "入金消込機能",
     summary: `## 概要
@@ -303,7 +299,6 @@ export const systemFunctions: SystemFunction[] = [
   },
   {
     id: "SRF-005",
-    designDocNo: "DD-TASK-005-001",
     category: "screen",
     title: "債権管理一覧画面",
     summary: `## 概要
@@ -376,7 +371,6 @@ export const systemFunctions: SystemFunction[] = [
   },
   {
     id: "SRF-006",
-    designDocNo: "DD-TASK-001-001",
     category: "screen",
     title: "与信管理画面",
     summary: `## 概要
@@ -448,7 +442,6 @@ export const systemFunctions: SystemFunction[] = [
   },
   {
     id: "SRF-007",
-    designDocNo: "DD-TASK-003-003",
     category: "interface",
     title: "電子請求書送信IF",
     summary: `## 概要
@@ -521,7 +514,6 @@ export const systemFunctions: SystemFunction[] = [
   },
   {
     id: "SRF-008",
-    designDocNo: "DD-TASK-006-001",
     category: "internal",
     title: "延滞債権アラート機能",
     summary: `## 概要
@@ -594,7 +586,6 @@ export const systemFunctions: SystemFunction[] = [
   // AP関連（8件）
   {
     id: "SRF-009",
-    designDocNo: "DD-TASK-009-001",
     category: "screen",
     title: "支払依頼画面",
     summary: `## 概要
@@ -659,7 +650,6 @@ export const systemFunctions: SystemFunction[] = [
   },
   {
     id: "SRF-010",
-    designDocNo: "DD-TASK-010-001",
     category: "screen",
     title: "支払承認画面",
     summary: `## 概要
@@ -724,7 +714,6 @@ export const systemFunctions: SystemFunction[] = [
   },
   {
     id: "SRF-011",
-    designDocNo: "DD-TASK-011-001",
     category: "internal",
     title: "支払実行機能",
     summary: `## 概要
@@ -796,7 +785,6 @@ export const systemFunctions: SystemFunction[] = [
   },
   {
     id: "SRF-012",
-    designDocNo: "DD-TASK-012-001",
     category: "screen",
     title: "手形管理画面",
     summary: `## 概要
@@ -869,7 +857,6 @@ export const systemFunctions: SystemFunction[] = [
   },
   {
     id: "SRF-013",
-    designDocNo: "DD-TASK-007-001",
     category: "internal",
     title: "仕入請求書取込機能",
     summary: `## 概要
@@ -941,7 +928,6 @@ export const systemFunctions: SystemFunction[] = [
   },
   {
     id: "SRF-014",
-    designDocNo: "DD-TASK-014-001",
     category: "screen",
     title: "買掛残高確認画面",
     summary: `## 概要
@@ -1006,7 +992,6 @@ export const systemFunctions: SystemFunction[] = [
   },
   {
     id: "SRF-015",
-    designDocNo: "DD-TASK-013-001",
     category: "interface",
     title: "仕入先ポータルIF",
     summary: `## 概要
@@ -1079,7 +1064,6 @@ export const systemFunctions: SystemFunction[] = [
   },
   {
     id: "SRF-016",
-    designDocNo: "DD-TASK-013-001",
     category: "internal",
     title: "支払予定表作成機能",
     summary: `## 概要
@@ -1152,7 +1136,6 @@ export const systemFunctions: SystemFunction[] = [
   // GL関連（8件）
   {
     id: "SRF-017",
-    designDocNo: "DD-TASK-015-001",
     category: "screen",
     title: "手動仕訳入力画面",
     summary: `## 概要
@@ -1225,7 +1208,6 @@ export const systemFunctions: SystemFunction[] = [
   },
   {
     id: "SRF-018",
-    designDocNo: "DD-TASK-016-001",
     category: "internal",
     title: "仕訳転記機能",
     summary: `## 概要
@@ -1297,7 +1279,6 @@ export const systemFunctions: SystemFunction[] = [
   },
   {
     id: "SRF-019",
-    designDocNo: "DD-TASK-017-001",
     category: "screen",
     title: "総勘定元帳画面",
     summary: `## 概要
@@ -1369,7 +1350,6 @@ export const systemFunctions: SystemFunction[] = [
   },
   {
     id: "SRF-020",
-    designDocNo: "DD-TASK-018-001",
     category: "screen",
     title: "試算表画面",
     summary: `## 概要
@@ -1442,7 +1422,6 @@ export const systemFunctions: SystemFunction[] = [
   },
   {
     id: "SRF-021",
-    designDocNo: "DD-TASK-019-001",
     category: "screen",
     title: "財務諸表画面",
     summary: `## 概要
@@ -1514,7 +1493,6 @@ export const systemFunctions: SystemFunction[] = [
   },
   {
     id: "SRF-022",
-    designDocNo: "DD-TASK-020-001",
     category: "internal",
     title: "決算整理機能",
     summary: `## 概要
@@ -1588,7 +1566,6 @@ export const systemFunctions: SystemFunction[] = [
   },
   {
     id: "SRF-023",
-    designDocNo: "DD-TASK-021-001",
     category: "internal",
     title: "固定資産償却機能",
     summary: `## 概要
@@ -1661,7 +1638,6 @@ export const systemFunctions: SystemFunction[] = [
   },
   {
     id: "SRF-024",
-    designDocNo: "DD-TASK-022-001",
     category: "screen",
     title: "税申告画面",
     summary: `## 概要

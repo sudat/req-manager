@@ -7,5 +7,6 @@
 				"Authorization": "Bearer ${SUPABASE_ACCESS_TOKEN}"
 			}
 		}
-	}
+	},
+	"env": ".env"
 }

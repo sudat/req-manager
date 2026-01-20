@@ -1,13 +1,14 @@
 import type { EntryPoint } from "@/lib/domain";
 
+/**
+ * 受入条件定義（PRD v1.3 Phase 2）
+ * 設計原則: 受入条件の定義と確認状態を分離する
+ * 確認状態は AcceptanceConfirmation で管理するため、ここでは定義のみを持つ
+ */
 export type AcceptanceCriterionJson = {
   id: string;
   description: string;
   verification_method: string | null;
-  status: string | null;
-  verified_by: string | null;
-  verified_at: string | null;
-  evidence: string | null;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -19,10 +20,6 @@ const defaultAcceptanceCriterion = (index: number, description: string): Accepta
   id: `AC-${pad3(index + 1)}`,
   description,
   verification_method: null,
-  status: null,
-  verified_by: null,
-  verified_at: null,
-  evidence: null,
 });
 
 export const normalizeAcceptanceCriteriaJson = (raw: unknown): AcceptanceCriterionJson[] => {
@@ -39,19 +36,10 @@ export const normalizeAcceptanceCriteriaJson = (raw: unknown): AcceptanceCriteri
     const verification_method =
       typeof item.verification_method === "string" ? item.verification_method : null;
 
-    const status = typeof item.status === "string" ? item.status : null;
-    const verified_by = typeof item.verified_by === "string" ? item.verified_by : null;
-    const verified_at = typeof item.verified_at === "string" ? item.verified_at : null;
-    const evidence = typeof item.evidence === "string" ? item.evidence : null;
-
     return {
       id,
       description,
       verification_method,
-      status,
-      verified_by,
-      verified_at,
-      evidence,
     };
   });
 };

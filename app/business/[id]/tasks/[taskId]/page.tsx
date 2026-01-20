@@ -20,7 +20,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { buildHealthScoreSummary } from "@/lib/health-score";
 import { BusinessRequirementCard } from "./business-requirement-card";
-import { SystemRequirementCard } from "./system-requirement-card";
 import { useTaskDetail } from "./use-task-detail";
 
 type PageProps = {
@@ -62,6 +61,18 @@ export default function TaskDetailPage({ params }: PageProps) {
 			new Map(businessRequirements.map((req) => [req.id, req.title || req.id])),
 		[businessRequirements],
 	);
+
+	const systemRequirementsByBizReq = useMemo(() => {
+		const map = new Map<string, typeof systemRequirements>();
+		systemRequirements.forEach(sr => {
+			sr.businessRequirementIds.forEach(bizReqId => {
+				const list = map.get(bizReqId) || [];
+				list.push(sr);
+				map.set(bizReqId, list);
+			});
+		});
+		return map;
+	}, [systemRequirements]);
 
 	const relatedSystemFunctions = useMemo(() => {
 		if (systemRequirements.length === 0) return [];
@@ -161,26 +172,17 @@ export default function TaskDetailPage({ params }: PageProps) {
 						/>
 					</div>
 
-					<BusinessRequirementsSection
-						requirements={businessRequirements}
-						loading={requirementsLoading}
-						error={requirementsError}
-						optionsError={optionsError}
-						conceptMap={conceptMap}
-						systemFunctionMap={systemFunctionMap}
-						systemFunctionDomainMap={systemFunctionDomainMap}
-						systemDomainMap={systemDomainMap}
-					/>
-
-					<SystemRequirementsSection
-						requirements={systemRequirements}
-						loading={systemRequirementsLoading}
-						error={systemRequirementsError}
-						conceptMap={conceptMap}
-						systemFunctions={systemFunctions}
-						systemFunctionDomainMap={systemFunctionDomainMap}
-						businessRequirementMap={businessRequirementMap}
-					/>
+				<BusinessRequirementsSection
+					requirements={businessRequirements}
+					loading={requirementsLoading}
+					error={requirementsError}
+					optionsError={optionsError}
+					conceptMap={conceptMap}
+					systemFunctionMap={systemFunctionMap}
+					systemFunctionDomainMap={systemFunctionDomainMap}
+					systemDomainMap={systemDomainMap}
+					systemRequirementsByBizReq={systemRequirementsByBizReq}
+				/>
 				</div>
 			</div>
 		</>
@@ -313,6 +315,7 @@ type BusinessRequirementsSectionProps = {
 	systemFunctionMap: Map<string, string>;
 	systemFunctionDomainMap: Map<string, string | null>;
 	systemDomainMap: Map<string, string>;
+	systemRequirementsByBizReq: Map<string, import("@/lib/data/system-requirements").SystemRequirement[]>;
 };
 
 function BusinessRequirementsSection(props: BusinessRequirementsSectionProps) {
@@ -331,41 +334,7 @@ function BusinessRequirementsSection(props: BusinessRequirementsSectionProps) {
 					systemFunctionDomainMap={props.systemFunctionDomainMap}
 					systemDomainMap={props.systemDomainMap}
 					optionsError={props.optionsError}
-				/>
-			)}
-		/>
-	);
-}
-
-type SystemRequirementsSectionProps = {
-	requirements: import("@/lib/data/system-requirements").SystemRequirement[];
-	loading: boolean;
-	error: string | null;
-	conceptMap: Map<string, string>;
-	systemFunctions: {
-		id: string;
-		name: string;
-		systemDomainId: string | null;
-	}[];
-	systemFunctionDomainMap: Map<string, string | null>;
-	businessRequirementMap: Map<string, string>;
-};
-
-function SystemRequirementsSection(props: SystemRequirementsSectionProps) {
-	return (
-		<RequirementsSection
-			title="関連システム要件"
-			items={props.requirements}
-			loading={props.loading}
-			error={props.error}
-			renderItem={(sysReq) => (
-				<SystemRequirementCard
-					key={sysReq.id}
-					requirement={sysReq}
-					conceptMap={props.conceptMap}
-					systemFunctions={props.systemFunctions}
-					systemFunctionDomainMap={props.systemFunctionDomainMap}
-					businessRequirementMap={props.businessRequirementMap}
+					relatedSystemRequirements={props.systemRequirementsByBizReq.get(req.id) ?? []}
 				/>
 			)}
 		/>

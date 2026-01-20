@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +19,7 @@ type BusinessRequirementCardProps = {
   systemFunctionDomainMap: Map<string, string | null>;
   systemDomainMap: Map<string, string>;
   optionsError: string | null;
+  relatedSystemRequirements: import("@/lib/data/system-requirements").SystemRequirement[];
 };
 
 export function BusinessRequirementCard({
@@ -28,11 +29,24 @@ export function BusinessRequirementCard({
   systemFunctionDomainMap,
   systemDomainMap,
   optionsError,
+  relatedSystemRequirements,
 }: BusinessRequirementCardProps) {
   const [isOpen, setIsOpen] = useState(true);
   const srfId = requirement.srfId ?? null;
   const srfName = srfId ? systemFunctionMap.get(srfId) ?? srfId : null;
   const srfDomainId = srfId ? systemFunctionDomainMap.get(srfId) : null;
+
+  // 関連するシステム要件の概要を抽出
+  const relatedSystemRequirementSummaries = useMemo(() => {
+    if (!srfId || relatedSystemRequirements.length === 0) return [];
+    return relatedSystemRequirements
+      .filter(sr => sr.srfId === srfId)
+      .map(sr => sr.summary)
+      .filter(Boolean);
+  }, [srfId, relatedSystemRequirements]);
+
+  const firstSummary = relatedSystemRequirementSummaries[0] ?? "";
+  const summaryCount = relatedSystemRequirementSummaries.length;
 
   return (
     <Collapsible
@@ -86,7 +100,11 @@ export function BusinessRequirementCard({
               <Badge
                 variant="outline"
                 className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] hover:bg-slate-100 max-w-[200px] truncate"
-                title={srfName ?? undefined}
+                title={
+                  summaryCount > 1
+                    ? `${firstSummary}\n\n（他${summaryCount - 1}件の要件があります）`
+                    : firstSummary || srfName || undefined
+                }
               >
                 {srfName}
               </Badge>
@@ -103,6 +121,21 @@ export function BusinessRequirementCard({
               <Badge key={domainId} variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px]">
                 {systemDomainMap.get(domainId) ?? domainId}
               </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {relatedSystemRequirements.length > 0 && (
+        <div className="border-t border-slate-100 pt-2 mt-2 space-y-1">
+          <div className="text-[12px] font-medium text-slate-500">関連システム要件</div>
+          <div className="flex flex-wrap gap-1.5">
+            {relatedSystemRequirements.map((sr) => (
+              <Link key={sr.id} href={`#${sr.id}`}>
+                <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] hover:bg-slate-100 max-w-[200px] truncate" title={sr.title ?? undefined}>
+                  {sr.title}
+                </Badge>
+              </Link>
             ))}
           </div>
         </div>

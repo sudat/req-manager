@@ -55,6 +55,29 @@ const syncLegacyBusinessRequirementLinks = (
 	}));
 };
 
+const syncSystemRequirementLinks = (
+	businessRequirements: TaskKnowledge["businessRequirements"],
+	systemRequirements: TaskKnowledge["systemRequirements"]
+): TaskKnowledge["systemRequirements"] => {
+	// 業務要件のrelatedSystemRequirementIdsから逆引きマップを作成
+	const bizReqIdsBySystemReq = new Map<string, Set<string>>();
+	
+	for (const bizReq of businessRequirements) {
+		for (const sysReqId of bizReq.relatedSystemRequirementIds ?? []) {
+			if (!bizReqIdsBySystemReq.has(sysReqId)) {
+				bizReqIdsBySystemReq.set(sysReqId, new Set());
+			}
+			bizReqIdsBySystemReq.get(sysReqId)?.add(bizReq.id);
+		}
+	}
+
+	// システム要件のbusinessRequirementIdsを更新
+	return systemRequirements.map((sysReq) => ({
+		...sysReq,
+		businessRequirementIds: Array.from(bizReqIdsBySystemReq.get(sysReq.id) ?? []),
+	}));
+};
+
 /**
  * タスク保存処理を行うカスタムフック
  * - LocalStorageへのバックアップ
@@ -108,10 +131,16 @@ export function useTaskSave({
 					return;
 				}
 
+				// システム要件のbusinessRequirementIdsを業務要件のrelatedSystemRequirementIdsから更新
+				const syncedSystemRequirements = syncSystemRequirementLinks(
+					syncedBusinessRequirements,
+					knowledge.systemRequirements
+				);
+
 				// システム要件を同期
 				const sysError = await syncSystemRequirements(
 					taskId,
-					knowledge.systemRequirements
+					syncedSystemRequirements
 				);
 				if (sysError) {
 					setSaveError(sysError);

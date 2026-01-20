@@ -163,6 +163,17 @@ export default function TaskDetailEditPage({
 		[knowledge.businessRequirements]
 	);
 
+	const systemRequirementMap = useMemo(
+		() =>
+			new Map(
+				knowledge.systemRequirements.map((req) => [
+					req.id,
+					req.title || req.id,
+				])
+			),
+		[knowledge.systemRequirements]
+	);
+
 	const businessRequirementItems: SelectableItem[] = useMemo(
 		() =>
 			knowledge.businessRequirements.map((req) => ({
@@ -170,6 +181,15 @@ export default function TaskDetailEditPage({
 				name: req.title || req.id,
 			})),
 		[knowledge.businessRequirements]
+	);
+
+	const systemRequirementItems: SelectableItem[] = useMemo(
+		() =>
+			knowledge.systemRequirements.map((req) => ({
+				id: req.id,
+				name: req.title || req.id,
+			})),
+		[knowledge.systemRequirements]
 	);
 
 	// ダイアログハンドラー
@@ -215,6 +235,7 @@ export default function TaskDetailEditPage({
 					systemFunctionMap={systemFunctionMap}
 					systemDomainMap={systemDomainMap}
 					businessRequirementMap={businessRequirementMap}
+					systemRequirementMap={systemRequirementMap}
 					onOpenDialog={handleOpenDialog}
 				/>
 
@@ -244,6 +265,7 @@ export default function TaskDetailEditPage({
 				systemFunctions={systemFunctions}
 				systemDomains={systemDomains}
 				businessRequirements={businessRequirementItems}
+				systemRequirements={systemRequirementItems}
 				onUpdateRequirement={(reqId, patch) => {
 					const listKey = knowledge.businessRequirements.find((r) => r.id === reqId)
 						? "businessRequirements"

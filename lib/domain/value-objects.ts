@@ -1,5 +1,7 @@
 // 値オブジェクト型定義
 
+import type { AcceptanceCriterionJson } from "@/lib/data/structured";
+
 /**
  * 関連要件情報
  */
@@ -9,7 +11,8 @@ export interface RelatedRequirementInfo {
   systemReqSummary?: string;           // システム要件の概要
   systemReqConcepts?: { id: string; name: string }[];  // 関連概念
   systemReqImpacts?: string[];         // 影響領域
-  systemReqAcceptanceCriteria?: string[];  // 受入条件
+  systemReqAcceptanceCriteria?: string[];  // 受入条件（レガシー）
+  systemReqAcceptanceCriteriaJson?: AcceptanceCriterionJson[];  // 受入条件（構造化）
   businessReqId: string;     // BR-TASK-003-001
   businessReqTitle: string;
   businessId: string;        // BIZ-001
@@ -72,7 +75,7 @@ export interface TicketVersionApplication {
 export interface ProjectSettings {
   projectName: string;
   projectDescription: string;
-  suspectLinkThreshold: "low" | "medium" | "high";
+  reviewLinkThreshold: "low" | "medium" | "high";
   autoSaveEnabled: boolean;
   githubRepositoryUrl?: string;
 }
@@ -85,6 +88,66 @@ export interface EntryPoint {
   type: string | null;
   responsibility: string | null;
 }
+
+/**
+ * 変更要求（PRD v1.3 Phase 2）
+ */
+export interface ChangeRequest {
+  id: string;                    // UUID
+  ticketId: string;              // CR-001
+  title: string;
+  description: string | null;
+  background: string | null;
+  expectedBenefit: string | null;
+  status: ChangeRequestStatus;
+  priority: ChangeRequestPriority;
+  requestedBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * 影響範囲（PRD v1.3 Phase 2）
+ */
+export interface ImpactScope {
+  id: string;
+  changeRequestId: string;
+  targetType: ImpactScopeTargetType;
+  targetId: string;
+  targetTitle: string;
+  rationale: string | null;
+  confirmed: boolean;
+  confirmedBy: string | null;
+  confirmedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * 受入条件確認状態（PRD v1.3 Phase 2）
+ * 設計原則: 変更要求ごとに独立した版管理を行う
+ */
+export interface AcceptanceConfirmation {
+  id: string;
+  changeRequestId: string;
+  acceptanceCriterionId: string;
+  acceptanceCriterionSourceType: AcceptanceCriterionSourceType;
+  acceptanceCriterionSourceId: string;
+  acceptanceCriterionDescription: string;
+  acceptanceCriterionVerificationMethod: string | null;
+  status: AcceptanceConfirmationStatus;
+  verifiedBy: string | null;
+  verifiedAt: string | null;
+  evidence: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type ChangeRequestStatus = 'open' | 'review' | 'approved' | 'applied';
+export type ChangeRequestPriority = 'low' | 'medium' | 'high';
+export type ImpactScopeTargetType = 'business_requirement' | 'system_requirement' | 'system_function' | 'file';
+export type AcceptanceCriterionSourceType = 'business_requirement' | 'system_requirement';
+export type AcceptanceConfirmationStatus = 'unverified' | 'verified_ok' | 'verified_ng';
 
 // Import types used in value objects
 import type { BusinessArea } from "./enums";

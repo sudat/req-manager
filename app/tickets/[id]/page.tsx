@@ -3,20 +3,23 @@ import { notFound } from "next/navigation";
 import { MobileHeader } from "@/components/layout/mobile-header";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, CheckCircle2, Pencil } from "lucide-react";
-import { getTicketById } from "@/lib/mock/data/tickets/tickets";
+import { getChangeRequestById } from "@/lib/data/change-requests";
+import { listImpactScopesByChangeRequestId } from "@/lib/data/impact-scopes";
+import { getAcceptanceConfirmationCompletionStatus } from "@/lib/data/acceptance-confirmations";
 import { TicketBasicInfoCard } from "@/components/tickets/ticket-basic-info-card";
 import { TicketImpactCard } from "@/components/tickets/ticket-impact-card";
-import { TicketChangeItemsCard } from "@/components/tickets/ticket-change-items-card";
-import { TicketRelatedConceptsCard } from "@/components/tickets/ticket-related-concepts-card";
-import { TicketVersionCard } from "@/components/tickets/ticket-version-card";
+import { AcceptanceConfirmationPanel } from "@/components/tickets/acceptance-confirmation-panel";
 
 export default async function TicketDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const ticket = getTicketById(id);
+  const { data: changeRequest, error } = await getChangeRequestById(id);
 
-  if (!ticket) {
+  if (error || !changeRequest) {
     notFound();
   }
+
+  const { data: impactScopes } = await listImpactScopesByChangeRequestId(id);
+  const { data: completionStatus } = await getAcceptanceConfirmationCompletionStatus(id);
 
   return (
     <>
@@ -42,14 +45,43 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
             </div>
           </div>
 
-          <h1 className="text-[32px] font-semibold tracking-tight text-slate-900 mb-4">{ticket.title}</h1>
+          <h1 className="text-[32px] font-semibold tracking-tight text-slate-900 mb-4">{changeRequest.title}</h1>
 
           <div className="space-y-4">
-            <TicketBasicInfoCard ticket={ticket} />
-            <TicketImpactCard ticket={ticket} />
-            <TicketChangeItemsCard changeItems={ticket.changeItems || []} />
-            <TicketRelatedConceptsCard ticket={ticket} />
-            <TicketVersionCard ticket={ticket} />
+            <TicketBasicInfoCard changeRequest={changeRequest} />
+
+            {/* 影響範囲カード */}
+            {impactScopes && impactScopes.length > 0 && (
+              <TicketImpactCard impactScopes={impactScopes} />
+            )}
+
+            {/* 受入条件確認パネル - Phase 5.6で実装済み */}
+            <AcceptanceConfirmationPanel changeRequestId={id} />
+
+            {/* 北極星KPI達成状況サマリー */}
+            {completionStatus && (
+              <div className="rounded-md border border-slate-200 bg-white p-4">
+                <h3 className="text-[14px] font-semibold text-slate-900 mb-3">受入条件確認状況サマリー</h3>
+                <div className="flex items-center gap-6 text-[13px]">
+                  <div>
+                    <span className="text-slate-500">総数:</span>
+                    <span className="ml-2 font-mono text-slate-900">{completionStatus.total}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500">確認済:</span>
+                    <span className="ml-2 font-mono text-emerald-600">{completionStatus.verified}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500">未確認:</span>
+                    <span className="ml-2 font-mono text-amber-600">{completionStatus.pending}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500">達成率:</span>
+                    <span className="ml-2 font-mono text-slate-900">{completionStatus.completionRate.toFixed(1)}%</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

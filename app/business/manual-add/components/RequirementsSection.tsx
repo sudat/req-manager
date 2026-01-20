@@ -14,6 +14,7 @@ type RequirementsSectionProps = {
   concepts: SelectableItem[];
   systemFunctions: SelectableItem[];
   systemDomains: SystemDomain[];
+  systemRequirements?: SelectableItem[];
   loading: boolean;
   onAddRequirement: () => void;
   onUpdateRequirement: (reqId: string, patch: Partial<Requirement>) => void;
@@ -26,6 +27,7 @@ export function RequirementsSection({
   concepts,
   systemFunctions,
   systemDomains,
+  systemRequirements = [],
   loading,
   onAddRequirement,
   onUpdateRequirement,
@@ -45,6 +47,11 @@ export function RequirementsSection({
   const systemDomainMap = useMemo(
     () => new Map(systemDomains.map((d) => [d.id, d.name])),
     [systemDomains]
+  );
+
+  const systemRequirementMap = useMemo(
+    () => new Map(systemRequirements.map((sr) => [sr.id, sr.name])),
+    [systemRequirements]
   );
 
   return (
@@ -84,6 +91,7 @@ export function RequirementsSection({
               conceptMap={conceptMap}
               systemFunctionMap={systemFunctionMap}
               systemDomainMap={systemDomainMap}
+              systemRequirementMap={systemRequirementMap}
               onUpdate={(patch) => onUpdateRequirement(req.id, patch)}
               onRemove={() => onRemoveRequirement(req.id)}
               onOpenDialog={(type) => onOpenDialog(type, req.id)}

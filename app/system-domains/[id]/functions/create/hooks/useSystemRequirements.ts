@@ -25,6 +25,7 @@ export function useSystemRequirements(): UseSystemRequirementsResult {
         title: "",
         summary: "",
         businessRequirementIds: [],
+        acceptanceCriteriaJson: [],
       };
 
       return [...prev, nextSysReq];

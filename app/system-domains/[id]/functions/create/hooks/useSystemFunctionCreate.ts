@@ -111,7 +111,6 @@ export function useSystemFunctionCreate(systemDomainId: string): UseSystemFuncti
 				const { error: saveError } = await createSystemFunction({
 					id: nextId,
 					systemDomainId: systemDomainId,
-					designDocNo: "",
 					category,
 					title: title.trim(),
 					summary: summary.trim(),

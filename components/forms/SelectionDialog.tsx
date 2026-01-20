@@ -15,6 +15,7 @@ type SelectionDialogProps = {
 	systemFunctions: SelectableItem[];
 	systemDomains: SelectableItem[];
 	businessRequirements: SelectableItem[];
+	systemRequirements?: SelectableItem[];
 	onUpdateRequirement: (reqId: string, patch: Partial<Requirement>) => void;
 };
 
@@ -28,6 +29,8 @@ function getDialogTitle(type: SelectionDialogType): string {
 			return "システム領域を選択";
 		case "business":
 			return "業務要件を選択";
+		case "systemRequirements":
+			return "関連システム要件を選択";
 		default:
 			return "";
 	}
@@ -81,6 +84,7 @@ export function SelectionDialog({
 	systemFunctions,
 	systemDomains,
 	businessRequirements,
+	systemRequirements = [],
 	onUpdateRequirement,
 }: SelectionDialogProps) {
 	const [searchQuery, setSearchQuery] = useState("");
@@ -90,6 +94,7 @@ export function SelectionDialog({
 	const filteredSystemFunctions = useFilteredItems(systemFunctions, searchQuery);
 	const filteredSystemDomains = useFilteredItems(systemDomains, searchQuery);
 	const filteredBusinessRequirements = useFilteredItems(businessRequirements, searchQuery);
+	const filteredSystemRequirements = useFilteredItems(systemRequirements, searchQuery);
 
 	// トグルハンドラー
 	const {
@@ -97,6 +102,7 @@ export function SelectionDialog({
 		handleSystemFunctionToggle,
 		handleDomainToggle,
 		handleBusinessRequirementToggle,
+		handleSystemRequirementToggle,
 	} = useToggleHandlers(activeRequirement, onUpdateRequirement);
 
 	function handleOpenChange(open: boolean): void {
@@ -156,6 +162,15 @@ export function SelectionDialog({
 								emptyMessage="該当する業務要件がありません。"
 								isChecked={(id) => activeRequirement.businessRequirementIds.includes(id)}
 								onToggle={handleBusinessRequirementToggle}
+							/>
+						)}
+
+						{dialogState?.type === "systemRequirements" && activeRequirement && (
+							<CheckboxList
+								items={filteredSystemRequirements}
+								emptyMessage="該当するシステム要件がありません。"
+								isChecked={(id) => activeRequirement.relatedSystemRequirementIds.includes(id)}
+								onToggle={handleSystemRequirementToggle}
 							/>
 						)}
 					</div>

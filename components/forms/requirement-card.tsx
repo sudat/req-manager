@@ -28,6 +28,7 @@ type RequirementCardProps = {
   systemFunctionMap: Map<string, string>;
   systemDomainMap: Map<string, string>;
   businessRequirementMap?: Map<string, string>;
+  systemRequirementMap?: Map<string, string>;
   onUpdate: (patch: Partial<Requirement>) => void;
   onRemove: () => void;
   onOpenDialog: (type: SelectionDialogType) => void;
@@ -83,6 +84,7 @@ export function RequirementCard({
   systemFunctionMap,
   systemDomainMap,
   businessRequirementMap,
+  systemRequirementMap,
   onUpdate,
   onRemove,
   onOpenDialog,
@@ -208,6 +210,15 @@ export function RequirementCard({
             selectedIds={requirement.businessRequirementIds}
             nameMap={businessRequirementMap}
             onOpenDialog={() => onOpenDialog("business")}
+          />
+        )}
+
+        {requirement.type === "業務要件" && systemRequirementMap && (
+          <SelectionField
+            label="関連システム要件"
+            selectedIds={requirement.relatedSystemRequirementIds}
+            nameMap={systemRequirementMap}
+            onOpenDialog={() => onOpenDialog("systemRequirements")}
           />
         )}
 

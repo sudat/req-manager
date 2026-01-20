@@ -1,17 +1,20 @@
 "use client";
 
-import { use } from "react";
+import { use, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { SystemFunction } from "@/lib/domain";
+import type { SystemFunction, SelectionDialogType, SelectableItem } from "@/lib/domain";
 import { useSystemFunctionForm } from "./hooks/useSystemFunctionForm";
 import {
 	BasicInfoSection,
 	SystemDesignSection,
 } from "./components";
 import { EntryPointsEditor } from "@/components/forms/EntryPointsEditor";
+import { RequirementListSection } from "@/components/forms/requirement-list-section";
+import { SelectionDialog } from "@/components/forms/SelectionDialog";
+import { useMasterData } from "@/app/business/[id]/tasks/[taskId]/edit/hooks/useMasterData";
 
 // ============================================
 // 型定義
@@ -153,6 +156,42 @@ export default function SystemFunctionEditPage({
 	const router = useRouter();
 	const { state, actions } = useSystemFunctionForm(srfId);
 
+	// マスターデータ取得
+	const {
+		concepts,
+		systemFunctions,
+		systemDomains,
+		conceptMap,
+		systemFunctionMap,
+		systemDomainMap,
+	} = useMasterData();
+
+	// ダイアログ状態管理
+	const [dialogState, setDialogState] = useState<{
+		type: SelectionDialogType;
+		reqId: string;
+	} | null>(null);
+
+	// アクティブな要件
+	const activeRequirement = useMemo(
+		() =>
+			dialogState
+				? state.systemRequirements.find(
+						(r) => r.id === dialogState.reqId
+				  ) ?? null
+				: null,
+		[dialogState, state.systemRequirements]
+	);
+
+	// ダイアログハンドラー
+	function handleOpenDialog(type: SelectionDialogType, reqId: string): void {
+		setDialogState({ type, reqId });
+	}
+
+	function handleCloseDialog(): void {
+		setDialogState(null);
+	}
+
 	// ローディング中
 	if (state.loading) {
 		return <LoadingState />;
@@ -179,12 +218,10 @@ export default function SystemFunctionEditPage({
 
 					<BasicInfoSection
 						systemFunctionId={id}
-						designDocNo={state.designDocNo}
 						category={state.category}
 						status={state.status}
 						title={state.title}
 						summary={state.summary}
-						onDesignDocNoChange={actions.setDesignDocNo}
 						onCategoryChange={actions.setCategory}
 						onStatusChange={actions.setStatus}
 						onTitleChange={actions.setTitle}
@@ -204,6 +241,19 @@ export default function SystemFunctionEditPage({
 						onChange={actions.setEntryPoints}
 					/>
 
+					{/* システム要件セクション */}
+					<RequirementListSection
+						title="システム要件"
+						requirements={state.systemRequirements}
+						onAdd={() => actions.addSystemRequirement()}
+						onUpdate={(reqId, patch) => actions.updateSystemRequirement(reqId, patch)}
+						onRemove={(reqId) => actions.removeSystemRequirement(reqId)}
+						conceptMap={conceptMap}
+						systemFunctionMap={systemFunctionMap}
+						systemDomainMap={systemDomainMap}
+						onOpenDialog={handleOpenDialog}
+					/>
+
 					{state.error && (
 						<p className="text-sm text-rose-600">{state.error}</p>
 					)}
@@ -216,6 +266,21 @@ export default function SystemFunctionEditPage({
 					/>
 				</div>
 			</div>
+
+			{/* 選択ダイアログ */}
+			<SelectionDialog
+				dialogState={dialogState}
+				onClose={handleCloseDialog}
+				activeRequirement={activeRequirement}
+				concepts={concepts}
+				systemFunctions={systemFunctions}
+				systemDomains={systemDomains}
+				businessRequirements={[]}
+				systemRequirements={[]}
+				onUpdateRequirement={(reqId, patch) => {
+					actions.updateSystemRequirement(reqId, patch);
+				}}
+			/>
 		</>
 	);
 }

@@ -6,7 +6,7 @@ import type { AcceptanceCriterionJson } from "@/lib/data/structured";
 /**
  * 選択ダイアログタイプ
  */
-export type SelectionDialogType = "concepts" | "system" | "domain" | "business";
+export type SelectionDialogType = "concepts" | "system" | "domain" | "business" | "systemRequirements";
 
 /**
  * 要件タイプ

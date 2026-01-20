@@ -2,12 +2,9 @@
 
 import { useState } from "react";
 import { Plus, X, ChevronDown } from "lucide-react";
-import { parseISO, format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { DatePicker } from "@/components/ui/date-picker";
 import type { AcceptanceCriterionJson } from "@/lib/data/structured";
 import { cn } from "@/lib/utils";
 
@@ -23,13 +20,7 @@ const normalizeOptional = (value: string): string | null =>
 	value.trim().length === 0 ? null : value;
 
 const hasDetails = (item: AcceptanceCriterionJson): boolean =>
-	!!(
-		item.verification_method ||
-		item.status ||
-		item.verified_by ||
-		item.verified_at ||
-		item.evidence
-	);
+	!!item.verification_method;
 
 function getNextId(values: AcceptanceCriterionJson[]): string {
 	const used = new Set(values.map((item) => item.id));
@@ -54,10 +45,6 @@ export function StructuredAcceptanceCriteriaInput({
 			id: getNextId(values),
 			description: "",
 			verification_method: null,
-			status: null,
-			verified_by: null,
-			verified_at: null,
-			evidence: null,
 		};
 		onChange([...values, next]);
 	};
@@ -130,7 +117,7 @@ export function StructuredAcceptanceCriteriaInput({
 							</Button>
 
 							{isExpanded && (
-								<div className="grid gap-3 md:grid-cols-2">
+								<div className="grid gap-3 md:grid-cols-1">
 									<div className="space-y-1">
 										<Label className="text-[11px] text-slate-500">
 											検証方法
@@ -144,55 +131,6 @@ export function StructuredAcceptanceCriteriaInput({
 											}
 											placeholder="例: 目視確認"
 											className="h-9 text-[13px]"
-										/>
-									</div>
-									<div className="space-y-1">
-										<Label className="text-[11px] text-slate-500">ステータス</Label>
-										<Input
-											value={item.status ?? ""}
-											onChange={(e) =>
-												updateItem(index, { status: normalizeOptional(e.target.value) })
-											}
-											placeholder="例: 未検証"
-											className="h-9 text-[13px]"
-										/>
-									</div>
-									<div className="space-y-1">
-										<Label className="text-[11px] text-slate-500">確認者</Label>
-										<Input
-											value={item.verified_by ?? ""}
-											onChange={(e) =>
-												updateItem(index, {
-													verified_by: normalizeOptional(e.target.value),
-												})
-											}
-											placeholder="例: QAチーム"
-											className="h-9 text-[13px]"
-										/>
-									</div>
-									<div className="space-y-1">
-										<Label className="text-[11px] text-slate-500">確認日</Label>
-										<DatePicker
-											value={item.verified_at ? parseISO(item.verified_at) : undefined}
-											onChange={(date) =>
-												updateItem(index, {
-													verified_at: date ? format(date, "yyyy-MM-dd") : null,
-												})
-											}
-											placeholder="例: 2026-01-19"
-										/>
-									</div>
-									<div className="space-y-1 md:col-span-2">
-										<Label className="text-[11px] text-slate-500">エビデンス</Label>
-										<Textarea
-											value={item.evidence ?? ""}
-											onChange={(e) =>
-												updateItem(index, {
-													evidence: normalizeOptional(e.target.value),
-												})
-											}
-											placeholder="例: テスト結果URL"
-											className="min-h-[72px] text-[13px]"
 										/>
 									</div>
 								</div>

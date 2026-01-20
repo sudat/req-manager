@@ -5,7 +5,6 @@ import { codeRefsToEntryPoints, entryPointsToCodeRefs, normalizeEntryPoints } fr
 export type SystemFunctionInput = {
   id: string;
   systemDomainId: string | null;
-  designDocNo: string;
   category: SrfCategory;
   title: string;
   summary: string;
@@ -20,7 +19,6 @@ export type SystemFunctionInput = {
 type SystemFunctionRow = {
   id: string;
   system_domain_id: string | null;
-  design_doc_no: string;
   category: string;
   title: string;
   summary: string;
@@ -49,7 +47,6 @@ const toSystemFunction = (row: SystemFunctionRow): SystemFunction => {
 	return {
 		id: row.id,
 		systemDomainId: row.system_domain_id ?? null,
-		designDocNo: row.design_doc_no,
 		category: row.category as SrfCategory,
 		title: row.title,
 		summary: row.summary,
@@ -67,7 +64,6 @@ const toSystemFunction = (row: SystemFunctionRow): SystemFunction => {
 const toSystemFunctionRowBase = (input: SystemFunctionInput) => ({
 	id: input.id,
 	system_domain_id: input.systemDomainId,
-	design_doc_no: input.designDocNo,
 	category: input.category,
 	title: input.title,
 	summary: input.summary,
