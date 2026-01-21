@@ -64,10 +64,10 @@ export const SystemFunctionListToolbar = ({
           <SelectItem value="interface">IF</SelectItem>
         </SelectContent>
       </Select>
-      <Link href={`/system-domains/${domainId}/functions/create`}>
+      <Link href={`/system-domains/${domainId}/create`}>
         <Button className="h-8 px-4 text-[14px] font-medium bg-slate-900 hover:bg-slate-800 gap-2">
           <Plus className="h-4 w-4" />
-          追加
+          新規作成
         </Button>
       </Link>
     </div>

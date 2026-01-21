@@ -10,8 +10,8 @@
  *   --task=TASK-XXX  特定タスクのみ対象
  */
 
-import { listBusinessRequirements, updateBusinessRequirement } from "@/lib/data/business-requirements";
-import { listSystemRequirements, updateSystemRequirement } from "@/lib/data/system-requirements";
+import { updateBusinessRequirement } from "@/lib/data/business-requirements";
+import { updateSystemRequirement } from "@/lib/data/system-requirements";
 
 // ============================================================================
 // 型定義

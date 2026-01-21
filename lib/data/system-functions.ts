@@ -1,6 +1,11 @@
 import { supabase, getSupabaseConfigError } from "@/lib/supabase/client";
 import type { EntryPoint, SystemFunction, DesignItemCategory, SrfCategory, SrfStatus } from "@/lib/domain";
-import { codeRefsToEntryPoints, entryPointsToCodeRefs, normalizeEntryPoints } from "@/lib/data/structured";
+import {
+	codeRefsToEntryPoints,
+	entryPointsToCodeRefs,
+	normalizeEntryPoints,
+	normalizeCodeRefs,
+} from "@/lib/data/structured";
 
 export type SystemFunctionInput = {
   id: string;
@@ -27,19 +32,23 @@ type SystemFunctionRow = {
   requirement_ids: string[] | null;
   system_design: SystemFunction["systemDesign"] | null;
 	entry_points: unknown | null;
-  code_refs: SystemFunction["codeRefs"] | null;
+  code_refs: unknown | null;
   created_at: string;
   updated_at: string;
 };
 
 const toSystemFunction = (row: SystemFunctionRow): SystemFunction => {
 	const normalizedEntryPoints = normalizeEntryPoints(row.entry_points);
+	const normalizedCodeRefs = normalizeCodeRefs(row.code_refs);
+
 	const entryPoints =
-		normalizedEntryPoints.length > 0 ? normalizedEntryPoints : codeRefsToEntryPoints(row.code_refs);
+		normalizedEntryPoints.length > 0
+			? normalizedEntryPoints
+			: codeRefsToEntryPoints(normalizedCodeRefs);
 
 	const codeRefs =
-		(row.code_refs ?? []).length > 0
-			? (row.code_refs ?? [])
+		normalizedCodeRefs.length > 0
+			? normalizedCodeRefs
 			: entryPoints.length > 0
 				? (entryPointsToCodeRefs(entryPoints) as SystemFunction["codeRefs"])
 				: [];

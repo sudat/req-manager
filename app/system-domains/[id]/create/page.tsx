@@ -82,7 +82,7 @@ export default function SystemFunctionCreatePage({
 						システム機能一覧に戻る
 					</Link>
 
-					<h1 className="text-2xl font-semibold text-slate-900 mb-6">システム機能を新規追加</h1>
+					<h1 className="text-2xl font-semibold text-slate-900 mb-6">システム機能を新規作成</h1>
 
 					<Card className="p-6">
 						<form className="space-y-6" onSubmit={handleFormSubmit}>

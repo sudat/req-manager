@@ -2,7 +2,13 @@
 
 ---
 
+← 設計書の[ai-impact-analysis](../design/ai-impact-analysis.md)に遷移する。
+
+---
+
 # 6. 技術アーキテクチャ（ハイブリッド構成）
+
+本書はプロダクト全体の技術構成と責務分担を定義する。個別機能の詳細設計（フロー/API/データ/運用上の具体策）は各設計書に記載し、本書には重複して書かない（例: `docs/design/ai-impact-analysis.md`）。PRDは要求レベルの概要に留める。
 
 ## 6.1 設計方針
 
@@ -48,7 +54,7 @@ graph TB
 | アプリ（バックエンド） | 正本API、MCP Server | Supabase Edge Functions or Next.js API Routes |
 | 正本DB | 業務要件・システム要件・エントリポイント・正解データの保持 | Supabase（PostgreSQL + pgvector） |
 | コーディングエージェント | 正本参照、影響調査、計画立案、実装 | Claude Agent SDK（Python / TypeScript） |
-| Agent Runner | SDK実行の受付・ジョブ管理・結果返却 | ローカル常駐 or Cloud Run等 |
+| Agent Runner | SDK実行の受付・ジョブ管理・結果返却 | Cloud Run（本番前提、開発はローカル可） |
 
 ## 6.3 コンポーネントの役割
 
@@ -82,8 +88,8 @@ Agent SDKを使うことで、アプリ側から影響調査を起動し、結�
 
 重要な注意点として、ブラウザから直接SDKを動かすのではなく、以下いずれかの「Agent Runner（実行基盤）」を介して起動する。
 
-- ローカル常駐（ユーザーPC上のデーモン/CLIラッパーがジョブを受けてSDKを実行）
-- クラウド常駐（Cloud Run等のジョブ実行基盤がSDKを実行）
+- 本番運用はCloud Run上のジョブ実行基盤でSDKを起動する
+- ローカル常駐は開発/検証用途に限定する
 
 ※ 実装時点でのSDK成熟度・API仕様を確認し、必要に応じて代替手段（Claude API直接呼び出し + ツール実装）も検討する。
 

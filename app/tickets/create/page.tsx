@@ -134,10 +134,10 @@ export default function TicketCreatePage() {
               </div>
 
               <div className="space-y-2">
-                <Label>説明</Label>
+                <Label>修正内容</Label>
                 <Textarea
                   name="description"
-                  placeholder="変更の詳細を記述してください"
+                  placeholder="修正内容を記述してください"
                   className="min-h-[120px]"
                   disabled={submitting}
                 />

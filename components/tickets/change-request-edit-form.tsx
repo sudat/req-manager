@@ -105,7 +105,7 @@ export function ChangeRequestEditForm({
 					</div>
 
 					<div className="space-y-2">
-						<Label>説明</Label>
+						<Label>修正内容</Label>
 						<Textarea
 							value={description}
 							onChange={(e) => onDescriptionChange(e.target.value)}

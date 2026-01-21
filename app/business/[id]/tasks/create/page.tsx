@@ -1,7 +1,7 @@
 "use client";
 
-import { Suspense, useMemo, useState, type FormEvent } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { use, useMemo, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { MobileHeader } from "@/components/layout/mobile-header";
 import { ArrowLeft } from "lucide-react";
@@ -16,10 +16,8 @@ import { RequirementsSection } from "./components/RequirementsSection";
 import { SelectionDialog } from "@/components/forms/SelectionDialog";
 import type { SelectionDialogState, SelectionDialogType, SelectableItem } from "@/lib/domain/forms";
 
-function ManualAddPageContent() {
-  const searchParams = useSearchParams();
+function BusinessTaskCreatePageContent({ bizId }: { bizId: string }) {
   const router = useRouter();
-  const bizId = searchParams.get("id");
 
   const {
     loading,
@@ -188,27 +186,6 @@ function ManualAddPageContent() {
     router.push(`/business/${bizId}/tasks`);
   }
 
-  if (!bizId) {
-    return (
-    <>
-        <div className="flex-1 min-h-screen bg-white">
-          <div className="mx-auto max-w-[1400px] px-8 py-6">
-            <p className="text-sm text-rose-600">
-              業務IDが指定されていません。
-            </p>
-            <Link
-              href="/business"
-              className="inline-flex items-center gap-2 text-[14px] font-medium text-slate-600 hover:text-slate-900 mt-4"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              業務一覧に戻る
-            </Link>
-          </div>
-        </div>
-      </>
-    );
-  }
-
   return (
     <>
       <MobileHeader />
@@ -223,7 +200,7 @@ function ManualAddPageContent() {
           </Link>
 
           <h1 className="text-[32px] font-semibold tracking-tight text-slate-900 mb-6">
-            業務タスクを手動追加
+            業務タスクを新規作成
           </h1>
 
           <TaskForm
@@ -278,23 +255,13 @@ function ManualAddPageContent() {
   );
 }
 
-export default function ManualAddPage() {
+export default function BusinessTaskCreatePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+
   return (
     <>
       <MobileHeader />
-      <Suspense fallback={
-        <div className="flex-1 min-h-screen bg-white">
-          <div className="mx-auto max-w-[1400px] px-8 py-6">
-            <div className="animate-pulse space-y-3">
-              <div className="h-8 bg-slate-200 rounded w-48" />
-              <div className="h-4 bg-slate-200 rounded w-32" />
-              <div className="h-64 bg-slate-200 rounded" />
-            </div>
-          </div>
-        </div>
-      }>
-        <ManualAddPageContent />
-      </Suspense>
+      <BusinessTaskCreatePageContent bizId={id} />
     </>
   );
 }

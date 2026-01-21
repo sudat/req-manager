@@ -146,10 +146,10 @@ export default function BusinessTasksPage({ params }: { params: Promise<{ id: st
                   AI修正指示
                 </Button>
               </Link>
-              <Link href={`/business/manual-add?id=${id}`}>
+              <Link href={`/business/${id}/tasks/create`}>
                 <Button className="h-8 gap-2 text-[14px] bg-slate-900 hover:bg-slate-800">
                   <Plus className="h-4 w-4" />
-                  追加
+                  新規作成
                 </Button>
               </Link>
             </div>

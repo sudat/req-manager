@@ -130,13 +130,16 @@ export function BusinessRequirementCard({
         <div className="border-t border-slate-100 pt-2 mt-2 space-y-1">
           <div className="text-[12px] font-medium text-slate-500">関連システム要件</div>
           <div className="flex flex-wrap gap-1.5">
-            {relatedSystemRequirements.map((sr) => (
-              <Link key={sr.id} href={`#${sr.id}`}>
-                <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] hover:bg-slate-100 max-w-[200px] truncate" title={sr.title ?? undefined}>
-                  {sr.title}
-                </Badge>
-              </Link>
-            ))}
+            {relatedSystemRequirements.map((sr) => {
+              const srDomainId = sr.srfId ? systemFunctionDomainMap.get(sr.srfId) : null;
+              return (
+                <Link key={sr.id} href={srDomainId && sr.srfId ? `/system-domains/${srDomainId}/${sr.srfId}` : "/system-domains"}>
+                  <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] hover:bg-slate-100 max-w-[200px] truncate" title={sr.title ?? undefined}>
+                    {sr.title}
+                  </Badge>
+                </Link>
+              );
+            })}
           </div>
         </div>
       )}

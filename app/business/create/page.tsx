@@ -15,7 +15,7 @@ import type { BusinessArea } from "@/lib/domain";
 
 const areaPattern = /^[A-Z_-]+$/;
 
-export default function BusinessAddPage() {
+export default function BusinessCreatePage() {
   const router = useRouter();
   const [nextId, setNextId] = useState("BIZ-001");
   const [name, setName] = useState("");
@@ -73,7 +73,7 @@ export default function BusinessAddPage() {
             業務一覧に戻る
           </Link>
 
-          <h1 className="text-2xl font-semibold text-slate-900 mb-6">業務を新規追加</h1>
+          <h1 className="text-2xl font-semibold text-slate-900 mb-6">業務を新規作成</h1>
 
           <Card className="p-6">
             <form className="space-y-6" onSubmit={handleSubmit}>

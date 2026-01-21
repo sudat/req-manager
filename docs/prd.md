@@ -928,7 +928,6 @@ LLM候補生成を「思考」ではなく「差分提案」として運用に�
 設定サブナビ（`/settings/*`）:
 - プロジェクト設定: `/settings`
 - LLM設定: `/settings/llm`
-- システム領域マスタ: `/settings/system-domains`
 - 通知設定: `/settings/notification`
 
 ### 3.2 フェーズ別主要導線（現行→勝ち筋へ）
@@ -943,7 +942,7 @@ LLM候補生成を「思考」ではなく「差分提案」として運用に�
 
 - 業務/タスク/要件の整備: `/business` → `/business/{bizId}/tasks` → `/business/{bizId}/tasks/{taskId}/edit`
   - 業務要件/システム要件に受入条件を記述し、概念・システム領域/機能と紐づける
-- システム領域/機能カタログの整備: `/settings/system-domains` → `/system-domains` → `/system-domains/{systemDomainId}/functions/create`
+- システム領域/機能カタログの整備: `/system-domains` → `/system-domains/create` → `/system-domains/{systemDomainId}/create`
   - 機能単位で、設計項目やコード参照（パス）を保持できるようにする
 - 概念辞書の整備: `/ideas`
   - 同義語と影響領域を育て、後工程の影響分析の漏れを減らす（1.3）
@@ -980,22 +979,22 @@ LLM候補生成を「思考」ではなく「差分提案」として運用に�
 - 業務一覧（詳細）＝業務タスク一覧: `/business/{bizId}/tasks`（作成/編集/削除）
 - 業務タスク詳細: `/business/{bizId}/tasks/{taskId}`（業務要件カード内で関連システム要件をバッジ表示。スクロール往復を削減）
 - 業務タスク編集: `/business/{bizId}/tasks/{taskId}/edit`（業務要件・システム要件を含む編集。業務要件から関連システム要件を選択可能）
-- 業務タスク手動追加: `/business/manual-add?id={bizId}`（タスク＋業務要件の一括登録。業務要件から既存システム要件を紐づけ可能）
+- 業務タスク新規作成: `/business/{bizId}/tasks/create`（タスク＋業務要件の一括登録。業務要件から既存システム要件を紐づけ可能）
 - AI修正指示（デモ）: `/business/{bizId}/tasks/ai-order`（ラフ入力→差分候補の提示。LLM連携は将来）
 
 #### 3.3.2 システム領域→システム機能（カタログ中心）
 
 - システム領域一覧: `/system-domains`（一覧/検索）
-- システム領域マスタ管理: `/settings/system-domains`（作成/編集/削除）
+- システム領域 作成/編集/削除: `/system-domains/create`, `/system-domains/{systemDomainId}/edit`
 - システム機能一覧（領域内）: `/system-domains/{systemDomainId}`（一覧/フィルタ/削除）
-- システム機能 新規追加: `/system-domains/{systemDomainId}/functions/create`（システム要件と紐づけて登録）
+- システム機能 新規作成: `/system-domains/{systemDomainId}/create`（システム要件と紐づけて登録）
 - システム機能 詳細: `/system-domains/{systemDomainId}/{srfId}`（設計項目/コード参照/関連システム要件）
 - システム機能 編集: `/system-domains/{systemDomainId}/{srfId}/edit`
 
 #### 3.3.3 概念辞書（育てる）
 
 - 概念一覧: `/ideas`
-- 概念 新規追加: `/ideas/add`
+- 概念 新規作成: `/ideas/create`
 - 概念 詳細/編集: `/ideas/{conceptId}` / `/ideas/{conceptId}/edit`
 - 概念の統合/分割: UI導線はあるが、統合・分割の実処理は将来（1.3）
 
@@ -1005,7 +1004,7 @@ LLM候補生成を「思考」ではなく「差分提案」として運用に�
 - 照会: `/query`（サンプル。将来：根拠付き横断検索）
 - ベースライン履歴: `/baseline`（準備中。将来：版間差分、取り込み変更要求、適用履歴）
 - エクスポート: `/export`（準備中。将来：5章のClaude Code連携形式で出力）
-- 設定: `/settings`（一部設定は将来。システム領域マスタは提供中）
+- 設定: `/settings`（一部設定は将来）
 
 ---
 
@@ -1086,22 +1085,23 @@ LLM候補生成を「思考」ではなく「差分提案」として運用に�
 | 機能 | ルート | データ | 実装状況 | 備考 |
 |------|--------|--------|----------|------|
 | 業務一覧 | `/business` | Supabase | 実装済 | 一覧/検索/削除 |
-| 業務 追加 | `/business/add` | Supabase | 実装済 | 自動採番して作成 |
+| 業務 作成 | `/business/create` | Supabase | 実装済 | 自動採番して作成 |
 | 業務 編集 | `/business/{bizId}/edit` | Supabase | 実装済 |  |
 | 業務タスク一覧 | `/business/{bizId}/tasks` | Supabase | 実装済 | 一覧/検索/削除 |
-| 業務タスク 手動追加 | `/business/manual-add?id={bizId}` | Supabase | 実装済 | タスク＋業務要件の一括登録 |
+| 業務タスク 作成 | `/business/{bizId}/tasks/create` | Supabase | 実装済 | タスク＋業務要件の一括登録 |
 | 業務タスク 詳細 | `/business/{bizId}/tasks/{taskId}` | Supabase | 実装済 | 業務要件/関連システム要件の参照 |
 | 業務タスク 編集 | `/business/{bizId}/tasks/{taskId}/edit` | Supabase | 実装済 | タスク基本情報＋要件（同期保存） |
 | 受入条件（要件に保持） | 上記の要件編集 | Supabase | 実装済 | 業務要件/システム要件に構造化配列で保持（Phase 1: jsonb配列へ段階移行） |
 | AI修正指示（差分候補） | `/business/{bizId}/tasks/ai-order` | 静的 | 部分実装 | LLM連携なしのデモ |
 | 概念辞書一覧 | `/ideas` | Supabase | 実装済 | 一覧/検索/削除 |
-| 概念 追加 | `/ideas/add` | Supabase | 実装済 | 自動採番して作成 |
+| 概念 作成 | `/ideas/create` | Supabase | 実装済 | 自動採番して作成 |
 | 概念 詳細/編集 | `/ideas/{conceptId}` / `/ideas/{conceptId}/edit` | Supabase | 実装済 |  |
 | 概念の統合/分割 | `/ideas/{conceptId}` | - | 未実装 | ボタン導線のみ |
-| システム領域一覧 | `/system-domains` | Supabase | 実装済 | 一覧/検索 |
-| システム領域マスタ | `/settings/system-domains` | Supabase | 実装済 | 作成/編集/削除 |
+| システム領域一覧 | `/system-domains` | Supabase | 実装済 | 一覧/検索/削除 |
+| システム領域 作成 | `/system-domains/create` | Supabase | 実装済 | 作成 |
+| システム領域 編集 | `/system-domains/{systemDomainId}/edit` | Supabase | 実装済 | 編集 |
 | システム機能一覧（領域内） | `/system-domains/{systemDomainId}` | Supabase | 実装済 | 検索/フィルタ/削除 |
-| システム機能 追加 | `/system-domains/{systemDomainId}/functions/create` | Supabase | 実装済 | システム要件作成＋業務要件とのリンク付け＋構造化された受入条件入力 |
+| システム機能 作成 | `/system-domains/{systemDomainId}/create` | Supabase | 実装済 | システム要件作成＋業務要件とのリンク付け＋構造化された受入条件入力 |
 | システム機能 詳細/編集 | `/system-domains/{systemDomainId}/{srfId}` / `/system-domains/{systemDomainId}/{srfId}/edit` | Supabase | 実装済 | 設計項目/コード参照/ステータス管理/システム要件CRUD（追加/編集/削除）/構造化された受入条件表示・編集 |
 
 - システム要件のCRUD（追加/編集/削除）は、システム機能の詳細/編集画面（`/system-domains/{systemDomainId}/{srfId}/edit`）で行う
@@ -1132,5 +1132,8 @@ LLM候補生成を「思考」ではなく「差分提案」として運用に�
 ## 6. 技術アーキテクチャ（影響分析AI）
 
 本章は、変更要求に対する影響分析を自動化するAIシステムのアーキテクチャを定義する。
+前提として **Cloud Runにデプロイして運用する**（非同期実行・ステートレス・Secrets管理などを含む）ことを採用する。
+実装/運用上の詳細（非同期実行モデル、冪等性、Secrets、ネットワーク、監視、コスト設計など）はPRDには書かず、下記の設計/仕様に集約する。
 
-詳細な仕様については [技術アーキテクチャ](./request/architecture-specification.md) を参照すること。
+- 詳細仕様（将来拡張含む）: [技術アーキテクチャ](./request/architecture-specification.md)
+- 詳細設計: [技術アーキテクチャ](./design/ai-impact-analysis.md)

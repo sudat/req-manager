@@ -116,3 +116,26 @@ export const entryPointsToCodeRefs = (entryPoints: EntryPoint[]): Array<{ paths:
   { paths: entryPoints.map((p) => p.path) },
 ];
 
+export const normalizeCodeRefs = (raw: unknown): Array<{ githubUrl?: string; paths: string[]; note?: string }> => {
+  if (!Array.isArray(raw)) return [];
+
+  return raw
+    .map((item) => {
+      if (typeof item !== "object" || item === null) return null;
+      const ref = item as Record<string, unknown>;
+
+      const paths = Array.isArray(ref.paths)
+        ? ref.paths.filter((p): p is string => typeof p === "string" && p.length > 0)
+        : [];
+
+      if (paths.length === 0) return null;
+
+      return {
+        githubUrl: typeof ref.githubUrl === "string" ? ref.githubUrl : undefined,
+        paths,
+        note: typeof ref.note === "string" ? ref.note : undefined,
+      };
+    })
+    .filter((r): r is NonNullable<typeof r> => r !== null);
+};
+

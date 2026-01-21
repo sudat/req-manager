@@ -27,7 +27,7 @@ const splitLines = (value: string) =>
     .map((v) => v.trim())
     .filter(Boolean);
 
-export default function IdeaAddPage() {
+export default function IdeaCreatePage() {
   const router = useRouter();
   const [nextId, setNextId] = useState("C001");
   const [name, setName] = useState("");
@@ -94,7 +94,7 @@ export default function IdeaAddPage() {
             概念一覧に戻る
           </Link>
 
-          <h1 className="text-2xl font-semibold text-slate-900 mb-6">概念を新規追加</h1>
+          <h1 className="text-2xl font-semibold text-slate-900 mb-6">概念を新規作成</h1>
 
           <Card className="p-6">
             <form className="space-y-6" onSubmit={handleSubmit}>

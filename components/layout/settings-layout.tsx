@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Settings, TrendingUp, Grid3x3, Bell } from "lucide-react";
+import { Settings, TrendingUp, Bell } from "lucide-react";
 import { ReactNode } from "react";
 
 interface SettingsLayoutProps {
@@ -12,7 +12,6 @@ interface SettingsLayoutProps {
 const menuItems = [
   { key: "settings", label: "プロジェクト設定", href: "/settings", icon: Settings },
   { key: "llm", label: "LLM設定", href: "/settings/llm", icon: TrendingUp },
-  { key: "domains", label: "システム領域マスタ", href: "/settings/system-domains", icon: Grid3x3 },
   { key: "notification", label: "通知設定", href: "/settings/notification", icon: Bell },
 ];
 
