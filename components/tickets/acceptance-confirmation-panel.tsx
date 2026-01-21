@@ -47,8 +47,8 @@ export function AcceptanceConfirmationPanel({
   // ローディング状態
   if (loading) {
     return (
-      <Card className="rounded-md border border-slate-200">
-        <CardContent className="p-4">
+      <Card className="rounded-md border border-slate-200/60 shadow-sm hover:border-slate-300/60 transition-colors">
+        <CardContent className="p-6">
           <p className="text-[13px] text-slate-500">読み込み中...</p>
         </CardContent>
       </Card>
@@ -58,8 +58,8 @@ export function AcceptanceConfirmationPanel({
   // 空状態
   if (confirmations.length === 0) {
     return (
-      <Card className="rounded-md border border-slate-200">
-        <CardContent className="p-4">
+      <Card className="rounded-md border border-slate-200/60 shadow-sm hover:border-slate-300/60 transition-colors">
+        <CardContent className="p-6">
           <p className="text-[13px] text-slate-500">
             受入条件が登録されていません。
           </p>
@@ -69,8 +69,8 @@ export function AcceptanceConfirmationPanel({
   }
 
   return (
-    <Card className="rounded-md border border-slate-200">
-      <CardContent className="p-3 space-y-3">
+    <Card className="rounded-md border border-slate-200/60 shadow-sm hover:border-slate-300/60 transition-colors">
+      <CardContent className="p-6 space-y-3">
         <AcceptanceConfirmationHeader
           selectedCount={selectedIds.size}
           totalCount={confirmations.length}

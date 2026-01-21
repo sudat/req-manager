@@ -21,8 +21,8 @@ export function AcceptanceConfirmationHeader({
   const allSelected = selectedCount === totalCount;
 
   return (
-    <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-      <h3 className="text-[14px] font-semibold text-slate-900">
+    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+      <h3 className="section-heading border-0 p-0 text-[18px]">
         受入条件確認
       </h3>
       <div className="flex items-center gap-2">

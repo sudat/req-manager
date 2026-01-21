@@ -99,5 +99,6 @@ export function fromSystemRequirement(
 		category: sr.category,
 		businessRequirementIds: sr.businessRequirementIds ?? [],
 		relatedSystemRequirementIds: [],
+		taskId: sr.taskId, // taskIdを追加（外部キー制約対応）
 	};
 }

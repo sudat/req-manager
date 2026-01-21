@@ -9,7 +9,7 @@ export type HealthScoreIssue = {
 	id: string;
 	label: string;
 	severity: HealthScoreSeverity;
-	missing: number;
+	completed: number;
 	total: number;
 	ratio: number;
 };
@@ -113,15 +113,15 @@ const createIssue = (
 	id: string,
 	label: string,
 	severity: HealthScoreSeverity,
-	missing: number,
+	completed: number,
 	total: number
 ): HealthScoreIssue => ({
 	id,
 	label,
 	severity,
-	missing,
+	completed,
 	total,
-	ratio: total === 0 ? 0 : missing / total,
+	ratio: total === 0 ? 1 : completed / total,
 });
 
 const hasAcceptanceCriteria = (items: AcceptanceCriterionJson[]): boolean =>
@@ -176,41 +176,40 @@ export const buildHealthScoreSummary = ({
 
 	issues.push(
 		createIssue(
-			"business_requirements_without_system_requirements",
-			"業務要件にシステム要件が紐づいていない",
+			"business_requirements_with_system_requirements",
+			"業務要件にシステム要件が紐づいている",
 			"high",
-			businessRequirements.filter((req) => req.relatedSystemRequirementIds.length === 0)
-				.length,
+			businessRequirements.filter((req) => req.relatedSystemRequirementIds.length > 0).length,
 			businessRequirements.length
 		)
 	);
 
 	issues.push(
 		createIssue(
-			"system_requirements_without_business_requirements",
-			"システム要件に業務要件が紐づいていない",
+			"system_requirements_with_business_requirements",
+			"システム要件に業務要件が紐づいている",
 			"high",
-			systemRequirements.filter((req) => req.businessRequirementIds.length === 0).length,
+			systemRequirements.filter((req) => req.businessRequirementIds.length > 0).length,
 			systemRequirements.length
 		)
 	);
 
 	issues.push(
 		createIssue(
-			"system_functions_without_entry_points",
-			"システム機能にエントリポイントが未設定",
+			"system_functions_with_entry_points",
+			"システム機能にエントリポイントが設定されている",
 			"high",
-			systemFunctions.filter((fn) => ensureArray(fn.entryPoints).length === 0).length,
+			systemFunctions.filter((fn) => ensureArray(fn.entryPoints).length > 0).length,
 			systemFunctions.length
 		)
 	);
 
 	issues.push(
 		createIssue(
-			"entry_points_without_responsibility",
-			"エントリポイントに責務が未設定",
+			"entry_points_with_responsibility",
+			"エントリポイントに責務が設定されている",
 			"medium",
-			entryPoints.filter((entry) => !entry.responsibility || entry.responsibility.trim().length === 0)
+			entryPoints.filter((entry) => entry.responsibility && entry.responsibility.trim().length > 0)
 				.length,
 			entryPoints.length
 		)
@@ -218,7 +217,7 @@ export const buildHealthScoreSummary = ({
 
 	const conceptEntries = buildConceptEntries(concepts);
 	let requirementsWithConceptTerms = 0;
-	let requirementsMissingConceptLinks = 0;
+	let requirementsWithConceptLinks = 0;
 
 	if (conceptEntries.length > 0) {
 		const allRequirements = [
@@ -242,47 +241,47 @@ export const buildHealthScoreSummary = ({
 			if (matchedConceptIds.length === 0) continue;
 			requirementsWithConceptTerms += 1;
 			const linkedIds = new Set(req.conceptIds);
-			const missing = matchedConceptIds.some((id) => !linkedIds.has(id));
-			if (missing) requirementsMissingConceptLinks += 1;
+			const hasAllLinks = matchedConceptIds.every((id) => linkedIds.has(id));
+			if (hasAllLinks) requirementsWithConceptLinks += 1;
 		}
 	}
 
 	issues.push(
 		createIssue(
-			"concept_terms_without_links",
-			"概念辞書の用語が要件文中に出現するのにリンクがない",
+			"concept_terms_with_links",
+			"概念辞書の用語にリンクされている",
 			"medium",
-			requirementsMissingConceptLinks,
+			requirementsWithConceptLinks,
 			requirementsWithConceptTerms
 		)
 	);
 
 	issues.push(
 		createIssue(
-			"business_requirements_without_concepts",
-			"業務要件に concept_ids がない",
+			"business_requirements_with_concepts",
+			"業務要件に概念が紐づいている",
 			"high",
-			businessRequirements.filter((req) => req.conceptIds.length === 0).length,
+			businessRequirements.filter((req) => req.conceptIds.length > 0).length,
 			businessRequirements.length
 		)
 	);
 
 	issues.push(
 		createIssue(
-			"business_requirements_without_impacts",
-			"業務要件に impacts がない",
+			"business_requirements_with_impacts",
+			"業務要件に影響範囲が設定されている",
 			"high",
-			businessRequirements.filter((req) => req.impacts.length === 0).length,
+			businessRequirements.filter((req) => req.impacts.length > 0).length,
 			businessRequirements.length
 		)
 	);
 
 	issues.push(
 		createIssue(
-			"system_requirements_without_category",
-			"システム要件に category（観点種別）がない",
+			"system_requirements_with_category",
+			"システム要件に観点種別が設定されている",
 			"high",
-			systemRequirements.filter((req) => !req.categoryRaw || !allowedCategories.has(req.categoryRaw))
+			systemRequirements.filter((req) => req.categoryRaw && allowedCategories.has(req.categoryRaw))
 				.length,
 			systemRequirements.length
 		)
@@ -290,11 +289,11 @@ export const buildHealthScoreSummary = ({
 
 	issues.push(
 		createIssue(
-			"requirements_without_acceptance_criteria",
-			"受入条件が0件",
+			"requirements_with_acceptance_criteria",
+			"受入条件が設定されている",
 			"high",
 			[...businessRequirements, ...systemRequirements].filter(
-				(req) => !hasAcceptanceCriteria(req.acceptanceCriteriaJson)
+				(req) => hasAcceptanceCriteria(req.acceptanceCriteriaJson)
 			).length,
 			requirementCount
 		)
@@ -302,11 +301,11 @@ export const buildHealthScoreSummary = ({
 
 	issues.push(
 		createIssue(
-			"acceptance_criteria_lint_warning",
-			"受入条件がlint警告を受けている",
+			"acceptance_criteria_well_written",
+			"受入条件が適切に記述されている",
 			"high",
 			[...businessRequirements, ...systemRequirements].filter((req) =>
-				hasAcceptanceLintWarning(req.acceptanceCriteriaJson)
+				!hasAcceptanceLintWarning(req.acceptanceCriteriaJson)
 			).length,
 			requirementCount
 		)
@@ -322,7 +321,7 @@ export const buildHealthScoreSummary = ({
 		totalWeight === 0
 			? 100
 			: (scoredIssues.reduce((sum, issue) => {
-					const compliance = 1 - issue.ratio;
+					const compliance = issue.ratio;
 					return sum + compliance * severityWeight[issue.severity];
 			  }, 0) /
 					totalWeight) *

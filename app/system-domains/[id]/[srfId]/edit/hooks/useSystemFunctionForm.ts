@@ -8,6 +8,9 @@ import {
 import { listSystemRequirementsBySrfId } from "@/lib/data/system-requirements";
 import { fromSystemRequirement } from "@/lib/data/requirement-mapper";
 import { deleteSystemRequirementsBySrfId, createSystemRequirements, updateSystemRequirement } from "@/lib/data/system-requirements";
+import { listBusinessRequirementsByIds } from "@/lib/data/business-requirements";
+import { linkBusinessRequirements } from "@/lib/utils/system-functions/link-business-requirements";
+import type { SystemRequirementCard } from "@/app/system-domains/[id]/create/types";
 import type {
 	SystemFunction,
 	SrfCategory,
@@ -267,6 +270,9 @@ export function useSystemFunctionForm(srfId: string): {
 	// システム要件を追加
 	const addSystemRequirement = useCallback((): void => {
 		const newId = `SR-${srfId}-${String(systemRequirements.length + 1).padStart(3, "0")}`;
+		// 既存のシステム要件からtaskIdを取得（最初の要件のtaskIdを使用）
+		const existingTaskId = systemRequirements.length > 0 ? systemRequirements[0].taskId : "";
+
 		setSystemRequirements((prev) => [
 			...prev,
 			{
@@ -282,6 +288,7 @@ export function useSystemFunctionForm(srfId: string): {
 				category: "function",
 				businessRequirementIds: [],
 				relatedSystemRequirementIds: [],
+				taskId: existingTaskId, // 既存のtaskIdを継承
 			},
 		]);
 	}, [srfId, systemRequirements.length]);
@@ -342,7 +349,7 @@ export function useSystemFunctionForm(srfId: string): {
 			if (systemRequirements.length > 0) {
 				const sysReqInputs = systemRequirements.map((req, index) => ({
 					id: req.id,
-					taskId: "", // システム機能はタスクを持たない
+					taskId: req.taskId || "", // 既存のtaskIdを維持（外部キー制約対応）
 					srfId: srfId,
 					title: req.title,
 					summary: req.summary,
@@ -361,6 +368,40 @@ export function useSystemFunctionForm(srfId: string): {
 					setError(sysReqError);
 					setSaving(false);
 					return false;
+				}
+			}
+
+			// 双方向参照の同期：システム要件から関連する業務要件を収集
+			const relatedBizReqIds = Array.from(
+				new Set(
+					systemRequirements.flatMap((req) => req.businessRequirementIds ?? [])
+				)
+			);
+
+			if (relatedBizReqIds.length > 0) {
+				// 業務要件を取得
+				const { data: relatedBizReqs, error: bizFetchError } =
+					await listBusinessRequirementsByIds(relatedBizReqIds);
+
+				if (!bizFetchError && relatedBizReqs && relatedBizReqs.length > 0) {
+					// SystemRequirementCard型に変換
+					const sysReqCards: SystemRequirementCard[] = systemRequirements
+						.filter((req) => (req.businessRequirementIds?.length ?? 0) > 0)
+						.map((req) => ({
+							id: req.id,
+							title: req.title,
+							summary: req.summary,
+							businessRequirementIds: req.businessRequirementIds ?? [],
+							acceptanceCriteriaJson: req.acceptanceCriteriaJson ?? [],
+						}));
+
+					// 双方向参照を同期
+					const linkError = await linkBusinessRequirements(sysReqCards, relatedBizReqs);
+					if (linkError) {
+						setError(`双方向参照同期エラー: ${linkError}`);
+						setSaving(false);
+						return false;
+					}
 				}
 			}
 

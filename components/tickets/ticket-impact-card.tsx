@@ -53,8 +53,8 @@ export function TicketImpactCard({ impactScopes }: TicketImpactCardProps) {
   }
 
   return (
-    <Card className="rounded-md border border-slate-200">
-      <CardContent className="p-3 space-y-2">
+    <Card className="rounded-md border border-slate-200/60 shadow-sm hover:border-slate-300/60 transition-colors">
+      <CardContent className="p-6 space-y-3">
         <div className="flex items-center justify-between pb-2 border-b border-slate-100">
           <h3 className="text-[14px] font-semibold text-slate-900">
             影響範囲
@@ -80,14 +80,14 @@ export function TicketImpactCard({ impactScopes }: TicketImpactCardProps) {
           </div>
         </div>
 
-        <div className="border-t border-slate-100 pt-2 mt-2 space-y-2">
+        <div className="border-t border-slate-100 pt-3 mt-3 space-y-3">
           <div className="text-[12px] font-medium text-slate-500">
             影響する対象 ({scopes.length})
             {allConfirmed && <span className="text-emerald-600 ml-2">すべて確定済み</span>}
           </div>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {scopes.map((scope) => (
-              <div key={scope.id} className={`rounded-md border p-3 ${scope.confirmed ? "border-emerald-200 bg-emerald-50" : "border-slate-200"}`}>
+              <div key={scope.id} className={`rounded-md border p-6 ${scope.confirmed ? "border-emerald-200 bg-emerald-50" : "border-slate-200"}`}>
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
@@ -111,7 +111,7 @@ export function TicketImpactCard({ impactScopes }: TicketImpactCardProps) {
                     )}
                   </div>
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] font-medium px-2 py-0.5">
+                    <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] font-medium px-2.5 py-1">
                       {targetTypeLabels[scope.targetType] || scope.targetType}
                     </Badge>
                     {!scope.confirmed && (

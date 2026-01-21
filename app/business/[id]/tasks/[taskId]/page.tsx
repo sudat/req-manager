@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil } from "lucide-react";
+import { Pencil, User, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
 import Link from "next/link";
 import { use, useMemo } from "react";
 import { HealthScoreCard } from "@/components/health-score/health-score-card";
@@ -109,7 +109,7 @@ export default function TaskDetailPage({ params }: PageProps) {
 	return (
 		<>
 			<MobileHeader />
-			<div className="flex-1 min-h-screen bg-white">
+			<div className="flex-1 min-h-screen bg-slate-50">
 				<div className="mx-auto max-w-[1400px] px-8 py-4">
 					{/* パンくずリスト */}
 					<Breadcrumb className="mb-4">
@@ -232,12 +232,12 @@ function TaskSummaryCard({
 	displayOutput,
 }: TaskSummaryCardProps) {
 	return (
-		<Card className="rounded-md border border-slate-200/60 bg-white hover:border-slate-300/60 transition-colors">
-			<CardContent className="p-5 space-y-2">
-				<div className="flex items-center gap-3 text-[12px] text-slate-500">
-					<span className="font-mono">{displayBizId}</span>
+		<Card className="rounded-md border border-slate-200/60 bg-white shadow-sm hover:border-slate-300/60 transition-colors">
+			<CardContent className="p-6 space-y-3">
+				<div className="flex items-center gap-2">
+					<span className="id-label--brand">{displayBizId}</span>
 					<span className="text-slate-300">/</span>
-					<span className="font-mono">{taskId}</span>
+					<span className="id-label--brand">{taskId}</span>
 				</div>
 
 				<h2 className="text-[20px] font-semibold text-slate-900 leading-tight">
@@ -246,19 +246,10 @@ function TaskSummaryCard({
 
 				<MarkdownRenderer content={displayTaskSummary} />
 
-				<div className="flex flex-wrap gap-x-6 gap-y-2 pt-2 border-t border-slate-100 text-[13px]">
-					<div>
-						<span className="text-slate-500">担当者</span>
-						<span className="ml-2 text-slate-900">{displayPerson ?? "—"}</span>
-					</div>
-					<div>
-						<span className="text-slate-500">インプット</span>
-						<span className="ml-2 text-slate-900">{displayInput ?? "—"}</span>
-					</div>
-					<div>
-						<span className="text-slate-500">アウトプット</span>
-						<span className="ml-2 text-slate-900">{displayOutput ?? "—"}</span>
-					</div>
+				<div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-slate-100">
+					<MetaItem icon={User} label="担当者" value={displayPerson ?? "—"} />
+					<MetaItem icon={ArrowDownToLine} label="インプット" value={displayInput ?? "—"} />
+					<MetaItem icon={ArrowUpFromLine} label="アウトプット" value={displayOutput ?? "—"} />
 				</div>
 			</CardContent>
 		</Card>
@@ -283,13 +274,13 @@ function RequirementsSection<T extends { id: string }>({
 	renderItem,
 }: RequirementsSectionProps<T>) {
 	return (
-		<Card className="mt-4 rounded-md border border-slate-200/60 bg-white hover:border-slate-300/60 transition-colors">
-			<CardContent className="p-3 space-y-2">
-				<div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-					<h3 className="text-[20px] font-semibold text-slate-900">{title}</h3>
+		<Card className="mt-4 rounded-md border border-slate-200/60 bg-white shadow-sm hover:border-slate-300/60 transition-colors">
+			<CardContent className="p-6 space-y-3">
+				<div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+					<h3 className="section-heading border-0 p-0 text-[18px]">{title}</h3>
 					<Badge
 						variant="outline"
-						className="font-mono text-[11px] border-slate-200 bg-slate-50 text-slate-600 px-1.5 py-0"
+						className="font-mono text-[11px] border-brand-200 bg-brand-50 text-brand-700 px-2.5 py-1"
 					>
 						{items.length}
 					</Badge>
@@ -338,5 +329,21 @@ function BusinessRequirementsSection(props: BusinessRequirementsSectionProps) {
 				/>
 			)}
 		/>
+	);
+}
+
+type MetaItemProps = {
+	icon: React.ElementType;
+	label: string;
+	value: string;
+};
+
+function MetaItem({ icon: Icon, label, value }: MetaItemProps) {
+	return (
+		<div className="flex items-center gap-2">
+			<Icon className="h-4 w-4 text-slate-400" strokeWidth={1.5} />
+			<span className="text-[13px] text-slate-500">{label}</span>
+			<span className="text-[13px] text-slate-900 font-medium">{value}</span>
+		</div>
 	);
 }

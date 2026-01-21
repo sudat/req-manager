@@ -62,7 +62,7 @@ export function AcceptanceConfirmationItem({
 }: AcceptanceConfirmationItemProps) {
   return (
     <div
-      className={`rounded-md border p-3 transition-colors ${
+      className={`rounded-md border p-6 transition-colors ${
         selected
           ? "border-slate-400 bg-slate-50"
           : "border-slate-200 bg-white"

@@ -19,7 +19,7 @@ export function EntryPointsSection({
 					{entryPoints.map((entry) => (
 						<div
 							key={entry.path}
-							className="rounded-md border border-slate-200 bg-white p-3 space-y-2"
+							className="rounded-md border border-slate-200 bg-white p-6 space-y-2"
 						>
 							<SectionLabel>Path</SectionLabel>
 							<code className="text-[12px] text-slate-800 font-mono">

@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { listConcepts } from "@/lib/data/concepts";
 import { getSystemFunctionById } from "@/lib/data/system-functions";
 import { listSystemRequirementsBySrfId } from "@/lib/data/system-requirements";
+import { listBusinessRequirementsByIds } from "@/lib/data/business-requirements";
 import type { SystemFunction } from "@/lib/domain";
 import {
 	buildHealthScoreSummary,
@@ -39,7 +40,7 @@ function PageLayout({
 	children: React.ReactNode;
 }): React.ReactNode {
 	return (
-		<div className="flex-1 min-h-screen bg-white">
+		<div className="flex-1 min-h-screen bg-slate-50">
 			<div className="mx-auto max-w-[1400px] px-8 py-4">{children}</div>
 		</div>
 	);
@@ -148,8 +149,30 @@ export default function SystemFunctionDetailPage({
 				return;
 			}
 
+			// システム要件から関連する業務要件IDを収集
+			const systemReqs = systemReqResult.data ?? [];
+			const relatedBusinessRequirementIds = Array.from(
+				new Set(
+					systemReqs.flatMap(req => req.businessRequirementIds)
+				)
+			);
+
+			// 業務要件を取得
+			const businessReqResult = await listBusinessRequirementsByIds(
+				relatedBusinessRequirementIds
+			);
+
+			if (!active) return;
+
+			if (businessReqResult.error) {
+				setHealthError(businessReqResult.error);
+				setHealthSummary(null);
+				setHealthLoading(false);
+				return;
+			}
+
 			const summary = buildHealthScoreSummary({
-				businessRequirements: [],
+				businessRequirements: businessReqResult.data ?? [],
 				systemRequirements: systemReqResult.data ?? [],
 				systemFunctions: [currentSrf],
 				concepts: conceptResult.data ?? [],

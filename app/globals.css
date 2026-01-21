@@ -146,3 +146,28 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  /* ヘルススコア用プログレスバー */
+  .progress-bar-track {
+    @apply w-full h-1.5 bg-slate-100 rounded-full overflow-hidden;
+  }
+
+  .progress-bar-fill {
+    @apply h-full rounded-full transition-all duration-300;
+  }
+
+  /* ID表示用ラベル */
+  .id-label {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono bg-slate-100 text-slate-600;
+  }
+
+  .id-label--brand {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono bg-brand-50 text-brand-700 border border-brand-200;
+  }
+
+  /* セクション見出し（左ボーダー付き） */
+  .section-heading {
+    @apply border-l-4 border-brand-500 pl-3 text-[16px] font-semibold text-slate-900;
+  }
+}

@@ -50,9 +50,9 @@ export function SystemRequirementsSection({ srfId }: SystemRequirementsSectionPr
 
 function RequirementItem({ req }: { req: RelatedRequirementInfo }): React.ReactNode {
 	return (
-		<div className="rounded-md border border-slate-200 bg-slate-50/50 p-3">
+		<div className="rounded-md border border-slate-200 bg-slate-50/50 p-6">
 			<div className="flex items-center gap-2 mb-2">
-				<Badge className="border-blue-200/60 bg-blue-50 text-blue-700 text-[12px] font-medium px-2 py-0.5">
+				<Badge className="border-blue-200/60 bg-blue-50 text-blue-700 text-[12px] font-medium px-2.5 py-1">
 					{req.systemReqId}
 				</Badge>
 				<span className="text-[13px] font-medium text-slate-900">
@@ -137,7 +137,7 @@ function BusinessRequirementLink({ req }: { req: RelatedRequirementInfo }): Reac
 				<div className="flex items-center gap-2">
 					<Badge
 						variant="outline"
-						className="border-emerald-200/60 bg-emerald-50 text-emerald-700 text-[12px] font-medium px-2 py-0.5"
+						className="border-emerald-200/60 bg-emerald-50 text-emerald-700 text-[12px] font-medium px-2.5 py-1"
 					>
 						{req.businessReqId}
 					</Badge>

@@ -11,17 +11,17 @@ interface SectionCardProps {
 
 export function SectionCard({ title, children, count }: SectionCardProps): React.ReactNode {
 	return (
-		<Card className="mt-4 rounded-md border border-slate-200/60 bg-white hover:border-slate-300/60 transition-colors">
-			<CardContent className="p-3">
-				<div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-					<h2 className="text-[20px] font-semibold text-slate-900">{title}</h2>
+		<Card className="mt-4 rounded-md border border-slate-200/60 shadow-sm hover:border-slate-300/60 transition-colors">
+			<CardContent className="p-6">
+				<div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+					<h2 className="section-heading border-0 p-0 text-[18px]">{title}</h2>
 					{count !== undefined && (
-						<Badge variant="outline" className="font-mono text-[11px] border-slate-200 bg-slate-50 text-slate-600 px-1.5 py-0">
+						<Badge variant="outline" className="font-mono text-[11px] border-brand-200 bg-brand-50 text-brand-700 px-2.5 py-1">
 							{count}
 						</Badge>
 					)}
 				</div>
-				<div className="pt-2">{children}</div>
+				<div className="pt-3">{children}</div>
 			</CardContent>
 		</Card>
 	);

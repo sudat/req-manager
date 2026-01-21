@@ -2,7 +2,15 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MobileHeader } from "@/components/layout/mobile-header";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, CheckCircle2, Pencil } from "lucide-react";
+import { CheckCircle2, Pencil } from "lucide-react";
+import {
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { getChangeRequestById } from "@/lib/data/change-requests";
 import { listImpactScopesByChangeRequestId } from "@/lib/data/impact-scopes";
 import { getAcceptanceConfirmationCompletionStatus } from "@/lib/data/acceptance-confirmations";
@@ -24,13 +32,24 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
   return (
     <>
       <MobileHeader />
-      <div className="flex-1 min-h-screen bg-white">
+      <div className="flex-1 min-h-screen bg-slate-50">
         <div className="mx-auto max-w-[1400px] px-8 py-4">
+          {/* パンくずリスト */}
+          <Breadcrumb className="mb-4">
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link href="/tickets">変更要求一覧</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>変更要求詳細</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+
           <div className="flex items-center justify-between mb-4">
-            <Link href="/tickets" className="inline-flex items-center gap-2 text-[14px] font-medium text-slate-600 hover:text-slate-900">
-              <ArrowLeft className="h-4 w-4" />
-              変更要求一覧に戻る
-            </Link>
             <div className="flex items-center gap-2">
               <Link href={`/tickets/${id}/edit`}>
                 <Button variant="outline" className="h-8 px-4 text-[14px] font-medium border-slate-200 hover:bg-slate-50 gap-2">

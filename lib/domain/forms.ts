@@ -30,6 +30,7 @@ export type Requirement = {
   category?: SystemRequirementCategory;
   businessRequirementIds: string[];
   relatedSystemRequirementIds: string[];
+  taskId?: string; // システム要件のタスクID（外部キー制約対応）
 };
 
 /**

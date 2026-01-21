@@ -2,6 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Check } from "@phosphor-icons/react";
 import type { HealthScoreSummary, HealthScoreWarning } from "@/lib/health-score";
 
 type HealthScoreCardProps = {
@@ -53,22 +54,36 @@ export function HealthScoreCard({
 	const remainingIssues = issues.length - visibleIssues.length;
 
 	return (
-		<Card className="rounded-md border border-slate-200/60 bg-white hover:border-slate-300/60 transition-colors">
-			<CardContent className="p-4 space-y-3">
+		<Card className="rounded-md border border-slate-200/60 bg-white shadow-sm hover:border-slate-300/60 transition-colors">
+			<CardContent className="p-6 space-y-4">
 				<div className="flex items-center justify-between">
 					<h2 className="text-[16px] font-semibold text-slate-900">{title}</h2>
 					{summary && (
-						<div className="flex items-center gap-2">
-							<Badge
-								variant="outline"
-								className={`text-[11px] font-medium ${levelClassNames[summary.level]}`}
-							>
-								{levelLabels[summary.level]}
-							</Badge>
-							<span className="font-mono text-[18px] font-semibold text-slate-900">
-								{summary.score}
-							</span>
-							<span className="text-[11px] text-slate-400">/100</span>
+						<div className="flex flex-col items-end gap-2">
+							<div className="flex items-center gap-2">
+								<Badge
+									variant="outline"
+									className={`text-[11px] font-medium ${levelClassNames[summary.level]}`}
+								>
+									{levelLabels[summary.level]}
+								</Badge>
+								<span className="font-mono text-[24px] font-semibold text-slate-900">
+									{summary.score}
+								</span>
+								<span className="text-[11px] text-slate-400">/100</span>
+							</div>
+							<div className="w-32 progress-bar-track">
+								<div
+									className={`progress-bar-fill ${
+										summary.score >= 80
+											? "bg-emerald-500"
+											: summary.score >= 50
+												? "bg-amber-500"
+												: "bg-rose-500"
+									}`}
+									style={{ width: `${summary.score}%` }}
+								/>
+							</div>
 						</div>
 					)}
 				</div>
@@ -115,7 +130,7 @@ export function HealthScoreCard({
 									{visibleIssues.map((issue) => (
 										<li
 											key={issue.id}
-											className="flex items-center justify-between text-[12px] text-slate-600"
+											className="flex items-center justify-between gap-3 text-[12px] text-slate-600 p-2 rounded bg-slate-50 hover:bg-slate-100 transition-colors"
 										>
 											<div className="flex items-center gap-2">
 												<Badge
@@ -126,9 +141,42 @@ export function HealthScoreCard({
 												</Badge>
 												<span className="text-slate-700">{issue.label}</span>
 											</div>
-											<span className="font-mono text-[12px] text-slate-900">
-												{issue.missing}/{issue.total}
-											</span>
+											<div className="flex items-center gap-2">
+												{/* ミニプログレスバー */}
+												<div className="w-[100px] h-1 bg-slate-200 rounded-full overflow-hidden">
+													<div
+														className={`h-full rounded-full transition-all ${
+															issue.completed === issue.total
+																? "bg-emerald-500"
+																: issue.completed === 0
+																	? "bg-rose-500"
+																	: "bg-amber-500"
+														}`}
+														style={{ width: `${issue.ratio * 100}%` }}
+													/>
+												</div>
+												{/* 数値表示 */}
+												<div className="font-mono text-[12px] tabular-nums">
+													<span
+														className={`font-semibold ${
+															issue.completed === issue.total
+																? "text-emerald-700"
+																: issue.completed === 0
+																	? "text-rose-700"
+																	: "text-amber-700"
+														}`}
+													>
+														{issue.completed}
+													</span>
+													<span className="text-slate-400">/</span>
+													<span className="text-slate-500">{issue.total}</span>
+												</div>
+												{/* ✓ アイコン（常にスペース確保、全てOKの場合のみ表示） */}
+												<Check
+													weight="bold"
+													className={`w-4 h-4 ${issue.completed === issue.total ? "text-emerald-500" : "invisible"}`}
+												/>
+											</div>
 										</li>
 									))}
 								</ul>
