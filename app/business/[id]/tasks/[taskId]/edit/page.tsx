@@ -10,6 +10,7 @@ import { fromBusinessRequirement, fromSystemRequirement } from "@/lib/data/requi
 import { getTaskById } from "@/lib/data/tasks";
 import { removeFromStorage } from "@/lib/utils/local-storage";
 import { createEmptyTaskKnowledge } from "@/lib/utils/task-knowledge";
+import { useProject } from "@/components/project/project-context";
 
 // Hooks
 import { useMasterData } from "./hooks/useMasterData";
@@ -32,6 +33,7 @@ export default function TaskDetailEditPage({
 	const [defaultKnowledge, setDefaultKnowledge] = useState<TaskKnowledge>(() =>
 		createEmptyTaskKnowledge(id, taskId)
 	);
+	const { currentProjectId, loading: projectLoading } = useProject();
 
 	// データロード状態
 	const [isLoading, setIsLoading] = useState(true);
@@ -77,12 +79,16 @@ export default function TaskDetailEditPage({
 
 		async function loadExistingData(): Promise<void> {
 			setIsLoading(true);
+			if (projectLoading || !currentProjectId) {
+				setIsLoading(false);
+				return;
+			}
 
 			try {
 				const [taskResult, businessReqResult, systemReqResult] = await Promise.all([
-					getTaskById(taskId),
-					listBusinessRequirementsByTaskId(taskId),
-					listSystemRequirementsByTaskId(taskId),
+					getTaskById(taskId, currentProjectId),
+					listBusinessRequirementsByTaskId(taskId, currentProjectId),
+					listSystemRequirementsByTaskId(taskId, currentProjectId),
 				]);
 
 				if (!active) return;
@@ -133,7 +139,7 @@ export default function TaskDetailEditPage({
 		return () => {
 			active = false;
 		};
-	}, [id, taskId, setKnowledge, setDefaultKnowledge]);
+	}, [id, taskId, setKnowledge, setDefaultKnowledge, currentProjectId, projectLoading]);
 
 	// ダイアログ状態管理
 	const [dialogState, setDialogState] = useState<{

@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { getSystemDomainById, updateSystemDomain, type SystemDomain } from "@/lib/data/system-domains";
+import { useProject } from "@/components/project/project-context";
 
 export default function SystemDomainEditPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -20,12 +21,20 @@ export default function SystemDomainEditPage({ params }: { params: Promise<{ id:
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const { currentProjectId, loading: projectLoading } = useProject();
 
   useEffect(() => {
+    if (projectLoading) return;
+    if (!currentProjectId) {
+      setError("プロジェクトが選択されていません");
+      setDomain(null);
+      setLoading(false);
+      return;
+    }
     let active = true;
     const fetchData = async () => {
       setLoading(true);
-      const { data, error: fetchError } = await getSystemDomainById(id);
+      const { data, error: fetchError } = await getSystemDomainById(id, currentProjectId);
       if (!active) return;
       if (fetchError) {
         setError(fetchError);
@@ -45,7 +54,7 @@ export default function SystemDomainEditPage({ params }: { params: Promise<{ id:
     return () => {
       active = false;
     };
-  }, [id]);
+  }, [id, currentProjectId, projectLoading]);
 
   const canSubmit = useMemo(() => name.trim().length > 0, [name]);
 
@@ -54,11 +63,16 @@ export default function SystemDomainEditPage({ params }: { params: Promise<{ id:
     if (!canSubmit || saving) return;
     setSaving(true);
     setError(null);
+    if (projectLoading || !currentProjectId) {
+      setError("プロジェクトが選択されていません");
+      setSaving(false);
+      return;
+    }
     const { error: saveError } = await updateSystemDomain(id, {
       name: name.trim(),
       description: description.trim(),
       sortOrder: Number(sortOrder) || 0,
-    });
+    }, currentProjectId);
     setSaving(false);
     if (saveError) {
       setError(saveError);

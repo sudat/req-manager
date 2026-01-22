@@ -21,6 +21,10 @@ export type SystemFunctionInput = {
   codeRefs: SystemFunction["codeRefs"];
 };
 
+export type SystemFunctionCreateInput = SystemFunctionInput & {
+	projectId: string;
+};
+
 type SystemFunctionRow = {
   id: string;
   system_domain_id: string | null;
@@ -90,49 +94,64 @@ const failIfMissingConfig = () => {
   return null;
 };
 
-export const listSystemFunctions = async () => {
+export const listSystemFunctions = async (projectId?: string) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("system_functions")
     .select("*")
     .order("id");
 
+  if (projectId) {
+    query = query.eq("project_id", projectId);
+  }
+
+  const { data, error } = await query;
   if (error) return { data: null, error: error.message };
   return { data: (data as SystemFunctionRow[]).map(toSystemFunction), error: null };
 };
 
-export const listSystemFunctionsByDomain = async (systemDomainId: string) => {
+export const listSystemFunctionsByDomain = async (systemDomainId: string, projectId?: string) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("system_functions")
     .select("*")
     .eq("system_domain_id", systemDomainId)
     .order("id");
 
+  if (projectId) {
+    query = query.eq("project_id", projectId);
+  }
+
+  const { data, error } = await query;
   if (error) return { data: null, error: error.message };
   return { data: (data as SystemFunctionRow[]).map(toSystemFunction), error: null };
 };
 
-export const getSystemFunctionById = async (id: string) => {
+export const getSystemFunctionById = async (id: string, projectId?: string) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("system_functions")
     .select("*")
-    .eq("id", id)
-    .maybeSingle();
+    .eq("id", id);
+
+  if (projectId) {
+    query = query.eq("project_id", projectId);
+  }
+
+  const { data, error } = await query.maybeSingle();
 
   if (error) return { data: null, error: error.message };
   if (!data) return { data: null, error: null };
   return { data: toSystemFunction(data as SystemFunctionRow), error: null };
 };
 
-export const createSystemFunction = async (input: SystemFunctionInput) => {
+export const createSystemFunction = async (input: SystemFunctionCreateInput) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
@@ -141,6 +160,7 @@ export const createSystemFunction = async (input: SystemFunctionInput) => {
 		input.entryPoints !== undefined ? input.entryPoints : codeRefsToEntryPoints(input.codeRefs);
   const payload = {
     ...toSystemFunctionRowBase(input),
+		project_id: input.projectId,
 		entry_points: entryPoints,
 		code_refs:
 			input.codeRefs.length > 0
@@ -162,15 +182,24 @@ export const createSystemFunction = async (input: SystemFunctionInput) => {
   return { data: toSystemFunction(data as SystemFunctionRow), error: null };
 };
 
-export const updateSystemFunction = async (id: string, input: Omit<SystemFunctionInput, "id">) => {
+export const updateSystemFunction = async (
+  id: string,
+  input: Omit<SystemFunctionInput, "id">,
+  projectId?: string
+) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
-	const { data: existing, error: fetchError } = await supabase
+	let fetchQuery = supabase
 		.from("system_functions")
 		.select("entry_points")
-		.eq("id", id)
-		.maybeSingle();
+		.eq("id", id);
+
+	if (projectId) {
+		fetchQuery = fetchQuery.eq("project_id", projectId);
+	}
+
+	const { data: existing, error: fetchError } = await fetchQuery.maybeSingle();
 
 	if (fetchError) return { data: null, error: fetchError.message };
 
@@ -199,10 +228,16 @@ export const updateSystemFunction = async (id: string, input: Omit<SystemFunctio
     updated_at: now,
   };
 
-  const { data, error } = await supabase
+  let updateQuery = supabase
     .from("system_functions")
     .update(payload)
-    .eq("id", id)
+    .eq("id", id);
+
+  if (projectId) {
+    updateQuery = updateQuery.eq("project_id", projectId);
+  }
+
+  const { data, error } = await updateQuery
     .select("*")
     .single();
 
@@ -210,14 +245,20 @@ export const updateSystemFunction = async (id: string, input: Omit<SystemFunctio
   return { data: toSystemFunction(data as SystemFunctionRow), error: null };
 };
 
-export const deleteSystemFunction = async (id: string) => {
+export const deleteSystemFunction = async (id: string, projectId?: string) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
-  const { error } = await supabase
+  let query = supabase
     .from("system_functions")
     .delete()
     .eq("id", id);
+
+  if (projectId) {
+    query = query.eq("project_id", projectId);
+  }
+
+  const { error } = await query;
 
   if (error) return { data: null, error: error.message };
   return { data: true, error: null };

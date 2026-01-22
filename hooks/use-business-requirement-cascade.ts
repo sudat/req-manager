@@ -4,6 +4,7 @@ import { listTasksByBusinessId } from "@/lib/data/tasks"
 import { listBusinessRequirementsByTaskId } from "@/lib/data/business-requirements"
 import type { BusinessRequirement } from "@/lib/data/business-requirements"
 import type { Business, Task } from "@/lib/domain/entities"
+import { useProject } from "@/components/project/project-context"
 
 export interface UseBusinessRequirementCascadeReturn {
 	businesses: Business[]
@@ -29,16 +30,24 @@ export function useBusinessRequirementCascade(): UseBusinessRequirementCascadeRe
 	const [businessReqs, setBusinessReqs] = useState<BusinessRequirement[]>([])
 	const [loading, setLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
+	const { currentProjectId, loading: projectLoading } = useProject()
 
 	// 前回の選択値を追跡（useCallback の依存関係問題を回避）
 	const prevBusinessIdRef = useRef<string | null>(null)
 
 	// ビジネス領域一覧読み込み
 	useEffect(() => {
+		if (projectLoading) return
+		if (!currentProjectId) {
+			setError("プロジェクトが選択されていません")
+			setBusinesses([])
+			setLoading(false)
+			return
+		}
 		let active = true
 		const loadBusinesses = async () => {
 			setLoading(true)
-			const { data, error: err } = await listBusinesses()
+			const { data, error: err } = await listBusinesses(currentProjectId)
 			if (!active) return
 			if (err) {
 				setError(err)
@@ -51,7 +60,7 @@ export function useBusinessRequirementCascade(): UseBusinessRequirementCascadeRe
 		return () => {
 			active = false
 		}
-	}, [])
+	}, [currentProjectId, projectLoading])
 
 	// 業務タスク読み込み
 	useEffect(() => {
@@ -60,10 +69,16 @@ export function useBusinessRequirementCascade(): UseBusinessRequirementCascadeRe
 			setBusinessReqs([])
 			return
 		}
+		if (projectLoading || !currentProjectId) {
+			setError("プロジェクトが選択されていません")
+			setTasks([])
+			setBusinessReqs([])
+			return
+		}
 
 		let active = true
 		const loadTasks = async () => {
-			const { data, error: err } = await listTasksByBusinessId(selectedBusinessId)
+			const { data, error: err } = await listTasksByBusinessId(selectedBusinessId, currentProjectId)
 			if (!active) return
 			if (err) {
 				setError(err)
@@ -75,7 +90,7 @@ export function useBusinessRequirementCascade(): UseBusinessRequirementCascadeRe
 		return () => {
 			active = false
 		}
-	}, [selectedBusinessId])
+	}, [selectedBusinessId, currentProjectId, projectLoading])
 
 	// 業務要件読み込み
 	useEffect(() => {
@@ -83,10 +98,15 @@ export function useBusinessRequirementCascade(): UseBusinessRequirementCascadeRe
 			setBusinessReqs([])
 			return
 		}
+		if (projectLoading || !currentProjectId) {
+			setError("プロジェクトが選択されていません")
+			setBusinessReqs([])
+			return
+		}
 
 		let active = true
 		const loadBusinessReqs = async () => {
-			const { data, error: err } = await listBusinessRequirementsByTaskId(selectedTaskId)
+			const { data, error: err } = await listBusinessRequirementsByTaskId(selectedTaskId, currentProjectId)
 			if (!active) return
 			if (err) {
 				setError(err)
@@ -98,7 +118,7 @@ export function useBusinessRequirementCascade(): UseBusinessRequirementCascadeRe
 		return () => {
 			active = false
 		}
-	}, [selectedTaskId])
+	}, [selectedTaskId, currentProjectId, projectLoading])
 
 	// カスケードクリア付きのセッター（依存関係なし）
 	const selectBusinessId = useCallback((id: string | null) => {

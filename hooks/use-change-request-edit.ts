@@ -28,6 +28,7 @@ import {
 	buildAcceptanceInputs,
 	buildImpactScopeInputs,
 } from "@/lib/data/transformers/acceptance-input-builder";
+import { useProject } from "@/components/project/project-context";
 
 // ========================================
 // Type Definitions
@@ -92,16 +93,23 @@ export function useChangeRequestEdit(
 	const [loading, setLoading] = useState(true);
 	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const { currentProjectId, loading: projectLoading } = useProject();
 
 	// データフェッチ
 	useEffect(() => {
+		if (projectLoading) return;
+		if (!currentProjectId) {
+			setError("プロジェクトが選択されていません");
+			setLoading(false);
+			return;
+		}
 		let active = true;
 
 		async function fetchData(): Promise<void> {
 			setLoading(true);
 
 			// 変更要求を取得
-			const { data, error: fetchError } = await getChangeRequestById(changeRequestId);
+			const { data, error: fetchError } = await getChangeRequestById(changeRequestId, currentProjectId);
 			if (!active) return;
 			if (fetchError || !data) {
 				setError(fetchError ?? "変更要求が見つかりません");
@@ -123,7 +131,10 @@ export function useChangeRequestEdit(
 
 			if (impactScopes && impactScopes.length > 0) {
 				try {
-					const result = await transformImpactScopesToSelectedRequirements(impactScopes);
+					const result = await transformImpactScopesToSelectedRequirements(
+						impactScopes,
+						currentProjectId
+					);
 					if (active) {
 						setSelectedRequirements(result.selectedRequirements);
 					}
@@ -141,12 +152,17 @@ export function useChangeRequestEdit(
 		return () => {
 			active = false;
 		};
-	}, [changeRequestId]);
+	}, [changeRequestId, currentProjectId, projectLoading]);
 
 	// 保存処理
 	const handleSubmit = async (): Promise<void> => {
 		setSubmitting(true);
 		setError(null);
+		if (projectLoading || !currentProjectId) {
+			setError("プロジェクトが選択されていません");
+			setSubmitting(false);
+			return;
+		}
 
 		// 変更要求を更新
 		const { error: updateError } = await updateChangeRequest(changeRequestId, {
@@ -156,7 +172,7 @@ export function useChangeRequestEdit(
 			expectedBenefit: expectedBenefit || null,
 			status,
 			priority,
-		});
+		}, currentProjectId);
 
 		if (updateError) {
 			setError(updateError);

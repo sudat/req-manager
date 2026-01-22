@@ -1,18 +1,20 @@
 "use client"
 
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { ArrowLeft } from "lucide-react";
+import { useProject } from "@/components/project/project-context";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
 import { createSystemDomain, listSystemDomains } from "@/lib/data/system-domains";
+import { requireProjectId } from "@/lib/utils/project";
 
 const domainCodePattern = /^[A-Z_-]+$/;
 
-export default function SystemDomainCreatePage() {
+export default function SystemDomainCreatePage(): JSX.Element {
   const router = useRouter();
   const [domainId, setDomainId] = useState("");
   const [name, setName] = useState("");
@@ -20,11 +22,20 @@ export default function SystemDomainCreatePage() {
   const [sortOrder, setSortOrder] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const { currentProjectId, loading: projectLoading } = useProject();
 
   useEffect(() => {
+    if (
+      !requireProjectId({
+        currentProjectId,
+        projectLoading,
+        onMissing: setError,
+      })
+    )
+      return;
     let active = true;
-    const fetchNextSortOrder = async () => {
-      const { data, error: fetchError } = await listSystemDomains();
+    async function fetchNextSortOrder(): Promise<void> {
+      const { data, error: fetchError } = await listSystemDomains(currentProjectId);
       if (!active) return;
       if (fetchError) {
         setError(fetchError);
@@ -32,26 +43,36 @@ export default function SystemDomainCreatePage() {
       }
       const maxSortOrder = (data ?? []).reduce((max, domain) => Math.max(max, domain.sortOrder ?? 0), 0);
       setSortOrder(maxSortOrder + 1);
-    };
+    }
     fetchNextSortOrder();
     return () => {
       active = false;
     };
-  }, []);
+  }, [currentProjectId, projectLoading]);
 
   const isCodeValid = useMemo(() => domainCodePattern.test(domainId.trim()), [domainId]);
   const canSubmit = useMemo(() => domainId.trim() && name.trim() && isCodeValid, [domainId, name, isCodeValid]);
 
-  const handleSubmit = async (event: FormEvent) => {
+  async function handleSubmit(event: FormEvent): Promise<void> {
     event.preventDefault();
     if (!canSubmit || saving) return;
     setSaving(true);
     setError(null);
+    const projectId = requireProjectId({
+      currentProjectId,
+      projectLoading,
+      onMissing: setError,
+    });
+    if (!projectId) {
+      setSaving(false);
+      return;
+    }
     const { error: saveError } = await createSystemDomain({
       id: domainId.trim(),
       name: name.trim(),
       description: description.trim(),
       sortOrder: Number(sortOrder) || 0,
+      projectId,
     });
     setSaving(false);
     if (saveError) {
@@ -59,7 +80,7 @@ export default function SystemDomainCreatePage() {
       return;
     }
     router.push("/system-domains");
-  };
+  }
 
   return (
     <>

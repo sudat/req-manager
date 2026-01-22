@@ -10,7 +10,7 @@ export interface UseChangeRequestsReturn {
   clearError: () => void;
 }
 
-export function useChangeRequests(): UseChangeRequestsReturn {
+export function useChangeRequests(projectId?: string | null): UseChangeRequestsReturn {
   const [changeRequests, setChangeRequests] = useState<ChangeRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -19,7 +19,13 @@ export function useChangeRequests(): UseChangeRequestsReturn {
     let active = true;
     const fetchData = async () => {
       setLoading(true);
-      const { data, error: fetchError } = await listChangeRequests();
+      if (!projectId) {
+        setError("プロジェクトが選択されていません");
+        setChangeRequests([]);
+        setLoading(false);
+        return;
+      }
+      const { data, error: fetchError } = await listChangeRequests(projectId ?? undefined);
       if (!active) return;
       if (fetchError) {
         setError(fetchError);
@@ -34,10 +40,10 @@ export function useChangeRequests(): UseChangeRequestsReturn {
     return () => {
       active = false;
     };
-  }, []);
+  }, [projectId]);
 
   const deleteRequest = async (id: string, ticketId: string) => {
-    const { error: deleteError } = await deleteChangeRequest(id);
+    const { error: deleteError } = await deleteChangeRequest(id, projectId ?? undefined);
     if (deleteError) {
       setError(`削除に失敗しました: ${deleteError}`);
       return;

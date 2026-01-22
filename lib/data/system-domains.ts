@@ -16,6 +16,10 @@ export type SystemDomainInput = {
   sortOrder: number;
 };
 
+export type SystemDomainCreateInput = SystemDomainInput & {
+  projectId: string;
+};
+
 type SystemDomainRow = {
   id: string;
   name: string;
@@ -49,42 +53,54 @@ const failIfMissingConfig = () => {
   return null;
 };
 
-export const listSystemDomains = async () => {
+export const listSystemDomains = async (projectId?: string) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("system_domains")
     .select("*")
     .order("sort_order")
     .order("id");
 
+  if (projectId) {
+    query = query.eq("project_id", projectId);
+  }
+
+  const { data, error } = await query;
+
   if (error) return { data: null, error: error.message };
   return { data: (data as SystemDomainRow[]).map(toSystemDomain), error: null };
 };
 
-export const getSystemDomainById = async (id: string) => {
+export const getSystemDomainById = async (id: string, projectId?: string) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("system_domains")
     .select("*")
-    .eq("id", id)
-    .maybeSingle();
+    .eq("id", id);
+
+  if (projectId) {
+    query = query.eq("project_id", projectId);
+  }
+
+  const { data, error } = await query.maybeSingle();
 
   if (error) return { data: null, error: error.message };
   if (!data) return { data: null, error: null };
   return { data: toSystemDomain(data as SystemDomainRow), error: null };
 };
 
-export const createSystemDomain = async (input: SystemDomainInput) => {
+export const createSystemDomain = async (input: SystemDomainCreateInput) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
   const now = new Date().toISOString();
   const payload = {
     ...toSystemDomainRow(input),
+    project_id: input.projectId,
     created_at: now,
     updated_at: now,
   };
@@ -99,7 +115,11 @@ export const createSystemDomain = async (input: SystemDomainInput) => {
   return { data: toSystemDomain(data as SystemDomainRow), error: null };
 };
 
-export const updateSystemDomain = async (id: string, input: Omit<SystemDomainInput, "id">) => {
+export const updateSystemDomain = async (
+  id: string,
+  input: Omit<SystemDomainInput, "id">,
+  projectId?: string
+) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
@@ -109,10 +129,16 @@ export const updateSystemDomain = async (id: string, input: Omit<SystemDomainInp
     updated_at: now,
   };
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("system_domains")
     .update(payload)
-    .eq("id", id)
+    .eq("id", id);
+
+  if (projectId) {
+    query = query.eq("project_id", projectId);
+  }
+
+  const { data, error } = await query
     .select("*")
     .single();
 
@@ -120,14 +146,20 @@ export const updateSystemDomain = async (id: string, input: Omit<SystemDomainInp
   return { data: toSystemDomain(data as SystemDomainRow), error: null };
 };
 
-export const deleteSystemDomain = async (id: string) => {
+export const deleteSystemDomain = async (id: string, projectId?: string) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
-  const { error } = await supabase
+  let query = supabase
     .from("system_domains")
     .delete()
     .eq("id", id);
+
+  if (projectId) {
+    query = query.eq("project_id", projectId);
+  }
+
+  const { error } = await query;
 
   if (error) return { data: null, error: error.message };
   return { data: true, error: null };

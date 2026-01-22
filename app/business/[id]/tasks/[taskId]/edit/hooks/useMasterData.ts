@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { useProject } from "@/components/project/project-context";
 
 export type MasterDataItem = { id: string; name: string };
 
@@ -24,16 +25,21 @@ export function useMasterData(): UseMasterDataResult {
 	const [systemDomains, setSystemDomains] = useState<MasterDataItem[]>([]);
 	const [optionsError, setOptionsError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
+	const { currentProjectId, loading: projectLoading } = useProject();
 
 	useEffect(() => {
 		let active = true;
 
 		async function loadMasterData(): Promise<void> {
 			try {
+				if (projectLoading || !currentProjectId) {
+					setOptionsError("プロジェクトが選択されていません");
+					return;
+				}
 				const [conceptResult, srfResult, domainResult] = await Promise.all([
-					import("@/lib/data/concepts").then((m) => m.listConcepts()),
-					import("@/lib/data/system-functions").then((m) => m.listSystemFunctions()),
-					import("@/lib/data/system-domains").then((m) => m.listSystemDomains()),
+					import("@/lib/data/concepts").then((m) => m.listConcepts(currentProjectId)),
+					import("@/lib/data/system-functions").then((m) => m.listSystemFunctions(currentProjectId)),
+					import("@/lib/data/system-domains").then((m) => m.listSystemDomains(currentProjectId)),
 				]);
 
 				if (!active) return;
@@ -71,7 +77,7 @@ export function useMasterData(): UseMasterDataResult {
 		return () => {
 			active = false;
 		};
-	}, []);
+	}, [currentProjectId, projectLoading]);
 
 	const conceptMap = useMemo(() => new Map(concepts.map((c) => [c.id, c.name])), [concepts]);
 	const systemFunctionMap = useMemo(

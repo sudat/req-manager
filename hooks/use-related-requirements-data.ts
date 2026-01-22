@@ -6,6 +6,7 @@ import { listBusinessRequirementsByTaskIds } from "@/lib/data/business-requireme
 import { listConcepts } from "@/lib/data/concepts";
 import { listSystemRequirementsBySrfId } from "@/lib/data/system-requirements";
 import { listTasksByIds } from "@/lib/data/tasks";
+import { useProject } from "@/components/project/project-context";
 import {
 	buildRelatedRequirements,
 	buildSysReqToBizReqsMap,
@@ -32,15 +33,22 @@ export function useRelatedRequirementsData(
 	const [relatedRequirements, setRelatedRequirements] = useState<RelatedRequirementInfo[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const { currentProjectId, loading: projectLoading } = useProject();
 
 	useEffect(() => {
+		if (projectLoading) return;
+		if (!currentProjectId) {
+			setError("プロジェクトが選択されていません");
+			setLoading(false);
+			return;
+		}
 		let active = true;
 
 		async function fetchData(): Promise<void> {
 			setLoading(true);
 
 			// 1. システム要件を取得
-			const { data: sysReqs, error: sysError } = await listSystemRequirementsBySrfId(srfId);
+			const { data: sysReqs, error: sysError } = await listSystemRequirementsBySrfId(srfId, currentProjectId);
 			if (!active) return;
 			if (sysError) {
 				setError(sysError);
@@ -57,7 +65,7 @@ export function useRelatedRequirementsData(
 
 			// 2. タスクIDを抽出して業務要件を取得
 			const taskIds = Array.from(new Set(reqs.map((req) => req.taskId)));
-			const { data: bizReqs, error: bizError } = await listBusinessRequirementsByTaskIds(taskIds);
+			const { data: bizReqs, error: bizError } = await listBusinessRequirementsByTaskIds(taskIds, currentProjectId);
 			if (!active) return;
 			if (bizError) {
 				setError(bizError);
@@ -68,8 +76,8 @@ export function useRelatedRequirementsData(
 
 			// 3. タスクとコンセプトを並行取得
 			const [taskResult, conceptResult] = await Promise.all([
-				listTasksByIds(taskIds),
-				listConcepts(),
+				listTasksByIds(taskIds, currentProjectId),
+				listConcepts(currentProjectId),
 			]);
 			if (!active) return;
 
@@ -108,7 +116,7 @@ export function useRelatedRequirementsData(
 		return () => {
 			active = false;
 		};
-	}, [srfId]);
+	}, [srfId, currentProjectId, projectLoading]);
 
 	return {
 		relatedRequirements,

@@ -11,6 +11,10 @@ export type ConceptInput = {
   requirementCount: number;
 };
 
+export type ConceptCreateInput = ConceptInput & {
+  projectId: string;
+};
+
 type ConceptRow = {
   id: string;
   name: string;
@@ -53,41 +57,53 @@ const failIfMissingConfig = () => {
   return null;
 };
 
-export const listConcepts = async () => {
+export const listConcepts = async (projectId?: string) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("concepts")
     .select("*")
     .order("id");
+
+  if (projectId) {
+    query = query.eq("project_id", projectId);
+  }
+
+  const { data, error } = await query;
 
   if (error) return { data: null, error: error.message };
   return { data: (data as ConceptRow[]).map(toConcept), error: null };
 };
 
-export const getConceptById = async (id: string) => {
+export const getConceptById = async (id: string, projectId?: string) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("concepts")
     .select("*")
-    .eq("id", id)
-    .maybeSingle();
+    .eq("id", id);
+
+  if (projectId) {
+    query = query.eq("project_id", projectId);
+  }
+
+  const { data, error } = await query.maybeSingle();
 
   if (error) return { data: null, error: error.message };
   if (!data) return { data: null, error: null };
   return { data: toConcept(data as ConceptRow), error: null };
 };
 
-export const createConcept = async (input: ConceptInput) => {
+export const createConcept = async (input: ConceptCreateInput) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
   const now = new Date().toISOString();
   const payload = {
     ...toConceptRow(input),
+    project_id: input.projectId,
     created_at: now,
     updated_at: now,
   };
@@ -102,7 +118,11 @@ export const createConcept = async (input: ConceptInput) => {
   return { data: toConcept(data as ConceptRow), error: null };
 };
 
-export const updateConcept = async (id: string, input: Omit<ConceptInput, "id">) => {
+export const updateConcept = async (
+  id: string,
+  input: Omit<ConceptInput, "id">,
+  projectId?: string
+) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
@@ -112,10 +132,16 @@ export const updateConcept = async (id: string, input: Omit<ConceptInput, "id">)
     updated_at: now,
   };
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("concepts")
     .update(payload)
-    .eq("id", id)
+    .eq("id", id);
+
+  if (projectId) {
+    query = query.eq("project_id", projectId);
+  }
+
+  const { data, error } = await query
     .select("*")
     .single();
 
@@ -123,14 +149,20 @@ export const updateConcept = async (id: string, input: Omit<ConceptInput, "id">)
   return { data: toConcept(data as ConceptRow), error: null };
 };
 
-export const deleteConcept = async (id: string) => {
+export const deleteConcept = async (id: string, projectId?: string) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
-  const { error } = await supabase
+  let query = supabase
     .from("concepts")
     .delete()
     .eq("id", id);
+
+  if (projectId) {
+    query = query.eq("project_id", projectId);
+  }
+
+  const { error } = await query;
 
   if (error) return { data: null, error: error.message };
   return { data: true, error: null };

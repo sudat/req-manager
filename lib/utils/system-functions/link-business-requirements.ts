@@ -10,7 +10,8 @@ import type { BusinessRequirement } from "@/lib/data/business-requirements";
  */
 export async function linkBusinessRequirements(
 	systemRequirements: SystemRequirementCard[],
-	businessRequirements: BusinessRequirement[]
+	businessRequirements: BusinessRequirement[],
+	projectId: string
 ): Promise<string | null> {
 	for (const sysReq of systemRequirements) {
 		for (const bizReqId of sysReq.businessRequirementIds) {
@@ -31,7 +32,7 @@ export async function linkBusinessRequirements(
 					relatedSystemRequirementIds: updatedIds,
 					acceptanceCriteria: bizReq.acceptanceCriteria,
 					sortOrder: bizReq.sortOrder,
-				});
+				}, projectId);
 				if (error) return error;
 			}
 		}

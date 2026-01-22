@@ -7,11 +7,13 @@ import { ChangeRequestListToolbar } from "@/components/tickets/change-request-li
 import { ChangeRequestTable } from "@/components/tickets/change-request-table";
 import { useChangeRequests } from "@/hooks/use-change-requests";
 import { useChangeRequestFilters } from "@/hooks/use-change-request-filters";
+import { useProject } from "@/components/project/project-context";
 import { confirmDelete } from "@/lib/ui/confirm";
 
 export default function TicketsPage() {
   const router = useRouter();
-  const { changeRequests, loading, error, deleteRequest, clearError } = useChangeRequests();
+  const { currentProjectId } = useProject();
+  const { changeRequests, loading, error, deleteRequest, clearError } = useChangeRequests(currentProjectId);
 
   const {
     searchQuery,

@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, Info, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { useProject } from "@/components/project/project-context";
 import { createChangeRequest } from "@/lib/data/change-requests";
 import { ImpactScopeSelector, type SelectedRequirement } from "@/components/tickets/impact-scope-selector";
 import { createImpactScopes } from "@/lib/data/impact-scopes";
@@ -19,11 +20,17 @@ export default function TicketCreatePage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedRequirements, setSelectedRequirements] = useState<SelectedRequirement[]>([]);
+  const { currentProjectId, loading: projectLoading } = useProject();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
+    if (projectLoading || !currentProjectId) {
+      setError("プロジェクトが選択されていません");
+      setSubmitting(false);
+      return;
+    }
 
     const formData = new FormData(e.currentTarget);
     const ticketId = `CR-${String(Date.now()).slice(-6)}`;
@@ -38,6 +45,7 @@ export default function TicketCreatePage() {
       status: "open",
       priority: "medium",
       requestedBy: "システム",
+      projectId: currentProjectId,
     });
 
     if (createError || !changeRequest) {

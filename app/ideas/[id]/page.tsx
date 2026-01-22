@@ -12,6 +12,7 @@ import type { Concept } from "@/lib/domain";
 import { getConceptById, deleteConcept } from "@/lib/data/concepts";
 import { CardSkeleton, PageHeaderSkeleton } from "@/components/skeleton";
 import { confirmDelete } from "@/lib/ui/confirm";
+import { useProject } from "@/components/project/project-context";
 
 export default function IdeaDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -19,12 +20,20 @@ export default function IdeaDetailPage({ params }: { params: Promise<{ id: strin
   const [concept, setConcept] = useState<Concept | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const { currentProjectId, loading: projectLoading } = useProject();
 
   useEffect(() => {
+    if (projectLoading) return;
+    if (!currentProjectId) {
+      setError("プロジェクトが選択されていません");
+      setConcept(null);
+      setLoading(false);
+      return;
+    }
     let active = true;
     const fetchData = async () => {
       setLoading(true);
-      const { data, error: fetchError } = await getConceptById(id);
+      const { data, error: fetchError } = await getConceptById(id, currentProjectId);
       if (!active) return;
       if (fetchError) {
         setError(fetchError);
@@ -39,14 +48,18 @@ export default function IdeaDetailPage({ params }: { params: Promise<{ id: strin
     return () => {
       active = false;
     };
-  }, [id]);
+  }, [id, currentProjectId, projectLoading]);
 
   const relatedRequirements = useMemo(() => getRelatedRequirements(id), [id]);
 
   const handleDelete = async () => {
     if (!concept) return;
     if (!confirmDelete(`${concept.name}（${concept.id}）`)) return;
-    const { error: deleteError } = await deleteConcept(concept.id);
+    if (projectLoading || !currentProjectId) {
+      alert("プロジェクトが選択されていません");
+      return;
+    }
+    const { error: deleteError } = await deleteConcept(concept.id, currentProjectId);
     if (deleteError) {
       alert(deleteError);
       return;

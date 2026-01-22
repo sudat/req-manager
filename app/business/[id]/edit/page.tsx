@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { getBusinessById, updateBusiness } from "@/lib/data/businesses";
+import { useProject } from "@/components/project/project-context";
 import type { Business } from "@/lib/domain";
 
 const areaPattern = /^[A-Z_-]+$/;
@@ -24,12 +25,20 @@ export default function BusinessEditPage({ params }: { params: Promise<{ id: str
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const { currentProjectId, loading: projectLoading } = useProject();
 
   useEffect(() => {
+    if (projectLoading) return;
+    if (!currentProjectId) {
+      setError("プロジェクトが選択されていません");
+      setBusiness(null);
+      setLoading(false);
+      return;
+    }
     let active = true;
     const fetchData = async () => {
       setLoading(true);
-      const { data, error: fetchError } = await getBusinessById(id);
+      const { data, error: fetchError } = await getBusinessById(id, currentProjectId);
       if (!active) return;
       if (fetchError) {
         setError(fetchError);
@@ -49,7 +58,7 @@ export default function BusinessEditPage({ params }: { params: Promise<{ id: str
     return () => {
       active = false;
     };
-  }, [id]);
+  }, [id, currentProjectId, projectLoading]);
 
   const isAreaValid = useMemo(() => areaPattern.test(area.trim()), [area]);
   const canSubmit = useMemo(() => name.trim().length > 0 && isAreaValid, [name, isAreaValid]);
@@ -58,11 +67,16 @@ export default function BusinessEditPage({ params }: { params: Promise<{ id: str
     event.preventDefault();
     if (!canSubmit) return;
     setSaving(true);
+    if (projectLoading || !currentProjectId) {
+      setError("プロジェクトが選択されていません");
+      setSaving(false);
+      return;
+    }
     const { error: saveError } = await updateBusiness(id, {
       name: name.trim(),
       area: area.trim(),
       summary: summary.trim(),
-    });
+    }, currentProjectId);
     setSaving(false);
     if (saveError) {
       setError(saveError);

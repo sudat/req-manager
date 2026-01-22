@@ -42,6 +42,10 @@ export type BusinessRequirementInput = {
 	sortOrder: number;
 };
 
+export type BusinessRequirementCreateInput = BusinessRequirementInput & {
+	projectId: string;
+};
+
 type BusinessRequirementRow = {
 	id: string;
 	task_id: string;
@@ -112,42 +116,52 @@ const failIfMissingConfig = () => {
   return null;
 };
 
-export const listBusinessRequirementsByTaskId = async (taskId: string) => {
+export const listBusinessRequirementsByTaskId = async (taskId: string, projectId?: string) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("business_requirements")
     .select("*")
     .eq("task_id", taskId)
     .order("sort_order")
     .order("id");
 
+  if (projectId) {
+    query = query.eq("project_id", projectId);
+  }
+
+  const { data, error } = await query;
   if (error) return { data: null, error: error.message };
   return { data: (data as BusinessRequirementRow[]).map(toBusinessRequirement), error: null };
 };
 
-export const listBusinessRequirementsByIds = async (ids: string[]) => {
+export const listBusinessRequirementsByIds = async (ids: string[], projectId?: string) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
   if (ids.length === 0) return { data: [], error: null };
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("business_requirements")
     .select("*")
     .in("id", ids)
     .order("id");
 
+  if (projectId) {
+    query = query.eq("project_id", projectId);
+  }
+
+  const { data, error } = await query;
   if (error) return { data: null, error: error.message };
   return { data: (data as BusinessRequirementRow[]).map(toBusinessRequirement), error: null };
 };
 
-export const listBusinessRequirementsByTaskIds = async (taskIds: string[]) => {
+export const listBusinessRequirementsByTaskIds = async (taskIds: string[], projectId?: string) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
   if (taskIds.length === 0) return { data: [], error: null };
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("business_requirements")
     .select("*")
     .in("task_id", taskIds)
@@ -155,11 +169,16 @@ export const listBusinessRequirementsByTaskIds = async (taskIds: string[]) => {
     .order("sort_order")
     .order("id");
 
+  if (projectId) {
+    query = query.eq("project_id", projectId);
+  }
+
+  const { data, error } = await query;
   if (error) return { data: null, error: error.message };
   return { data: (data as BusinessRequirementRow[]).map(toBusinessRequirement), error: null };
 };
 
-export const createBusinessRequirements = async (inputs: BusinessRequirementInput[]) => {
+export const createBusinessRequirements = async (inputs: BusinessRequirementCreateInput[]) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
   if (inputs.length === 0) return { data: [], error: null };
@@ -172,6 +191,7 @@ export const createBusinessRequirements = async (inputs: BusinessRequirementInpu
 
 		return {
 			...toBusinessRequirementRowBase(input),
+			project_id: input.projectId,
 		priority: input.priority ?? "Must",
 		acceptance_criteria_json: acceptanceCriteriaJson,
 		acceptance_criteria: acceptanceCriteriaJsonToLegacy(acceptanceCriteriaJson),
@@ -189,15 +209,24 @@ export const createBusinessRequirements = async (inputs: BusinessRequirementInpu
   return { data: (data as BusinessRequirementRow[]).map(toBusinessRequirement), error: null };
 };
 
-export const updateBusinessRequirement = async (id: string, input: Omit<BusinessRequirementInput, "id">) => {
+export const updateBusinessRequirement = async (
+  id: string,
+  input: Omit<BusinessRequirementInput, "id">,
+  projectId?: string
+) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
-	const { data: existing, error: fetchError } = await supabase
+	let fetchQuery = supabase
 		.from("business_requirements")
 		.select("priority, acceptance_criteria_json")
-		.eq("id", id)
-		.maybeSingle();
+		.eq("id", id);
+
+	if (projectId) {
+		fetchQuery = fetchQuery.eq("project_id", projectId);
+	}
+
+	const { data: existing, error: fetchError } = await fetchQuery.maybeSingle();
 
 	if (fetchError) return { data: null, error: fetchError.message };
 
@@ -221,10 +250,16 @@ export const updateBusinessRequirement = async (id: string, input: Omit<Business
     updated_at: now,
   };
 
-  const { data, error } = await supabase
+  let updateQuery = supabase
     .from("business_requirements")
     .update(payload)
-    .eq("id", id)
+    .eq("id", id);
+
+  if (projectId) {
+    updateQuery = updateQuery.eq("project_id", projectId);
+  }
+
+  const { data, error } = await updateQuery
     .select("*")
     .single();
 
@@ -232,30 +267,41 @@ export const updateBusinessRequirement = async (id: string, input: Omit<Business
   return { data: toBusinessRequirement(data as BusinessRequirementRow), error: null };
 };
 
-export const deleteBusinessRequirement = async (id: string) => {
+export const deleteBusinessRequirement = async (id: string, projectId?: string) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
-  const { error } = await supabase
+  let query = supabase
     .from("business_requirements")
     .delete()
     .eq("id", id);
+
+  if (projectId) {
+    query = query.eq("project_id", projectId);
+  }
+
+  const { error } = await query;
 
   if (error) return { data: null, error: error.message };
   return { data: true, error: null };
 };
 
-export const listBusinessRequirements = async () => {
+export const listBusinessRequirements = async (projectId?: string) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("business_requirements")
     .select("*")
     .order("task_id")
     .order("sort_order")
     .order("id");
 
+  if (projectId) {
+    query = query.eq("project_id", projectId);
+  }
+
+  const { data, error } = await query;
   if (error) return { data: null, error: error.message };
   return { data: (data as BusinessRequirementRow[]).map(toBusinessRequirement), error: null };
 };

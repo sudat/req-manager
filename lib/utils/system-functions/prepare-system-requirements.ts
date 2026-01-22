@@ -1,4 +1,4 @@
-import type { SystemRequirementInput } from "@/lib/data/system-requirements";
+import type { SystemRequirementCreateInput } from "@/lib/data/system-requirements";
 import type { SystemRequirementCard } from "@/app/system-domains/[id]/create/types";
 import type { BusinessRequirement } from "@/lib/data/business-requirements";
 
@@ -12,8 +12,9 @@ import type { BusinessRequirement } from "@/lib/data/business-requirements";
 export function prepareSystemRequirementInputs(
 	systemRequirements: SystemRequirementCard[],
 	businessRequirements: BusinessRequirement[],
-	srfId: string
-): SystemRequirementInput[] {
+	srfId: string,
+	projectId: string
+): SystemRequirementCreateInput[] {
 	return systemRequirements.map((sr, index) => {
 		// 最初に選択された業務要件からtaskIdを取得
 		const firstBizReq =
@@ -35,6 +36,7 @@ export function prepareSystemRequirementInputs(
 			acceptanceCriteria: [],
 			systemDomainIds: [],
 			sortOrder: index + 1,
+			projectId,
 		};
 	});
 }

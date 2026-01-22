@@ -16,6 +16,7 @@ import {
 	type SystemRequirement,
 } from "@/lib/data/system-requirements";
 import { getTaskById } from "@/lib/data/tasks";
+import { useProject } from "@/components/project/project-context";
 import type {
 	Concept,
 	SystemFunction,
@@ -65,6 +66,7 @@ export function useTaskDetail({
 		() => createEmptyTaskKnowledge(bizId, taskId),
 		[bizId, taskId],
 	);
+	const { currentProjectId, loading: projectLoading } = useProject();
 
 	const [knowledge] = useState<TaskKnowledge>(() => {
 		if (typeof window === "undefined") return defaultKnowledge;
@@ -81,7 +83,12 @@ export function useTaskDetail({
 	});
 
 	// タスク取得
-	const fetchTask = useCallback(() => getTaskById(taskId), [taskId]);
+	const fetchTask = useCallback(() => {
+		if (!currentProjectId) {
+			return Promise.resolve({ data: null, error: "プロジェクトが選択されていません" });
+		}
+		return getTaskById(taskId, currentProjectId);
+	}, [taskId, currentProjectId]);
 	const {
 		data: task,
 		loading: taskLoading,
@@ -90,8 +97,13 @@ export function useTaskDetail({
 
 	// 業務要件取得
 	const fetchBusinessRequirements = useCallback(
-		() => listBusinessRequirementsByTaskId(taskId),
-		[taskId],
+		() => {
+			if (!currentProjectId) {
+				return Promise.resolve({ data: null, error: "プロジェクトが選択されていません" });
+			}
+			return listBusinessRequirementsByTaskId(taskId, currentProjectId);
+		},
+		[taskId, currentProjectId],
 	);
 	const {
 		data: businessRequirements,
@@ -101,8 +113,13 @@ export function useTaskDetail({
 
 	// システム要件取得
 	const fetchSystemRequirements = useCallback(
-		() => listSystemRequirementsByTaskId(taskId),
-		[taskId],
+		() => {
+			if (!currentProjectId) {
+				return Promise.resolve({ data: null, error: "プロジェクトが選択されていません" });
+			}
+			return listSystemRequirementsByTaskId(taskId, currentProjectId);
+		},
+		[taskId, currentProjectId],
 	);
 	const {
 		data: systemRequirements,
@@ -123,10 +140,15 @@ export function useTaskDetail({
 		optionsActiveRef.current = true;
 
 		async function fetchOptions(): Promise<void> {
+			if (projectLoading || !currentProjectId) {
+				setOptionsError("プロジェクトが選択されていません");
+				setOptionsLoading(false);
+				return;
+			}
 			const [conceptResult, srfResult, domainResult] = await Promise.all([
-				listConcepts(),
-				listSystemFunctions(),
-				listSystemDomains(),
+				listConcepts(currentProjectId),
+				listSystemFunctions(currentProjectId),
+				listSystemDomains(currentProjectId),
 			]);
 			if (!optionsActiveRef.current) return;
 
@@ -150,7 +172,7 @@ export function useTaskDetail({
 		return () => {
 			optionsActiveRef.current = false;
 		};
-	}, []);
+	}, [currentProjectId, projectLoading]);
 
 	const conceptMap = useMemo(
 		() => new Map(concepts.map((c) => [c.id, c.name])),

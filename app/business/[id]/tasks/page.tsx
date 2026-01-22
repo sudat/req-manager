@@ -28,6 +28,7 @@ import { stripMarkdown } from "@/lib/utils";
 import { TableSkeleton } from "@/components/skeleton";
 import { getBusinessById } from "@/lib/data/businesses";
 import { confirmDelete } from "@/lib/ui/confirm";
+import { useProject } from "@/components/project/project-context";
 
 export default function BusinessTasksPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -37,18 +38,27 @@ export default function BusinessTasksPage({ params }: { params: Promise<{ id: st
   const [query, setQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const { currentProjectId, loading: projectLoading } = useProject();
 
   const handleRowClick = (taskId: string) => {
     router.push(`/business/${id}/tasks/${taskId}`);
   };
 
   useEffect(() => {
+    if (projectLoading) return;
+    if (!currentProjectId) {
+      setError("プロジェクトが選択されていません");
+      setItems([]);
+      setBusinessArea(null);
+      setLoading(false);
+      return;
+    }
     let active = true;
     const fetchData = async () => {
       setLoading(true);
       const [{ data: taskRows, error: taskError }, { data: business, error: businessError }] = await Promise.all([
-        listTasksByBusinessId(id),
-        getBusinessById(id),
+        listTasksByBusinessId(id, currentProjectId),
+        getBusinessById(id, currentProjectId),
       ]);
       if (!active) return;
       const mergedError = taskError ?? businessError;
@@ -67,7 +77,7 @@ export default function BusinessTasksPage({ params }: { params: Promise<{ id: st
     return () => {
       active = false;
     };
-  }, [id]);
+  }, [id, currentProjectId, projectLoading]);
 
   const filtered = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -89,7 +99,7 @@ export default function BusinessTasksPage({ params }: { params: Promise<{ id: st
 
   const handleDelete = async (task: Task) => {
     if (!confirmDelete(`${task.name}（${task.id}）`)) return;
-    const { error: deleteError } = await deleteTask(task.id);
+    const { error: deleteError } = await deleteTask(task.id, currentProjectId ?? undefined);
     if (deleteError) {
       alert(deleteError);
       return;

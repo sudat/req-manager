@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cookies } from "next/headers";
 import { MobileHeader } from "@/components/layout/mobile-header";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Pencil } from "lucide-react";
@@ -18,9 +19,12 @@ import { TicketBasicInfoCard } from "@/components/tickets/ticket-basic-info-card
 import { TicketImpactCard } from "@/components/tickets/ticket-impact-card";
 import { AcceptanceConfirmationPanel } from "@/components/tickets/acceptance-confirmation-panel";
 
+const DEFAULT_PROJECT_ID = "00000000-0000-0000-0000-000000000001";
+
 export default async function TicketDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { data: changeRequest, error } = await getChangeRequestById(id);
+  const projectId = cookies().get("current-project-id")?.value ?? DEFAULT_PROJECT_ID;
+  const { data: changeRequest, error } = await getChangeRequestById(id, projectId);
 
   if (error || !changeRequest) {
     notFound();

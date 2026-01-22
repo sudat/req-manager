@@ -8,6 +8,10 @@ export type BusinessInput = {
   summary: string;
 };
 
+export type BusinessCreateInput = BusinessInput & {
+  projectId: string;
+};
+
 type BusinessRow = {
   id: string;
   name: string;
@@ -51,41 +55,53 @@ const failIfMissingConfig = () => {
   return null;
 };
 
-export const listBusinesses = async () => {
+export const listBusinesses = async (projectId?: string) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("business_domains")
     .select("*")
     .order("id");
+
+  if (projectId) {
+    query = query.eq("project_id", projectId);
+  }
+
+  const { data, error } = await query;
 
   if (error) return { data: null, error: error.message };
   return { data: (data as BusinessRow[]).map(toBusiness), error: null };
 };
 
-export const getBusinessById = async (id: string) => {
+export const getBusinessById = async (id: string, projectId?: string) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("business_domains")
     .select("*")
-    .eq("id", id)
-    .maybeSingle();
+    .eq("id", id);
+
+  if (projectId) {
+    query = query.eq("project_id", projectId);
+  }
+
+  const { data, error } = await query.maybeSingle();
 
   if (error) return { data: null, error: error.message };
   if (!data) return { data: null, error: null };
   return { data: toBusiness(data as BusinessRow), error: null };
 };
 
-export const createBusiness = async (input: BusinessInput) => {
+export const createBusiness = async (input: BusinessCreateInput) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
   const now = new Date().toISOString();
   const payload = {
     ...toBusinessRow(input),
+    project_id: input.projectId,
     created_at: now,
     updated_at: now,
   };
@@ -100,7 +116,11 @@ export const createBusiness = async (input: BusinessInput) => {
   return { data: toBusiness(data as BusinessRow), error: null };
 };
 
-export const updateBusiness = async (id: string, input: Partial<Omit<BusinessInput, "id">>) => {
+export const updateBusiness = async (
+  id: string,
+  input: Partial<Omit<BusinessInput, "id">>,
+  projectId?: string
+) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
@@ -110,10 +130,16 @@ export const updateBusiness = async (id: string, input: Partial<Omit<BusinessInp
     updated_at: now,
   };
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("business_domains")
     .update(payload)
-    .eq("id", id)
+    .eq("id", id);
+
+  if (projectId) {
+    query = query.eq("project_id", projectId);
+  }
+
+  const { data, error } = await query
     .select("*")
     .single();
 
@@ -121,27 +147,39 @@ export const updateBusiness = async (id: string, input: Partial<Omit<BusinessInp
   return { data: toBusiness(data as BusinessRow), error: null };
 };
 
-export const deleteBusiness = async (id: string) => {
+export const deleteBusiness = async (id: string, projectId?: string) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
-  const { error } = await supabase
+  let query = supabase
     .from("business_domains")
     .delete()
     .eq("id", id);
+
+  if (projectId) {
+    query = query.eq("project_id", projectId);
+  }
+
+  const { error } = await query;
 
   if (error) return { data: null, error: error.message };
   return { data: true, error: null };
 };
 
-export const listBusinessesWithRequirementCounts = async () => {
+export const listBusinessesWithRequirementCounts = async (projectId?: string) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
-  const { data: businesses, error: bizError } = await supabase
+  let query = supabase
     .from("business_domains")
     .select("id")
     .order("id");
+
+  if (projectId) {
+    query = query.eq("project_id", projectId);
+  }
+
+  const { data: businesses, error: bizError } = await query;
 
   if (bizError) return { data: null, error: bizError.message };
   if (!businesses || businesses.length === 0) return { data: [], error: null };
@@ -158,7 +196,7 @@ export const listBusinessesWithRequirementCounts = async () => {
   const taskIds = tasks?.map((t) => t.id) ?? [];
 
   if (taskIds.length === 0) {
-    const { data: fullBusinesses, error: fullError } = await listBusinesses();
+    const { data: fullBusinesses, error: fullError } = await listBusinesses(projectId);
     if (fullError || !fullBusinesses) return { data: null, error: fullError ?? "Unknown error" };
 
     const result = fullBusinesses.map((biz) => ({
@@ -210,7 +248,7 @@ export const listBusinessesWithRequirementCounts = async () => {
     }
   });
 
-  const { data: fullBusinesses, error: fullError } = await listBusinesses();
+  const { data: fullBusinesses, error: fullError } = await listBusinesses(projectId);
   if (fullError || !fullBusinesses) return { data: null, error: fullError ?? "Unknown error" };
 
   const result = fullBusinesses.map((biz) => ({

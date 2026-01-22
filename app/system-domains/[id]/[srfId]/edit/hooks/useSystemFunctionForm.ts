@@ -10,6 +10,7 @@ import { fromSystemRequirement } from "@/lib/data/requirement-mapper";
 import { deleteSystemRequirementsBySrfId, createSystemRequirements, updateSystemRequirement } from "@/lib/data/system-requirements";
 import { listBusinessRequirementsByIds } from "@/lib/data/business-requirements";
 import { linkBusinessRequirements } from "@/lib/utils/system-functions/link-business-requirements";
+import { useProject } from "@/components/project/project-context";
 import type { SystemRequirementCard } from "@/app/system-domains/[id]/create/types";
 import type {
 	SystemFunction,
@@ -164,14 +165,21 @@ export function useSystemFunctionForm(srfId: string): {
 
 	// システム要件
 	const [systemRequirements, setSystemRequirements] = useState<Requirement[]>([]);
+	const { currentProjectId, loading: projectLoading } = useProject();
 
 	// データ読み込み
 	useEffect(() => {
+		if (projectLoading || !currentProjectId) {
+			setError("プロジェクトが選択されていません");
+			setExistingSrf(null);
+			setLoading(false);
+			return;
+		}
 		let active = true;
 
 		async function fetchData(): Promise<void> {
 			setLoading(true);
-			const { data, error: fetchError } = await getSystemFunctionById(srfId);
+			const { data, error: fetchError } = await getSystemFunctionById(srfId, currentProjectId);
 
 			if (!active) return;
 
@@ -193,7 +201,7 @@ export function useSystemFunctionForm(srfId: string): {
 			}
 
 			// システム要件をロード
-			const { data: sysReqs, error: sysReqError } = await listSystemRequirementsBySrfId(srfId);
+			const { data: sysReqs, error: sysReqError } = await listSystemRequirementsBySrfId(srfId, currentProjectId);
 			if (!active) return;
 
 			if (sysReqError) {
@@ -209,7 +217,7 @@ export function useSystemFunctionForm(srfId: string): {
 		return () => {
 			active = false;
 		};
-	}, [srfId]);
+	}, [srfId, currentProjectId, projectLoading]);
 
 	// 設計項目を追加
 	const addDesignItem = useCallback((): void => {
@@ -309,6 +317,10 @@ export function useSystemFunctionForm(srfId: string): {
 	const save = useCallback(
 		async (systemDomainId: string): Promise<boolean> => {
 			if (!existingSrf) return false;
+			if (projectLoading || !currentProjectId) {
+				setError("プロジェクトが選択されていません");
+				return false;
+			}
 
 			const entryValidationError = validateEntryPoints(entryPoints);
 			if (entryValidationError) {
@@ -335,7 +347,7 @@ export function useSystemFunctionForm(srfId: string): {
 				systemDesign,
 				entryPoints: normalizedEntryPoints,
 				codeRefs,
-			});
+			}, currentProjectId);
 
 			if (saveError) {
 				setError(saveError);
@@ -344,7 +356,7 @@ export function useSystemFunctionForm(srfId: string): {
 			}
 
 			// システム要件を保存：一旦削除して再作成
-			await deleteSystemRequirementsBySrfId(srfId);
+			await deleteSystemRequirementsBySrfId(srfId, currentProjectId);
 
 			if (systemRequirements.length > 0) {
 				const sysReqInputs = systemRequirements.map((req, index) => ({
@@ -361,6 +373,7 @@ export function useSystemFunctionForm(srfId: string): {
 					acceptanceCriteria: req.acceptanceCriteria,
 					systemDomainIds: req.systemDomainIds,
 					sortOrder: index,
+					projectId: currentProjectId,
 				}));
 
 				const { error: sysReqError } = await createSystemRequirements(sysReqInputs);
@@ -381,7 +394,7 @@ export function useSystemFunctionForm(srfId: string): {
 			if (relatedBizReqIds.length > 0) {
 				// 業務要件を取得
 				const { data: relatedBizReqs, error: bizFetchError } =
-					await listBusinessRequirementsByIds(relatedBizReqIds);
+					await listBusinessRequirementsByIds(relatedBizReqIds, currentProjectId);
 
 				if (!bizFetchError && relatedBizReqs && relatedBizReqs.length > 0) {
 					// SystemRequirementCard型に変換
@@ -396,7 +409,7 @@ export function useSystemFunctionForm(srfId: string): {
 						}));
 
 					// 双方向参照を同期
-					const linkError = await linkBusinessRequirements(sysReqCards, relatedBizReqs);
+					const linkError = await linkBusinessRequirements(sysReqCards, relatedBizReqs, currentProjectId);
 					if (linkError) {
 						setError(`双方向参照同期エラー: ${linkError}`);
 						setSaving(false);
@@ -419,6 +432,8 @@ export function useSystemFunctionForm(srfId: string): {
 			entryPoints,
 			codeRefs,
 			systemRequirements,
+			currentProjectId,
+			projectLoading,
 		],
 	);
 

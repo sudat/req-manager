@@ -13,6 +13,10 @@ export type TaskInput = {
   sortOrder: number;
 };
 
+export type TaskCreateInput = TaskInput & {
+  projectId: string;
+};
+
 type TaskRow = {
   id: string;
   business_id: string;
@@ -63,71 +67,93 @@ const failIfMissingConfig = () => {
   return null;
 };
 
-export const listTasks = async () => {
+export const listTasks = async (projectId?: string) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("business_tasks")
     .select("*")
     .order("id");
+
+  if (projectId) {
+    query = query.eq("project_id", projectId);
+  }
+
+  const { data, error } = await query;
 
   if (error) return { data: null, error: error.message };
   return { data: (data as TaskRow[]).map(toTask), error: null };
 };
 
-export const listTasksByBusinessId = async (businessId: string) => {
+export const listTasksByBusinessId = async (businessId: string, projectId?: string) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("business_tasks")
     .select("*")
     .eq("business_id", businessId)
     .order("sort_order")
     .order("id");
 
+  if (projectId) {
+    query = query.eq("project_id", projectId);
+  }
+
+  const { data, error } = await query;
   if (error) return { data: null, error: error.message };
   return { data: (data as TaskRow[]).map(toTask), error: null };
 };
 
-export const listTasksByIds = async (ids: string[]) => {
+export const listTasksByIds = async (ids: string[], projectId?: string) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
   if (ids.length === 0) return { data: [], error: null };
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("business_tasks")
     .select("*")
     .in("id", ids)
     .order("id");
 
+  if (projectId) {
+    query = query.eq("project_id", projectId);
+  }
+
+  const { data, error } = await query;
   if (error) return { data: null, error: error.message };
   return { data: (data as TaskRow[]).map(toTask), error: null };
 };
 
-export const getTaskById = async (id: string) => {
+export const getTaskById = async (id: string, projectId?: string) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("business_tasks")
     .select("*")
-    .eq("id", id)
-    .maybeSingle();
+    .eq("id", id);
+
+  if (projectId) {
+    query = query.eq("project_id", projectId);
+  }
+
+  const { data, error } = await query.maybeSingle();
 
   if (error) return { data: null, error: error.message };
   if (!data) return { data: null, error: null };
   return { data: toTask(data as TaskRow), error: null };
 };
 
-export const createTask = async (input: TaskInput) => {
+export const createTask = async (input: TaskCreateInput) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
   const now = new Date().toISOString();
   const payload = {
     ...toTaskRow(input),
+    project_id: input.projectId,
     created_at: now,
     updated_at: now,
   };
@@ -142,7 +168,7 @@ export const createTask = async (input: TaskInput) => {
   return { data: toTask(data as TaskRow), error: null };
 };
 
-export const updateTask = async (id: string, input: Omit<TaskInput, "id">) => {
+export const updateTask = async (id: string, input: Omit<TaskInput, "id">, projectId?: string) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
@@ -152,10 +178,16 @@ export const updateTask = async (id: string, input: Omit<TaskInput, "id">) => {
     updated_at: now,
   };
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("business_tasks")
     .update(payload)
-    .eq("id", id)
+    .eq("id", id);
+
+  if (projectId) {
+    query = query.eq("project_id", projectId);
+  }
+
+  const { data, error } = await query
     .select("*")
     .single();
 
@@ -163,14 +195,20 @@ export const updateTask = async (id: string, input: Omit<TaskInput, "id">) => {
   return { data: toTask(data as TaskRow), error: null };
 };
 
-export const deleteTask = async (id: string) => {
+export const deleteTask = async (id: string, projectId?: string) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
-  const { error } = await supabase
+  let query = supabase
     .from("business_tasks")
     .delete()
     .eq("id", id);
+
+  if (projectId) {
+    query = query.eq("project_id", projectId);
+  }
+
+  const { error } = await query;
 
   if (error) return { data: null, error: error.message };
   return { data: true, error: null };

@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
 import { getConceptById, updateConcept } from "@/lib/data/concepts";
+import { useProject } from "@/components/project/project-context";
 import type { BusinessArea, Concept } from "@/lib/domain";
 
 const areaOptions: BusinessArea[] = ["AR", "AP", "GL"];
@@ -41,12 +42,20 @@ export default function IdeaEditPage({ params }: { params: Promise<{ id: string 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const { currentProjectId, loading: projectLoading } = useProject();
 
   useEffect(() => {
+    if (projectLoading) return;
+    if (!currentProjectId) {
+      setError("プロジェクトが選択されていません");
+      setConcept(null);
+      setLoading(false);
+      return;
+    }
     let active = true;
     const fetchData = async () => {
       setLoading(true);
-      const { data, error: fetchError } = await getConceptById(id);
+      const { data, error: fetchError } = await getConceptById(id, currentProjectId);
       if (!active) return;
       if (fetchError) {
         setError(fetchError);
@@ -68,7 +77,7 @@ export default function IdeaEditPage({ params }: { params: Promise<{ id: string 
     return () => {
       active = false;
     };
-  }, [id]);
+  }, [id, currentProjectId, projectLoading]);
 
   const toggleArea = (area: BusinessArea) => {
     setSelectedAreas((prev) =>
@@ -85,6 +94,11 @@ export default function IdeaEditPage({ params }: { params: Promise<{ id: string 
     event.preventDefault();
     if (!canSubmit) return;
     setSaving(true);
+    if (projectLoading || !currentProjectId) {
+      setError("プロジェクトが選択されていません");
+      setSaving(false);
+      return;
+    }
     const { error: saveError } = await updateConcept(id, {
       name: name.trim(),
       synonyms: splitCsv(synonyms),
@@ -92,7 +106,7 @@ export default function IdeaEditPage({ params }: { params: Promise<{ id: string 
       definition: definition.trim(),
       relatedDocs: splitLines(relatedDocs),
       requirementCount: concept?.requirementCount ?? 0,
-    });
+    }, currentProjectId);
     setSaving(false);
     if (saveError) {
       setError(saveError);

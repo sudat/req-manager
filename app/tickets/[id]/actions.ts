@@ -1,11 +1,13 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers';
 import { updateChangeRequestStatus } from '@/lib/data/change-requests';
 import type { ChangeRequestStatus } from '@/lib/domain/value-objects';
 
 export async function updateTicketStatus(id: string, status: ChangeRequestStatus) {
-  const result = await updateChangeRequestStatus(id, status);
+  const projectId = cookies().get('current-project-id')?.value;
+  const result = await updateChangeRequestStatus(id, status, projectId);
 
   if (result.error) {
     return { success: false, error: result.error };

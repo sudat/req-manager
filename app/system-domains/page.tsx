@@ -4,16 +4,25 @@ import { deleteSystemDomain, listSystemDomains } from "@/lib/data/system-domains
 import { listSystemFunctions } from "@/lib/data/system-functions";
 import { ResourceListPage } from "@/components/resource-page/resource-list-page";
 import { systemDomainListConfig } from "@/config/resource-lists";
+import { useProject } from "@/components/project/project-context";
 import type { SystemDomain } from "@/lib/data/system-domains";
 import type { SystemFunction } from "@/lib/domain";
 
 type SystemDomainWithCount = SystemDomain & { functionCount: number };
 
 export default function SystemDomainsPage() {
+	const { currentProjectId, loading: projectLoading } = useProject();
+
 	// SystemDomain は functionCount を含まないため、フェッチ後に計算して付与する
 	const fetchData = async () => {
+		if (projectLoading || !currentProjectId) {
+			return { data: null, error: "プロジェクトが選択されていません" };
+		}
 		const [{ data: domainRows, error: domainError }, { data: functionRows, error: functionError }] =
-			await Promise.all([listSystemDomains(), listSystemFunctions()]);
+			await Promise.all([
+				listSystemDomains(currentProjectId),
+				listSystemFunctions(currentProjectId)
+			]);
 		const error = domainError ?? functionError;
 		if (error) {
 			return { data: null, error };
@@ -41,7 +50,12 @@ export default function SystemDomainsPage() {
 		<ResourceListPage
 			config={systemDomainListConfig}
 			fetchData={fetchData}
-			deleteItem={deleteSystemDomain}
+			deleteItem={(id) => {
+				if (projectLoading || !currentProjectId) {
+					return Promise.resolve({ data: null, error: "プロジェクトが選択されていません" });
+				}
+				return deleteSystemDomain(id, currentProjectId);
+			}}
 		/>
 	);
 }

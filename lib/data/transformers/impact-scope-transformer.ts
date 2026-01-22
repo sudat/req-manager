@@ -21,7 +21,8 @@ export interface ImpactScopeTransformResult {
  * @returns 変換結果（選択要件、業務要件ID配列、システム要件ID配列）
  */
 export async function transformImpactScopesToSelectedRequirements(
-	impactScopes: ImpactScope[]
+	impactScopes: ImpactScope[],
+	projectId: string
 ): Promise<ImpactScopeTransformResult> {
 	// タイプ別にIDを抽出
 	const businessReqIds = impactScopes
@@ -38,10 +39,10 @@ export async function transformImpactScopesToSelectedRequirements(
 
 	const [bizReqsResult, sysReqsResult] = await Promise.all([
 		businessReqIds.length > 0
-			? listBusinessRequirementsByIds(businessReqIds)
+			? listBusinessRequirementsByIds(businessReqIds, projectId)
 			: { data: [], error: null },
 		systemReqIds.length > 0
-			? listSystemRequirementsByIds(systemReqIds)
+			? listSystemRequirementsByIds(systemReqIds, projectId)
 			: { data: [], error: null },
 	]);
 

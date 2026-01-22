@@ -1,33 +1,37 @@
 "use client"
 
-import Link from "next/link";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
+import { useProject } from "@/components/project/project-context";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { listConcepts, createConcept } from "@/lib/data/concepts";
-import { nextSequentialId } from "@/lib/data/id";
+import { nextSequentialIdFrom } from "@/lib/data/id";
 import type { BusinessArea } from "@/lib/domain";
+import { requireProjectId } from "@/lib/utils/project";
 
 const areaOptions: BusinessArea[] = ["AR", "AP", "GL"];
 
-const splitCsv = (value: string) =>
-  value
+function splitCsv(value: string): string[] {
+  return value
     .split(",")
     .map((v) => v.trim())
     .filter(Boolean);
+}
 
-const splitLines = (value: string) =>
-  value
+function splitLines(value: string): string[] {
+  return value
     .split("\n")
     .map((v) => v.trim())
     .filter(Boolean);
+}
 
-export default function IdeaCreatePage() {
+export default function IdeaCreatePage(): JSX.Element {
   const router = useRouter();
   const [nextId, setNextId] = useState("C001");
   const [name, setName] = useState("");
@@ -37,37 +41,54 @@ export default function IdeaCreatePage() {
   const [selectedAreas, setSelectedAreas] = useState<BusinessArea[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const { currentProjectId, loading: projectLoading } = useProject();
 
   useEffect(() => {
+    if (
+      !requireProjectId({
+        currentProjectId,
+        projectLoading,
+        onMissing: setError,
+      })
+    )
+      return;
     let active = true;
-    const fetchNextId = async () => {
+    async function fetchNextId(): Promise<void> {
       const { data, error: fetchError } = await listConcepts();
       if (!active) return;
       if (fetchError) {
         setError(fetchError);
         return;
       }
-      const ids = (data ?? []).map((concept) => concept.id);
-      setNextId(nextSequentialId("C", ids));
-    };
+      setNextId(nextSequentialIdFrom("C", data ?? [], (concept) => concept.id));
+    }
     fetchNextId();
     return () => {
       active = false;
     };
-  }, []);
+  }, [currentProjectId, projectLoading]);
 
-  const toggleArea = (area: BusinessArea) => {
+  function toggleArea(area: BusinessArea): void {
     setSelectedAreas((prev) =>
       prev.includes(area) ? prev.filter((d) => d !== area) : [...prev, area],
     );
-  };
+  }
 
   const canSubmit = useMemo(() => name.trim().length > 0 && selectedAreas.length > 0, [name, selectedAreas]);
 
-  const handleSubmit = async (event: FormEvent) => {
+  async function handleSubmit(event: FormEvent): Promise<void> {
     event.preventDefault();
     if (!canSubmit) return;
     setSaving(true);
+    const projectId = requireProjectId({
+      currentProjectId,
+      projectLoading,
+      onMissing: setError,
+    });
+    if (!projectId) {
+      setSaving(false);
+      return;
+    }
     const { error: saveError } = await createConcept({
       id: nextId,
       name: name.trim(),
@@ -76,6 +97,7 @@ export default function IdeaCreatePage() {
       definition: definition.trim(),
       relatedDocs: splitLines(relatedDocs),
       requirementCount: 0,
+      projectId,
     });
     setSaving(false);
     if (saveError) {
@@ -83,7 +105,7 @@ export default function IdeaCreatePage() {
       return;
     }
     router.push("/ideas");
-  };
+  }
 
   return (
     <>

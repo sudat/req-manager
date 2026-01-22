@@ -62,10 +62,11 @@ export function hasRequirementChanged<T extends {
 export async function syncBusinessRequirements(
 	taskId: string,
 	editedRequirements: Requirement[],
+	projectId: string,
 ): Promise<string | null> {
 	try {
 		// 現在のDB状態を取得
-		const { data: existingReqs, error: fetchError } = await listBusinessRequirementsByTaskId(taskId);
+		const { data: existingReqs, error: fetchError } = await listBusinessRequirementsByTaskId(taskId, projectId);
 		if (fetchError) return fetchError;
 
 		const existingIds = new Set(existingReqs?.map((r) => r.id) ?? []);
@@ -82,14 +83,14 @@ export async function syncBusinessRequirements(
 
 		// 1. 削除
 		for (const id of toDelete) {
-			const { error } = await deleteBusinessRequirement(id);
+			const { error } = await deleteBusinessRequirement(id, projectId);
 			if (error) return `削除エラー (${id}): ${error}`;
 		}
 
 		// 2. 作成
 		if (toCreate.length > 0) {
 			const createInputs = toCreate.map((req, index) =>
-				toBusinessRequirementInput(req, taskId, index)
+				({ ...toBusinessRequirementInput(req, taskId, index), projectId })
 			);
 			const { error } = await createBusinessRequirements(createInputs);
 			if (error) return `作成エラー: ${error}`;
@@ -106,7 +107,7 @@ export async function syncBusinessRequirements(
 			}
 
 			const input = toBusinessRequirementInput(req, taskId, existing.sortOrder);
-			const { error } = await updateBusinessRequirement(req.id, input);
+			const { error } = await updateBusinessRequirement(req.id, input, projectId);
 			if (error) return `更新エラー (${req.id}): ${error}`;
 		}
 
@@ -125,10 +126,11 @@ export async function syncBusinessRequirements(
 export async function syncSystemRequirements(
 	taskId: string,
 	editedRequirements: Requirement[],
+	projectId: string,
 ): Promise<string | null> {
 	try {
 		// 現在のDB状態を取得
-		const { data: existingReqs, error: fetchError } = await listSystemRequirementsByTaskId(taskId);
+		const { data: existingReqs, error: fetchError } = await listSystemRequirementsByTaskId(taskId, projectId);
 		if (fetchError) return fetchError;
 
 		const existingIds = new Set(existingReqs?.map((r) => r.id) ?? []);
@@ -145,14 +147,14 @@ export async function syncSystemRequirements(
 
 		// 1. 削除
 		for (const id of toDelete) {
-			const { error } = await deleteSystemRequirement(id);
+			const { error } = await deleteSystemRequirement(id, projectId);
 			if (error) return `削除エラー (${id}): ${error}`;
 		}
 
 		// 2. 作成
 		if (toCreate.length > 0) {
 			const createInputs = toCreate.map((req, index) =>
-				toSystemRequirementInput(req, taskId, index)
+				({ ...toSystemRequirementInput(req, taskId, index), projectId })
 			);
 			const { error } = await createSystemRequirements(createInputs);
 			if (error) return `作成エラー: ${error}`;
@@ -169,7 +171,7 @@ export async function syncSystemRequirements(
 			}
 
 			const input = toSystemRequirementInput(req, taskId, existing.sortOrder);
-			const { error } = await updateSystemRequirement(req.id, input);
+			const { error } = await updateSystemRequirement(req.id, input, projectId);
 			if (error) return `更新エラー (${req.id}): ${error}`;
 		}
 
@@ -196,12 +198,13 @@ export async function syncTaskBasicInfo(
 	person: string,
 	input: string,
 	output: string,
+	projectId: string,
 ): Promise<string | null> {
 	try {
 		const { updateTask, getTaskById } = await import("@/lib/data/tasks");
 
 		// 既存タスクを取得して businessId と sortOrder を維持
-		const { data: existingTask, error: fetchError } = await getTaskById(taskId);
+		const { data: existingTask, error: fetchError } = await getTaskById(taskId, projectId);
 		if (fetchError) return `タスク取得エラー: ${fetchError}`;
 		if (!existingTask) return `タスクが見つかりません: ${taskId}`;
 
@@ -214,7 +217,7 @@ export async function syncTaskBasicInfo(
 			output,
 			concepts: existingTask.concepts, // 既存値を維持
 			sortOrder: existingTask.sortOrder, // 既存値を維持
-		});
+		}, projectId);
 
 		if (error) return `タスク更新エラー: ${error}`;
 		return null;

@@ -10,6 +10,7 @@ import { listBusinessRequirements } from "@/lib/data/business-requirements";
 import { listConcepts } from "@/lib/data/concepts";
 import { listSystemFunctions } from "@/lib/data/system-functions";
 import { listSystemRequirements } from "@/lib/data/system-requirements";
+import { useProject } from "@/components/project/project-context";
 import {
 	buildHealthScoreSummary,
 	type HealthScoreSummary,
@@ -21,18 +22,26 @@ export default function DashboardPage() {
 	);
 	const [healthLoading, setHealthLoading] = useState(true);
 	const [healthError, setHealthError] = useState<string | null>(null);
+	const { currentProjectId, loading: projectLoading } = useProject();
 
 	useEffect(() => {
+		if (projectLoading) return;
+		if (!currentProjectId) {
+			setHealthError("プロジェクトが選択されていません");
+			setHealthSummary(null);
+			setHealthLoading(false);
+			return;
+		}
 		let active = true;
 
 		async function fetchHealth(): Promise<void> {
 			setHealthLoading(true);
 			const [businessResult, systemResult, functionResult, conceptResult] =
 				await Promise.all([
-					listBusinessRequirements(),
-					listSystemRequirements(),
-					listSystemFunctions(),
-					listConcepts(),
+					listBusinessRequirements(currentProjectId),
+					listSystemRequirements(currentProjectId),
+					listSystemFunctions(currentProjectId),
+					listConcepts(currentProjectId),
 				]);
 
 			if (!active) return;
@@ -66,7 +75,7 @@ export default function DashboardPage() {
 		return () => {
 			active = false;
 		};
-	}, []);
+	}, [currentProjectId, projectLoading]);
 
 	return (
 		<>

@@ -4,18 +4,20 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { useProject } from "@/components/project/project-context";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { listBusinesses, createBusiness } from "@/lib/data/businesses";
-import { nextSequentialId } from "@/lib/data/id";
+import { nextSequentialIdFrom } from "@/lib/data/id";
 import type { BusinessArea } from "@/lib/domain";
+import { requireProjectId } from "@/lib/utils/project";
 
 const areaPattern = /^[A-Z_-]+$/;
 
-export default function BusinessCreatePage() {
+export default function BusinessCreatePage(): JSX.Element {
   const router = useRouter();
   const [nextId, setNextId] = useState("BIZ-001");
   const [name, setName] = useState("");
@@ -24,37 +26,55 @@ export default function BusinessCreatePage() {
   const [summary, setSummary] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const { currentProjectId, loading: projectLoading } = useProject();
 
   useEffect(() => {
+    if (
+      !requireProjectId({
+        currentProjectId,
+        projectLoading,
+        onMissing: setError,
+      })
+    )
+      return;
     let active = true;
-    const fetchNextId = async () => {
+    async function fetchNextId(): Promise<void> {
       const { data, error: fetchError } = await listBusinesses();
       if (!active) return;
       if (fetchError) {
         setError(fetchError);
         return;
       }
-      const ids = (data ?? []).map((biz) => biz.id);
-      setNextId(nextSequentialId("BIZ-", ids));
-    };
+      setNextId(nextSequentialIdFrom("BIZ-", data ?? [], (biz) => biz.id));
+    }
     fetchNextId();
     return () => {
       active = false;
     };
-  }, []);
+  }, [currentProjectId, projectLoading]);
 
   const isAreaValid = useMemo(() => areaPattern.test(area.trim()), [area]);
   const canSubmit = useMemo(() => name.trim().length > 0 && isAreaValid, [name, isAreaValid]);
 
-  const handleSubmit = async (event: FormEvent) => {
+  async function handleSubmit(event: FormEvent): Promise<void> {
     event.preventDefault();
     if (!canSubmit) return;
     setSaving(true);
+    const projectId = requireProjectId({
+      currentProjectId,
+      projectLoading,
+      onMissing: setError,
+    });
+    if (!projectId) {
+      setSaving(false);
+      return;
+    }
     const { error: saveError } = await createBusiness({
       id: nextId,
       name: name.trim(),
       area: area.trim() as BusinessArea,
       summary: summary.trim(),
+      projectId,
     });
     setSaving(false);
     if (saveError) {
@@ -62,7 +82,7 @@ export default function BusinessCreatePage() {
       return;
     }
     router.push("/business");
-  };
+  }
 
   return (
     <>

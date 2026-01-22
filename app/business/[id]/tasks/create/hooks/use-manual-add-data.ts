@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { listTasks, listTasksByBusinessId } from "@/lib/data/tasks";
+import { useProject } from "@/components/project/project-context";
 import { getBusinessById } from "@/lib/data/businesses";
 import { listConcepts } from "@/lib/data/concepts";
+import { nextSequentialIdFrom } from "@/lib/data/id";
 import { listSystemFunctions } from "@/lib/data/system-functions";
 import { listSystemDomains, type SystemDomain } from "@/lib/data/system-domains";
 import { listSystemRequirements } from "@/lib/data/system-requirements";
-import { nextSequentialId } from "@/lib/data/id";
+import { listTasks, listTasksByBusinessId } from "@/lib/data/tasks";
 import type { SelectableItem } from "@/lib/domain/forms";
 
 type UseManualAddDataResult = {
@@ -34,8 +35,15 @@ export function useManualAddData(bizId: string | null): UseManualAddDataResult {
   const [systemFunctions, setSystemFunctions] = useState<SelectableItem[]>([]);
   const [systemDomains, setSystemDomains] = useState<SystemDomain[]>([]);
   const [systemRequirements, setSystemRequirements] = useState<SelectableItem[]>([]);
+  const { currentProjectId, loading: projectLoading } = useProject();
 
   useEffect(() => {
+    if (projectLoading) return;
+    if (!currentProjectId) {
+      setError("プロジェクトが選択されていません。");
+      setLoading(false);
+      return;
+    }
     let active = true;
 
     async function fetchTaskData(): Promise<void> {
@@ -57,8 +65,8 @@ export function useManualAddData(bizId: string | null): UseManualAddDataResult {
         { data: business, error: businessError },
       ] = await Promise.all([
         listTasks(),
-        listTasksByBusinessId(bizId!),
-        getBusinessById(bizId!),
+        listTasksByBusinessId(bizId!, currentProjectId),
+        getBusinessById(bizId!, currentProjectId),
       ]);
 
       if (!active) return;
@@ -77,8 +85,7 @@ export function useManualAddData(bizId: string | null): UseManualAddDataResult {
         return;
       }
 
-      const ids = (allTasks ?? []).map((task) => task.id);
-      const nextId = nextSequentialId("TASK-", ids);
+      const nextId = nextSequentialIdFrom("TASK-", allTasks ?? [], (task) => task.id);
       const maxOrder = (bizTasks ?? []).reduce(
         (max, task) => Math.max(max, task.sortOrder ?? 0),
         0
@@ -101,9 +108,14 @@ export function useManualAddData(bizId: string | null): UseManualAddDataResult {
     return () => {
       active = false;
     };
-  }, [bizId]);
+  }, [bizId, currentProjectId, projectLoading]);
 
   useEffect(() => {
+    if (projectLoading) return;
+    if (!currentProjectId) {
+      setOptionsError("プロジェクトが選択されていません。");
+      return;
+    }
     let active = true;
 
     async function fetchOptions(): Promise<void> {
@@ -113,10 +125,10 @@ export function useManualAddData(bizId: string | null): UseManualAddDataResult {
         { data: domainRows, error: domainError },
         { data: sysReqRows, error: sysReqError },
       ] = await Promise.all([
-        listConcepts(),
-        listSystemFunctions(),
-        listSystemDomains(),
-        listSystemRequirements(),
+        listConcepts(currentProjectId),
+        listSystemFunctions(currentProjectId),
+        listSystemDomains(currentProjectId),
+        listSystemRequirements(currentProjectId),
       ]);
 
       if (!active) return;
@@ -151,7 +163,7 @@ export function useManualAddData(bizId: string | null): UseManualAddDataResult {
     return () => {
       active = false;
     };
-  }, []);
+  }, [currentProjectId, projectLoading]);
 
   return {
     loading,

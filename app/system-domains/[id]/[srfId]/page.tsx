@@ -25,6 +25,7 @@ import { getSystemFunctionById } from "@/lib/data/system-functions";
 import { listSystemRequirementsBySrfId } from "@/lib/data/system-requirements";
 import { listBusinessRequirementsByIds } from "@/lib/data/business-requirements";
 import type { SystemFunction } from "@/lib/domain";
+import { useProject } from "@/components/project/project-context";
 import {
 	buildHealthScoreSummary,
 	type HealthScoreSummary,
@@ -102,13 +103,21 @@ export default function SystemFunctionDetailPage({
 	);
 	const [healthLoading, setHealthLoading] = useState(true);
 	const [healthError, setHealthError] = useState<string | null>(null);
+	const { currentProjectId, loading: projectLoading } = useProject();
 
 	useEffect(() => {
+		if (projectLoading) return;
+		if (!currentProjectId) {
+			setError("プロジェクトが選択されていません");
+			setSrf(null);
+			setLoading(false);
+			return;
+		}
 		let active = true;
 
 		async function fetchData(): Promise<void> {
 			setLoading(true);
-			const { data, error: fetchError } = await getSystemFunctionById(srfId);
+			const { data, error: fetchError } = await getSystemFunctionById(srfId, currentProjectId);
 			if (!active) return;
 
 			if (fetchError) {
@@ -125,18 +134,18 @@ export default function SystemFunctionDetailPage({
 		return () => {
 			active = false;
 		};
-	}, [srfId]);
+	}, [srfId, currentProjectId, projectLoading]);
 
 	useEffect(() => {
-		if (!srf) return;
+		if (!srf || projectLoading || !currentProjectId) return;
 		const currentSrf = srf;
 		let active = true;
 
 		async function fetchHealth(): Promise<void> {
 			setHealthLoading(true);
 			const [systemReqResult, conceptResult] = await Promise.all([
-				listSystemRequirementsBySrfId(currentSrf.id),
-				listConcepts(),
+				listSystemRequirementsBySrfId(currentSrf.id, currentProjectId),
+				listConcepts(currentProjectId),
 			]);
 
 			if (!active) return;
@@ -159,7 +168,8 @@ export default function SystemFunctionDetailPage({
 
 			// 業務要件を取得
 			const businessReqResult = await listBusinessRequirementsByIds(
-				relatedBusinessRequirementIds
+				relatedBusinessRequirementIds,
+				currentProjectId
 			);
 
 			if (!active) return;
@@ -187,7 +197,7 @@ export default function SystemFunctionDetailPage({
 		return () => {
 			active = false;
 		};
-	}, [srf]);
+	}, [srf, currentProjectId, projectLoading]);
 
 	if (loading) {
 		return <LoadingState />;

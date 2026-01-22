@@ -9,6 +9,7 @@ import {
 	syncSystemRequirements,
 } from "@/lib/data/task-sync";
 import { saveToStorage, removeFromStorage } from "@/lib/utils/local-storage";
+import { useProject } from "@/components/project/project-context";
 
 type UseTaskSaveParams = {
 	bizId: string;
@@ -92,6 +93,7 @@ export function useTaskSave({
 	const router = useRouter();
 	const [isSaving, setIsSaving] = useState(false);
 	const [saveError, setSaveError] = useState<string | null>(null);
+	const { currentProjectId, loading: projectLoading } = useProject();
 
 	const handleSave = useCallback(
 		async (knowledge: TaskKnowledge): Promise<void> => {
@@ -99,6 +101,10 @@ export function useTaskSave({
 			setSaveError(null);
 
 			try {
+				if (projectLoading || !currentProjectId) {
+					setSaveError("プロジェクトが選択されていません");
+					return;
+				}
 				// LocalStorageにバックアップ
 				saveToStorage(storageKey, knowledge);
 
@@ -109,7 +115,8 @@ export function useTaskSave({
 					knowledge.taskSummary,
 					knowledge.person ?? "",
 					knowledge.input ?? "",
-					knowledge.output ?? ""
+					knowledge.output ?? "",
+					currentProjectId
 				);
 				if (taskError) {
 					setSaveError(taskError);
@@ -124,7 +131,8 @@ export function useTaskSave({
 				// 業務要件を同期
 				const bizError = await syncBusinessRequirements(
 					taskId,
-					syncedBusinessRequirements
+					syncedBusinessRequirements,
+					currentProjectId
 				);
 				if (bizError) {
 					setSaveError(bizError);
@@ -140,7 +148,8 @@ export function useTaskSave({
 				// システム要件を同期
 				const sysError = await syncSystemRequirements(
 					taskId,
-					syncedSystemRequirements
+					syncedSystemRequirements,
+					currentProjectId
 				);
 				if (sysError) {
 					setSaveError(sysError);
@@ -157,7 +166,7 @@ export function useTaskSave({
 				setIsSaving(false);
 			}
 		},
-		[bizId, taskId, storageKey, router]
+		[bizId, taskId, storageKey, router, currentProjectId, projectLoading]
 	);
 
 	const clearError = useCallback(() => {

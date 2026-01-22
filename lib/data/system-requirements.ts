@@ -43,6 +43,10 @@ export type SystemRequirementInput = {
 	sortOrder: number;
 };
 
+export type SystemRequirementCreateInput = SystemRequirementInput & {
+	projectId: string;
+};
+
 type SystemRequirementRow = {
 	id: string;
 	task_id: string;
@@ -121,52 +125,67 @@ const failIfMissingConfig = () => {
 	return null;
 };
 
-export const listSystemRequirementsByTaskId = async (taskId: string) => {
+export const listSystemRequirementsByTaskId = async (taskId: string, projectId?: string) => {
 	const configError = failIfMissingConfig();
 	if (configError) return configError;
 
-	const { data, error } = await supabase
+	let query = supabase
 		.from("system_requirements")
 		.select("*")
 		.eq("task_id", taskId)
 		.order("sort_order")
 		.order("id");
 
+	if (projectId) {
+		query = query.eq("project_id", projectId);
+	}
+
+	const { data, error } = await query;
 	if (error) return { data: null, error: error.message };
 	return { data: (data as SystemRequirementRow[]).map(toSystemRequirement), error: null };
 };
 
-export const listSystemRequirementsByIds = async (ids: string[]) => {
+export const listSystemRequirementsByIds = async (ids: string[], projectId?: string) => {
 	const configError = failIfMissingConfig();
 	if (configError) return configError;
 	if (ids.length === 0) return { data: [], error: null };
 
-	const { data, error } = await supabase
+	let query = supabase
 		.from("system_requirements")
 		.select("*")
 		.in("id", ids)
 		.order("id");
 
+	if (projectId) {
+		query = query.eq("project_id", projectId);
+	}
+
+	const { data, error } = await query;
 	if (error) return { data: null, error: error.message };
 	return { data: (data as SystemRequirementRow[]).map(toSystemRequirement), error: null };
 };
 
-export const listSystemRequirements = async () => {
+export const listSystemRequirements = async (projectId?: string) => {
 	const configError = failIfMissingConfig();
 	if (configError) return configError;
 
-	const { data, error } = await supabase
+	let query = supabase
 		.from("system_requirements")
 		.select("*")
 		.order("task_id")
 		.order("sort_order")
 		.order("id");
 
+	if (projectId) {
+		query = query.eq("project_id", projectId);
+	}
+
+	const { data, error } = await query;
 	if (error) return { data: null, error: error.message };
 	return { data: (data as SystemRequirementRow[]).map(toSystemRequirement), error: null };
 };
 
-export const createSystemRequirements = async (inputs: SystemRequirementInput[]) => {
+export const createSystemRequirements = async (inputs: SystemRequirementCreateInput[]) => {
 	const configError = failIfMissingConfig();
 	if (configError) return configError;
 	if (inputs.length === 0) return { data: [], error: null };
@@ -179,6 +198,7 @@ export const createSystemRequirements = async (inputs: SystemRequirementInput[])
 
 		return {
 			...toSystemRequirementRowBase(input),
+			project_id: input.projectId,
 		category: input.category ?? "function",
 		business_requirement_ids: input.businessRequirementIds ?? [],
 		acceptance_criteria_json: acceptanceCriteriaJson,
@@ -197,22 +217,27 @@ export const createSystemRequirements = async (inputs: SystemRequirementInput[])
 	return { data: (data as SystemRequirementRow[]).map(toSystemRequirement), error: null };
 };
 
-export const listSystemRequirementsBySrfId = async (srfId: string) => {
+export const listSystemRequirementsBySrfId = async (srfId: string, projectId?: string) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("system_requirements")
     .select("*")
     .eq("srf_id", srfId)
     .order("sort_order")
     .order("id");
 
+	if (projectId) {
+		query = query.eq("project_id", projectId);
+	}
+
+  const { data, error } = await query;
   if (error) return { data: null, error: error.message };
   return { data: (data as SystemRequirementRow[]).map(toSystemRequirement), error: null };
 };
 
-export const createSystemRequirement = async (input: SystemRequirementInput) => {
+export const createSystemRequirement = async (input: SystemRequirementCreateInput) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
@@ -222,6 +247,7 @@ export const createSystemRequirement = async (input: SystemRequirementInput) => 
 	);
   const payload = {
     ...toSystemRequirementRowBase(input),
+		project_id: input.projectId,
 		category: input.category ?? "function",
 		business_requirement_ids: input.businessRequirementIds ?? [],
 		acceptance_criteria_json: acceptanceCriteriaJson,
@@ -240,15 +266,24 @@ export const createSystemRequirement = async (input: SystemRequirementInput) => 
   return { data: toSystemRequirement(data as SystemRequirementRow), error: null };
 };
 
-export const updateSystemRequirement = async (id: string, input: Omit<SystemRequirementInput, "id">) => {
+export const updateSystemRequirement = async (
+  id: string,
+  input: Omit<SystemRequirementInput, "id">,
+  projectId?: string
+) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
-	const { data: existing, error: fetchError } = await supabase
+	let fetchQuery = supabase
 		.from("system_requirements")
 		.select("category, business_requirement_ids, acceptance_criteria_json")
-		.eq("id", id)
-		.maybeSingle();
+		.eq("id", id);
+
+	if (projectId) {
+		fetchQuery = fetchQuery.eq("project_id", projectId);
+	}
+
+	const { data: existing, error: fetchError } = await fetchQuery.maybeSingle();
 
 	if (fetchError) return { data: null, error: fetchError.message };
 
@@ -277,10 +312,16 @@ export const updateSystemRequirement = async (id: string, input: Omit<SystemRequ
     updated_at: now,
   };
 
-  const { data, error } = await supabase
+  let updateQuery = supabase
     .from("system_requirements")
     .update(payload)
-    .eq("id", id)
+    .eq("id", id);
+
+  if (projectId) {
+    updateQuery = updateQuery.eq("project_id", projectId);
+  }
+
+  const { data, error } = await updateQuery
     .select("*")
     .single();
 
@@ -288,27 +329,39 @@ export const updateSystemRequirement = async (id: string, input: Omit<SystemRequ
   return { data: toSystemRequirement(data as SystemRequirementRow), error: null };
 };
 
-export const deleteSystemRequirement = async (id: string) => {
+export const deleteSystemRequirement = async (id: string, projectId?: string) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
-  const { error } = await supabase
+  let query = supabase
     .from("system_requirements")
     .delete()
     .eq("id", id);
+
+  if (projectId) {
+    query = query.eq("project_id", projectId);
+  }
+
+  const { error } = await query;
 
   if (error) return { data: null, error: error.message };
   return { data: true, error: null };
 };
 
-export const deleteSystemRequirementsBySrfId = async (srfId: string) => {
+export const deleteSystemRequirementsBySrfId = async (srfId: string, projectId?: string) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
-  const { error } = await supabase
+  let query = supabase
     .from("system_requirements")
     .delete()
     .eq("srf_id", srfId);
+
+  if (projectId) {
+    query = query.eq("project_id", projectId);
+  }
+
+  const { error } = await query;
 
   if (error) return { data: null, error: error.message };
   return { data: true, error: null };

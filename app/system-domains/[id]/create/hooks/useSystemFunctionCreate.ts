@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, useState, useCallback, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { listSystemFunctions, createSystemFunction } from "@/lib/data/system-functions";
-import { listBusinessRequirements } from "@/lib/data/business-requirements";
+import { useProject } from "@/components/project/project-context";
 import type { BusinessRequirement } from "@/lib/data/business-requirements";
+import { listBusinessRequirements } from "@/lib/data/business-requirements";
+import { nextSequentialIdFrom } from "@/lib/data/id";
 import { createSystemRequirements } from "@/lib/data/system-requirements";
-import { nextSequentialId } from "@/lib/data/id";
+import { createSystemFunction, listSystemFunctions } from "@/lib/data/system-functions";
 import type { SrfCategory, SrfStatus } from "@/lib/domain";
-import { prepareSystemRequirementInputs } from "@/lib/utils/system-functions/prepare-system-requirements";
 import { linkBusinessRequirements } from "@/lib/utils/system-functions/link-business-requirements";
+import { prepareSystemRequirementInputs } from "@/lib/utils/system-functions/prepare-system-requirements";
 import type { SystemRequirementCard } from "../types";
 
 type UseSystemFunctionCreateResult = {
@@ -54,9 +55,15 @@ export function useSystemFunctionCreate(systemDomainId: string): UseSystemFuncti
 	const [loading, setLoading] = useState(true);
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const { currentProjectId, loading: projectLoading } = useProject();
 
 	// nextIdを取得
 	useEffect(() => {
+		if (projectLoading || !currentProjectId) {
+			setError("プロジェクトが選択されていません");
+			setLoading(false);
+			return;
+		}
 		let active = true;
 
 		async function fetchNextId(): Promise<void> {
@@ -66,8 +73,7 @@ export function useSystemFunctionCreate(systemDomainId: string): UseSystemFuncti
 				setError(fetchError);
 				return;
 			}
-			const ids = (data ?? []).map((srf) => srf.id);
-			setNextId(nextSequentialId("SRF-", ids));
+			setNextId(nextSequentialIdFrom("SRF-", data ?? [], (srf) => srf.id));
 		}
 
 		fetchNextId();
@@ -75,14 +81,19 @@ export function useSystemFunctionCreate(systemDomainId: string): UseSystemFuncti
 		return () => {
 			active = false;
 		};
-	}, []);
+	}, [currentProjectId, projectLoading]);
 
 	// 業務要件を取得
 	useEffect(() => {
+		if (projectLoading || !currentProjectId) {
+			setError("プロジェクトが選択されていません");
+			setLoading(false);
+			return;
+		}
 		let active = true;
 
 		async function fetchBusinessRequirements(): Promise<void> {
-			const { data, error: fetchError } = await listBusinessRequirements();
+			const { data, error: fetchError } = await listBusinessRequirements(currentProjectId);
 			if (!active) return;
 			if (fetchError) {
 				setError(fetchError);
@@ -97,20 +108,28 @@ export function useSystemFunctionCreate(systemDomainId: string): UseSystemFuncti
 		return () => {
 			active = false;
 		};
-	}, []);
+	}, [currentProjectId, projectLoading]);
 
 	// handleSubmit
 	const handleSubmit = useCallback(
-		async (event: FormEvent, systemRequirements: SystemRequirementCard[]): Promise<void> => {
+		async function handleSubmit(
+			event: FormEvent,
+			systemRequirements: SystemRequirementCard[]
+		): Promise<void> {
 			event.preventDefault();
 			setSaving(true);
 			setError(null);
 
 			try {
+				if (projectLoading || !currentProjectId) {
+					setError("プロジェクトが選択されていません");
+					setSaving(false);
+					return;
+				}
 				// 1. システム機能を作成
 				const { error: saveError } = await createSystemFunction({
 					id: nextId,
-					systemDomainId: systemDomainId,
+					systemDomainId,
 					category,
 					title: title.trim(),
 					summary: summary.trim(),
@@ -119,6 +138,7 @@ export function useSystemFunctionCreate(systemDomainId: string): UseSystemFuncti
 					requirementIds: systemRequirements.map((sr) => sr.id),
 					systemDesign: [],
 					codeRefs: [],
+					projectId: currentProjectId,
 				});
 
 				if (saveError) {
@@ -131,7 +151,8 @@ export function useSystemFunctionCreate(systemDomainId: string): UseSystemFuncti
 				const sysReqInputs = prepareSystemRequirementInputs(
 					systemRequirements,
 					businessRequirements,
-					nextId
+					nextId,
+					currentProjectId
 				);
 
 				const { error: sysReqError } = await createSystemRequirements(sysReqInputs);
@@ -144,7 +165,8 @@ export function useSystemFunctionCreate(systemDomainId: string): UseSystemFuncti
 				// 3. 業務要件の関連システム要件IDを更新
 				const linkError = await linkBusinessRequirements(
 					systemRequirements,
-					businessRequirements
+					businessRequirements,
+					currentProjectId
 				);
 				if (linkError) {
 					setError(linkError);
@@ -169,6 +191,8 @@ export function useSystemFunctionCreate(systemDomainId: string): UseSystemFuncti
 			status,
 			businessRequirements,
 			router,
+			currentProjectId,
+			projectLoading,
 		]
 	);
 

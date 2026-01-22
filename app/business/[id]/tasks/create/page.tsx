@@ -1,23 +1,30 @@
 "use client";
 
 import { use, useMemo, useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { MobileHeader } from "@/components/layout/mobile-header";
+import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { createTask, deleteTask } from "@/lib/data/tasks";
+import { SelectionDialog } from "@/components/forms/SelectionDialog";
+import { MobileHeader } from "@/components/layout/mobile-header";
+import { useProject } from "@/components/project/project-context";
 import { createBusinessRequirements } from "@/lib/data/business-requirements";
-import { listSystemRequirementsByIds, updateSystemRequirement } from "@/lib/data/system-requirements";
 import { acceptanceCriteriaJsonToLegacy, mergeAcceptanceCriteriaJsonWithLegacy } from "@/lib/data/structured";
+import { listSystemRequirementsByIds, updateSystemRequirement } from "@/lib/data/system-requirements";
+import { createTask, deleteTask } from "@/lib/data/tasks";
+import type { SelectableItem, SelectionDialogState, SelectionDialogType } from "@/lib/domain/forms";
+import { requireProjectId } from "@/lib/utils/project";
+import { RequirementsSection } from "./components/RequirementsSection";
+import { TaskForm } from "./components/TaskForm";
 import { useManualAddData } from "./hooks/use-manual-add-data";
 import { useRequirements } from "./hooks/use-requirements";
-import { TaskForm } from "./components/TaskForm";
-import { RequirementsSection } from "./components/RequirementsSection";
-import { SelectionDialog } from "@/components/forms/SelectionDialog";
-import type { SelectionDialogState, SelectionDialogType, SelectableItem } from "@/lib/domain/forms";
 
-function BusinessTaskCreatePageContent({ bizId }: { bizId: string }) {
+type BusinessTaskCreatePageContentProps = {
+  bizId: string;
+};
+
+function BusinessTaskCreatePageContent({ bizId }: BusinessTaskCreatePageContentProps): JSX.Element {
   const router = useRouter();
+  const { currentProjectId, loading: projectLoading } = useProject();
 
   const {
     loading,
@@ -81,6 +88,12 @@ function BusinessTaskCreatePageContent({ bizId }: { bizId: string }) {
   async function handleSubmit(event: FormEvent): Promise<void> {
     event.preventDefault();
     if (!bizId || !canSubmit) return;
+    const projectId = requireProjectId({
+      currentProjectId,
+      projectLoading,
+      onMissing: setError,
+    });
+    if (!projectId) return;
 
     setSaving(true);
     setError(null);
@@ -95,6 +108,7 @@ function BusinessTaskCreatePageContent({ bizId }: { bizId: string }) {
       output: output.trim(),
       concepts: [],
       sortOrder,
+      projectId,
     });
 
     if (saveError) {
@@ -125,6 +139,7 @@ function BusinessTaskCreatePageContent({ bizId }: { bizId: string }) {
         acceptanceCriteriaJson,
         acceptanceCriteria: acceptanceCriteriaJsonToLegacy(acceptanceCriteriaJson),
         sortOrder: index + 1,
+        projectId,
       };
     });
 
@@ -133,7 +148,7 @@ function BusinessTaskCreatePageContent({ bizId }: { bizId: string }) {
     );
 
     if (requirementError) {
-      const rollback = await deleteTask(taskId);
+      const rollback = await deleteTask(taskId, projectId);
       const rollbackMessage = rollback.error
         ? `（ロールバック失敗: ${rollback.error}）`
         : "";
@@ -157,7 +172,10 @@ function BusinessTaskCreatePageContent({ bizId }: { bizId: string }) {
     }
 
     if (allSystemReqIds.size > 0) {
-      const { data: existingSystemReqs } = await listSystemRequirementsByIds(Array.from(allSystemReqIds));
+      const { data: existingSystemReqs } = await listSystemRequirementsByIds(
+        Array.from(allSystemReqIds),
+        projectId
+      );
       
       if (existingSystemReqs) {
         for (const sysReq of existingSystemReqs) {
@@ -178,7 +196,7 @@ function BusinessTaskCreatePageContent({ bizId }: { bizId: string }) {
             acceptanceCriteria: sysReq.acceptanceCriteria,
             systemDomainIds: sysReq.systemDomainIds,
             sortOrder: sysReq.sortOrder,
-          });
+          }, projectId);
         }
       }
     }
@@ -255,7 +273,11 @@ function BusinessTaskCreatePageContent({ bizId }: { bizId: string }) {
   );
 }
 
-export default function BusinessTaskCreatePage({ params }: { params: Promise<{ id: string }> }) {
+type BusinessTaskCreatePageProps = {
+  params: Promise<{ id: string }>;
+};
+
+export default function BusinessTaskCreatePage({ params }: BusinessTaskCreatePageProps): JSX.Element {
   const { id } = use(params);
 
   return (

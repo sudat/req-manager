@@ -99,6 +99,17 @@ export interface SystemFunction {
   updatedAt: string;
 }
 
+/**
+ * Project（プロジェクト）
+ */
+export interface Project {
+  id: string;              // UUID
+  name: string;            // プロジェクト名
+  description: string | null;  // 説明
+  createdAt: string;       // ISO日付
+  updatedAt: string;       // ISO日付
+}
+
 // Note: Related types (BusinessArea, TicketStatus, etc.) are defined in enums.ts
 // and should be imported from there when using this file
 // This file only contains the core entity interfaces

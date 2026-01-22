@@ -3,6 +3,7 @@ import type { SystemFunction } from "@/lib/domain";
 import { listSystemFunctionsByDomain } from "@/lib/data/system-functions";
 import { getSystemDomainById } from "@/lib/data/system-domains";
 import { deleteSystemRequirementsBySrfId } from "@/lib/data/system-requirements";
+import { useProject } from "@/components/project/project-context";
 
 export interface UseSystemFunctionsReturn {
   functions: SystemFunction[];
@@ -18,14 +19,23 @@ export const useSystemFunctions = (domainId: string): UseSystemFunctionsReturn =
   const [domainName, setDomainName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { currentProjectId, loading: projectLoading } = useProject();
 
   useEffect(() => {
+    if (projectLoading) return;
+    if (!currentProjectId) {
+      setError("プロジェクトが選択されていません");
+      setFunctions([]);
+      setDomainName(null);
+      setLoading(false);
+      return;
+    }
     let active = true;
     const fetchData = async () => {
       setLoading(true);
       const [{ data: domain, error: domainError }, { data, error: fetchError }] = await Promise.all([
-        getSystemDomainById(domainId),
-        listSystemFunctionsByDomain(domainId),
+        getSystemDomainById(domainId, currentProjectId),
+        listSystemFunctionsByDomain(domainId, currentProjectId),
       ]);
       if (!active) return;
       const mergedError = domainError ?? fetchError;
@@ -44,16 +54,20 @@ export const useSystemFunctions = (domainId: string): UseSystemFunctionsReturn =
     return () => {
       active = false;
     };
-  }, [domainId]);
+  }, [domainId, currentProjectId, projectLoading]);
 
   const deleteFunction = async (srf: SystemFunction) => {
-    const { error: requirementDeleteError } = await deleteSystemRequirementsBySrfId(srf.id);
+    if (projectLoading || !currentProjectId) {
+      setError("プロジェクトが選択されていません");
+      return;
+    }
+    const { error: requirementDeleteError } = await deleteSystemRequirementsBySrfId(srf.id, currentProjectId);
     if (requirementDeleteError) {
       setError(requirementDeleteError);
       return;
     }
     const { deleteSystemFunction } = await import("@/lib/data/system-functions");
-    const { error: deleteError } = await deleteSystemFunction(srf.id);
+    const { error: deleteError } = await deleteSystemFunction(srf.id, currentProjectId);
     if (deleteError) {
       setError(deleteError);
       return;
