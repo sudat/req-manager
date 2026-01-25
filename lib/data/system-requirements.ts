@@ -8,6 +8,17 @@ import {
 	type AcceptanceCriterionJson,
 } from "@/lib/data/structured";
 
+export const getSystemRequirementCategoryLabel = (category: SystemRequirementCategory): string => {
+	const labels: Record<SystemRequirementCategory, string> = {
+		function: "機能",
+		data: "データ",
+		exception: "例外",
+		auth: "認証・認可",
+		non_functional: "非機能",
+	};
+	return labels[category] || category;
+};
+
 export type SystemRequirement = {
 	id: string;
 	taskId: string;
@@ -19,6 +30,7 @@ export type SystemRequirement = {
 	category: SystemRequirementCategory;
 	categoryRaw?: string | null;
 	businessRequirementIds: string[];
+	relatedDeliverableIds: string[];
 	acceptanceCriteriaJson: AcceptanceCriterionJson[];
 	acceptanceCriteria: string[];
 	systemDomainIds: string[];
@@ -37,6 +49,7 @@ export type SystemRequirementInput = {
 	impacts: string[];
 	category?: SystemRequirementCategory;
 	businessRequirementIds?: string[];
+	relatedDeliverableIds?: string[];
 	acceptanceCriteriaJson?: AcceptanceCriterionJson[];
 	acceptanceCriteria: string[];
 	systemDomainIds: string[];
@@ -57,6 +70,7 @@ type SystemRequirementRow = {
 	impacts: string[] | null;
 	category: string | null;
 	business_requirement_ids: string[] | null;
+	related_deliverable_ids: string[] | null;
 	acceptance_criteria_json: unknown | null;
 	acceptance_criteria: string[] | null;
 	system_domain_ids: string[] | null;
@@ -96,6 +110,7 @@ const toSystemRequirement = (row: SystemRequirementRow): SystemRequirement => {
 		category: normalizeCategory(row.category),
 		categoryRaw: row.category,
 		businessRequirementIds: row.business_requirement_ids ?? [],
+		relatedDeliverableIds: row.related_deliverable_ids ?? [],
 		acceptanceCriteriaJson,
 		acceptanceCriteria: acceptanceCriteriaJsonToLegacy(acceptanceCriteriaJson),
 		systemDomainIds: row.system_domain_ids ?? [],
@@ -201,6 +216,7 @@ export const createSystemRequirements = async (inputs: SystemRequirementCreateIn
 			project_id: input.projectId,
 		category: input.category ?? "function",
 		business_requirement_ids: input.businessRequirementIds ?? [],
+		related_deliverable_ids: input.relatedDeliverableIds ?? [],
 		acceptance_criteria_json: acceptanceCriteriaJson,
 		acceptance_criteria: acceptanceCriteriaJsonToLegacy(acceptanceCriteriaJson),
 		created_at: now,
@@ -250,6 +266,7 @@ export const createSystemRequirement = async (input: SystemRequirementCreateInpu
 		project_id: input.projectId,
 		category: input.category ?? "function",
 		business_requirement_ids: input.businessRequirementIds ?? [],
+		related_deliverable_ids: input.relatedDeliverableIds ?? [],
 		acceptance_criteria_json: acceptanceCriteriaJson,
 		acceptance_criteria: acceptanceCriteriaJsonToLegacy(acceptanceCriteriaJson),
     created_at: now,
@@ -276,7 +293,7 @@ export const updateSystemRequirement = async (
 
 	let fetchQuery = supabase
 		.from("system_requirements")
-		.select("category, business_requirement_ids, acceptance_criteria_json")
+		.select("category, business_requirement_ids, related_deliverable_ids, acceptance_criteria_json")
 		.eq("id", id);
 
 	if (projectId) {
@@ -307,6 +324,10 @@ export const updateSystemRequirement = async (
 			input.businessRequirementIds !== undefined
 				? input.businessRequirementIds
 				: ((existing as SystemRequirementRow | null)?.business_requirement_ids ?? []),
+		related_deliverable_ids:
+			input.relatedDeliverableIds !== undefined
+				? input.relatedDeliverableIds
+				: ((existing as SystemRequirementRow | null)?.related_deliverable_ids ?? []),
 		acceptance_criteria_json: acceptanceCriteriaJson,
 		acceptance_criteria: acceptanceCriteriaJsonToLegacy(acceptanceCriteriaJson),
     updated_at: now,

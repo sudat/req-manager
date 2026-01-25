@@ -38,6 +38,7 @@ type MenuConfig = MenuItem | MenuDivider
 const menuConfig: MenuConfig[] = [
   { type: "item" as const, key: "dashboard", label: "ダッシュボード", href: "/dashboard", icon: LayoutDashboard },
   { type: "item" as const, key: "query", label: "照会", href: "/query", icon: Search },
+  { type: "divider" as const },
   { type: "item" as const, key: "business", label: "業務一覧", href: "/business", icon: Briefcase },
   { type: "item" as const, key: "system-domains", label: "システム領域一覧", href: "/system-domains", icon: Boxes },
   { type: "item" as const, key: "ideas", label: "概念辞書", href: "/ideas", icon: BookOpen },
@@ -116,6 +117,7 @@ export function Sidebar() {
         </SheetContent>
       </Sheet>
       <aside
+        data-sidebar
         className={cn(
           "fixed left-0 top-0 hidden h-screen overflow-hidden border-r border-slate-200 bg-white/95 backdrop-blur transition-all duration-300 md:flex md:flex-col",
           isCollapsed ? "w-[64px]" : "w-[280px]"

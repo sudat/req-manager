@@ -1,7 +1,7 @@
 export const PROJECT_REQUIRED_MESSAGE = "プロジェクトが選択されていません";
 
 type RequireProjectIdOptions = {
-  currentProjectId: string | null;
+  currentProjectId: string | undefined;
   projectLoading?: boolean;
   onMissing?: (message: string) => void;
 };

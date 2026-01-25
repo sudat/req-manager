@@ -4,12 +4,18 @@ import type { Project } from "@/lib/domain";
 export type ProjectInput = {
   name: string;
   description?: string | null;
+  githubUrl?: string | null;
+  reviewLinkThreshold?: 'low' | 'medium' | 'high' | null;
+  autoSave?: boolean | null;
 };
 
 type ProjectRow = {
   id: string;
   name: string;
   description: string | null;
+  github_url: string | null;
+  review_link_threshold: string;
+  auto_save: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -18,6 +24,9 @@ const toProject = (row: ProjectRow): Project => ({
   id: row.id,
   name: row.name,
   description: row.description,
+  githubUrl: row.github_url,
+  reviewLinkThreshold: row.review_link_threshold as 'low' | 'medium' | 'high',
+  autoSave: row.auto_save,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });
@@ -25,12 +34,20 @@ const toProject = (row: ProjectRow): Project => ({
 const toProjectRow = (input: ProjectInput) => ({
   name: input.name,
   description: input.description ?? null,
+  github_url: input.githubUrl ?? null,
+  review_link_threshold: input.reviewLinkThreshold ?? 'medium',
+  auto_save: input.autoSave ?? true,
 });
 
 const toProjectRowPartial = (input: Partial<ProjectInput>) => {
   const row: Partial<ProjectRow> = {};
   if (input.name !== undefined) row.name = input.name;
   if (input.description !== undefined) row.description = input.description ?? null;
+  if (input.githubUrl !== undefined) row.github_url = input.githubUrl;
+  if (input.reviewLinkThreshold !== undefined) {
+    row.review_link_threshold = input.reviewLinkThreshold ?? 'medium';
+  }
+  if (input.autoSave !== undefined) row.auto_save = input.autoSave ?? true;
   return row;
 };
 

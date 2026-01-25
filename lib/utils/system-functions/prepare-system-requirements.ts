@@ -1,5 +1,5 @@
 import type { SystemRequirementCreateInput } from "@/lib/data/system-requirements";
-import type { SystemRequirementCard } from "@/app/system-domains/[id]/create/types";
+import type { SystemRequirementCard } from "@/app/(with-sidebar)/system-domains/[id]/create/types";
 import type { BusinessRequirement } from "@/lib/data/business-requirements";
 
 /**

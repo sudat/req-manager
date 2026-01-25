@@ -42,7 +42,7 @@ export function EntryPointsEditor({
 	};
 
 	return (
-		<Card className="rounded-md border border-slate-200/60 bg-white mb-4">
+		<Card className="rounded-md border border-slate-200/60 bg-white">
 			<CardContent className="p-6 space-y-4">
 				<div className="flex items-center justify-between">
 					<h2 className="text-[20px] font-semibold text-slate-900">

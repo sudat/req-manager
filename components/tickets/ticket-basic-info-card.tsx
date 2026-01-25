@@ -12,7 +12,7 @@ import {
 import { CircleDot, Flag, User, Calendar } from "lucide-react";
 import { statusLabels, priorityLabels, formatDate } from "@/lib/utils/ticket-labels";
 import type { ChangeRequest, ChangeRequestStatus } from "@/lib/domain/value-objects";
-import { updateTicketStatus } from "@/app/tickets/[id]/actions";
+import { updateTicketStatus } from "@/app/(with-sidebar)/tickets/[id]/actions";
 
 interface TicketBasicInfoCardProps {
   changeRequest: ChangeRequest;

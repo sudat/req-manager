@@ -35,7 +35,7 @@ export function RequirementListSection({
 	onOpenDialog,
 }: RequirementListSectionProps): React.ReactElement {
 	return (
-		<Card className="mt-4 rounded-md border border-slate-200">
+		<Card className="rounded-md border border-slate-200">
 			<CardContent className="p-3 space-y-3">
 				{/* セクションヘッダー */}
 				<div className="flex items-center justify-between pb-2 border-b border-slate-100">

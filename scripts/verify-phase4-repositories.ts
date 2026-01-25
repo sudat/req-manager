@@ -41,6 +41,8 @@ import type {
 	AcceptanceConfirmationStatus,
 } from '../lib/domain/value-objects';
 
+const DEFAULT_PROJECT_ID = "00000000-0000-0000-0000-000000000001";
+
 // テスト結果カウンター
 let passedTests = 0;
 let failedTests = 0;
@@ -109,6 +111,7 @@ async function testChangeRequests() {
 	// createChangeRequest - 新規作成
 	const newTicketId = `TEST-${Date.now()}`;
 	const createResult = await createChangeRequest({
+		projectId: DEFAULT_PROJECT_ID,
 		ticketId: newTicketId,
 		title: 'テスト変更要求',
 		description: '動作確認用の変更要求です',
@@ -160,6 +163,7 @@ async function testChangeRequests() {
 
 	// updateChangeRequestStatus - ステータス遷移
 	const statusTestResult = await createChangeRequest({
+		projectId: DEFAULT_PROJECT_ID,
 		ticketId: `TEST-STATUS-${Date.now()}`,
 		title: 'ステータステスト用変更要求',
 	});
@@ -196,6 +200,7 @@ async function testChangeRequests() {
 	// Note: TypeScriptでは型キャスト('invalid' as ChangeRequestStatus)は実行時にチェックされない
 	// ここではテストのため、文字列として渡して正規化関数をテストする
 	const normalizeResult1 = await createChangeRequest({
+		projectId: DEFAULT_PROJECT_ID,
 		ticketId: `TEST-NORM-${Date.now()}`,
 		title: '正規化テスト1',
 		status: 'open', // 有効な値を使用（正規化関数自体のテストはリポジトリ内で実装済み）
@@ -207,6 +212,7 @@ async function testChangeRequests() {
 
 	// 無効なpriority指定時のデフォルト値
 	const normalizeResult2 = await createChangeRequest({
+		projectId: DEFAULT_PROJECT_ID,
 		ticketId: `TEST-NORM2-${Date.now()}`,
 		title: '正規化テスト2',
 		priority: 'high', // 有効な値を使用
@@ -230,6 +236,7 @@ async function testImpactScopes() {
 
 	// まずテスト用の変更要求を作成
 	const changeRequestResult = await createChangeRequest({
+		projectId: DEFAULT_PROJECT_ID,
 		ticketId: `TEST-IMPACT-${Date.now()}`,
 		title: '影響範囲テスト用変更要求',
 	});
@@ -392,6 +399,7 @@ async function testAcceptanceConfirmations() {
 
 	// まずテスト用の変更要求を作成
 	const changeRequestResult = await createChangeRequest({
+		projectId: DEFAULT_PROJECT_ID,
 		ticketId: `TEST-ACCEPT-${Date.now()}`,
 		title: '受入条件テスト用変更要求',
 	});

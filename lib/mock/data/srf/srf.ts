@@ -79,6 +79,7 @@ export const systemFunctions: SystemFunction[] = [
       },
     ],
     createdAt: "2024-01-01T00:00:00Z",
+    deliverables: [],
     updatedAt: "2024-01-15T00:00:00Z",
   },
   {
@@ -151,6 +152,7 @@ export const systemFunctions: SystemFunction[] = [
       },
     ],
     createdAt: "2024-01-01T00:00:00Z",
+    deliverables: [],
     updatedAt: "2024-01-15T00:00:00Z",
   },
   {
@@ -223,6 +225,7 @@ export const systemFunctions: SystemFunction[] = [
       },
     ],
     createdAt: "2024-01-01T00:00:00Z",
+    deliverables: [],
     updatedAt: "2024-03-01T00:00:00Z",
   },
   {
@@ -295,6 +298,7 @@ export const systemFunctions: SystemFunction[] = [
       },
     ],
     createdAt: "2024-01-01T00:00:00Z",
+    deliverables: [],
     updatedAt: "2024-03-10T00:00:00Z",
   },
   {
@@ -367,6 +371,7 @@ export const systemFunctions: SystemFunction[] = [
       },
     ],
     createdAt: "2024-01-01T00:00:00Z",
+    deliverables: [],
     updatedAt: "2024-01-01T00:00:00Z",
   },
   {
@@ -438,6 +443,7 @@ export const systemFunctions: SystemFunction[] = [
       },
     ],
     createdAt: "2024-02-01T00:00:00Z",
+    deliverables: [],
     updatedAt: "2024-03-15T00:00:00Z",
   },
   {
@@ -510,6 +516,7 @@ export const systemFunctions: SystemFunction[] = [
       },
     ],
     createdAt: "2024-02-01T00:00:00Z",
+    deliverables: [],
     updatedAt: "2024-02-01T00:00:00Z",
   },
   {
@@ -581,6 +588,7 @@ export const systemFunctions: SystemFunction[] = [
       },
     ],
     createdAt: "2024-02-15T00:00:00Z",
+    deliverables: [],
     updatedAt: "2024-04-01T00:00:00Z",
   },
   // AP関連（8件）
@@ -646,6 +654,7 @@ export const systemFunctions: SystemFunction[] = [
       },
     ],
     createdAt: "2024-01-15T00:00:00Z",
+    deliverables: [],
     updatedAt: "2024-02-01T00:00:00Z",
   },
   {
@@ -710,6 +719,7 @@ export const systemFunctions: SystemFunction[] = [
       },
     ],
     createdAt: "2024-01-15T00:00:00Z",
+    deliverables: [],
     updatedAt: "2024-03-05T00:00:00Z",
   },
   {
@@ -781,6 +791,7 @@ export const systemFunctions: SystemFunction[] = [
       },
     ],
     createdAt: "2024-01-15T00:00:00Z",
+    deliverables: [],
     updatedAt: "2024-03-20T00:00:00Z",
   },
   {
@@ -853,6 +864,7 @@ export const systemFunctions: SystemFunction[] = [
       },
     ],
     createdAt: "2024-02-01T00:00:00Z",
+    deliverables: [],
     updatedAt: "2024-02-01T00:00:00Z",
   },
   {
@@ -924,6 +936,7 @@ export const systemFunctions: SystemFunction[] = [
       },
     ],
     createdAt: "2024-01-15T00:00:00Z",
+    deliverables: [],
     updatedAt: "2024-02-15T00:00:00Z",
   },
   {
@@ -988,6 +1001,7 @@ export const systemFunctions: SystemFunction[] = [
       },
     ],
     createdAt: "2024-02-01T00:00:00Z",
+    deliverables: [],
     updatedAt: "2024-03-25T00:00:00Z",
   },
   {
@@ -1060,6 +1074,7 @@ export const systemFunctions: SystemFunction[] = [
       },
     ],
     createdAt: "2024-03-01T00:00:00Z",
+    deliverables: [],
     updatedAt: "2024-03-01T00:00:00Z",
   },
   {
@@ -1131,6 +1146,7 @@ export const systemFunctions: SystemFunction[] = [
       },
     ],
     createdAt: "2024-02-15T00:00:00Z",
+    deliverables: [],
     updatedAt: "2024-04-05T00:00:00Z",
   },
   // GL関連（8件）
@@ -1204,6 +1220,7 @@ export const systemFunctions: SystemFunction[] = [
       },
     ],
     createdAt: "2024-01-01T00:00:00Z",
+    deliverables: [],
     updatedAt: "2024-02-01T00:00:00Z",
   },
   {
@@ -1275,6 +1292,7 @@ export const systemFunctions: SystemFunction[] = [
       },
     ],
     createdAt: "2024-01-01T00:00Z",
+    deliverables: [],
     updatedAt: "2024-02-01T00:00:00Z",
   },
   {
@@ -1346,6 +1364,7 @@ export const systemFunctions: SystemFunction[] = [
       },
     ],
     createdAt: "2024-01-15T00:00:00Z",
+    deliverables: [],
     updatedAt: "2024-02-15T00:00:00Z",
   },
   {
@@ -1418,6 +1437,7 @@ export const systemFunctions: SystemFunction[] = [
       },
     ],
     createdAt: "2024-01-15T00:00:00Z",
+    deliverables: [],
     updatedAt: "2024-03-10T00:00:00Z",
   },
   {
@@ -1489,6 +1509,7 @@ export const systemFunctions: SystemFunction[] = [
       },
     ],
     createdAt: "2024-02-01T00:00:00Z",
+    deliverables: [],
     updatedAt: "2024-04-01T00:00:00Z",
   },
   {
@@ -1562,6 +1583,7 @@ export const systemFunctions: SystemFunction[] = [
       },
     ],
     createdAt: "2024-03-01T00:00:00Z",
+    deliverables: [],
     updatedAt: "2024-03-01T00:00:00Z",
   },
   {
@@ -1634,6 +1656,7 @@ export const systemFunctions: SystemFunction[] = [
       },
     ],
     createdAt: "2024-03-01T00:00:00Z",
+    deliverables: [],
     updatedAt: "2024-03-20T00:00:00Z",
   },
   {
@@ -1708,6 +1731,7 @@ export const systemFunctions: SystemFunction[] = [
       },
     ],
     createdAt: "2024-03-15T00:00:00Z",
+    deliverables: [],
     updatedAt: "2024-03-15T00:00:00Z",
   },
 ];

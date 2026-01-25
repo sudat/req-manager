@@ -27,9 +27,11 @@ export type Requirement = {
   acceptanceCriteria: string[];
   acceptanceCriteriaJson: AcceptanceCriterionJson[];
   priority?: BusinessRequirementPriority;
+  /** @deprecated 要件に観点は不要。relatedDeliverableIds を使用してください */
   category?: SystemRequirementCategory;
   businessRequirementIds: string[];
   relatedSystemRequirementIds: string[];
+  relatedDeliverableIds?: string[]; // 関連成果物ID配列
   taskId?: string; // システム要件のタスクID（外部キー制約対応）
 };
 

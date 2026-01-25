@@ -179,11 +179,11 @@ export function RequirementCard({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="function">function</SelectItem>
-                <SelectItem value="data">data</SelectItem>
-                <SelectItem value="exception">exception</SelectItem>
-                <SelectItem value="auth">auth</SelectItem>
-                <SelectItem value="non_functional">non_functional</SelectItem>
+                <SelectItem value="function">機能</SelectItem>
+                <SelectItem value="data">データ</SelectItem>
+                <SelectItem value="exception">例外</SelectItem>
+                <SelectItem value="auth">認証・認可</SelectItem>
+                <SelectItem value="non_functional">非機能</SelectItem>
               </SelectContent>
             </Select>
           </div>

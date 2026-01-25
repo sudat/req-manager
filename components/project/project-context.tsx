@@ -5,11 +5,12 @@ import { listProjects } from "@/lib/data/projects"
 import type { Project } from "@/lib/domain"
 
 interface ProjectContextValue {
-  currentProjectId: string | null
+  currentProjectId: string | undefined
   currentProject: Project | null
   projects: Project[]
   loading: boolean
   setCurrentProjectId: (id: string) => void
+  refreshProjects: () => Promise<void>
 }
 
 const ProjectContext = createContext<ProjectContextValue | undefined>(undefined)
@@ -19,7 +20,7 @@ const DEFAULT_PROJECT_ID = "00000000-0000-0000-0000-000000000001"
 const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365
 
 export function ProjectProvider({ children }: { children: ReactNode }) {
-  const [currentProjectId, setCurrentProjectIdState] = useState<string | null>(null)
+  const [currentProjectId, setCurrentProjectIdState] = useState<string | undefined>(undefined)
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -27,6 +28,33 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     if (typeof window === "undefined") return
     localStorage.setItem(STORAGE_KEY, id)
     document.cookie = `${STORAGE_KEY}=${id}; path=/; max-age=${COOKIE_MAX_AGE_SECONDS}`
+  }
+
+  const refreshProjects = async () => {
+    try {
+      const { data, error } = await listProjects()
+      if (error) {
+        console.error("Failed to fetch projects:", error)
+        setProjects([])
+        return
+      }
+
+      setProjects(data ?? [])
+
+      // 現在のプロジェクトIDが削除されている場合は、デフォルトプロジェクトに切り替え
+      if (currentProjectId && !data?.some(p => p.id === currentProjectId)) {
+        if (data && data.length > 0) {
+          const defaultProject = data.find(p => p.id === DEFAULT_PROJECT_ID) ?? data[0]
+          setCurrentProjectIdState(defaultProject.id)
+          persistProjectId(defaultProject.id)
+        } else {
+          setCurrentProjectIdState(undefined)
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching projects:", err)
+      setProjects([])
+    }
   }
 
   useEffect(() => {
@@ -82,6 +110,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         projects,
         loading,
         setCurrentProjectId,
+        refreshProjects,
       }}
     >
       {children}

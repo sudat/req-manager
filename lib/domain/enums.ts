@@ -22,6 +22,7 @@ export type BusinessRequirementPriority = "Must" | "Should" | "Could";
 
 /**
  * システム要件カテゴリ（PRD v1.3）
+ * @deprecated 要件に観点は不要。成果物への紐づけ（relatedDeliverableIds）を使用してください
  */
 export type SystemRequirementCategory =
   | "function"
@@ -37,6 +38,7 @@ export type SrfStatus = "not_implemented" | "implementing" | "testing" | "implem
 
 /**
  * SRFカテゴリ
+ * @deprecated 成果物の種別で代替。deliverables[].type を使用してください
  */
 export type SrfCategory = "screen" | "internal" | "interface";
 

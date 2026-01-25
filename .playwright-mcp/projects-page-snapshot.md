@@ -1,0 +1,138 @@
+### New console messages
+- [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f...
+- [LOG] [Fast Refresh] done in 251ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dis...
+- [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f...
+- [LOG] [Fast Refresh] done in 185ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dis...
+- [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f...
+- [LOG] [Fast Refresh] done in 232ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dis...
+- [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f...
+- [LOG] [Fast Refresh] done in 139ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dis...
+
+### Page state
+- Page URL: http://localhost:3000/projects
+- Page Title: 要件管理ツール
+- Page Snapshot:
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - button [ref=e4]:
+        - img
+      - heading "要件管理ツール" [level=2] [ref=e6]
+      - navigation [ref=e7]:
+        - list [ref=e8]:
+          - listitem [ref=e9]:
+            - link "ダッシュボード" [ref=e10] [cursor=pointer]:
+              - /url: /dashboard
+              - img [ref=e11]
+              - generic [ref=e16]: ダッシュボード
+          - listitem [ref=e17]:
+            - link "照会" [ref=e18] [cursor=pointer]:
+              - /url: /query
+              - img [ref=e19]
+              - generic [ref=e22]: 照会
+          - listitem [ref=e24]:
+            - link "業務一覧" [ref=e25] [cursor=pointer]:
+              - /url: /business
+              - img [ref=e26]
+              - generic [ref=e29]: 業務一覧
+          - listitem [ref=e30]:
+            - link "システム領域一覧" [ref=e31] [cursor=pointer]:
+              - /url: /system-domains
+              - img [ref=e32]
+              - generic [ref=e42]: システム領域一覧
+          - listitem [ref=e43]:
+            - link "概念辞書" [ref=e44] [cursor=pointer]:
+              - /url: /ideas
+              - img [ref=e45]
+              - generic [ref=e47]: 概念辞書
+          - listitem [ref=e49]:
+            - link "変更要求一覧" [ref=e50] [cursor=pointer]:
+              - /url: /tickets
+              - img [ref=e51]
+              - generic [ref=e54]: 変更要求一覧
+          - listitem [ref=e55]:
+            - link "ベースライン履歴" [ref=e56] [cursor=pointer]:
+              - /url: /baseline
+              - img [ref=e57]
+              - generic [ref=e61]: ベースライン履歴
+          - listitem [ref=e62]:
+            - link "エクスポート" [ref=e63] [cursor=pointer]:
+              - /url: /export
+              - img [ref=e64]
+              - generic [ref=e67]: エクスポート
+          - listitem [ref=e69]:
+            - link "設定" [ref=e70] [cursor=pointer]:
+              - /url: /settings
+              - img [ref=e71]
+              - generic [ref=e74]: 設定
+      - button "新会計システムプロジェクト" [ref=e76]:
+        - generic [ref=e77]:
+          - img
+          - generic [ref=e78]: 新会計システムプロジェクト
+        - img
+    - main [ref=e79]:
+      - generic [ref=e81]:
+        - link "ダッシュボードに戻る" [ref=e82] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e83]
+          - text: ダッシュボードに戻る
+        - heading "プロジェクト管理" [level=1] [ref=e86]
+        - generic [ref=e87]:
+          - generic [ref=e88]:
+            - generic [ref=e90]:
+              - img [ref=e91]
+              - heading "テストプロジェクト" [level=3] [ref=e93]
+            - paragraph [ref=e94]: バリデーションテスト用プロジェクト
+            - generic [ref=e95]:
+              - generic [ref=e96]: "ID: 941a9dc7-14a2-4efd-8d6f-e611901487e4"
+              - generic [ref=e97]: "作成: 2026/1/22"
+            - generic [ref=e98]:
+              - link "編集" [ref=e99] [cursor=pointer]:
+                - /url: /projects/941a9dc7-14a2-4efd-8d6f-e611901487e4/edit
+                - button "編集" [ref=e100]:
+                  - img
+                  - text: 編集
+              - button "削除" [ref=e101]:
+                - img
+                - text: 削除
+          - generic [ref=e102]:
+            - generic [ref=e104]:
+              - img [ref=e105]
+              - heading "テスト用プロジェクト" [level=3] [ref=e107]
+            - paragraph [ref=e108]: E2Eテスト用の一時プロジェクト
+            - generic [ref=e109]:
+              - generic [ref=e110]: "ID: f7f85d50-7587-464b-90b8-5c85807e748c"
+              - generic [ref=e111]: "作成: 2026/1/22"
+            - generic [ref=e112]:
+              - link "編集" [ref=e113] [cursor=pointer]:
+                - /url: /projects/f7f85d50-7587-464b-90b8-5c85807e748c/edit
+                - button "編集" [ref=e114]:
+                  - img
+                  - text: 編集
+              - button "削除" [ref=e115]:
+                - img
+                - text: 削除
+          - generic [ref=e116]:
+            - generic [ref=e117]:
+              - generic [ref=e118]:
+                - img [ref=e119]
+                - heading "新会計システムプロジェクト" [level=3] [ref=e121]
+              - generic [ref=e122]: 選択中
+            - paragraph [ref=e123]: 既存データを紐付けた初期プロジェクトttest
+            - generic [ref=e124]:
+              - generic [ref=e125]: "ID: 00000000-0000-0000-0000-000000000001"
+              - generic [ref=e126]: "作成: 2026/1/21"
+            - generic [ref=e127]:
+              - link "編集" [ref=e128] [cursor=pointer]:
+                - /url: /projects/00000000-0000-0000-0000-000000000001/edit
+                - button "編集" [ref=e129]:
+                  - img
+                  - text: 編集
+              - button "削除" [disabled]:
+                - img
+                - text: 削除
+  - button "Open Next.js Dev Tools" [ref=e135] [cursor=pointer]:
+    - img [ref=e136]
+  - alert [ref=e139]
+```

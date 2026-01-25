@@ -170,4 +170,249 @@
   .section-heading {
     @apply border-l-4 border-brand-500 pl-3 text-[16px] font-semibold text-slate-900;
   }
+
+  /* ランディングページ */
+  .landing-page {
+    @apply fixed inset-0 flex items-center justify-center relative overflow-hidden;
+    background-color: #0a0a0a;
+    z-index: 999999;
+  }
+
+  .landing-background {
+    @apply absolute inset-0;
+    opacity: 0.03;
+    background-image: linear-gradient(to right, #ffffff 1px, transparent 1px),
+      linear-gradient(to bottom, #ffffff 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  .landing-content {
+    @apply relative z-10 text-center px-6 max-w-2xl;
+  }
+
+  .landing-title {
+    @apply text-4xl md:text-5xl font-light text-white mb-12;
+    animation: fade-in 0.8s ease-out forwards;
+  }
+
+  .landing-tagline {
+    @apply text-lg md:text-xl text-white/80 font-light leading-relaxed mb-16;
+    animation: fade-in 0.8s ease-out 0.2s forwards;
+    opacity: 0;
+  }
+
+  .landing-button {
+    @apply inline-flex items-center justify-center px-8 py-3 text-white font-light;
+    background-color: #0066cc;
+    transition: background-color 0.2s;
+    animation: fade-in 0.8s ease-out 0.4s forwards;
+    opacity: 0;
+  }
+
+  .landing-button:hover {
+    background-color: #0052a3;
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* ========================================
+     ランディングページ改善用スタイル
+     ======================================== */
+
+  /* メッシュグラデーション背景（オーロラ風） */
+  .mesh-gradient {
+    background:
+      radial-gradient(at 40% 20%, hsla(263, 90%, 65%, 0.6) 0px, transparent 50%),
+      radial-gradient(at 80% 0%, hsla(189, 100%, 56%, 0.4) 0px, transparent 50%),
+      radial-gradient(at 0% 50%, hsla(355, 85%, 63%, 0.3) 0px, transparent 50%),
+      radial-gradient(at 80% 50%, hsla(240, 100%, 70%, 0.4) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, hsla(22, 100%, 60%, 0.3) 0px, transparent 50%);
+    background-color: #0f0f1e;
+  }
+
+  /* テキストグラデーション */
+  .text-gradient {
+    background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #EC4899 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* グラスモーフィズムカード */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+  }
+
+  .glass-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  }
+
+  /* CTAボタン強化 */
+  .cta-button {
+    background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+    transition: all 0.3s ease;
+  }
+
+  .cta-button:hover {
+    background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+    transform: scale(1.05);
+    box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
+  }
+
+  /* Large Type タイトル */
+  .hero-title {
+    font-size: clamp(48px, 8vw, 72px);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+  }
+
+  /* 統計数字用スタイル */
+  .stat-number {
+    font-size: clamp(36px, 5vw, 48px);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  /* ========================================
+     パーティクル背景アニメーション
+     ======================================== */
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0) translateX(0);
+      opacity: 0;
+    }
+    10% {
+      opacity: 1;
+    }
+    90% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(-100vh) translateX(20px);
+      opacity: 0;
+    }
+  }
+
+  .particle {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    pointer-events: none;
+    animation: float linear infinite;
+  }
+
+  .particle--small {
+    width: 2px;
+    height: 2px;
+  }
+
+  .particle--medium {
+    width: 4px;
+    height: 4px;
+  }
+
+  .particle--large {
+    width: 6px;
+    height: 6px;
+  }
+
+  /* ========================================
+     カスタムカーソル
+     ======================================== */
+  .custom-cursor {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(99, 102, 241, 0.5);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: width 0.2s, height 0.2s, border-color 0.2s;
+  }
+
+  .custom-cursor--hover {
+    width: 40px;
+    height: 40px;
+    border-color: rgba(139, 92, 246, 0.8);
+    background: rgba(139, 92, 246, 0.1);
+  }
+
+  .custom-cursor-dot {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 6px;
+    height: 6px;
+    background: rgba(99, 102, 241, 0.8);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+  }
+
+  /* モバイルではカスタムカーソルを非表示 */
+  @media (hover: none) and (pointer: coarse) {
+    .custom-cursor,
+    .custom-cursor-dot {
+      display: none;
+    }
+  }
+
+  /* ========================================
+     スクロールプログレスバー
+     ======================================== */
+  .scroll-progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #6366F1, #8B5CF6, #EC4899);
+    transform-origin: left;
+    z-index: 10000;
+    transition: transform 0.1s ease-out;
+  }
+
+  /* ========================================
+     スムーズスクロール
+     ======================================== */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* ========================================
+     セクションリンク用
+     ======================================== */
+  .section-link {
+    scroll-margin-top: 2rem;
+  }
+
+  /* ========================================
+     フッタースタイル
+     ======================================== */
+  .footer-link {
+    @apply text-white/60 hover:text-white transition-colors duration-200;
+  }
+
+  .footer-link:hover {
+    @apply text-white;
+  }
 }

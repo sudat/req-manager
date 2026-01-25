@@ -103,13 +103,14 @@ export function useChangeRequestEdit(
 			setLoading(false);
 			return;
 		}
+		const projectId = currentProjectId;
 		let active = true;
 
 		async function fetchData(): Promise<void> {
 			setLoading(true);
 
 			// 変更要求を取得
-			const { data, error: fetchError } = await getChangeRequestById(changeRequestId, currentProjectId);
+			const { data, error: fetchError } = await getChangeRequestById(changeRequestId, projectId);
 			if (!active) return;
 			if (fetchError || !data) {
 				setError(fetchError ?? "変更要求が見つかりません");
@@ -133,7 +134,7 @@ export function useChangeRequestEdit(
 				try {
 					const result = await transformImpactScopesToSelectedRequirements(
 						impactScopes,
-						currentProjectId
+						projectId
 					);
 					if (active) {
 						setSelectedRequirements(result.selectedRequirements);

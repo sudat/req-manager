@@ -1,6 +1,8 @@
 // ドメインエンティティ型定義
 import type { BusinessArea, TicketStatus, TicketPriority, SrfCategory, SrfStatus, SystemDesignItem } from './enums';
 import type { TicketRequirementReference, TicketChangeItem, TicketConceptReference, TicketVersionApplication, EntryPoint } from './value-objects';
+import type { SystemDesignItemV2 } from './schemas/system-design';
+import type { Deliverable } from './schemas/deliverable';
 
 /**
  * Business（業務）
@@ -82,14 +84,18 @@ export interface Concept {
 export interface SystemFunction {
   id: string;              // SRF-001
   systemDomainId?: string | null; // システム領域ID（例: AR）
+  /** @deprecated 成果物の種別で代替。deliverables[].type を使用してください */
   category: SrfCategory;   // screen
   title: string;           // 機能名
   summary: string;         // 説明
   status: SrfStatus;       // implemented
   relatedTaskIds: string[];  // [TASK-001] (外部キー配列)
   requirementIds: string[];  // [SR-TASK-001-001] (関連要件ID)
-  systemDesign: SystemDesignItem[];  // システム設計項目配列
+  /** @deprecated deliverablesに移行中。新規はdeliverables[].designを使用してください */
+  systemDesign: (SystemDesignItem | SystemDesignItemV2)[];  // システム設計項目配列（V2とレガシーの混在対応）
+  /** @deprecated deliverablesに統合されました。deliverables[].entryPointを使用してください */
   entryPoints?: EntryPoint[];  // PRD v1.3（DB: system_functions.entry_points）
+  deliverables: Deliverable[];  // 成果物配列（新構造）
   codeRefs: {
     githubUrl?: string;
     paths: string[];
@@ -106,6 +112,9 @@ export interface Project {
   id: string;              // UUID
   name: string;            // プロジェクト名
   description: string | null;  // 説明
+  githubUrl: string | null;    // GitHubリポジトリURL
+  reviewLinkThreshold: 'low' | 'medium' | 'high';  // 要確認リンク判定基準
+  autoSave: boolean;       // 自動保存有効フラグ
   createdAt: string;       // ISO日付
   updatedAt: string;       // ISO日付
 }
