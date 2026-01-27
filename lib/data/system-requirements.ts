@@ -1,19 +1,20 @@
 import { supabase, getSupabaseConfigError } from "@/lib/supabase/client";
 import type { SystemRequirementCategory } from "@/lib/domain";
+import type { AcceptanceCriterion } from "@/lib/domain";
 import {
 	acceptanceCriteriaJsonToLegacy,
-	legacyAcceptanceCriteriaToJson,
-	mergeAcceptanceCriteriaJsonWithLegacy,
-	normalizeAcceptanceCriteriaJson,
 	type AcceptanceCriterionJson,
 } from "@/lib/data/structured";
+import {
+	acceptanceCriteriaToJson,
+	listAcceptanceCriteriaBySystemRequirementIds,
+} from "@/lib/data/acceptance-criteria";
 
 export const getSystemRequirementCategoryLabel = (category: SystemRequirementCategory): string => {
 	const labels: Record<SystemRequirementCategory, string> = {
 		function: "機能",
 		data: "データ",
 		exception: "例外",
-		auth: "認証・認可",
 		non_functional: "非機能",
 	};
 	return labels[category] || category;
@@ -84,21 +85,15 @@ const normalizeCategory = (value: unknown): SystemRequirementCategory => {
 		value === "function" ||
 		value === "data" ||
 		value === "exception" ||
-		value === "auth" ||
 		value === "non_functional"
 	) {
 		return value;
 	}
+	if (value === "auth") return "non_functional";
 	return "function";
 };
 
 const toSystemRequirement = (row: SystemRequirementRow): SystemRequirement => {
-	const normalizedJson = normalizeAcceptanceCriteriaJson(row.acceptance_criteria_json);
-	const acceptanceCriteriaJson =
-		normalizedJson.length > 0
-			? normalizedJson
-			: legacyAcceptanceCriteriaToJson(row.acceptance_criteria ?? []);
-
 	return {
 		id: row.id,
 		taskId: row.task_id,
@@ -111,8 +106,9 @@ const toSystemRequirement = (row: SystemRequirementRow): SystemRequirement => {
 		categoryRaw: row.category,
 		businessRequirementIds: row.business_requirement_ids ?? [],
 		relatedDeliverableIds: row.related_deliverable_ids ?? [],
-		acceptanceCriteriaJson,
-		acceptanceCriteria: acceptanceCriteriaJsonToLegacy(acceptanceCriteriaJson),
+		// 受入条件は正本テーブル acceptance_criteria からマージする
+		acceptanceCriteriaJson: [],
+		acceptanceCriteria: [],
 		systemDomainIds: row.system_domain_ids ?? [],
 		sortOrder: row.sort_order ?? 0,
 		createdAt: row.created_at,
@@ -140,6 +136,43 @@ const failIfMissingConfig = () => {
 	return null;
 };
 
+const mergeAcceptanceCriteriaFromCanonical = async (
+	requirements: SystemRequirement[],
+	projectId?: string
+) => {
+	if (requirements.length === 0) return { data: [], error: null };
+
+	const ids = requirements.map((req) => req.id);
+	const { data: acceptanceRows, error } = await listAcceptanceCriteriaBySystemRequirementIds(
+		ids,
+		projectId
+	);
+	if (error) return { data: null, error };
+
+	const acceptanceMap = new Map<string, AcceptanceCriterion[]>();
+	for (const row of acceptanceRows ?? []) {
+		const list = acceptanceMap.get(row.systemRequirementId);
+		if (list) {
+			list.push(row);
+		} else {
+			acceptanceMap.set(row.systemRequirementId, [row]);
+		}
+	}
+
+	const merged = requirements.map((req) => {
+		const canonical = acceptanceMap.get(req.id);
+		if (!canonical || canonical.length === 0) return req;
+		const acceptanceCriteriaJson = acceptanceCriteriaToJson(canonical);
+		return {
+			...req,
+			acceptanceCriteriaJson,
+			acceptanceCriteria: acceptanceCriteriaJsonToLegacy(acceptanceCriteriaJson),
+		};
+	});
+
+	return { data: merged, error: null };
+};
+
 export const listSystemRequirementsByTaskId = async (taskId: string, projectId?: string) => {
 	const configError = failIfMissingConfig();
 	if (configError) return configError;
@@ -157,7 +190,8 @@ export const listSystemRequirementsByTaskId = async (taskId: string, projectId?:
 
 	const { data, error } = await query;
 	if (error) return { data: null, error: error.message };
-	return { data: (data as SystemRequirementRow[]).map(toSystemRequirement), error: null };
+	const mapped = (data as SystemRequirementRow[]).map(toSystemRequirement);
+	return mergeAcceptanceCriteriaFromCanonical(mapped, projectId);
 };
 
 export const listSystemRequirementsByIds = async (ids: string[], projectId?: string) => {
@@ -165,11 +199,7 @@ export const listSystemRequirementsByIds = async (ids: string[], projectId?: str
 	if (configError) return configError;
 	if (ids.length === 0) return { data: [], error: null };
 
-	let query = supabase
-		.from("system_requirements")
-		.select("*")
-		.in("id", ids)
-		.order("id");
+	let query = supabase.from("system_requirements").select("*").in("id", ids).order("id");
 
 	if (projectId) {
 		query = query.eq("project_id", projectId);
@@ -177,19 +207,15 @@ export const listSystemRequirementsByIds = async (ids: string[], projectId?: str
 
 	const { data, error } = await query;
 	if (error) return { data: null, error: error.message };
-	return { data: (data as SystemRequirementRow[]).map(toSystemRequirement), error: null };
+	const mapped = (data as SystemRequirementRow[]).map(toSystemRequirement);
+	return mergeAcceptanceCriteriaFromCanonical(mapped, projectId);
 };
 
 export const listSystemRequirements = async (projectId?: string) => {
 	const configError = failIfMissingConfig();
 	if (configError) return configError;
 
-	let query = supabase
-		.from("system_requirements")
-		.select("*")
-		.order("task_id")
-		.order("sort_order")
-		.order("id");
+	let query = supabase.from("system_requirements").select("*").order("task_id").order("sort_order").order("id");
 
 	if (projectId) {
 		query = query.eq("project_id", projectId);
@@ -197,7 +223,8 @@ export const listSystemRequirements = async (projectId?: string) => {
 
 	const { data, error } = await query;
 	if (error) return { data: null, error: error.message };
-	return { data: (data as SystemRequirementRow[]).map(toSystemRequirement), error: null };
+	const mapped = (data as SystemRequirementRow[]).map(toSystemRequirement);
+	return mergeAcceptanceCriteriaFromCanonical(mapped, projectId);
 };
 
 export const createSystemRequirements = async (inputs: SystemRequirementCreateInput[]) => {
@@ -207,20 +234,14 @@ export const createSystemRequirements = async (inputs: SystemRequirementCreateIn
 
 	const now = new Date().toISOString();
 	const payload = inputs.map((input) => {
-		const acceptanceCriteriaJson = normalizeAcceptanceCriteriaJson(
-			input.acceptanceCriteriaJson ?? legacyAcceptanceCriteriaToJson(input.acceptanceCriteria)
-		);
-
 		return {
 			...toSystemRequirementRowBase(input),
 			project_id: input.projectId,
-		category: input.category ?? "function",
-		business_requirement_ids: input.businessRequirementIds ?? [],
-		related_deliverable_ids: input.relatedDeliverableIds ?? [],
-		acceptance_criteria_json: acceptanceCriteriaJson,
-		acceptance_criteria: acceptanceCriteriaJsonToLegacy(acceptanceCriteriaJson),
-		created_at: now,
-		updated_at: now,
+			category: input.category ?? "function",
+			business_requirement_ids: input.businessRequirementIds ?? [],
+			related_deliverable_ids: input.relatedDeliverableIds ?? [],
+			created_at: now,
+			updated_at: now,
 		};
 	});
 
@@ -234,23 +255,24 @@ export const createSystemRequirements = async (inputs: SystemRequirementCreateIn
 };
 
 export const listSystemRequirementsBySrfId = async (srfId: string, projectId?: string) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
+	const configError = failIfMissingConfig();
+	if (configError) return configError;
 
-  let query = supabase
-    .from("system_requirements")
-    .select("*")
-    .eq("srf_id", srfId)
-    .order("sort_order")
-    .order("id");
+	let query = supabase
+		.from("system_requirements")
+		.select("*")
+		.eq("srf_id", srfId)
+		.order("sort_order")
+		.order("id");
 
 	if (projectId) {
 		query = query.eq("project_id", projectId);
 	}
 
-  const { data, error } = await query;
-  if (error) return { data: null, error: error.message };
-  return { data: (data as SystemRequirementRow[]).map(toSystemRequirement), error: null };
+	const { data, error } = await query;
+	if (error) return { data: null, error: error.message };
+	const mapped = (data as SystemRequirementRow[]).map(toSystemRequirement);
+	return mergeAcceptanceCriteriaFromCanonical(mapped, projectId);
 };
 
 export const createSystemRequirement = async (input: SystemRequirementCreateInput) => {
@@ -258,17 +280,12 @@ export const createSystemRequirement = async (input: SystemRequirementCreateInpu
   if (configError) return configError;
 
   const now = new Date().toISOString();
-	const acceptanceCriteriaJson = normalizeAcceptanceCriteriaJson(
-		input.acceptanceCriteriaJson ?? legacyAcceptanceCriteriaToJson(input.acceptanceCriteria)
-	);
   const payload = {
     ...toSystemRequirementRowBase(input),
 		project_id: input.projectId,
 		category: input.category ?? "function",
 		business_requirement_ids: input.businessRequirementIds ?? [],
 		related_deliverable_ids: input.relatedDeliverableIds ?? [],
-		acceptance_criteria_json: acceptanceCriteriaJson,
-		acceptance_criteria: acceptanceCriteriaJsonToLegacy(acceptanceCriteriaJson),
     created_at: now,
     updated_at: now,
   };
@@ -284,16 +301,16 @@ export const createSystemRequirement = async (input: SystemRequirementCreateInpu
 };
 
 export const updateSystemRequirement = async (
-  id: string,
-  input: Omit<SystemRequirementInput, "id">,
-  projectId?: string
+	id: string,
+	input: Omit<SystemRequirementInput, "id">,
+	projectId?: string
 ) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
+	const configError = failIfMissingConfig();
+	if (configError) return configError;
 
 	let fetchQuery = supabase
 		.from("system_requirements")
-		.select("category, business_requirement_ids, related_deliverable_ids, acceptance_criteria_json")
+		.select("category, business_requirement_ids, related_deliverable_ids")
 		.eq("id", id);
 
 	if (projectId) {
@@ -301,53 +318,31 @@ export const updateSystemRequirement = async (
 	}
 
 	const { data: existing, error: fetchError } = await fetchQuery.maybeSingle();
-
 	if (fetchError) return { data: null, error: fetchError.message };
 
-  const now = new Date().toISOString();
-	const acceptanceCriteriaJson =
-		input.acceptanceCriteriaJson !== undefined
-			? normalizeAcceptanceCriteriaJson(input.acceptanceCriteriaJson)
-			: mergeAcceptanceCriteriaJsonWithLegacy(
-					(existing as Pick<SystemRequirementRow, "acceptance_criteria_json"> | null)
-						?.acceptance_criteria_json,
-					input.acceptanceCriteria
-			  );
+	const existingRow = existing as SystemRequirementRow | null;
+	const now = new Date().toISOString();
 
-  const payload = {
-    ...toSystemRequirementRowBase({ ...input, id }),
-		category:
-			input.category !== undefined
-				? input.category
-				: normalizeCategory((existing as SystemRequirementRow | null)?.category),
-		business_requirement_ids:
-			input.businessRequirementIds !== undefined
-				? input.businessRequirementIds
-				: ((existing as SystemRequirementRow | null)?.business_requirement_ids ?? []),
-		related_deliverable_ids:
-			input.relatedDeliverableIds !== undefined
-				? input.relatedDeliverableIds
-				: ((existing as SystemRequirementRow | null)?.related_deliverable_ids ?? []),
-		acceptance_criteria_json: acceptanceCriteriaJson,
-		acceptance_criteria: acceptanceCriteriaJsonToLegacy(acceptanceCriteriaJson),
-    updated_at: now,
-  };
+	const payload = {
+		...toSystemRequirementRowBase({ ...input, id }),
+		category: input.category ?? normalizeCategory(existingRow?.category),
+		business_requirement_ids: input.businessRequirementIds ?? existingRow?.business_requirement_ids ?? [],
+		related_deliverable_ids: input.relatedDeliverableIds ?? existingRow?.related_deliverable_ids ?? [],
+		updated_at: now,
+	};
 
-  let updateQuery = supabase
-    .from("system_requirements")
-    .update(payload)
-    .eq("id", id);
+	let updateQuery = supabase
+		.from("system_requirements")
+		.update(payload)
+		.eq("id", id);
 
-  if (projectId) {
-    updateQuery = updateQuery.eq("project_id", projectId);
-  }
+	if (projectId) {
+		updateQuery = updateQuery.eq("project_id", projectId);
+	}
 
-  const { data, error } = await updateQuery
-    .select("*")
-    .single();
-
-  if (error) return { data: null, error: error.message };
-  return { data: toSystemRequirement(data as SystemRequirementRow), error: null };
+	const { data, error } = await updateQuery.select("*").single();
+	if (error) return { data: null, error: error.message };
+	return { data: toSystemRequirement(data as SystemRequirementRow), error: null };
 };
 
 export const deleteSystemRequirement = async (id: string, projectId?: string) => {

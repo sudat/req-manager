@@ -12,23 +12,19 @@ export function toBusinessRequirementInput(
 	taskId: string,
 	sortOrder: number,
 ): BusinessRequirementInput {
-	const acceptanceCriteriaJson = mergeAcceptanceCriteriaJsonWithLegacy(
-		requirement.acceptanceCriteriaJson,
-		requirement.acceptanceCriteria
-	);
+	const goal = requirement.goal.trim() || requirement.summary.trim();
 	return {
 		id: requirement.id,
 		taskId,
 		title: requirement.title,
-		summary: requirement.summary,
+		goal,
+		constraints: requirement.constraints.trim(),
+		owner: requirement.owner.trim(),
 		conceptIds: requirement.conceptIds,
 		srfId: requirement.srfId,
 		systemDomainIds: requirement.systemDomainIds,
 		impacts: [], // 影響領域は廃止
 		relatedSystemRequirementIds: requirement.relatedSystemRequirementIds ?? [],
-		priority: requirement.priority,
-		acceptanceCriteriaJson,
-		acceptanceCriteria: acceptanceCriteriaJsonToLegacy(acceptanceCriteriaJson),
 		sortOrder,
 	};
 }
@@ -41,13 +37,15 @@ export function fromBusinessRequirement(
 		id: br.id,
 		type: "業務要件",
 		title: br.title,
-		summary: br.summary,
+		summary: br.summary ?? br.goal,
+		goal: br.goal,
+		constraints: br.constraints,
+		owner: br.owner,
 		conceptIds: br.conceptIds,
 		srfId: br.srfId,
 		systemDomainIds: br.systemDomainIds ?? [],
 		acceptanceCriteria: br.acceptanceCriteria,
 		acceptanceCriteriaJson: br.acceptanceCriteriaJson,
-		priority: br.priority,
 		category: undefined,
 		businessRequirementIds: [],
 		relatedSystemRequirementIds: br.relatedSystemRequirementIds ?? [],
@@ -74,6 +72,7 @@ export function toSystemRequirementInput(
 		impacts: [], // 影響領域は廃止
 		category: requirement.category,
 		businessRequirementIds: requirement.businessRequirementIds ?? [],
+		relatedDeliverableIds: requirement.relatedDeliverableIds ?? [],
 		acceptanceCriteriaJson,
 		acceptanceCriteria: acceptanceCriteriaJsonToLegacy(acceptanceCriteriaJson),
 		systemDomainIds: requirement.systemDomainIds,
@@ -90,14 +89,17 @@ export function fromSystemRequirement(
 		type: "システム要件",
 		title: sr.title,
 		summary: sr.summary,
+		goal: "",
+		constraints: "",
+		owner: "",
 		conceptIds: sr.conceptIds,
 		srfId: sr.srfId,
 		systemDomainIds: sr.systemDomainIds ?? [],
 		acceptanceCriteria: sr.acceptanceCriteria,
 		acceptanceCriteriaJson: sr.acceptanceCriteriaJson,
-		priority: undefined,
 		category: sr.category,
 		businessRequirementIds: sr.businessRequirementIds ?? [],
+		relatedDeliverableIds: sr.relatedDeliverableIds ?? [],
 		relatedSystemRequirementIds: [],
 		taskId: sr.taskId, // taskIdを追加（外部キー制約対応）
 	};

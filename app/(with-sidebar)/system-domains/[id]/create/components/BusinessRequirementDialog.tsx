@@ -49,8 +49,10 @@ function CheckboxList({
               <span className="font-mono text-[11px] text-slate-500">{item.id}</span>
               <span className="font-medium">{item.title}</span>
             </div>
-            {item.summary && (
-              <p className="text-[12px] text-slate-500 mt-0.5 line-clamp-2">{item.summary}</p>
+            {(item.goal || item.summary) && (
+              <p className="text-[12px] text-slate-500 mt-0.5 line-clamp-2">
+                {item.goal || item.summary}
+              </p>
             )}
           </div>
         </label>

@@ -130,7 +130,7 @@ export const businessListConfig: ResourceListConfig<Business> = {
 		{
 			icon: Eye,
 			label: "照会",
-			href: () => `/business/${biz.id}/tasks`,
+			href: () => `/business/${biz.id}`,
 		},
 		{
 			icon: Pencil,
@@ -138,7 +138,7 @@ export const businessListConfig: ResourceListConfig<Business> = {
 			href: () => `/business/${biz.id}/edit`,
 		},
 	],
-	getRowHref: (biz) => `/business/${biz.id}/tasks`,
+	getRowHref: (biz) => `/business/${biz.id}`,
 	getSearchText: (biz) => [biz.id, biz.name, biz.area, biz.summary].join(" "),
 };
 
@@ -175,7 +175,12 @@ const systemDomainColumns: ColumnDef<SystemDomain & { functionCount?: number }>[
 		id: "functionCount",
 		header: "機能数",
 		className: "px-4 py-3",
-		cell: (domain) => <span className="font-mono text-[13px] text-slate-700">{domain.functionCount ?? 0}</span>,
+		cell: (domain) => (
+			<div className="flex items-baseline gap-1.5">
+				<span className="font-mono text-[16px] font-semibold text-slate-900 tabular-nums">{domain.functionCount ?? 0}</span>
+				<span className="text-[11px] text-slate-400">件</span>
+			</div>
+		),
 	},
 ];
 

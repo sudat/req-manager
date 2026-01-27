@@ -5,9 +5,12 @@ export type TaskKnowledge = {
 	taskId: string;
 	taskName: string;
 	taskSummary: string;
+	businessContext: string;
+	processSteps: string;
+	input: string;
+	output: string;
+	conceptIdsYaml: string;
 	person?: string;
-	input?: string;
-	output?: string;
 	businessRequirements: Requirement[];
 	systemRequirements: Requirement[];
 	designDocs: DesignDoc[];

@@ -8,9 +8,7 @@ import { CardSkeleton, PageHeaderSkeleton } from "@/components/skeleton";
 import {
 	FunctionSummaryCard,
 	SystemRequirementsSection,
-	SystemDesignSection,
-	EntryPointsSection,
-	DeliverablesSection,
+	ImplUnitSdSection,
 } from "@/components/system-domains";
 import {
 	Breadcrumb,
@@ -23,9 +21,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { listConcepts } from "@/lib/data/concepts";
 import { getSystemFunctionById } from "@/lib/data/system-functions";
+import { listImplUnitSdsBySrfId } from "@/lib/data/impl-unit-sds";
 import { listSystemRequirementsBySrfId } from "@/lib/data/system-requirements";
 import { listBusinessRequirementsByIds } from "@/lib/data/business-requirements";
-import type { SystemFunction } from "@/lib/domain";
+import type { SystemFunction, ImplUnitSd } from "@/lib/domain";
 import { useProject } from "@/components/project/project-context";
 import {
 	buildHealthScoreSummary,
@@ -43,7 +42,7 @@ function PageLayout({
 }): React.ReactNode {
 	return (
 		<div className="flex-1 min-h-screen bg-slate-50">
-			<div className="mx-auto max-w-[1400px] px-8 py-4">{children}</div>
+			<div className="mx-auto max-w-[1400px] px-8 py-6">{children}</div>
 		</div>
 	);
 }
@@ -104,6 +103,9 @@ export default function SystemFunctionDetailPage({
 	);
 	const [healthLoading, setHealthLoading] = useState(true);
 	const [healthError, setHealthError] = useState<string | null>(null);
+	const [implUnitSds, setImplUnitSds] = useState<ImplUnitSd[]>([]);
+	const [implUnitsLoading, setImplUnitsLoading] = useState(true);
+	const [implUnitsError, setImplUnitsError] = useState<string | null>(null);
 	const { currentProjectId, loading: projectLoading } = useProject();
 
 	useEffect(() => {
@@ -202,6 +204,37 @@ export default function SystemFunctionDetailPage({
 		};
 	}, [srf, currentProjectId, projectLoading]);
 
+	useEffect(() => {
+		if (projectLoading) return;
+		if (!currentProjectId) {
+			setImplUnitsError("プロジェクトが選択されていません");
+			setImplUnitsLoading(false);
+			setImplUnitSds([]);
+			return;
+		}
+		let active = true;
+		const projectId = currentProjectId;
+
+		async function fetchImplUnits(): Promise<void> {
+			setImplUnitsLoading(true);
+			const { data, error: fetchError } = await listImplUnitSdsBySrfId(srfId, projectId);
+			if (!active) return;
+			if (fetchError) {
+				setImplUnitsError(fetchError);
+				setImplUnitSds([]);
+			} else {
+				setImplUnitsError(null);
+				setImplUnitSds(data ?? []);
+			}
+			setImplUnitsLoading(false);
+		}
+
+		fetchImplUnits();
+		return () => {
+			active = false;
+		};
+	}, [srfId, currentProjectId, projectLoading]);
+
 	if (loading) {
 		return <LoadingState />;
 	}
@@ -234,7 +267,7 @@ export default function SystemFunctionDetailPage({
 			</Breadcrumb>
 
 			{/* タイトルと編集ボタン */}
-			<div className="flex items-center justify-between mb-4">
+			<div className="flex items-center justify-between mb-6">
 				<h1 className="text-[32px] font-semibold tracking-tight text-slate-900">
 					システム機能詳細
 				</h1>
@@ -246,8 +279,8 @@ export default function SystemFunctionDetailPage({
 				</Link>
 			</div>
 
-			<FunctionSummaryCard srf={srf} domainId={id} />
-			<div className="mt-4">
+			<div className="space-y-4">
+				<FunctionSummaryCard srf={srf} domainId={id} />
 				<HealthScoreCard
 					title="システム機能ヘルススコア"
 					summary={healthSummary}
@@ -257,16 +290,35 @@ export default function SystemFunctionDetailPage({
 					showStats
 				/>
 			</div>
-			<SystemRequirementsSection srfId={srf.id} />
-			{/* 成果物表示（新構造） */}
-			{srf.deliverables.length > 0 && (
-				<DeliverablesSection deliverables={srf.deliverables} />
-			)}
-			{/* 後方互換性: 古いsystemDesignも表示 */}
-			{srf.systemDesign.length > 0 && (
-				<SystemDesignSection systemDesign={srf.systemDesign} />
-			)}
-			<EntryPointsSection entryPoints={srf.entryPoints ?? []} />
+
+			<div className="mt-6 space-y-6">
+				<section className="space-y-4">
+					<div>
+						<div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
+							仕様
+						</div>
+						<div className="text-[14px] font-medium text-slate-700">
+							システム要件
+						</div>
+					</div>
+					<SystemRequirementsSection srfId={srf.id} />
+				</section>
+				<section className="space-y-4">
+					<div>
+						<div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
+							実装
+						</div>
+						<div className="text-[14px] font-medium text-slate-700">
+							実装単位SD（IU）
+						</div>
+					</div>
+					<ImplUnitSdSection
+						items={implUnitSds}
+						loading={implUnitsLoading}
+						error={implUnitsError}
+					/>
+				</section>
+			</div>
 		</PageLayout>
 	);
 }

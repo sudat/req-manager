@@ -39,7 +39,13 @@ export default function BusinessCreatePage() {
       return;
     let active = true;
     async function fetchNextId(): Promise<void> {
-      const { data, error: fetchError } = await listBusinesses();
+      const projectId = requireProjectId({
+        currentProjectId,
+        projectLoading,
+        onMissing: setError,
+      });
+      if (!projectId) return;
+      const { data, error: fetchError } = await listBusinesses(projectId);
       if (!active) return;
       if (fetchError) {
         setError(fetchError);

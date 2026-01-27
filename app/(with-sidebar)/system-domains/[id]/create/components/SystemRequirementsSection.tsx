@@ -8,10 +8,12 @@ import { Plus } from "lucide-react";
 import { SystemRequirementCard } from "./SystemRequirementCard";
 import type { SystemRequirementCard as SysReqCard } from "../types";
 import type { BusinessRequirement } from "@/lib/data/business-requirements";
+import type { Deliverable } from "@/lib/domain/schemas/deliverable";
 
 type SystemRequirementsSectionProps = {
   systemRequirements: SysReqCard[];
   businessRequirements: BusinessRequirement[];
+  deliverables: Deliverable[];
   loading: boolean;
   onAddSystemRequirement: () => void;
   onUpdateSystemRequirement: (sysReqId: string, patch: Partial<SysReqCard>) => void;
@@ -22,6 +24,7 @@ type SystemRequirementsSectionProps = {
 export function SystemRequirementsSection({
   systemRequirements,
   businessRequirements,
+  deliverables,
   loading,
   onAddSystemRequirement,
   onUpdateSystemRequirement,
@@ -68,6 +71,7 @@ export function SystemRequirementsSection({
               key={sysReq.id}
               systemRequirement={sysReq}
               businessRequirementMap={businessRequirementMap}
+              deliverables={deliverables}
               onUpdate={(patch) => onUpdateSystemRequirement(sysReq.id, patch)}
               onRemove={() => onRemoveSystemRequirement(sysReq.id)}
               onOpenBusinessRequirementDialog={() => onOpenBusinessRequirementDialog(sysReq.id)}

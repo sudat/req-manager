@@ -1,12 +1,18 @@
 // フォーム関連型定義
 // components/forms/types.ts と TaskKnowledge で使う型を統合
-import type { BusinessRequirementPriority, SystemRequirementCategory } from "./enums";
+import type { SystemRequirementCategory } from "./enums";
 import type { AcceptanceCriterionJson } from "@/lib/data/structured";
 
 /**
  * 選択ダイアログタイプ
  */
-export type SelectionDialogType = "concepts" | "system" | "domain" | "business" | "systemRequirements";
+export type SelectionDialogType =
+  | "concepts"
+  | "system"
+  | "domain"
+  | "business"
+  | "systemRequirements"
+  | "deliverables";
 
 /**
  * 要件タイプ
@@ -21,12 +27,14 @@ export type Requirement = {
   type: RequirementType;
   title: string;
   summary: string;
+  goal: string;
+  constraints: string;
+  owner: string;
   conceptIds: string[];
   srfId: string | null;
   systemDomainIds: string[];
   acceptanceCriteria: string[];
   acceptanceCriteriaJson: AcceptanceCriterionJson[];
-  priority?: BusinessRequirementPriority;
   /** @deprecated 要件に観点は不要。relatedDeliverableIds を使用してください */
   category?: SystemRequirementCategory;
   businessRequirementIds: string[];

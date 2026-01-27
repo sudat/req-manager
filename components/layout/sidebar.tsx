@@ -7,6 +7,7 @@ import {
   Boxes,
   Briefcase,
   Download,
+  FileText,
   History,
   LayoutDashboard,
   ListChecks,
@@ -38,6 +39,7 @@ type MenuConfig = MenuItem | MenuDivider
 const menuConfig: MenuConfig[] = [
   { type: "item" as const, key: "dashboard", label: "ダッシュボード", href: "/dashboard", icon: LayoutDashboard },
   { type: "item" as const, key: "query", label: "照会", href: "/query", icon: Search },
+  { type: "item" as const, key: "product-requirement", label: "プロダクト要件", href: "/product-requirement", icon: FileText },
   { type: "divider" as const },
   { type: "item" as const, key: "business", label: "業務一覧", href: "/business", icon: Briefcase },
   { type: "item" as const, key: "system-domains", label: "システム領域一覧", href: "/system-domains", icon: Boxes },

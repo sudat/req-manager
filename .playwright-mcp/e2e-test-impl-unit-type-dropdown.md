@@ -1,0 +1,355 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - button [ref=e4]:
+        - img
+      - heading "要件管理ツール" [level=2] [ref=e6]
+      - navigation [ref=e7]:
+        - list [ref=e8]:
+          - listitem [ref=e9]:
+            - link "ダッシュボード" [ref=e10] [cursor=pointer]:
+              - /url: /dashboard
+              - img [ref=e11]
+              - generic [ref=e16]: ダッシュボード
+          - listitem [ref=e17]:
+            - link "照会" [ref=e18] [cursor=pointer]:
+              - /url: /query
+              - img [ref=e19]
+              - generic [ref=e22]: 照会
+          - listitem [ref=e23]:
+            - link "プロダクト要件" [ref=e24] [cursor=pointer]:
+              - /url: /product-requirement
+              - img [ref=e25]
+              - generic [ref=e28]: プロダクト要件
+          - listitem [ref=e30]:
+            - link "業務一覧" [ref=e31] [cursor=pointer]:
+              - /url: /business
+              - img [ref=e32]
+              - generic [ref=e35]: 業務一覧
+          - listitem [ref=e36]:
+            - link "システム領域一覧" [ref=e37] [cursor=pointer]:
+              - /url: /system-domains
+              - img [ref=e38]
+              - generic [ref=e48]: システム領域一覧
+          - listitem [ref=e49]:
+            - link "概念辞書" [ref=e50] [cursor=pointer]:
+              - /url: /ideas
+              - img [ref=e51]
+              - generic [ref=e53]: 概念辞書
+          - listitem [ref=e55]:
+            - link "変更要求一覧" [ref=e56] [cursor=pointer]:
+              - /url: /tickets
+              - img [ref=e57]
+              - generic [ref=e60]: 変更要求一覧
+          - listitem [ref=e61]:
+            - link "ベースライン履歴" [ref=e62] [cursor=pointer]:
+              - /url: /baseline
+              - img [ref=e63]
+              - generic [ref=e67]: ベースライン履歴
+          - listitem [ref=e68]:
+            - link "エクスポート" [ref=e69] [cursor=pointer]:
+              - /url: /export
+              - img [ref=e70]
+              - generic [ref=e73]: エクスポート
+          - listitem [ref=e75]:
+            - link "設定" [ref=e76] [cursor=pointer]:
+              - /url: /settings
+              - img [ref=e77]
+              - generic [ref=e80]: 設定
+      - button "新会計システムプロジェクト" [ref=e101]:
+        - generic [ref=e83]:
+          - img
+          - generic [ref=e84]: 新会計システムプロジェクト
+        - img
+    - main [ref=e85]:
+      - generic [ref=e103]:
+        - link "システム機能詳細に戻る" [ref=e105] [cursor=pointer]:
+          - /url: /system-domains/AR/SRF-001
+          - img [ref=e106]
+          - text: システム機能詳細に戻る
+        - generic [ref=e108]:
+          - 'heading "編集: 請求書発行" [level=1] [ref=e109]'
+          - paragraph [ref=e110]: システム機能の情報を編集します
+        - generic [ref=e111]:
+          - generic [ref=e113]:
+            - heading "基本情報" [level=2] [ref=e114]
+            - generic [ref=e115]:
+              - generic [ref=e116]:
+                - generic [ref=e117]: システム機能ID
+                - textbox [disabled]: AR
+                - paragraph [ref=e118]: IDは変更できません
+              - generic [ref=e119]:
+                - generic [ref=e120]:
+                  - text: 機能分類
+                  - generic [ref=e121]: "*"
+                - combobox [ref=e122]:
+                  - generic: 画面（screen）
+                  - img
+              - generic [ref=e123]:
+                - generic [ref=e124]:
+                  - text: ステータス
+                  - generic [ref=e125]: "*"
+                - combobox [ref=e126]:
+                  - generic: 実装済
+                  - img
+            - generic [ref=e127]:
+              - generic [ref=e128]:
+                - text: 機能名
+                - generic [ref=e129]: "*"
+              - textbox "例：請求書発行機能" [ref=e130]: 請求書発行
+            - generic [ref=e131]:
+              - generic [ref=e132]:
+                - text: 機能概要
+                - generic [ref=e133]: "*"
+              - textbox "機能の概要を入力" [ref=e134]: "## 概要 適格請求書等保存方式に対応した請求書PDFを生成する機能 ### 主な機能 - PuppeteerとHandlebars.jsによるHTMLテンプレートからのPDF生成 - 税率別（10%/8%）の対価額と税額の集計・表示 - 登録番号（T+13桁）を含むインボイス対応帳票出力 ### 対象 経理担当者、営業担当者（請求書作成者） ### 関連 - 関連タスク：TASK-003 - 関連要件：SR-TASK-003-001, SR-TASK-003-002"
+            - generic [ref=e135]:
+              - generic [ref=e136]: 設計方針
+              - textbox "複数の実装単位にまたがる設計方針を入力" [ref=e137]: "E2E検証: 設計方針保存テスト"
+              - paragraph [ref=e138]: Markdownで記載できます
+          - generic [ref=e139]:
+            - generic [ref=e140]: 仕様
+            - generic [ref=e141]: システム要件
+          - generic [ref=e143]:
+            - generic [ref=e144]:
+              - generic [ref=e145]:
+                - heading "システム要件" [level=3] [ref=e146]
+                - generic [ref=e147]: "4"
+              - button "追加" [ref=e148]:
+                - img
+                - text: 追加
+            - generic [ref=e150]:
+              - generic [ref=e151]:
+                - generic [ref=e152]:
+                  - generic [ref=e153]: SR-TASK-003-001
+                  - generic [ref=e154]: システム要件
+                - button "削除" [ref=e155]:
+                  - img
+              - generic [ref=e156]:
+                - generic [ref=e157]: タイトル
+                - textbox [ref=e158]: 請求書PDF生成（検証）
+              - generic [ref=e159]:
+                - generic [ref=e160]: 概要
+                - textbox [ref=e161]: インボイス要件に対応したフォーマットで適格請求書をPDFとして生成できること。具体的には、①自社の登録番号を請求書に印字できること、②税率別の対価および税率別税額を集計し印字できること、③適用税率ごとに摘要を区分して表示できること、④生成した請求書PDFをダウンロードできること。
+              - generic [ref=e162]:
+                - generic [ref=e163]: カテゴリ
+                - combobox [ref=e164]:
+                  - generic: 非機能
+                  - img
+              - generic [ref=e165]:
+                - generic [ref=e166]: 受入基準（GWT）
+                - button "条件を追加" [ref=e167]:
+                  - img
+                  - text: 条件を追加
+              - generic [ref=e168]:
+                - generic [ref=e169]:
+                  - generic [ref=e170]: 関連概念
+                  - generic [ref=e171]:
+                    - button "選択" [ref=e172]
+                    - 'generic "C001: インボイス制度" [ref=e173]'
+                    - 'generic "C002: 消費税計算" [ref=e174]'
+                - generic [ref=e175]:
+                  - generic [ref=e176]: 関連システム機能
+                  - generic [ref=e177]:
+                    - button "選択" [ref=e178]
+                    - 'generic "SRF-001: 請求書発行" [ref=e179]'
+              - generic [ref=e180]:
+                - generic [ref=e181]: 関連成果物
+                - generic [ref=e182]:
+                  - button "選択" [ref=e183]
+                  - generic [ref=e184]: 未選択
+              - generic [ref=e185]:
+                - generic [ref=e186]: システム領域
+                - generic [ref=e187]:
+                  - button "選択" [ref=e188]
+                  - generic [ref=e189]: 未選択
+            - generic [ref=e191]:
+              - generic [ref=e192]:
+                - generic [ref=e193]:
+                  - generic [ref=e194]: SR-TASK-003-002
+                  - generic [ref=e195]: システム要件
+                - button "削除" [ref=e196]:
+                  - img
+              - generic [ref=e197]:
+                - generic [ref=e198]: タイトル
+                - textbox [ref=e199]: 電子請求書送信
+              - generic [ref=e200]:
+                - generic [ref=e201]: 概要
+                - textbox [ref=e202]: 生成した請求書を顧客へ電子メールで送信できること。具体的には、①送信先の顧客メールアドレスを指定できること、②メール本文に請求内容の要約を含められること、③送信履歴を記録し後照会できること、④送信失敗時にはエラーログを記録できること。
+              - generic [ref=e203]:
+                - generic [ref=e204]: カテゴリ
+                - combobox [ref=e205]:
+                  - generic: 機能
+                  - img
+              - generic [ref=e206]:
+                - generic [ref=e207]: 受入基準（GWT）
+                - button "条件を追加" [ref=e208]:
+                  - img
+                  - text: 条件を追加
+              - generic [ref=e209]:
+                - generic [ref=e210]:
+                  - generic [ref=e211]: 関連概念
+                  - generic [ref=e212]:
+                    - button "選択" [ref=e213]
+                    - 'generic "C005: 請求書発行" [ref=e214]'
+                - generic [ref=e215]:
+                  - generic [ref=e216]: 関連システム機能
+                  - generic [ref=e217]:
+                    - button "選択" [ref=e218]
+                    - 'generic "SRF-001: 請求書発行" [ref=e219]'
+              - generic [ref=e220]:
+                - generic [ref=e221]: 関連成果物
+                - generic [ref=e222]:
+                  - button "選択" [ref=e223]
+                  - generic [ref=e224]: 未選択
+              - generic [ref=e225]:
+                - generic [ref=e226]: システム領域
+                - generic [ref=e227]:
+                  - button "選択" [ref=e228]
+                  - generic [ref=e229]: 未選択
+            - generic [ref=e231]:
+              - generic [ref=e232]:
+                - generic [ref=e233]:
+                  - generic [ref=e234]: SR-TASK-003-006
+                  - generic [ref=e235]: システム要件
+                - button "削除" [ref=e236]:
+                  - img
+              - generic [ref=e237]:
+                - generic [ref=e238]: タイトル
+                - textbox [ref=e239]: 請求書発行完了通知
+              - generic [ref=e240]:
+                - generic [ref=e241]: 概要
+                - textbox [ref=e242]: 請求書発行完了時に関係者へ通知を送信でき、処理完了を知らせることができること。通知履歴を記録し、後照会できること。
+              - generic [ref=e243]:
+                - generic [ref=e244]: カテゴリ
+                - combobox [ref=e245]:
+                  - generic: 機能
+                  - img
+              - generic [ref=e246]:
+                - generic [ref=e247]: 受入基準（GWT）
+                - button "条件を追加" [ref=e248]:
+                  - img
+                  - text: 条件を追加
+              - generic [ref=e249]:
+                - generic [ref=e250]:
+                  - generic [ref=e251]: 関連概念
+                  - generic [ref=e252]:
+                    - button "選択" [ref=e253]
+                    - generic [ref=e254]: 未選択
+                - generic [ref=e255]:
+                  - generic [ref=e256]: 関連システム機能
+                  - generic [ref=e257]:
+                    - button "選択" [ref=e258]
+                    - 'generic "SRF-001: 請求書発行" [ref=e259]'
+              - generic [ref=e260]:
+                - generic [ref=e261]: 関連成果物
+                - generic [ref=e262]:
+                  - button "選択" [ref=e263]
+                  - generic [ref=e264]: 未選択
+              - generic [ref=e265]:
+                - generic [ref=e266]: システム領域
+                - generic [ref=e267]:
+                  - button "選択" [ref=e268]
+                  - generic [ref=e269]: 未選択
+            - generic [ref=e271]:
+              - generic [ref=e272]:
+                - generic [ref=e273]:
+                  - generic [ref=e274]: SR-TASK-003-009
+                  - generic [ref=e275]: システム要件
+                - button "削除" [ref=e276]:
+                  - img
+              - generic [ref=e277]:
+                - generic [ref=e278]: タイトル
+                - textbox [ref=e279]: 請求書発行スケジュール管理
+              - generic [ref=e280]:
+                - generic [ref=e281]: 概要
+                - textbox [ref=e282]: 請求書発行のスケジュールを登録・管理でき、定期実行設定を行えること。スケジュールの実行履歴を記録し、実行結果を確認できること。
+              - generic [ref=e283]:
+                - generic [ref=e284]: カテゴリ
+                - combobox [ref=e285]:
+                  - generic: 機能
+                  - img
+              - generic [ref=e286]:
+                - generic [ref=e287]: 受入基準（GWT）
+                - button "条件を追加" [ref=e288]:
+                  - img
+                  - text: 条件を追加
+              - generic [ref=e289]:
+                - generic [ref=e290]:
+                  - generic [ref=e291]: 関連概念
+                  - generic [ref=e292]:
+                    - button "選択" [ref=e293]
+                    - generic [ref=e294]: 未選択
+                - generic [ref=e295]:
+                  - generic [ref=e296]: 関連システム機能
+                  - generic [ref=e297]:
+                    - button "選択" [ref=e298]
+                    - 'generic "SRF-001: 請求書発行" [ref=e299]'
+              - generic [ref=e300]:
+                - generic [ref=e301]: 関連成果物
+                - generic [ref=e302]:
+                  - button "選択" [ref=e303]
+                  - generic [ref=e304]: 未選択
+              - generic [ref=e305]:
+                - generic [ref=e306]: システム領域
+                - generic [ref=e307]:
+                  - button "選択" [ref=e308]
+                  - generic [ref=e309]: 未選択
+          - generic [ref=e310]:
+            - generic [ref=e311]: 実装
+            - generic [ref=e312]: 実装単位SD（IU）
+          - generic [ref=e313]:
+            - generic [ref=e315]:
+              - generic [ref=e316]:
+                - generic [ref=e317]: 実装単位SD（IU） (1)
+                - generic [ref=e318]: SF配下の実装単位を定義します（entry_points / design_policy / details）。
+              - button "追加" [ref=e319]:
+                - img
+                - text: 追加
+            - generic [ref=e329]:
+              - generic [ref=e330]:
+                - generic [ref=e331]:
+                  - generic [ref=e332]: ID
+                  - generic [ref=e333]: IU-SRF-001-001
+                - button "削除" [ref=e334]:
+                  - img
+              - generic [ref=e335]:
+                - generic [ref=e336]:
+                  - generic [ref=e337]:
+                    - text: 実装単位名
+                    - generic [ref=e338]: "*"
+                  - 'textbox "例: 請求書PDF生成バッチ" [ref=e339]'
+                - generic [ref=e340]:
+                  - generic [ref=e341]:
+                    - text: 種別
+                    - generic [ref=e342]: "*"
+                  - combobox [active] [ref=e343]:
+                    - generic: API
+                    - img
+              - generic [ref=e344]:
+                - generic [ref=e345]:
+                  - text: 概要
+                  - generic [ref=e346]: "*"
+                - textbox "入出力と責務の概要を記述" [ref=e347]
+              - generic [ref=e348]:
+                - generic [ref=e349]:
+                  - generic [ref=e350]:
+                    - text: エントリポイント
+                    - generic [ref=e351]: "*"
+                  - button "追加" [ref=e352]:
+                    - img
+                    - text: 追加
+                - generic [ref=e353]: エントリポイントがありません
+              - generic [ref=e354]:
+                - generic [ref=e355]: 設計方針
+                - textbox "横断的な設計方針を記述" [ref=e356]
+              - generic [ref=e357]:
+                - generic [ref=e358]: details（YAML）
+                - 'textbox "api_definition:, data_model: などをYAMLで記述" [ref=e359]'
+        - generic [ref=e323]:
+          - link "キャンセル" [ref=e324] [cursor=pointer]:
+            - /url: /system-domains/AR/SRF-001
+            - button "キャンセル" [ref=e325]
+          - button "保存" [ref=e326]
+  - button "Open Next.js Dev Tools" [ref=e97] [cursor=pointer]:
+    - img [ref=e98]
+  - alert [ref=e327]

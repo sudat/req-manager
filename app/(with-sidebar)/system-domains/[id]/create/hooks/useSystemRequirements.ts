@@ -24,7 +24,9 @@ export function useSystemRequirements(): UseSystemRequirementsResult {
         id,
         title: "",
         summary: "",
+        category: "function",
         businessRequirementIds: [],
+        relatedDeliverableIds: [],
         acceptanceCriteriaJson: [],
       };
 

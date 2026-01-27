@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button"
 import { ProjectCreateDialog } from "./project-create-dialog"
 
 export function ProjectSwitcher() {
-  const { currentProject, projects, setCurrentProjectId } = useProject()
+  const { currentProject, projects, setCurrentProjectId, error } = useProject()
   const { isCollapsed } = useSidebar()
   const [isCreateOpen, setIsCreateOpen] = useState(false)
 
@@ -37,7 +37,17 @@ export function ProjectSwitcher() {
         <DropdownMenuContent align="start" className="w-56">
           <DropdownMenuLabel>プロジェクト</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          {projects.map((project) => (
+          {error && (
+            <DropdownMenuItem disabled className="text-rose-600">
+              読み込みエラー
+            </DropdownMenuItem>
+          )}
+          {!error && projects.length === 0 && (
+            <DropdownMenuItem disabled className="text-slate-500">
+              プロジェクトがありません
+            </DropdownMenuItem>
+          )}
+          {!error && projects.map((project) => (
             <DropdownMenuItem
               key={project.id}
               onClick={() => setCurrentProjectId(project.id)}
@@ -91,7 +101,17 @@ export function ProjectSwitcher() {
         <DropdownMenuContent align="start" className="w-64">
           <DropdownMenuLabel>プロジェクト</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          {projects.map((project) => (
+          {error && (
+            <DropdownMenuItem disabled className="text-rose-600">
+              読み込みエラー
+            </DropdownMenuItem>
+          )}
+          {!error && projects.length === 0 && (
+            <DropdownMenuItem disabled className="text-slate-500">
+              プロジェクトがありません
+            </DropdownMenuItem>
+          )}
+          {!error && projects.map((project) => (
             <DropdownMenuItem
               key={project.id}
               onClick={() => setCurrentProjectId(project.id)}

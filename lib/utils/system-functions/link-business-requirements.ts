@@ -1,6 +1,14 @@
 import { updateBusinessRequirement } from "@/lib/data/business-requirements";
-import type { SystemRequirementCard } from "@/app/(with-sidebar)/system-domains/[id]/create/types";
 import type { BusinessRequirement } from "@/lib/data/business-requirements";
+import type { AcceptanceCriterionJson } from "@/lib/data/structured";
+
+export type SystemRequirementLinkCard = {
+	id: string;
+	title: string;
+	summary: string;
+	businessRequirementIds: string[];
+	acceptanceCriteriaJson: AcceptanceCriterionJson[];
+};
 
 /**
  * 業務要件の関連システム要件IDを更新する
@@ -9,7 +17,7 @@ import type { BusinessRequirement } from "@/lib/data/business-requirements";
  * @returns エラーメッセージ（失敗時）、成功時はnull
  */
 export async function linkBusinessRequirements(
-	systemRequirements: SystemRequirementCard[],
+	systemRequirements: SystemRequirementLinkCard[],
 	businessRequirements: BusinessRequirement[],
 	projectId: string
 ): Promise<string | null> {
@@ -24,13 +32,14 @@ export async function linkBusinessRequirements(
 				const { error } = await updateBusinessRequirement(bizReqId, {
 					taskId: bizReq.taskId,
 					title: bizReq.title,
-					summary: bizReq.summary,
+					goal: bizReq.goal,
+					constraints: bizReq.constraints,
+					owner: bizReq.owner,
 					conceptIds: bizReq.conceptIds,
 					srfId: bizReq.srfId,
 					systemDomainIds: bizReq.systemDomainIds,
 					impacts: bizReq.impacts,
 					relatedSystemRequirementIds: updatedIds,
-					acceptanceCriteria: bizReq.acceptanceCriteria,
 					sortOrder: bizReq.sortOrder,
 				}, projectId);
 				if (error) return error;

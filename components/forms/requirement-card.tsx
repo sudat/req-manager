@@ -3,7 +3,8 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { StructuredAcceptanceCriteriaInput } from "./StructuredAcceptanceCriteriaInput";
+import { YamlListField } from "./yaml-list-field";
+import { StructuredAcceptanceCriteriaInput } from "@/components/forms/StructuredAcceptanceCriteriaInput";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,10 +17,6 @@ import {
 } from "@/components/ui/select";
 import { Trash2 } from "lucide-react";
 import type { Requirement, SelectionDialogType } from "@/lib/domain";
-import {
-	acceptanceCriteriaJsonToLegacy,
-	mergeAcceptanceCriteriaJsonWithLegacy,
-} from "@/lib/data/structured";
 
 
 type RequirementCardProps = {
@@ -29,6 +26,7 @@ type RequirementCardProps = {
   systemDomainMap: Map<string, string>;
   businessRequirementMap?: Map<string, string>;
   systemRequirementMap?: Map<string, string>;
+  deliverableMap?: Map<string, string>;
   onUpdate: (patch: Partial<Requirement>) => void;
   onRemove: () => void;
   onOpenDialog: (type: SelectionDialogType) => void;
@@ -85,22 +83,11 @@ export function RequirementCard({
   systemDomainMap,
   businessRequirementMap,
   systemRequirementMap,
+  deliverableMap,
   onUpdate,
   onRemove,
   onOpenDialog,
 }: RequirementCardProps) {
-  const acceptanceCriteriaJson = mergeAcceptanceCriteriaJsonWithLegacy(
-    requirement.acceptanceCriteriaJson,
-    requirement.acceptanceCriteria
-  );
-
-  const handleStructuredChange = (values: typeof acceptanceCriteriaJson) => {
-    onUpdate({
-      acceptanceCriteriaJson: values,
-      acceptanceCriteria: acceptanceCriteriaJsonToLegacy(values),
-    });
-  };
-
   return (
     <Card className="rounded-md border border-slate-200">
       <CardContent className="p-3 space-y-3">
@@ -136,33 +123,47 @@ export function RequirementCard({
           />
         </div>
 
-        <div className="space-y-1.5">
-          <Label className="text-[12px] font-medium text-slate-500">概要</Label>
-          <Textarea
-            className="min-h-[90px] text-[14px]"
-            value={requirement.summary}
-            onChange={(e) => onUpdate({ summary: e.target.value })}
-          />
-        </div>
-
         {requirement.type === "業務要件" && (
+          <>
+            <div className="space-y-1.5">
+              <Label className="text-[12px] font-medium text-slate-500">
+                goal
+              </Label>
+              <Textarea
+                className="min-h-[90px] text-[14px]"
+                value={requirement.goal}
+                onChange={(e) => onUpdate({ goal: e.target.value })}
+              />
+            </div>
+            <YamlListField
+              label="constraints"
+              value={requirement.constraints}
+              onChange={(value) => onUpdate({ constraints: value })}
+              itemPlaceholder="例: 計上日は出荷日基準とする"
+              helperText="守るべき業務ルールや制度を箇条書きで記載します。"
+            />
+            <div className="space-y-1.5">
+              <Label className="text-[12px] font-medium text-slate-500">
+                owner
+              </Label>
+              <Input
+                value={requirement.owner}
+                onChange={(e) => onUpdate({ owner: e.target.value })}
+                className="text-[14px]"
+                placeholder="例: 経理部門長"
+              />
+            </div>
+          </>
+        )}
+
+        {requirement.type === "システム要件" && (
           <div className="space-y-1.5">
-            <Label className="text-[12px] font-medium text-slate-500">優先度</Label>
-            <Select
-              value={requirement.priority ?? "Must"}
-              onValueChange={(value) =>
-                onUpdate({ priority: value as Requirement["priority"] })
-              }
-            >
-              <SelectTrigger className="h-9">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Must">Must</SelectItem>
-                <SelectItem value="Should">Should</SelectItem>
-                <SelectItem value="Could">Could</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label className="text-[12px] font-medium text-slate-500">概要</Label>
+            <Textarea
+              className="min-h-[90px] text-[14px]"
+              value={requirement.summary}
+              onChange={(e) => onUpdate({ summary: e.target.value })}
+            />
           </div>
         )}
 
@@ -182,11 +183,19 @@ export function RequirementCard({
                 <SelectItem value="function">機能</SelectItem>
                 <SelectItem value="data">データ</SelectItem>
                 <SelectItem value="exception">例外</SelectItem>
-                <SelectItem value="auth">認証・認可</SelectItem>
                 <SelectItem value="non_functional">非機能</SelectItem>
               </SelectContent>
             </Select>
           </div>
+        )}
+
+        {requirement.type === "システム要件" && (
+          <StructuredAcceptanceCriteriaInput
+            values={requirement.acceptanceCriteriaJson ?? []}
+            onChange={(values) => onUpdate({ acceptanceCriteriaJson: values })}
+            category={requirement.category ?? "function"}
+            idPrefix={`AC-${requirement.id}-`}
+          />
         )}
 
         <div className="grid gap-3 md:grid-cols-2">
@@ -213,6 +222,15 @@ export function RequirementCard({
           />
         )}
 
+        {requirement.type === "システム要件" && deliverableMap && (
+          <SelectionField
+            label="関連成果物"
+            selectedIds={requirement.relatedDeliverableIds ?? []}
+            nameMap={deliverableMap}
+            onOpenDialog={() => onOpenDialog("deliverables")}
+          />
+        )}
+
         {requirement.type === "業務要件" && systemRequirementMap && (
           <SelectionField
             label="関連システム要件"
@@ -229,10 +247,6 @@ export function RequirementCard({
           onOpenDialog={() => onOpenDialog("domain")}
         />
 
-        <StructuredAcceptanceCriteriaInput
-          values={acceptanceCriteriaJson}
-          onChange={handleStructuredChange}
-        />
       </CardContent>
     </Card>
   );

@@ -1,0 +1,81 @@
+## init
+Use the init command to initialize configuration and dependencies for a new project.
+The init command installs dependencies, adds the cn util and configures CSS variables for the project.
+
+bun
+bunx --bun shadcn@latest init
+
+Options
+Usage: shadcn init [options] [components...]
+ 
+initialize your project and install dependencies
+ 
+Arguments:
+  components         the components to add or a url to the component.
+ 
+Options:
+  -t, --template <template>      the template to use. (next, next-monorepo)
+  -b, --base-color <base-color>  the base color to use. (neutral, gray, zinc, stone, slate)
+  -y, --yes                      skip confirmation prompt. (default: true)
+  -f, --force                    force overwrite of existing configuration. (default: false)
+  -c, --cwd <cwd>                the working directory. defaults to the current directory. (default:
+                                 "/Users/shadcn/Code/shadcn/ui/packages/shadcn")
+  -s, --silent                   mute output. (default: false)
+  --src-dir                      use the src directory when creating a new project. (default: false)
+  --no-src-dir                   do not use the src directory when creating a new project.
+  --css-variables                use css variables for theming. (default: true)
+  --no-css-variables             do not use css variables for theming.
+  -h, --help                     display help for command
+
+
+## add
+Use the add command to add components and dependencies to your project.
+
+bun
+bunx --bun shadcn@latest add [component]
+
+Options
+Usage: shadcn add [options] [components...]
+ 
+add a component to your project
+ 
+Arguments:
+  components         the components to add or a url to the component.
+ 
+Options:
+  -y, --yes           skip confirmation prompt. (default: false)
+  -o, --overwrite     overwrite existing files. (default: false)
+  -c, --cwd <cwd>     the working directory. defaults to the current directory. (default: "/Users/shadcn/Desktop")
+  -a, --all           add all available components (default: false)
+  -p, --path <path>   the path to add the component to.
+  -s, --silent        mute output. (default: false)
+  --src-dir           use the src directory when creating a new project. (default: false)
+  --no-src-dir        do not use the src directory when creating a new project.
+  --css-variables     use css variables for theming. (default: true)
+  --no-css-variables  do not use css variables for theming.
+  -h, --help          display help for command
+
+## build
+Use the build command to generate the registry JSON files.
+
+bun
+bunx --bun shadcn@latest build
+This command reads the registry.json file and generates the registry JSON files in the public/r directory.
+
+Options
+Usage: shadcn build [options] [registry]
+ 
+build components for a shadcn registry
+ 
+Arguments:
+  registry             path to registry.json file (default: "./registry.json")
+ 
+Options:
+  -o, --output <path>  destination directory for json files (default: "./public/r")
+  -c, --cwd <cwd>      the working directory. defaults to the current directory. (default:
+                       "/Users/shadcn/Code/shadcn/ui/packages/shadcn")
+  -h, --help           display help for command
+To customize the output directory, use the --output option.
+
+bun
+bunx --bun shadcn@latest build --output ./public/registry

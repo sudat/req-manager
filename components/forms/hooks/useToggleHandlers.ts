@@ -14,11 +14,16 @@ export function useToggleHandlers(
 ) {
 	// 複数選択トグルハンドラー生成
 	const createMultiToggle = (
-		key: "conceptIds" | "systemDomainIds" | "businessRequirementIds" | "relatedSystemRequirementIds"
+		key:
+			| "conceptIds"
+			| "systemDomainIds"
+			| "businessRequirementIds"
+			| "relatedSystemRequirementIds"
+			| "relatedDeliverableIds"
 	) => {
 		return (itemId: string, checked: boolean) => {
 			if (!activeRequirement) return;
-			const currentIds = activeRequirement[key];
+			const currentIds = (activeRequirement[key] ?? []) as string[];
 			const next = checked
 				? [...currentIds, itemId]
 				: currentIds.filter((id) => id !== itemId);
@@ -40,5 +45,6 @@ export function useToggleHandlers(
 		handleDomainToggle: createMultiToggle("systemDomainIds"),
 		handleBusinessRequirementToggle: createMultiToggle("businessRequirementIds"),
 		handleSystemRequirementToggle: createMultiToggle("relatedSystemRequirementIds"),
+		handleDeliverableToggle: createMultiToggle("relatedDeliverableIds"),
 	};
 }

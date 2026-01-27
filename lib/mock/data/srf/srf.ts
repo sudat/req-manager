@@ -21,6 +21,7 @@ export const systemFunctions: SystemFunction[] = [
 ### 関連
 - 関連タスク：TASK-003
 - 関連要件：SR-TASK-003-001, SR-TASK-003-002`,
+    designPolicy: "",
     status: "implemented",
     relatedTaskIds: ["TASK-003"],
     requirementIds: ["SR-TASK-003-001", "SR-TASK-003-002"],
@@ -101,6 +102,7 @@ export const systemFunctions: SystemFunction[] = [
 ### 関連
 - 関連タスク：TASK-003
 - 関連要件：SR-TASK-003-003`,
+    designPolicy: "",
     status: "implemented",
     relatedTaskIds: ["TASK-003"],
     requirementIds: ["SR-TASK-003-003"],
@@ -174,6 +176,7 @@ export const systemFunctions: SystemFunction[] = [
 ### 関連
 - 関連タスク：TASK-004
 - 関連要件：SR-TASK-004-001`,
+    designPolicy: "",
     status: "implementing",
     relatedTaskIds: ["TASK-004"],
     requirementIds: ["SR-TASK-004-001"],
@@ -247,6 +250,7 @@ export const systemFunctions: SystemFunction[] = [
 ### 関連
 - 関連タスク：TASK-004
 - 関連要件：SR-TASK-004-002`,
+    designPolicy: "",
     status: "testing",
     relatedTaskIds: ["TASK-004"],
     requirementIds: ["SR-TASK-004-002"],
@@ -320,6 +324,7 @@ export const systemFunctions: SystemFunction[] = [
 ### 関連
 - 関連タスク：TASK-005
 - 関連要件：SR-TASK-005-001, SR-TASK-005-002`,
+    designPolicy: "",
     status: "not_implemented",
     relatedTaskIds: ["TASK-005"],
     requirementIds: ["SR-TASK-005-001", "SR-TASK-005-002"],
@@ -393,6 +398,7 @@ export const systemFunctions: SystemFunction[] = [
 ### 関連
 - 関連タスク：TASK-001
 - 関連要件：SR-TASK-001-001`,
+    designPolicy: "",
     status: "implementing",
     relatedTaskIds: ["TASK-001"],
     requirementIds: ["SR-TASK-001-001"],
@@ -465,6 +471,7 @@ export const systemFunctions: SystemFunction[] = [
 ### 関連
 - 関連タスク：TASK-003
 - 関連要件：SR-TASK-003-004`,
+    designPolicy: "",
     status: "not_implemented",
     relatedTaskIds: ["TASK-003"],
     requirementIds: ["SR-TASK-003-004"],
@@ -538,6 +545,7 @@ export const systemFunctions: SystemFunction[] = [
 ### 関連
 - 関連タスク：TASK-006, TASK-005
 - 関連要件：SR-TASK-006-001`,
+    designPolicy: "",
     status: "testing",
     relatedTaskIds: ["TASK-006", "TASK-005"],
     requirementIds: ["SR-TASK-006-001"],
@@ -611,6 +619,7 @@ export const systemFunctions: SystemFunction[] = [
 ### 関連
 - 関連タスク：TASK-009
 - 関連要件：SR-TASK-009-001`,
+    designPolicy: "",
     status: "implemented",
     relatedTaskIds: ["TASK-009"],
     requirementIds: ["SR-TASK-009-001"],
@@ -676,6 +685,7 @@ export const systemFunctions: SystemFunction[] = [
 ### 関連
 - 関連タスク：TASK-010
 - 関連要件：SR-TASK-010-001`,
+    designPolicy: "",
     status: "testing",
     relatedTaskIds: ["TASK-010"],
     requirementIds: ["SR-TASK-010-001"],
@@ -741,6 +751,7 @@ export const systemFunctions: SystemFunction[] = [
 ### 関連
 - 関連タスク：TASK-011
 - 関連要件：SR-TASK-011-001`,
+    designPolicy: "",
     status: "implementing",
     relatedTaskIds: ["TASK-011"],
     requirementIds: ["SR-TASK-011-001"],
@@ -813,6 +824,7 @@ export const systemFunctions: SystemFunction[] = [
 ### 関連
 - 関連タスク：TASK-012
 - 関連要件：SR-TASK-012-001, SR-TASK-012-002`,
+    designPolicy: "",
     status: "not_implemented",
     relatedTaskIds: ["TASK-012"],
     requirementIds: ["SR-TASK-012-001", "SR-TASK-012-002"],
@@ -886,6 +898,7 @@ export const systemFunctions: SystemFunction[] = [
 ### 関連
 - 関連タスク：TASK-007
 - 関連要件：SR-TASK-007-001`,
+    designPolicy: "",
     status: "implemented",
     relatedTaskIds: ["TASK-007"],
     requirementIds: ["SR-TASK-007-001"],
@@ -958,6 +971,7 @@ export const systemFunctions: SystemFunction[] = [
 ### 関連
 - 関連タスク：TASK-014
 - 関連要件：SR-TASK-014-001`,
+    designPolicy: "",
     status: "testing",
     relatedTaskIds: ["TASK-014"],
     requirementIds: ["SR-TASK-014-001"],
@@ -1023,6 +1037,7 @@ export const systemFunctions: SystemFunction[] = [
 ### 関連
 - 関連タスク：TASK-013
 - 関連要件：SR-TASK-013-002, SR-TASK-013-003`,
+    designPolicy: "",
     status: "not_implemented",
     relatedTaskIds: ["TASK-013"],
     requirementIds: ["SR-TASK-013-002", "SR-TASK-013-003"],
@@ -1096,6 +1111,7 @@ export const systemFunctions: SystemFunction[] = [
 ### 関連
 - 関連タスク：TASK-013
 - 関連要件：SR-TASK-013-001`,
+    designPolicy: "",
     status: "implementing",
     relatedTaskIds: ["TASK-013"],
     requirementIds: ["SR-TASK-013-001"],
@@ -1170,6 +1186,7 @@ export const systemFunctions: SystemFunction[] = [
 ### 関連
 - 関連タスク：TASK-015
 - 関連要件：SR-TASK-015-001`,
+    designPolicy: "",
     status: "implemented",
     relatedTaskIds: ["TASK-015"],
     requirementIds: ["SR-TASK-015-001"],
@@ -1242,6 +1259,7 @@ export const systemFunctions: SystemFunction[] = [
 ### 関連
 - 関連タスク：TASK-016
 - 関連要件：SR-TASK-016-001`,
+    designPolicy: "",
     status: "implemented",
     relatedTaskIds: ["TASK-016"],
     requirementIds: ["SR-TASK-016-001"],
@@ -1314,6 +1332,7 @@ export const systemFunctions: SystemFunction[] = [
 ### 関連
 - 関連タスク：TASK-017
 - 関連要件：SR-TASK-017-001`,
+    designPolicy: "",
     status: "implemented",
     relatedTaskIds: ["TASK-017"],
     requirementIds: ["SR-TASK-017-001"],
@@ -1387,6 +1406,7 @@ export const systemFunctions: SystemFunction[] = [
 ### 関連
 - 関連タスク：TASK-018
 - 関連要件：SR-TASK-018-001`,
+    designPolicy: "",
     status: "testing",
     relatedTaskIds: ["TASK-018"],
     requirementIds: ["SR-TASK-018-001"],
@@ -1459,6 +1479,7 @@ export const systemFunctions: SystemFunction[] = [
 ### 関連
 - 関連タスク：TASK-019
 - 関連要件：SR-TASK-019-001`,
+    designPolicy: "",
     status: "implementing",
     relatedTaskIds: ["TASK-019"],
     requirementIds: ["SR-TASK-019-001"],
@@ -1532,6 +1553,7 @@ export const systemFunctions: SystemFunction[] = [
 ### 関連
 - 関連タスク：TASK-020
 - 関連要件：SR-TASK-020-001, SR-TASK-020-002, SR-TASK-020-003`,
+    designPolicy: "",
     status: "not_implemented",
     relatedTaskIds: ["TASK-020"],
     requirementIds: ["SR-TASK-020-001", "SR-TASK-020-002", "SR-TASK-020-003"],
@@ -1606,6 +1628,7 @@ export const systemFunctions: SystemFunction[] = [
 ### 関連
 - 関連タスク：TASK-021
 - 関連要件：SR-TASK-021-001`,
+    designPolicy: "",
     status: "testing",
     relatedTaskIds: ["TASK-021"],
     requirementIds: ["SR-TASK-021-001"],
@@ -1679,6 +1702,7 @@ export const systemFunctions: SystemFunction[] = [
 ### 関連
 - 関連タスク：TASK-022
 - 関連要件：SR-TASK-022-001, SR-TASK-022-002`,
+    designPolicy: "",
     status: "not_implemented",
     relatedTaskIds: ["TASK-022"],
     requirementIds: ["SR-TASK-022-001", "SR-TASK-022-002"],

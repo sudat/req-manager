@@ -379,18 +379,19 @@ async function applyMatching(summary: Summary): Promise<void> {
 		for (const result of autoResults) {
 			try {
 				// 業務要件を更新（srf_id を設定）
-				const businessUpdateResult = await updateBusinessRequirement(result.businessReq.id, {
-					taskId: result.businessReq.taskId,
-					title: result.businessReq.title,
-					summary: result.businessReq.summary,
-					conceptIds: [],
-					srfId: result.systemReq.srfId,
-					systemDomainIds: [],
-					impacts: [],
-					relatedSystemRequirementIds: [],
-					acceptanceCriteria: [],
-					sortOrder: 0,
-				});
+					const businessUpdateResult = await updateBusinessRequirement(result.businessReq.id, {
+						taskId: result.businessReq.taskId,
+						title: result.businessReq.title,
+						goal: result.businessReq.goal ?? result.businessReq.summary ?? "",
+						constraints: result.businessReq.constraints ?? "",
+						owner: result.businessReq.owner ?? "",
+						conceptIds: [],
+						srfId: result.systemReq.srfId,
+						systemDomainIds: [],
+						impacts: [],
+						relatedSystemRequirementIds: [],
+						sortOrder: 0,
+					});
 
 				if (businessUpdateResult.error) {
 					console.error(`  ✗ 業務要件の更新に失敗: ${result.businessReq.id} - ${businessUpdateResult.error}`);

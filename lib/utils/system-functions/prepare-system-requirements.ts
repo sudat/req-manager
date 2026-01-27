@@ -1,6 +1,7 @@
 import type { SystemRequirementCreateInput } from "@/lib/data/system-requirements";
 import type { SystemRequirementCard } from "@/app/(with-sidebar)/system-domains/[id]/create/types";
 import type { BusinessRequirement } from "@/lib/data/business-requirements";
+import { acceptanceCriteriaJsonToLegacy } from "@/lib/data/structured";
 
 /**
  * システム要件入力データを構築する
@@ -31,9 +32,11 @@ export function prepareSystemRequirementInputs(
 			summary: sr.summary.trim(),
 			conceptIds: [],
 			impacts: [],
-			category: "function",
+			category: sr.category ?? "function",
 			businessRequirementIds: sr.businessRequirementIds,
-			acceptanceCriteria: [],
+			relatedDeliverableIds: sr.relatedDeliverableIds ?? [],
+			acceptanceCriteriaJson: sr.acceptanceCriteriaJson ?? [],
+			acceptanceCriteria: acceptanceCriteriaJsonToLegacy(sr.acceptanceCriteriaJson ?? []),
 			systemDomainIds: [],
 			sortOrder: index + 1,
 			projectId,

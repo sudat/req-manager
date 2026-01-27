@@ -85,7 +85,6 @@ const allowedCategories = new Set([
 	"function",
 	"data",
 	"exception",
-	"auth",
 	"non_functional",
 ]);
 
@@ -124,15 +123,20 @@ const createIssue = (
 	ratio: total === 0 ? 1 : completed / total,
 });
 
+const buildAcceptanceText = (item: AcceptanceCriterionJson): string =>
+	[item.description, item.givenText, item.whenText, item.thenText]
+		.filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+		.join(" ");
+
 const hasAcceptanceCriteria = (items: AcceptanceCriterionJson[]): boolean =>
-	items.some((item) => item.description.trim().length > 0);
+	items.some((item) => buildAcceptanceText(item).trim().length > 0);
 
 const hasAcceptanceLintWarning = (items: AcceptanceCriterionJson[]): boolean => {
 	if (items.length === 0) return false;
 	return items.some((item) => {
-		const description = item.description.trim();
-		if (description.length === 0) return true;
-		const normalized = normalizeText(description);
+		const text = buildAcceptanceText(item).trim();
+		if (text.length === 0) return true;
+		const normalized = normalizeText(text);
 		return acceptanceLintTerms.some((term) => normalized.includes(normalizeText(term)));
 	});
 };
@@ -142,7 +146,7 @@ const buildRequirementText = (
 	summary: string,
 	criteria: AcceptanceCriterionJson[]
 ): string => {
-	const criteriaText = criteria.map((item) => item.description).filter(Boolean).join(" ");
+	const criteriaText = criteria.map((item) => buildAcceptanceText(item)).filter(Boolean).join(" ");
 	return normalizeText([title, summary, criteriaText].filter(Boolean).join(" "));
 };
 
@@ -289,13 +293,12 @@ export const buildHealthScoreSummary = ({
 
 	issues.push(
 		createIssue(
-			"requirements_with_acceptance_criteria",
-			"受入条件が設定されている",
+			"system_requirements_with_acceptance_criteria",
+			"システム要件に受入条件が設定されている",
 			"high",
-			[...businessRequirements, ...systemRequirements].filter(
-				(req) => hasAcceptanceCriteria(req.acceptanceCriteriaJson)
-			).length,
-			requirementCount
+			systemRequirements.filter((req) => hasAcceptanceCriteria(req.acceptanceCriteriaJson))
+				.length,
+			systemRequirements.length
 		)
 	);
 
@@ -304,10 +307,10 @@ export const buildHealthScoreSummary = ({
 			"acceptance_criteria_well_written",
 			"受入条件が適切に記述されている",
 			"high",
-			[...businessRequirements, ...systemRequirements].filter((req) =>
+			systemRequirements.filter((req) =>
 				!hasAcceptanceLintWarning(req.acceptanceCriteriaJson)
 			).length,
-			requirementCount
+			systemRequirements.length
 		)
 	);
 

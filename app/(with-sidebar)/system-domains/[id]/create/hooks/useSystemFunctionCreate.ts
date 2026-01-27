@@ -6,11 +6,15 @@ import { useProject } from "@/components/project/project-context";
 import type { BusinessRequirement } from "@/lib/data/business-requirements";
 import { listBusinessRequirements } from "@/lib/data/business-requirements";
 import { nextSequentialIdFrom } from "@/lib/data/id";
-import { createSystemRequirements } from "@/lib/data/system-requirements";
-import { createSystemFunction, listSystemFunctions } from "@/lib/data/system-functions";
-import type { SrfCategory, SrfStatus } from "@/lib/domain";
-import { linkBusinessRequirements } from "@/lib/utils/system-functions/link-business-requirements";
-import { prepareSystemRequirementInputs } from "@/lib/utils/system-functions/prepare-system-requirements";
+import { listSystemFunctions } from "@/lib/data/system-functions";
+import type { EntryPoint, SrfCategory, SrfStatus } from "@/lib/domain";
+import type { Deliverable } from "@/lib/domain/schemas/deliverable";
+import {
+	validateSystemFunctionEntryPoints,
+	validateImplUnitSds,
+} from "@/lib/utils/system-functions/validate-system-function";
+import { createSystemFunctionWithRelations } from "@/lib/utils/system-functions/create-system-function";
+import type { ImplUnitSdDraft } from "@/components/forms/impl-unit-sd-list";
 import type { SystemRequirementCard } from "../types";
 
 type UseSystemFunctionCreateResult = {
@@ -18,9 +22,13 @@ type UseSystemFunctionCreateResult = {
 	nextId: string;
 	title: string;
 	summary: string;
+	designPolicy: string;
 	category: SrfCategory;
 	status: SrfStatus;
 	businessRequirements: BusinessRequirement[];
+	deliverables: Deliverable[];
+	entryPoints: EntryPoint[];
+	implUnitSds: ImplUnitSdDraft[];
 
 	// ローディング・エラー状態
 	loading: boolean;
@@ -30,8 +38,12 @@ type UseSystemFunctionCreateResult = {
 	// セッター
 	setTitle: (title: string) => void;
 	setSummary: (summary: string) => void;
+	setDesignPolicy: (designPolicy: string) => void;
 	setCategory: (category: SrfCategory) => void;
 	setStatus: (status: SrfStatus) => void;
+	setDeliverables: (deliverables: Deliverable[]) => void;
+	setEntryPoints: (entryPoints: EntryPoint[]) => void;
+	setImplUnitSds: (implUnitSds: ImplUnitSdDraft[]) => void;
 
 	// 操作
 	handleSubmit: (event: FormEvent, systemRequirements: SystemRequirementCard[]) => Promise<void>;
@@ -47,9 +59,13 @@ export function useSystemFunctionCreate(systemDomainId: string): UseSystemFuncti
 	const [nextId, setNextId] = useState("SRF-001");
 	const [title, setTitle] = useState("");
 	const [summary, setSummary] = useState("");
+	const [designPolicy, setDesignPolicy] = useState("");
 	const [category, setCategory] = useState<SrfCategory>("screen");
 	const [status, setStatus] = useState<SrfStatus>("not_implemented");
 	const [businessRequirements, setBusinessRequirements] = useState<BusinessRequirement[]>([]);
+	const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
+	const [entryPoints, setEntryPoints] = useState<EntryPoint[]>([]);
+	const [implUnitSds, setImplUnitSds] = useState<ImplUnitSdDraft[]>([]);
 
 	// ローディング・エラー状態
 	const [loading, setLoading] = useState(true);
@@ -57,7 +73,7 @@ export function useSystemFunctionCreate(systemDomainId: string): UseSystemFuncti
 	const [error, setError] = useState<string | null>(null);
 	const { currentProjectId, loading: projectLoading } = useProject();
 
-	// nextIdを取得
+	// nextIdと業務要件を取得
 	useEffect(() => {
 		if (projectLoading || !currentProjectId) {
 			setError("プロジェクトが選択されていません");
@@ -66,44 +82,31 @@ export function useSystemFunctionCreate(systemDomainId: string): UseSystemFuncti
 		}
 		let active = true;
 
-		async function fetchNextId(): Promise<void> {
-			const { data, error: fetchError } = await listSystemFunctions();
+		async function fetchData(): Promise<void> {
+			const [{ data: srfData, error: srfError }, { data: brData, error: brError }] =
+				await Promise.all([
+					listSystemFunctions(currentProjectId),
+					listBusinessRequirements(currentProjectId),
+				]);
+
 			if (!active) return;
-			if (fetchError) {
-				setError(fetchError);
-				return;
+
+			if (srfError) {
+				setError(srfError);
+			} else {
+				setNextId(nextSequentialIdFrom("SRF-", srfData ?? [], (srf) => srf.id));
 			}
-			setNextId(nextSequentialIdFrom("SRF-", data ?? [], (srf) => srf.id));
-		}
 
-		fetchNextId();
-
-		return () => {
-			active = false;
-		};
-	}, [currentProjectId, projectLoading]);
-
-	// 業務要件を取得
-	useEffect(() => {
-		if (projectLoading || !currentProjectId) {
-			setError("プロジェクトが選択されていません");
-			setLoading(false);
-			return;
-		}
-		let active = true;
-
-		async function fetchBusinessRequirements(): Promise<void> {
-			const { data, error: fetchError } = await listBusinessRequirements(currentProjectId);
-			if (!active) return;
-			if (fetchError) {
-				setError(fetchError);
-				return;
+			if (brError) {
+				setError(brError);
+			} else {
+				setBusinessRequirements(brData ?? []);
 			}
-			setBusinessRequirements(data ?? []);
+
 			setLoading(false);
 		}
 
-		fetchBusinessRequirements();
+		fetchData();
 
 		return () => {
 			active = false;
@@ -126,19 +129,36 @@ export function useSystemFunctionCreate(systemDomainId: string): UseSystemFuncti
 					setSaving(false);
 					return;
 				}
-				// 1. システム機能を作成
-				const { error: saveError } = await createSystemFunction({
-					id: nextId,
+
+				// バリデーション
+				const entryValidationError = validateSystemFunctionEntryPoints(entryPoints);
+				if (entryValidationError) {
+					setError(entryValidationError);
+					setSaving(false);
+					return;
+				}
+
+				const implValidationError = validateImplUnitSds(implUnitSds);
+				if (implValidationError) {
+					setError(implValidationError);
+					setSaving(false);
+					return;
+				}
+
+				// 保存処理
+				const { error: saveError } = await createSystemFunctionWithRelations({
+					nextId,
 					systemDomainId,
 					category,
-					title: title.trim(),
-					summary: summary.trim(),
+					title,
+					summary,
+					designPolicy,
 					status,
-					relatedTaskIds: [],
-					requirementIds: systemRequirements.map((sr) => sr.id),
-					systemDesign: [],
-					codeRefs: [],
-				deliverables: [],
+					deliverables,
+					entryPoints,
+					implUnitSds,
+					systemRequirements,
+					businessRequirements,
 					projectId: currentProjectId,
 				});
 
@@ -148,34 +168,7 @@ export function useSystemFunctionCreate(systemDomainId: string): UseSystemFuncti
 					return;
 				}
 
-				// 2. システム要件を作成
-				const sysReqInputs = prepareSystemRequirementInputs(
-					systemRequirements,
-					businessRequirements,
-					nextId,
-					currentProjectId
-				);
-
-				const { error: sysReqError } = await createSystemRequirements(sysReqInputs);
-				if (sysReqError) {
-					setError(sysReqError);
-					setSaving(false);
-					return;
-				}
-
-				// 3. 業務要件の関連システム要件IDを更新
-				const linkError = await linkBusinessRequirements(
-					systemRequirements,
-					businessRequirements,
-					currentProjectId
-				);
-				if (linkError) {
-					setError(linkError);
-					setSaving(false);
-					return;
-				}
-
-				// 4. 成功時に一覧画面へ遷移
+				// 成功時に一覧画面へ遷移
 				setSaving(false);
 				router.push(`/system-domains/${systemDomainId}`);
 			} catch (e) {
@@ -189,7 +182,11 @@ export function useSystemFunctionCreate(systemDomainId: string): UseSystemFuncti
 			category,
 			title,
 			summary,
+			designPolicy,
 			status,
+			deliverables,
+			entryPoints,
+			implUnitSds,
 			businessRequirements,
 			router,
 			currentProjectId,
@@ -201,16 +198,24 @@ export function useSystemFunctionCreate(systemDomainId: string): UseSystemFuncti
 		nextId,
 		title,
 		summary,
+		designPolicy,
 		category,
 		status,
 		businessRequirements,
+		deliverables,
+		entryPoints,
+		implUnitSds,
 		loading,
 		saving,
 		error,
 		setTitle,
 		setSummary,
+		setDesignPolicy,
 		setCategory,
 		setStatus,
+		setDeliverables,
+		setEntryPoints,
+		setImplUnitSds,
 		handleSubmit,
 	};
 }

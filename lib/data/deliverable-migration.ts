@@ -118,7 +118,7 @@ export function migrateToDeliverables(
 
     // EntryPointを探す（target.nameとpath/responsibilityで照合）
     // 簡易実装: 最初のentryPointのpathを使用
-    const entryPoint = entryPoints.length > 0 ? entryPoints[0].path : target.entryPoint || null;
+    const entryPoint = entryArray.length > 0 ? entryArray[0].path : target.entryPoint || null;
 
     const deliverable: Deliverable = {
       id: firstItem.id, // 最初のitemのIDを使用（ユニーク性を保証）

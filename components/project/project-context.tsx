@@ -9,6 +9,7 @@ interface ProjectContextValue {
   currentProject: Project | null
   projects: Project[]
   loading: boolean
+  error: string | null
   setCurrentProjectId: (id: string) => void
   refreshProjects: () => Promise<void>
 }
@@ -23,6 +24,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   const [currentProjectId, setCurrentProjectIdState] = useState<string | undefined>(undefined)
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const persistProjectId = (id: string) => {
     if (typeof window === "undefined") return
@@ -30,15 +32,23 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     document.cookie = `${STORAGE_KEY}=${id}; path=/; max-age=${COOKIE_MAX_AGE_SECONDS}`
   }
 
+  const clearPersistedProjectId = () => {
+    if (typeof window === "undefined") return
+    localStorage.removeItem(STORAGE_KEY)
+    document.cookie = `${STORAGE_KEY}=; path=/; max-age=0`
+  }
+
   const refreshProjects = async () => {
     try {
       const { data, error } = await listProjects()
       if (error) {
         console.error("Failed to fetch projects:", error)
+        setError(error)
         setProjects([])
         return
       }
 
+      setError(null)
       setProjects(data ?? [])
 
       // 現在のプロジェクトIDが削除されている場合は、デフォルトプロジェクトに切り替え
@@ -49,10 +59,12 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
           persistProjectId(defaultProject.id)
         } else {
           setCurrentProjectIdState(undefined)
+          clearPersistedProjectId()
         }
       }
     } catch (err) {
       console.error("Error fetching projects:", err)
+      setError("プロジェクトの取得に失敗しました")
       setProjects([])
     }
   }
@@ -63,10 +75,12 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         const { data, error } = await listProjects()
         if (error) {
           console.error("Failed to fetch projects:", error)
+          setError(error)
           setProjects([])
           return
         }
 
+        setError(null)
         setProjects(data ?? [])
 
         // LocalStorageから現在のプロジェクトIDを取得
@@ -83,9 +97,13 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
           const defaultProject = data.find(p => p.id === DEFAULT_PROJECT_ID) ?? data[0]
           setCurrentProjectIdState(defaultProject.id)
           persistProjectId(defaultProject.id)
+        } else {
+          setCurrentProjectIdState(undefined)
+          clearPersistedProjectId()
         }
       } catch (err) {
         console.error("Error fetching projects:", err)
+        setError("プロジェクトの取得に失敗しました")
         setProjects([])
       } finally {
         setLoading(false)
@@ -109,6 +127,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         currentProject,
         projects,
         loading,
+        error,
         setCurrentProjectId,
         refreshProjects,
       }}

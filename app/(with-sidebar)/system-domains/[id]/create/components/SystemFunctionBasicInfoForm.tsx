@@ -16,10 +16,12 @@ type SystemFunctionBasicInfoFormProps = {
 	nextId: string;
 	title: string;
 	summary: string;
+	designPolicy: string;
 	category: SrfCategory;
 	status: SrfStatus;
 	onTitleChange: (title: string) => void;
 	onSummaryChange: (summary: string) => void;
+	onDesignPolicyChange: (designPolicy: string) => void;
 	onCategoryChange: (category: SrfCategory) => void;
 	onStatusChange: (status: SrfStatus) => void;
 };
@@ -31,10 +33,12 @@ export function SystemFunctionBasicInfoForm({
 	nextId,
 	title,
 	summary,
+	designPolicy,
 	category,
 	status,
 	onTitleChange,
 	onSummaryChange,
+	onDesignPolicyChange,
 	onCategoryChange,
 	onStatusChange,
 }: SystemFunctionBasicInfoFormProps) {
@@ -69,6 +73,17 @@ export function SystemFunctionBasicInfoForm({
 					className="min-h-[120px]"
 					required
 				/>
+			</div>
+
+			<div className="space-y-2">
+				<Label>設計方針</Label>
+				<Textarea
+					value={designPolicy}
+					onChange={(event) => onDesignPolicyChange(event.target.value)}
+					placeholder="複数の実装単位にまたがる設計方針を入力"
+					className="min-h-[120px]"
+				/>
+				<p className="text-xs text-slate-500">Markdownで記載できます</p>
 			</div>
 
 			<div className="grid gap-4 md:grid-cols-2">

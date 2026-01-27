@@ -9,6 +9,9 @@ export type AcceptanceCriterionJson = {
   id: string;
   description: string;
   verification_method: string | null;
+  givenText?: string;
+  whenText?: string;
+  thenText?: string;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -20,6 +23,9 @@ const defaultAcceptanceCriterion = (index: number, description: string): Accepta
   id: `AC-${pad3(index + 1)}`,
   description,
   verification_method: null,
+  givenText: "",
+  whenText: "",
+  thenText: "",
 });
 
 export const normalizeAcceptanceCriteriaJson = (raw: unknown): AcceptanceCriterionJson[] => {
@@ -36,10 +42,32 @@ export const normalizeAcceptanceCriteriaJson = (raw: unknown): AcceptanceCriteri
     const verification_method =
       typeof item.verification_method === "string" ? item.verification_method : null;
 
+    const givenText =
+      typeof item.givenText === "string"
+        ? item.givenText
+        : typeof item.given === "string"
+          ? item.given
+          : "";
+    const whenText =
+      typeof item.whenText === "string"
+        ? item.whenText
+        : typeof item.when === "string"
+          ? item.when
+          : "";
+    const thenText =
+      typeof item.thenText === "string"
+        ? item.thenText
+        : typeof item.then === "string"
+          ? item.then
+          : "";
+
     return {
       id,
       description,
       verification_method,
+      givenText,
+      whenText,
+      thenText,
     };
   });
 };

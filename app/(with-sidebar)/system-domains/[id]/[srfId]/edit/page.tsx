@@ -5,16 +5,13 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { SystemFunction, SelectionDialogType, SelectableItem } from "@/lib/domain";
+import type { SystemFunction, SelectionDialogType } from "@/lib/domain";
 import { useSystemFunctionForm } from "./hooks/useSystemFunctionForm";
-import {
-	BasicInfoSection,
-	SystemDesignSection,
-} from "./components";
-import { DeliverableList } from "@/components/forms/design/deliverable-list";
+import { BasicInfoSection } from "./components";
 import { RequirementListSection } from "@/components/forms/requirement-list-section";
 import { SelectionDialog } from "@/components/forms/SelectionDialog";
-import { useMasterData } from "@/app/(with-sidebar)/business/[id]/tasks/[taskId]/edit/hooks/useMasterData";
+import { useMasterData } from "@/app/(with-sidebar)/business/[id]/[taskId]/edit/hooks/useMasterData";
+import { ImplUnitSdList } from "@/components/forms/impl-unit-sd-list";
 
 // ============================================
 // 型定義
@@ -183,6 +180,7 @@ export default function SystemFunctionEditPage({
 		[dialogState, state.systemRequirements]
 	);
 
+
 	// ダイアログハンドラー
 	function handleOpenDialog(type: SelectionDialogType, reqId: string): void {
 		setDialogState({ type, reqId });
@@ -223,11 +221,22 @@ export default function SystemFunctionEditPage({
 							status={state.status}
 							title={state.title}
 							summary={state.summary}
+							designPolicy={state.designPolicy}
 							onCategoryChange={actions.setCategory}
 							onStatusChange={actions.setStatus}
 							onTitleChange={actions.setTitle}
 							onSummaryChange={actions.setSummary}
+							onDesignPolicyChange={actions.setDesignPolicy}
 						/>
+
+						<div className="space-y-1">
+							<div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
+								仕様
+							</div>
+							<div className="text-[14px] font-medium text-slate-700">
+								システム要件
+							</div>
+						</div>
 
 						{/* システム要件セクション */}
 						<RequirementListSection
@@ -240,12 +249,22 @@ export default function SystemFunctionEditPage({
 							systemFunctionMap={systemFunctionMap}
 							systemDomainMap={systemDomainMap}
 							onOpenDialog={handleOpenDialog}
+							deliverableMap={new Map()}
 						/>
 
-						{/* 成果物セクション */}
-						<DeliverableList
-							deliverables={state.deliverables}
-							onDeliverablesChange={actions.setDeliverables}
+						<div className="space-y-1 pt-2">
+							<div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
+								実装
+							</div>
+							<div className="text-[14px] font-medium text-slate-700">
+								実装単位SD（IU）
+							</div>
+						</div>
+
+						<ImplUnitSdList
+							srfId={srfId}
+							items={state.implUnitSds}
+							onChange={actions.setImplUnitSds}
 						/>
 					</div>
 
@@ -274,6 +293,7 @@ export default function SystemFunctionEditPage({
 				systemDomains={systemDomains}
 				businessRequirements={[]}
 				systemRequirements={[]}
+				deliverables={[]}
 				onUpdateRequirement={(reqId, patch) => {
 					actions.updateSystemRequirement(reqId, patch);
 				}}

@@ -63,8 +63,11 @@ export function useRelatedRequirementsData(
 				return;
 			}
 
+			// ACはデータ層で正本テーブルからマージ済み
+			const reqsWithAcceptance = reqs;
+
 			// 2. タスクIDを抽出して業務要件を取得
-			const taskIds = Array.from(new Set(reqs.map((req) => req.taskId)));
+			const taskIds = Array.from(new Set(reqsWithAcceptance.map((req) => req.taskId)));
 			const { data: bizReqs, error: bizError } = await listBusinessRequirementsByTaskIds(taskIds, currentProjectId);
 			if (!active) return;
 			if (bizError) {
@@ -93,7 +96,7 @@ export function useRelatedRequirementsData(
 
 			// 4. マップを構築
 			const legacyMap = buildSysReqToBizReqsMap(businessReqs);
-			const sysReqToBizReqsMap = buildSysReqToBizReqsMapFromSystemReqs(reqs, legacyMap);
+			const sysReqToBizReqsMap = buildSysReqToBizReqsMapFromSystemReqs(reqsWithAcceptance, legacyMap);
 
 			const businessReqMap = new Map(businessReqs.map((req) => [req.id, req]));
 			const taskBusinessMap = new Map(taskData.map((task) => [task.id, task.businessId]));
@@ -101,7 +104,7 @@ export function useRelatedRequirementsData(
 
 			// 5. 関連要件情報を構築
 			const result = buildRelatedRequirements(
-				reqs,
+				reqsWithAcceptance,
 				sysReqToBizReqsMap,
 				businessReqMap,
 				taskBusinessMap,

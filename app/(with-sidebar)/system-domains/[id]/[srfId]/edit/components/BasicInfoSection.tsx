@@ -23,10 +23,12 @@ interface BasicInfoSectionProps {
 	status: SrfStatus;
 	title: string;
 	summary: string;
+	designPolicy: string;
 	onCategoryChange: (value: SrfCategory) => void;
 	onStatusChange: (value: SrfStatus) => void;
 	onTitleChange: (value: string) => void;
 	onSummaryChange: (value: string) => void;
+	onDesignPolicyChange: (value: string) => void;
 }
 
 // ============================================
@@ -39,10 +41,12 @@ export function BasicInfoSection({
 	status,
 	title,
 	summary,
+	designPolicy,
 	onCategoryChange,
 	onStatusChange,
 	onTitleChange,
 	onSummaryChange,
+	onDesignPolicyChange,
 }: BasicInfoSectionProps) {
 	return (
 		<Card className="rounded-md border border-slate-200/60 bg-white">
@@ -120,6 +124,17 @@ export function BasicInfoSection({
 						placeholder="機能の概要を入力"
 						className="min-h-[100px]"
 					/>
+				</div>
+
+				<div className="mt-4 space-y-2">
+					<Label>設計方針</Label>
+					<Textarea
+						value={designPolicy}
+						onChange={(e) => onDesignPolicyChange(e.target.value)}
+						placeholder="複数の実装単位にまたがる設計方針を入力"
+						className="min-h-[120px]"
+					/>
+					<p className="text-xs text-slate-500">Markdownで記載できます</p>
 				</div>
 			</CardContent>
 		</Card>

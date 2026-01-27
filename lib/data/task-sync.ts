@@ -12,6 +12,11 @@ import {
 	deleteSystemRequirement,
 } from "@/lib/data/system-requirements";
 import {
+	createAcceptanceCriteria,
+	deleteAcceptanceCriteriaBySystemRequirementId,
+	acceptanceCriteriaJsonToInputs,
+} from "@/lib/data/acceptance-criteria";
+import {
 	toBusinessRequirementInput,
 	toSystemRequirementInput,
 } from "@/lib/data/requirement-mapper";
@@ -25,6 +30,9 @@ import {
 export function hasRequirementChanged<T extends {
 	title: string;
 	summary: string;
+	goal?: string;
+	constraints?: string;
+	owner?: string;
 	conceptIds: string[];
 	srfId: string | null;
 	systemDomainIds: string[];
@@ -34,22 +42,27 @@ export function hasRequirementChanged<T extends {
 	category?: string | null;
 	businessRequirementIds?: string[];
 	relatedSystemRequirementIds?: string[];
+	relatedDeliverableIds?: string[];
 }>(req: T, existing: T): boolean {
 	return !(
 		req.title === existing.title &&
 		req.summary === existing.summary &&
+		(req.goal ?? "") === (existing.goal ?? "") &&
+		(req.constraints ?? "") === (existing.constraints ?? "") &&
+		(req.owner ?? "") === (existing.owner ?? "") &&
 		JSON.stringify(req.conceptIds) === JSON.stringify(existing.conceptIds) &&
 		req.srfId === existing.srfId &&
 		JSON.stringify(req.systemDomainIds) === JSON.stringify(existing.systemDomainIds ?? []) &&
 		JSON.stringify(req.acceptanceCriteria) === JSON.stringify(existing.acceptanceCriteria) &&
 		JSON.stringify(req.acceptanceCriteriaJson ?? []) ===
 			JSON.stringify(existing.acceptanceCriteriaJson ?? []) &&
-		(req.priority ?? null) === (existing.priority ?? null) &&
 		(req.category ?? null) === (existing.category ?? null) &&
 		JSON.stringify(req.businessRequirementIds ?? []) ===
 			JSON.stringify(existing.businessRequirementIds ?? []) &&
 		JSON.stringify(req.relatedSystemRequirementIds ?? []) ===
-			JSON.stringify(existing.relatedSystemRequirementIds ?? [])
+			JSON.stringify(existing.relatedSystemRequirementIds ?? []) &&
+		JSON.stringify(req.relatedDeliverableIds ?? []) ===
+			JSON.stringify(existing.relatedDeliverableIds ?? [])
 	);
 }
 
@@ -158,6 +171,16 @@ export async function syncSystemRequirements(
 			);
 			const { error } = await createSystemRequirements(createInputs);
 			if (error) return `作成エラー: ${error}`;
+
+			const acceptanceInputs = toCreate.flatMap((req) =>
+				acceptanceCriteriaJsonToInputs(
+					req.acceptanceCriteriaJson ?? [],
+					req.id,
+					projectId
+				)
+			);
+			const { error: acError } = await createAcceptanceCriteria(acceptanceInputs);
+			if (acError) return `受入基準作成エラー: ${acError}`;
 		}
 
 		// 3. 更新
@@ -173,6 +196,20 @@ export async function syncSystemRequirements(
 			const input = toSystemRequirementInput(req, taskId, existing.sortOrder);
 			const { error } = await updateSystemRequirement(req.id, input, projectId);
 			if (error) return `更新エラー (${req.id}): ${error}`;
+
+			const { error: acDeleteError } = await deleteAcceptanceCriteriaBySystemRequirementId(
+				req.id,
+				projectId
+			);
+			if (acDeleteError) return `受入基準削除エラー (${req.id}): ${acDeleteError}`;
+
+			const acceptanceInputs = acceptanceCriteriaJsonToInputs(
+				req.acceptanceCriteriaJson ?? [],
+				req.id,
+				projectId
+			);
+			const { error: acError } = await createAcceptanceCriteria(acceptanceInputs);
+			if (acError) return `受入基準作成エラー (${req.id}): ${acError}`;
 		}
 
 		return null;
@@ -186,18 +223,24 @@ export async function syncSystemRequirements(
  * @param taskId タスクID
  * @param taskName タスク名
  * @param taskSummary タスク概要
+ * @param businessContext 業務コンテキスト
+ * @param processSteps タスク内の流れ（YAML）
  * @param person 担当者
  * @param input インプット
  * @param output アウトプット
+ * @param conceptIdsYaml 関連概念ID（YAML）
  * @returns エラーメッセージ（失敗時）、成功時はnull
  */
 export async function syncTaskBasicInfo(
 	taskId: string,
 	taskName: string,
 	taskSummary: string,
+	businessContext: string,
+	processSteps: string,
 	person: string,
 	input: string,
 	output: string,
+	conceptIdsYaml: string,
 	projectId: string,
 ): Promise<string | null> {
 	try {
@@ -212,9 +255,12 @@ export async function syncTaskBasicInfo(
 			businessId: existingTask.businessId, // 既存値を維持
 			name: taskName,
 			summary: taskSummary,
+			businessContext,
+			processSteps,
 			person,
 			input,
 			output,
+			conceptIdsYaml,
 			concepts: existingTask.concepts, // 既存値を維持
 			sortOrder: existingTask.sortOrder, // 既存値を維持
 		}, projectId);

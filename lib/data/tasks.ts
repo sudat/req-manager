@@ -6,9 +6,12 @@ export type TaskInput = {
   businessId: string;
   name: string;
   summary: string;
+  businessContext: string;
+  processSteps: string;
   person: string;
   input: string;
   output: string;
+  conceptIdsYaml: string;
   concepts: string[];
   sortOrder: number;
 };
@@ -22,9 +25,12 @@ type TaskRow = {
   business_id: string;
   name: string;
   summary: string;
+  business_context: string | null;
+  process_steps: string | null;
   person: string | null;
   input: string | null;
   output: string | null;
+  concept_ids_yaml: string | null;
   concepts: string[] | null;
   sort_order: number | null;
   created_at: string;
@@ -36,9 +42,12 @@ const toTask = (row: TaskRow): Task => ({
   businessId: row.business_id,
   name: row.name,
   summary: row.summary,
+  businessContext: row.business_context ?? "",
+  processSteps: row.process_steps ?? "",
   person: row.person ?? "",
   input: row.input ?? "",
   output: row.output ?? "",
+  conceptIdsYaml: row.concept_ids_yaml ?? "",
   concepts: row.concepts ?? [],
   businessReqCount: 0,
   systemReqCount: 0,
@@ -52,9 +61,12 @@ const toTaskRow = (input: TaskInput) => ({
   business_id: input.businessId,
   name: input.name,
   summary: input.summary,
+  business_context: input.businessContext,
+  process_steps: input.processSteps,
   person: input.person,
   input: input.input,
   output: input.output,
+  concept_ids_yaml: input.conceptIdsYaml,
   concepts: input.concepts,
   sort_order: input.sortOrder,
 });

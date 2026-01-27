@@ -15,6 +15,7 @@ export type SystemFunctionInput = {
   category: SrfCategory;
   title: string;
   summary: string;
+  designPolicy: string;
   status: SrfStatus;
   relatedTaskIds: string[];
   requirementIds: string[];
@@ -34,6 +35,7 @@ type SystemFunctionRow = {
   category: string;
   title: string;
   summary: string;
+  design_policy: string | null;
   status: string;
   related_task_ids: string[] | null;
   requirement_ids: string[] | null;
@@ -77,6 +79,7 @@ const toSystemFunction = (row: SystemFunctionRow): SystemFunction => {
 		category: row.category as SrfCategory,
 		title: row.title,
 		summary: row.summary,
+		designPolicy: row.design_policy ?? "",
 		status: row.status as SrfStatus,
 		relatedTaskIds: row.related_task_ids ?? [],
 		requirementIds: row.requirement_ids ?? [],
@@ -95,6 +98,7 @@ const toSystemFunctionRowBase = (input: SystemFunctionInput) => ({
 	category: input.category,
 	title: input.title,
 	summary: input.summary,
+	design_policy: input.designPolicy,
 	status: input.status,
 	related_task_ids: input.relatedTaskIds,
 	requirement_ids: input.requirementIds,

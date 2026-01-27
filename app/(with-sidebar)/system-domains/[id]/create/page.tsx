@@ -12,6 +12,7 @@ import { SystemRequirementsSection } from "./components/SystemRequirementsSectio
 import { BusinessRequirementDialog } from "./components/BusinessRequirementDialog";
 import { SystemFunctionBasicInfoForm } from "./components/SystemFunctionBasicInfoForm";
 import type { BusinessRequirementDialogState } from "./types";
+import { ImplUnitSdList } from "@/components/forms/impl-unit-sd-list";
 
 export default function SystemFunctionCreatePage({
 	params,
@@ -33,16 +34,20 @@ export default function SystemFunctionCreatePage({
 		nextId,
 		title,
 		summary,
+		designPolicy,
 		category,
 		status,
 		businessRequirements,
+		implUnitSds,
 		loading,
 		saving,
 		error,
 		setTitle,
 		setSummary,
+		setDesignPolicy,
 		setCategory,
 		setStatus,
+		setImplUnitSds,
 		handleSubmit,
 	} = useSystemFunctionCreate(id);
 
@@ -90,10 +95,12 @@ export default function SystemFunctionCreatePage({
 								nextId={nextId}
 								title={title}
 								summary={summary}
+								designPolicy={designPolicy}
 								category={category}
 								status={status}
 								onTitleChange={setTitle}
 								onSummaryChange={setSummary}
+								onDesignPolicyChange={setDesignPolicy}
 								onCategoryChange={setCategory}
 								onStatusChange={setStatus}
 							/>
@@ -101,6 +108,7 @@ export default function SystemFunctionCreatePage({
 							<SystemRequirementsSection
 								systemRequirements={systemRequirements}
 								businessRequirements={businessRequirements}
+								deliverables={[]}
 								loading={loading}
 								onAddSystemRequirement={() => addSystemRequirement(id)}
 								onUpdateSystemRequirement={updateSystemRequirement}
@@ -108,6 +116,21 @@ export default function SystemFunctionCreatePage({
 								onOpenBusinessRequirementDialog={(sysReqId) =>
 									setDialogState({ sysReqId })
 								}
+							/>
+
+							<div className="space-y-1 pt-2">
+								<div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
+									実装
+								</div>
+								<div className="text-[14px] font-medium text-slate-700">
+									実装単位SD（IU）
+								</div>
+							</div>
+
+							<ImplUnitSdList
+								srfId={nextId}
+								items={implUnitSds}
+								onChange={setImplUnitSds}
 							/>
 
 							{error && <p className="text-sm text-rose-600">{error}</p>}
