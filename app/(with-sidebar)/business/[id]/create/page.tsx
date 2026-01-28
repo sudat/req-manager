@@ -143,7 +143,7 @@ function BusinessTaskCreatePageContent({ bizId }: BusinessTaskCreatePageContentP
         constraints: req.constraints.trim(),
         owner: req.owner.trim(),
         conceptIds: req.conceptIds,
-        srfId: req.srfId,
+        srfIds: req.srfIds,
         systemDomainIds: req.systemDomainIds,
         impacts: [],
         relatedSystemRequirementIds: req.relatedSystemRequirementIds ?? [],
@@ -194,7 +194,7 @@ function BusinessTaskCreatePageContent({ bizId }: BusinessTaskCreatePageContentP
           
           await updateSystemRequirement(sysReq.id, {
             taskId: sysReq.taskId,
-            srfId: sysReq.srfId,
+            srfIds: sysReq.srfIds,
             title: sysReq.title,
             summary: sysReq.summary,
             conceptIds: sysReq.conceptIds,

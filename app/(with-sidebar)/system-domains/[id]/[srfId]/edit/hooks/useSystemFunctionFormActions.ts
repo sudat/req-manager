@@ -128,7 +128,7 @@ export function useSystemFunctionFormActions(input: UseSystemFunctionFormActions
 				constraints: "",
 				owner: "",
 				conceptIds: [],
-				srfId: srfId,
+				srfIds: [srfId],
 				systemDomainIds: [],
 				acceptanceCriteria: [],
 				acceptanceCriteriaJson: [],

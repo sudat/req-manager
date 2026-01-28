@@ -23,7 +23,7 @@ export const getSystemRequirementCategoryLabel = (category: SystemRequirementCat
 export type SystemRequirement = {
 	id: string;
 	taskId: string;
-	srfId: string | null;
+	srfIds: string[];
 	title: string;
 	summary: string;
 	conceptIds: string[];
@@ -43,7 +43,7 @@ export type SystemRequirement = {
 export type SystemRequirementInput = {
 	id: string;
 	taskId: string;
-	srfId: string | null;
+	srfIds: string[];
 	title: string;
 	summary: string;
 	conceptIds: string[];
@@ -64,7 +64,7 @@ export type SystemRequirementCreateInput = SystemRequirementInput & {
 type SystemRequirementRow = {
 	id: string;
 	task_id: string;
-	srf_id: string | null;
+	srf_ids: string[] | null;
 	title: string;
 	summary: string;
 	concept_ids: string[] | null;
@@ -97,7 +97,7 @@ const toSystemRequirement = (row: SystemRequirementRow): SystemRequirement => {
 	return {
 		id: row.id,
 		taskId: row.task_id,
-		srfId: row.srf_id ?? null,
+		srfIds: row.srf_ids ?? [],
 		title: row.title,
 		summary: row.summary,
 		conceptIds: row.concept_ids ?? [],
@@ -119,7 +119,7 @@ const toSystemRequirement = (row: SystemRequirementRow): SystemRequirement => {
 const toSystemRequirementRowBase = (input: SystemRequirementInput) => ({
 	id: input.id,
 	task_id: input.taskId,
-	srf_id: input.srfId,
+	srf_ids: input.srfIds,
 	title: input.title,
 	summary: input.summary,
 	concept_ids: input.conceptIds,
@@ -261,7 +261,7 @@ export const listSystemRequirementsBySrfId = async (srfId: string, projectId?: s
 	let query = supabase
 		.from("system_requirements")
 		.select("*")
-		.eq("srf_id", srfId)
+		.overlaps("srf_ids", [srfId])
 		.order("sort_order")
 		.order("id");
 
@@ -371,7 +371,7 @@ export const deleteSystemRequirementsBySrfId = async (srfId: string, projectId?:
   let query = supabase
     .from("system_requirements")
     .delete()
-    .eq("srf_id", srfId);
+    .overlaps("srf_ids", [srfId]);
 
   if (projectId) {
     query = query.eq("project_id", projectId);

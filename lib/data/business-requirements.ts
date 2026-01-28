@@ -10,7 +10,7 @@ export type BusinessRequirement = {
 	constraints: string;
 	owner: string;
 	conceptIds: string[];
-	srfId: string | null;
+	srfIds: string[];
 	systemDomainIds: string[];
 	impacts: string[];
 	relatedSystemRequirementIds: string[];
@@ -29,7 +29,7 @@ export type BusinessRequirementInput = {
 	constraints: string;
 	owner: string;
 	conceptIds: string[];
-	srfId: string | null;
+	srfIds: string[];
 	systemDomainIds: string[];
 	impacts: string[];
 	relatedSystemRequirementIds: string[];
@@ -49,7 +49,7 @@ type BusinessRequirementRow = {
 	constraints: string | null;
 	owner: string | null;
 	concept_ids: string[] | null;
-	srf_id: string | null;
+	srf_ids: string[] | null;
 	system_domain_ids: string[] | null;
 	impacts: string[] | null;
 	related_system_requirement_ids: string[] | null;
@@ -71,7 +71,7 @@ const toBusinessRequirement = (row: BusinessRequirementRow): BusinessRequirement
 		constraints: row.constraints ?? "",
 		owner: row.owner ?? "",
 		conceptIds: row.concept_ids ?? [],
-		srfId: row.srf_id ?? null,
+		srfIds: row.srf_ids ?? [],
 		systemDomainIds: row.system_domain_ids ?? [],
 		impacts: row.impacts ?? [],
 		relatedSystemRequirementIds: row.related_system_requirement_ids ?? [],
@@ -93,7 +93,7 @@ const toBusinessRequirementRowBase = (input: BusinessRequirementInput) => {
 		constraints: input.constraints,
 		owner: input.owner,
 		concept_ids: input.conceptIds,
-		srf_id: input.srfId,
+		srf_ids: input.srfIds,
 		system_domain_ids: input.systemDomainIds,
 		impacts: input.impacts,
 		related_system_requirement_ids: input.relatedSystemRequirementIds,

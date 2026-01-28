@@ -16,6 +16,7 @@ export function useToggleHandlers(
 	const createMultiToggle = (
 		key:
 			| "conceptIds"
+			| "srfIds"
 			| "systemDomainIds"
 			| "businessRequirementIds"
 			| "relatedSystemRequirementIds"
@@ -31,17 +32,9 @@ export function useToggleHandlers(
 		};
 	};
 
-	// 単一選択トグルハンドラー生成
-	const createSingleToggle = (key: "srfId") => {
-		return (itemId: string, checked: boolean) => {
-			if (!activeRequirement) return;
-			onUpdateRequirement(activeRequirement.id, { [key]: checked ? itemId : null });
-		};
-	};
-
 	return {
 		handleConceptToggle: createMultiToggle("conceptIds"),
-		handleSystemFunctionToggle: createSingleToggle("srfId"),
+		handleSystemFunctionToggle: createMultiToggle("srfIds"),
 		handleDomainToggle: createMultiToggle("systemDomainIds"),
 		handleBusinessRequirementToggle: createMultiToggle("businessRequirementIds"),
 		handleSystemRequirementToggle: createMultiToggle("relatedSystemRequirementIds"),

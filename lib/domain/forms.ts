@@ -31,7 +31,7 @@ export type Requirement = {
   constraints: string;
   owner: string;
   conceptIds: string[];
-  srfId: string | null;
+  srfIds: string[];
   systemDomainIds: string[];
   acceptanceCriteria: string[];
   acceptanceCriteriaJson: AcceptanceCriterionJson[];

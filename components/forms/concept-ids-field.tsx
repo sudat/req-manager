@@ -54,7 +54,7 @@ export function ConceptIdsField({
 			constraints: "",
 			owner: "",
 			conceptIds: selectedIds,
-			srfId: null,
+			srfIds: [],
 			systemDomainIds: [],
 			acceptanceCriteria: [],
 			acceptanceCriteriaJson: [],
