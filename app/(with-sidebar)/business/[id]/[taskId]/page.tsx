@@ -96,6 +96,7 @@ export default function TaskDetailPage({ params }: PageProps) {
 			systemRequirements,
 			systemFunctions: relatedSystemFunctions,
 			concepts,
+			pageType: 'business',
 		});
 	}, [
 		businessRequirements,
@@ -172,6 +173,7 @@ export default function TaskDetailPage({ params }: PageProps) {
 							error={healthError}
 							maxIssues={6}
 							showStats
+							pageType="business"
 						/>
 					</div>
 

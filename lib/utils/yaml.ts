@@ -2,7 +2,7 @@ import { parseDocument, stringify } from "yaml";
 
 export type YamlValidationResult = {
 	ok: boolean;
-	message: string | null;
+	message?: string;
 };
 
 export type KeySourceItem = {
@@ -36,7 +36,7 @@ export function validateYaml(src: string): YamlValidationResult {
 	try {
 		const doc = parseDocument(src, YAML_PARSE_OPTIONS);
 		const err = doc.errors?.[0] as YamlErrorLike | undefined;
-		if (!err) return { ok: true, message: null };
+		if (!err) return { ok: true };
 
 		const line = err.linePos?.start?.line;
 		const col = err.linePos?.start?.col;

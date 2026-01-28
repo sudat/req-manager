@@ -20,6 +20,15 @@ import {
 	toBusinessRequirementInput,
 	toSystemRequirementInput,
 } from "@/lib/data/requirement-mapper";
+import {
+	deleteRequirementLinksBySource,
+	createRequirementLinks,
+	type RequirementLinkCreateInput,
+} from "@/lib/data/requirement-links";
+import {
+	detectChangedFields,
+	markChangedFieldsSuspect,
+} from "@/lib/data/suspect-detection";
 
 /**
  * 要件の変更を検出する（ジェネリック版）
@@ -70,13 +79,13 @@ export function hasRequirementChanged<T extends {
  * 業務要件をDBに同期する
  * @param taskId タスクID
  * @param editedRequirements 編集後の要件一覧
- * @returns エラーメッセージ（失敗時）、成功時はnull
+ * @returns エラーメッセージ（失敗時）、成功時は変更された要件のIDとフィールドのマップ
  */
 export async function syncBusinessRequirements(
 	taskId: string,
 	editedRequirements: Requirement[],
 	projectId: string,
-): Promise<string | null> {
+): Promise<string | Map<string, string[]>> {
 	try {
 		// 現在のDB状態を取得
 		const { data: existingReqs, error: fetchError } = await listBusinessRequirementsByTaskId(taskId, projectId);
@@ -93,6 +102,9 @@ export async function syncBusinessRequirements(
 
 		// 更新対象: 両方にあるが内容が異なる可能性がある
 		const toUpdate = editedRequirements.filter((r) => existingIds.has(r.id));
+
+		// 変更された要件のIDとフィールドを収集
+		const changedRequirements = new Map<string, string[]>();
 
 		// 1. 削除
 		for (const id of toDelete) {
@@ -119,12 +131,20 @@ export async function syncBusinessRequirements(
 				continue;
 			}
 
+			// 変更フィールドを検出
+			const changedFields = detectChangedFields(req, existing);
+
+			// 疑義対象フィールドが変更されている場合はIDとフィールドを記録
+			if (changedFields.length > 0) {
+				changedRequirements.set(req.id, changedFields);
+			}
+
 			const input = toBusinessRequirementInput(req, taskId, existing.sortOrder);
 			const { error } = await updateBusinessRequirement(req.id, input, projectId);
 			if (error) return `更新エラー (${req.id}): ${error}`;
 		}
 
-		return null;
+		return changedRequirements;
 	} catch (e) {
 		return `同期エラー: ${e instanceof Error ? e.message : String(e)}`;
 	}
@@ -134,13 +154,13 @@ export async function syncBusinessRequirements(
  * システム要件をDBに同期する
  * @param taskId タスクID
  * @param editedRequirements 編集後の要件一覧
- * @returns エラーメッセージ（失敗時）、成功時はnull
+ * @returns エラーメッセージ（失敗時）、成功時は変更された要件のIDとフィールドのマップ
  */
 export async function syncSystemRequirements(
 	taskId: string,
 	editedRequirements: Requirement[],
 	projectId: string,
-): Promise<string | null> {
+): Promise<string | Map<string, string[]>> {
 	try {
 		// 現在のDB状態を取得
 		const { data: existingReqs, error: fetchError } = await listSystemRequirementsByTaskId(taskId, projectId);
@@ -157,6 +177,9 @@ export async function syncSystemRequirements(
 
 		// 更新対象: 両方にあるが内容が異なる可能性がある
 		const toUpdate = editedRequirements.filter((r) => existingIds.has(r.id));
+
+		// 変更された要件のIDとフィールドを収集
+		const changedRequirements = new Map<string, string[]>();
 
 		// 1. 削除
 		for (const id of toDelete) {
@@ -193,6 +216,14 @@ export async function syncSystemRequirements(
 				continue;
 			}
 
+			// 変更フィールドを検出
+			const changedFields = detectChangedFields(req, existing);
+
+			// 疑義対象フィールドが変更されている場合はIDとフィールドを記録
+			if (changedFields.length > 0) {
+				changedRequirements.set(req.id, changedFields);
+			}
+
 			const input = toSystemRequirementInput(req, taskId, existing.sortOrder);
 			const { error } = await updateSystemRequirement(req.id, input, projectId);
 			if (error) return `更新エラー (${req.id}): ${error}`;
@@ -212,7 +243,7 @@ export async function syncSystemRequirements(
 			if (acError) return `受入基準作成エラー (${req.id}): ${acError}`;
 		}
 
-		return null;
+		return changedRequirements;
 	} catch (e) {
 		return `同期エラー: ${e instanceof Error ? e.message : String(e)}`;
 	}
@@ -269,5 +300,54 @@ export async function syncTaskBasicInfo(
 		return null;
 	} catch (e) {
 		return `同期エラー: ${e instanceof Error ? e.message : String(e)}`;
+	}
+}
+
+/**
+ * BR↔SRリンクをrequirement_linksテーブルに同期する（Phase 3）
+ * @param systemRequirements システム要件配列（businessRequirementIdsを含む）
+ * @param projectId プロジェクトID
+ * @returns エラーメッセージ（失敗時）、成功時はnull
+ */
+export async function syncBrSrLinksToRequirementLinks(
+	systemRequirements: Array<{ id: string; businessRequirementIds: string[] }>,
+	projectId: string
+): Promise<string | null> {
+	try {
+		// 各SRについて、既存リンクを削除して新規リンクを挿入
+		for (const sr of systemRequirements) {
+			// 1. このSRをsourceとする既存リンクをすべて削除
+			const { error: deleteError } = await deleteRequirementLinksBySource("sr", sr.id, projectId);
+			if (deleteError) {
+				console.error(`[syncBrSrLinksToRequirementLinks] リンク削除エラー (SR: ${sr.id}):`, deleteError);
+				return `リンク削除エラー (SR: ${sr.id}): ${deleteError}`;
+			}
+
+			// 2. 新規リンクを作成（SR→BRの関係）
+			if (sr.businessRequirementIds.length > 0) {
+				const linkInputs: RequirementLinkCreateInput[] = sr.businessRequirementIds.map((brId) => ({
+					projectId,
+					sourceType: "sr",
+					sourceId: sr.id,
+					targetType: "br",
+					targetId: brId,
+					linkType: "derived_from",
+					suspect: false,
+				}));
+
+				const { error: createError } = await createRequirementLinks(linkInputs);
+				if (createError) {
+					console.error(`[syncBrSrLinksToRequirementLinks] リンク作成エラー (SR: ${sr.id}):`, createError);
+					return `リンク作成エラー (SR: ${sr.id}): ${createError}`;
+				}
+			}
+		}
+
+		console.log(`[syncBrSrLinksToRequirementLinks] 同期完了: ${systemRequirements.length}件のSRに対するリンクを更新`);
+		return null;
+	} catch (e) {
+		const message = e instanceof Error ? e.message : String(e);
+		console.error(`[syncBrSrLinksToRequirementLinks] 同期エラー:`, message);
+		return `リンク同期エラー: ${message}`;
 	}
 }

@@ -1,5 +1,5 @@
 // ドメインエンティティ型定義
-import type { BusinessArea, TicketStatus, TicketPriority, SrfCategory, SrfStatus, SystemDesignItem } from './enums';
+import type { BusinessArea, TicketStatus, TicketPriority, SrfCategory, SrfStatus, SystemDesignItem, ImplUnitType } from './enums';
 import type { TicketRequirementReference, TicketChangeItem, TicketConceptReference, TicketVersionApplication, EntryPoint } from './value-objects';
 import type { SystemDesignItemV2 } from './schemas/system-design';
 import type { Deliverable } from './schemas/deliverable';
@@ -205,8 +205,6 @@ export interface AcceptanceCriterion {
  * ImplUnitSD（実装単位SD）
  * PRD 3.9準拠: 4種類に限定
  */
-export type ImplUnitType = "screen" | "api" | "batch" | "external_if";
-
 export interface ImplUnitSd {
   id: string;              // IU-XXX
   srfId: string;           // SRF-XXX

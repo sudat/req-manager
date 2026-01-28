@@ -1,6 +1,5 @@
 import { supabase, getSupabaseConfigError } from "@/lib/supabase/client";
 import type { ProductRequirement } from "@/lib/domain";
-import { toYamlText } from "@/lib/utils/yaml";
 
 export type ProductRequirementInput = {
   id: string;
@@ -41,15 +40,10 @@ const toProductRequirement = (row: ProductRequirementRow): ProductRequirement =>
   qualityGoals: row.quality_goals,
   designSystem: row.design_system,
   uxGuidelines: row.ux_guidelines,
-  techStackProfile: toYamlText(row.tech_stack_profile),
-  codingConventions:
-    row.coding_conventions === null
-      ? null
-      : toYamlText(row.coding_conventions),
-  forbiddenChoices:
-    row.forbidden_choices === null
-      ? null
-      : toYamlText(row.forbidden_choices),
+  // JSONBカラムを文字列としてそのまま返す（既存のYAMLデータも自動変換）
+  techStackProfile: row.tech_stack_profile ?? "{}",
+  codingConventions: row.coding_conventions,
+  forbiddenChoices: row.forbidden_choices,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });

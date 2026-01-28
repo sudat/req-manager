@@ -1,6 +1,7 @@
 "use client";
 
-import { ExternalLink } from "lucide-react";
+import { useState } from "react";
+import { ExternalLink, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { SectionCard, EmptyState, SectionLabel } from "./section-card";
@@ -8,6 +9,13 @@ import { useRelatedRequirements } from "@/hooks/use-related-requirements";
 import type { RelatedRequirementInfo } from "@/lib/domain";
 import { CardSkeleton } from "@/components/skeleton";
 import { AcceptanceCriteriaDisplay } from "@/components/forms/AcceptanceCriteriaDisplay";
+import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { cn } from "@/lib/utils";
+import { SuspectLinkBadge } from "@/components/requirement-links/suspect-link-badge";
 
 interface SystemRequirementsSectionProps {
 	srfId: string;
@@ -48,73 +56,87 @@ export function SystemRequirementsSection({ srfId }: SystemRequirementsSectionPr
 }
 
 function RequirementItem({ req }: { req: RelatedRequirementInfo }): React.ReactNode {
+	const [isOpen, setIsOpen] = useState(false);
+
 	return (
-		<div className="rounded-md border border-slate-200 bg-white p-5 shadow-sm">
-			<div className="flex flex-wrap items-start justify-between gap-3 mb-4">
-				<div className="flex items-center gap-2 flex-wrap">
-					<Badge className="border-blue-200/60 bg-blue-50 text-blue-700 text-[12px] font-medium px-2.5 py-1">
-						{req.systemReqId}
-					</Badge>
-					<span className="text-[14px] font-semibold text-slate-900">
-						{req.systemReqTitle || "名称未設定"}
-					</span>
-				</div>
-				<span className="text-[11px] text-slate-400 uppercase tracking-wide">
-					SR
-				</span>
-			</div>
-
-			<div className="space-y-3">
-				{req.systemReqSummary && (
-					<div className="text-[13px] text-slate-600 leading-relaxed">
-						{req.systemReqSummary}
+		<Collapsible open={isOpen} onOpenChange={setIsOpen}>
+			<div className="rounded-md border border-slate-200 bg-white shadow-sm">
+				<CollapsibleTrigger className="w-full flex flex-wrap items-start justify-between gap-3 px-4 py-4 hover:bg-slate-50/50 cursor-pointer transition-colors">
+					<div className="flex items-center gap-2 flex-wrap">
+						<Badge className="border-blue-200/60 bg-blue-50 text-blue-700 text-[12px] font-medium px-2.5 py-1">
+							{req.systemReqId}
+						</Badge>
+						<span className="text-[14px] font-semibold text-slate-900">
+							{req.systemReqTitle || "名称未設定"}
+						</span>
 					</div>
-				)}
-
-				{req.systemReqConcepts && req.systemReqConcepts.length > 0 && (
-					<BadgeList label="関連概念">
-						{req.systemReqConcepts.map((concept) => (
-							<Link key={concept.id} href={`/ideas/${concept.id}`}>
-								<Badge
-									variant="outline"
-									className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] hover:bg-slate-100"
-								>
-									{concept.name}
-								</Badge>
-							</Link>
-						))}
-					</BadgeList>
-				)}
-
-				{req.systemReqImpacts && req.systemReqImpacts.length > 0 && (
-					<BadgeList label="影響領域">
-						{req.systemReqImpacts.map((impact, i) => (
-							<Badge
-								key={i}
-								variant="outline"
-								className="border-slate-200 bg-slate-50 text-slate-600 text-[12px]"
-							>
-								{impact}
-							</Badge>
-						))}
-					</BadgeList>
-				)}
-
-				{req.systemReqAcceptanceCriteriaJson && req.systemReqAcceptanceCriteriaJson.length > 0 && (
-					<div className="border-t border-slate-100 pt-3 space-y-2">
-						<div className="text-[12px] font-medium text-slate-500">受入条件</div>
-						<AcceptanceCriteriaDisplay
-							items={req.systemReqAcceptanceCriteriaJson}
-							emptyMessage="未登録"
+					<div className="flex items-center gap-2">
+						<span className="text-[11px] text-slate-400 uppercase tracking-wide">
+							SR
+						</span>
+						<ChevronDown
+							className={cn(
+								"h-5 w-5 text-slate-400 transition-transform duration-200",
+								isOpen ? "rotate-180" : ""
+							)}
 						/>
 					</div>
-				)}
-			</div>
+				</CollapsibleTrigger>
 
-			<div className="mt-4">
-				<BusinessRequirementLink req={req} />
+				<CollapsibleContent className="p-5">
+					<div className="space-y-3">
+						{req.systemReqSummary && (
+							<div className="text-[13px] text-slate-600 leading-relaxed">
+								{req.systemReqSummary}
+							</div>
+						)}
+
+						{req.systemReqConcepts && req.systemReqConcepts.length > 0 && (
+							<BadgeList label="関連概念">
+								{req.systemReqConcepts.map((concept) => (
+									<Link key={concept.id} href={`/ideas/${concept.id}`}>
+										<Badge
+											variant="outline"
+											className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] hover:bg-slate-100"
+										>
+											{concept.name}
+										</Badge>
+									</Link>
+								))}
+							</BadgeList>
+						)}
+
+						{req.systemReqImpacts && req.systemReqImpacts.length > 0 && (
+							<BadgeList label="影響領域">
+								{req.systemReqImpacts.map((impact, i) => (
+									<Badge
+										key={i}
+										variant="outline"
+										className="border-slate-200 bg-slate-50 text-slate-600 text-[12px]"
+									>
+										{impact}
+									</Badge>
+								))}
+							</BadgeList>
+						)}
+
+						{req.systemReqAcceptanceCriteriaJson && req.systemReqAcceptanceCriteriaJson.length > 0 && (
+							<div className="border-t border-slate-100 pt-3 space-y-2">
+								<div className="text-[12px] font-medium text-slate-500">受入条件</div>
+								<AcceptanceCriteriaDisplay
+									items={req.systemReqAcceptanceCriteriaJson}
+									emptyMessage="未登録"
+								/>
+							</div>
+						)}
+					</div>
+
+					<div className="mt-4">
+						<BusinessRequirementLink req={req} />
+					</div>
+				</CollapsibleContent>
 			</div>
-		</div>
+		</Collapsible>
 	);
 }
 
@@ -138,22 +160,24 @@ function BusinessRequirementLink({ req }: { req: RelatedRequirementInfo }): Reac
 						title: req.businessReqTitle,
 						taskId: req.taskId,
 						businessId: req.businessId,
+						suspect: false,
+						suspectReason: null,
 					},
 				]
 				: [];
 
 	if (relatedBusinessReqs.length === 0) {
 		return (
-			<div className="rounded-md border border-slate-200 bg-slate-50/70 p-3 text-[12px] text-slate-500">
-				<SectionLabel className="mb-2">関連業務要件</SectionLabel>
+			<div className="border-t border-slate-100 pt-3 text-[12px] text-slate-500">
+				<div className="text-[12px] font-medium text-slate-500 mb-2">関連業務要件</div>
 				関連業務要件が未設定です。
 			</div>
 		);
 	}
 
 	return (
-		<div className="rounded-md border border-slate-200 bg-slate-50/70 p-3">
-			<SectionLabel className="mb-2">関連業務要件</SectionLabel>
+		<div className="border-t border-slate-100 pt-3">
+			<div className="text-[12px] font-medium text-slate-500 mb-2">関連業務要件</div>
 			<div className="space-y-1.5">
 				{relatedBusinessReqs.map((bizReq) => {
 					const hasLink = bizReq.businessId && bizReq.taskId;
@@ -168,6 +192,14 @@ function BusinessRequirementLink({ req }: { req: RelatedRequirementInfo }): Reac
 							<span className="text-[13px] text-slate-700">
 								{bizReq.title || "名称未設定"}
 							</span>
+							{/* 疑義バッジ（Phase 4.6で追加） */}
+							{bizReq.suspect && (
+								<SuspectLinkBadge
+									suspect={bizReq.suspect}
+									suspectReason={bizReq.suspectReason}
+									size="sm"
+								/>
+							)}
 							{hasLink && <ExternalLink className="h-3 w-3 text-slate-400 ml-auto" />}
 						</div>
 					);

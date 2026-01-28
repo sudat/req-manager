@@ -10,11 +10,13 @@ import { listBusinessRequirements } from "@/lib/data/business-requirements";
 import { listConcepts } from "@/lib/data/concepts";
 import { listSystemFunctions } from "@/lib/data/system-functions";
 import { listSystemRequirements } from "@/lib/data/system-requirements";
+import { listImplUnitSds } from "@/lib/data/impl-unit-sds";
 import { useProject } from "@/components/project/project-context";
 import {
 	buildHealthScoreSummary,
 	type HealthScoreSummary,
 } from "@/lib/health-score";
+import { SuspectLinksCard } from "./components/suspect-links-card";
 
 export default function DashboardPage() {
 	const [healthSummary, setHealthSummary] = useState<HealthScoreSummary | null>(
@@ -37,12 +39,13 @@ export default function DashboardPage() {
 
 		async function fetchHealth(): Promise<void> {
 			setHealthLoading(true);
-			const [businessResult, systemResult, functionResult, conceptResult] =
+			const [businessResult, systemResult, functionResult, conceptResult, implUnitResult] =
 				await Promise.all([
 					listBusinessRequirements(projectId),
 					listSystemRequirements(projectId),
 					listSystemFunctions(projectId),
 					listConcepts(projectId),
+					listImplUnitSds(projectId),
 				]);
 
 			if (!active) return;
@@ -51,7 +54,8 @@ export default function DashboardPage() {
 				businessResult.error ??
 				systemResult.error ??
 				functionResult.error ??
-				conceptResult.error;
+				conceptResult.error ??
+				implUnitResult.error;
 
 			if (fetchError) {
 				setHealthError(fetchError);
@@ -64,6 +68,7 @@ export default function DashboardPage() {
 				businessRequirements: businessResult.data ?? [],
 				systemRequirements: systemResult.data ?? [],
 				systemFunctions: functionResult.data ?? [],
+				implUnitSds: implUnitResult.data ?? [],
 				concepts: conceptResult.data ?? [],
 			});
 
@@ -139,6 +144,13 @@ export default function DashboardPage() {
 							showStats
 						/>
 					</div>
+
+					{/* 疑義リンクカード（Phase 4.7で追加） */}
+					{currentProjectId && (
+						<div className="mb-6">
+							<SuspectLinksCard projectId={currentProjectId} />
+						</div>
+					)}
 
 					{/* メインコンテンツ */}
 					<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

@@ -7,6 +7,7 @@ import {
 	syncTaskBasicInfo,
 	syncBusinessRequirements,
 	syncSystemRequirements,
+	syncBrSrLinksToRequirementLinks,
 } from "@/lib/data/task-sync";
 import { saveToStorage, removeFromStorage } from "@/lib/utils/local-storage";
 import { useProject } from "@/components/project/project-context";
@@ -131,16 +132,17 @@ export function useTaskSave({
 					knowledge.systemRequirements
 				);
 
-				// 業務要件を同期
-				const bizError = await syncBusinessRequirements(
+				// 業務要件を同期（変更された要件IDとフィールドを取得）
+				const bizResult = await syncBusinessRequirements(
 					taskId,
 					syncedBusinessRequirements,
 					currentProjectId
 				);
-				if (bizError) {
-					setSaveError(bizError);
+				if (typeof bizResult === "string") {
+					setSaveError(bizResult);
 					return;
 				}
+				const changedBrMap = bizResult; // 変更されたBRのIDとフィールドのマップ
 
 				// システム要件のbusinessRequirementIdsを業務要件のrelatedSystemRequirementIdsから更新
 				const syncedSystemRequirements = syncSystemRequirementLinks(
@@ -148,15 +150,39 @@ export function useTaskSave({
 					knowledge.systemRequirements
 				);
 
-				// システム要件を同期
-				const sysError = await syncSystemRequirements(
+				// システム要件を同期（変更された要件IDとフィールドを取得）
+				const sysResult = await syncSystemRequirements(
 					taskId,
 					syncedSystemRequirements,
 					currentProjectId
 				);
-				if (sysError) {
-					setSaveError(sysError);
+				if (typeof sysResult === "string") {
+					setSaveError(sysResult);
 					return;
+				}
+				const changedSrMap = sysResult; // 変更されたSRのIDとフィールドのマップ
+
+				// Phase 3: BR↔SRリンクをrequirement_linksに同期
+				const linkError = await syncBrSrLinksToRequirementLinks(
+					syncedSystemRequirements,
+					currentProjectId
+				);
+				if (linkError) {
+					setSaveError(linkError);
+					return;
+				}
+
+				// Phase 4.5: リンク同期の後に疑義フラグを設定
+				// 変更されたBRに対して疑義フラグを設定
+				for (const [brId, changedFields] of changedBrMap) {
+					const { markChangedFieldsSuspect } = await import("@/lib/data/suspect-detection");
+					await markChangedFieldsSuspect(brId, "br", changedFields, currentProjectId);
+				}
+
+				// 変更されたSRに対して疑義フラグを設定
+				for (const [srId, changedFields] of changedSrMap) {
+					const { markChangedFieldsSuspect } = await import("@/lib/data/suspect-detection");
+					await markChangedFieldsSuspect(srId, "sr", changedFields, currentProjectId);
 				}
 
 				// 成功時はLocalStorageをクリア

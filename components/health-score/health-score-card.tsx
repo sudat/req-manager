@@ -18,6 +18,7 @@ type HealthScoreCardProps = {
 	error?: string | null;
 	maxIssues?: number;
 	showStats?: boolean;
+	pageType?: 'business' | 'system';
 };
 
 const levelLabels = {
@@ -54,6 +55,7 @@ export function HealthScoreCard({
 	error = null,
 	maxIssues,
 	showStats = false,
+	pageType,
 }: HealthScoreCardProps): React.ReactNode {
 	const issues = summary?.issues.filter((issue) => issue.total > 0) ?? [];
 	const [isOpen, setIsOpen] = useState(false);
@@ -127,10 +129,15 @@ export function HealthScoreCard({
 
 							{showStats && (
 								<div className="flex flex-wrap gap-4 text-[12px] text-slate-500">
-									<span>業務要件: {summary.stats.businessRequirements}</span>
-									<span>システム要件: {summary.stats.systemRequirements}</span>
-									<span>システム機能: {summary.stats.systemFunctions}</span>
-									<span>エントリポイント: {summary.stats.entryPoints}</span>
+									{(!pageType || pageType === 'system') && (
+										<span>業務要件: {summary.stats.businessRequirements}</span>
+									)}
+									{(!pageType || pageType === 'business') && (
+										<span>システム要件: {summary.stats.systemRequirements}</span>
+									)}
+									{(!pageType || pageType === 'business') && (
+										<span>実装単位SD: {summary.stats.implUnitSds}</span>
+									)}
 								</div>
 							)}
 

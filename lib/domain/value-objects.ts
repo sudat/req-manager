@@ -22,6 +22,8 @@ export interface RelatedRequirementInfo {
     title: string;
     taskId: string;
     businessId: string;
+    suspect?: boolean;              // 疑義フラグ（Phase 4.6で追加）
+    suspectReason?: string | null;  // 疑義理由（Phase 4.6で追加）
   }>;
 }
 

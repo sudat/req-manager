@@ -142,10 +142,10 @@ export function hasMeaningfulContent(ac: AcceptanceCriterionJson): boolean {
 	}
 
 	// GWTフィールドのいずれかに具体的な内容がある場合は意味があるとみなす
-	const hasContent =
-		(ac.givenText && ac.givenText.trim().length > 0 && !ac.givenText.includes("[")) ||
-		(ac.whenText && ac.whenText.trim().length > 0 && !ac.whenText.includes("[")) ||
-		(ac.thenText && ac.thenText.trim().length > 0 && !ac.thenText.includes("["));
+	const hasContent: boolean =
+		!!(ac.givenText && ac.givenText.trim().length > 0 && !ac.givenText.includes("[")) ||
+		!!(ac.whenText && ac.whenText.trim().length > 0 && !ac.whenText.includes("[")) ||
+		!!(ac.thenText && ac.thenText.trim().length > 0 && !ac.thenText.includes("["));
 
 	return hasContent;
 }

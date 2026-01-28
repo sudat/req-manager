@@ -1,7 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { FileCode2 } from "lucide-react";
+import { useState } from "react";
+import { FileCode2, ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { SectionCard, EmptyState, SectionLabel } from "./section-card";
 import type { ImplUnitSd } from "@/lib/domain";
@@ -11,6 +12,12 @@ import {
 	IMPL_UNIT_TYPE_COLORS,
 	type ImplUnitType,
 } from "@/lib/domain/enums";
+import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { cn } from "@/lib/utils";
 
 interface ImplUnitSdSectionProps {
 	items: ImplUnitSd[];
@@ -55,6 +62,7 @@ export function ImplUnitSdSection({
 }
 
 function ImplUnitSdItem({ item }: { item: ImplUnitSd }): ReactNode {
+	const [isOpen, setIsOpen] = useState(false);
 	const typeLabel =
 		IMPL_UNIT_TYPE_LABELS[item.type as ImplUnitType] ?? item.type;
 	const typeColor =
@@ -64,10 +72,10 @@ function ImplUnitSdItem({ item }: { item: ImplUnitSd }): ReactNode {
 	const detailsText = toYamlText(item.details ?? {}).trim();
 
 	return (
-		<div className="rounded-md border border-slate-200 bg-white p-5 space-y-4 shadow-sm">
-			<div className="flex flex-wrap items-start justify-between gap-3">
-				<div className="space-y-1 flex-1">
-					<div className="flex items-center gap-2 flex-wrap">
+		<Collapsible open={isOpen} onOpenChange={setIsOpen}>
+			<div className="rounded-md border border-slate-200 bg-white shadow-sm">
+				<CollapsibleTrigger className="w-full flex flex-wrap items-start justify-between gap-3 px-4 py-4 hover:bg-slate-50/50 cursor-pointer transition-colors">
+					<div className="flex items-center gap-2 flex-wrap flex-1">
 						<h3 className="text-[15px] font-semibold text-slate-900">
 							{item.name || "名称未設定"}
 						</h3>
@@ -78,72 +86,82 @@ function ImplUnitSdItem({ item }: { item: ImplUnitSd }): ReactNode {
 							{typeLabel}
 						</Badge>
 					</div>
-				</div>
-				<span className="text-[10px] text-slate-400 font-mono">{item.id}</span>
-			</div>
+					<div className="flex items-center gap-2">
+						<span className="text-[10px] text-slate-400 font-mono">{item.id}</span>
+						<ChevronDown
+							className={cn(
+								"h-5 w-5 text-slate-400 transition-transform duration-200",
+								isOpen ? "rotate-180" : ""
+							)}
+						/>
+					</div>
+				</CollapsibleTrigger>
 
-			{/* エントリポイントを名称直下に配置（最も重要な情報） */}
-			<div className="space-y-2">
-				<SectionLabel>エントリポイント</SectionLabel>
-				{entryPoints.length === 0 ? (
-					<div className="text-[12px] text-slate-400">未設定</div>
-				) : (
+				<CollapsibleContent className="p-5 space-y-4">
+					{/* エントリポイントを名称直下に配置（最も重要な情報） */}
 					<div className="space-y-2">
-						{entryPoints.map((entry, index) => (
-							<div
-								key={`${entry.path}-${index}`}
-								className="flex items-start gap-2 text-[13px]"
-							>
-								<FileCode2 className="h-4 w-4 text-slate-500 mt-0.5 flex-shrink-0" />
-								<div className="flex-1 space-y-0.5">
-									<code className="font-mono text-slate-700 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
-										{entry.path}
-									</code>
-									{(entry.type || entry.responsibility) && (
-										<div className="text-[12px] text-slate-600 ml-1">
-											{entry.type && (
-												<span className="font-medium">({entry.type})</span>
-											)}
-											{entry.type && entry.responsibility && " "}
-											{entry.responsibility && (
-												<span className="text-slate-500">
-													- {entry.responsibility}
-												</span>
+						<SectionLabel>エントリポイント</SectionLabel>
+						{entryPoints.length === 0 ? (
+							<div className="text-[12px] text-slate-400">未設定</div>
+						) : (
+							<div className="space-y-2">
+								{entryPoints.map((entry, index) => (
+									<div
+										key={`${entry.path}-${index}`}
+										className="flex items-start gap-2 text-[13px]"
+									>
+										<FileCode2 className="h-4 w-4 text-slate-500 mt-0.5 flex-shrink-0" />
+										<div className="flex-1 space-y-0.5">
+											<code className="font-mono text-slate-700 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
+												{entry.path}
+											</code>
+											{(entry.type || entry.responsibility) && (
+												<div className="text-[12px] text-slate-600 ml-1">
+													{entry.type && (
+														<span className="font-medium">({entry.type})</span>
+													)}
+													{entry.type && entry.responsibility && " "}
+													{entry.responsibility && (
+														<span className="text-slate-500">
+															- {entry.responsibility}
+														</span>
+													)}
+												</div>
 											)}
 										</div>
-									)}
-								</div>
+									</div>
+								))}
 							</div>
-						))}
+						)}
 					</div>
-				)}
-			</div>
 
-			{/* 概要を3番目に配置 */}
-			<div className="space-y-2">
-				<SectionLabel>概要</SectionLabel>
-				<div className="text-[13px] text-slate-600">{item.summary}</div>
-			</div>
-
-			{item.designPolicy && (
-				<div className="space-y-2">
-					<SectionLabel>設計方針</SectionLabel>
-					<div className="text-[12px] text-slate-600 whitespace-pre-wrap">
-						{item.designPolicy}
+					{/* 概要を3番目に配置 */}
+					<div className="space-y-2">
+						<SectionLabel>概要</SectionLabel>
+						<div className="text-[13px] text-slate-600">{item.summary}</div>
 					</div>
-				</div>
-			)}
 
-			{detailsText ? (
-				<div className="space-y-2">
-					<SectionLabel>details</SectionLabel>
-					<pre className="text-[11px] text-slate-600 whitespace-pre-wrap bg-slate-50 rounded-md p-3 border border-slate-200">
-						{detailsText}
-					</pre>
-				</div>
-			) : (
-				<div className="text-[12px] text-slate-400">details 未設定</div>
-			)}
-		</div>
+					{item.designPolicy && (
+						<div className="space-y-2">
+							<SectionLabel>設計方針</SectionLabel>
+							<div className="text-[12px] text-slate-600 whitespace-pre-wrap">
+								{item.designPolicy}
+							</div>
+						</div>
+					)}
+
+					{detailsText ? (
+						<div className="space-y-2">
+							<SectionLabel>details</SectionLabel>
+							<pre className="text-[11px] text-slate-600 whitespace-pre-wrap bg-slate-50 rounded-md p-3 border border-slate-200">
+								{detailsText}
+							</pre>
+						</div>
+					) : (
+						<div className="text-[12px] text-slate-400">details 未設定</div>
+					)}
+				</CollapsibleContent>
+			</div>
+		</Collapsible>
 	);
 }

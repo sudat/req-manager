@@ -1,6 +1,18 @@
 import { supabase, getSupabaseConfigError } from "@/lib/supabase/client";
 import type { RequirementLink, RequirementLinkNodeType } from "@/lib/domain";
 
+export type RequirementLinkType = "derived_from";
+
+/**
+ * リンク種別の論理名定義
+ */
+export const getRequirementLinkTypeLabel = (linkType: RequirementLinkType): string => {
+	const labels: Record<RequirementLinkType, string> = {
+		derived_from: "BR→SR派生",
+	};
+	return labels[linkType] ?? linkType;
+};
+
 export type RequirementLinkInput = {
   sourceType: RequirementLinkNodeType;
   sourceId: string;
@@ -86,7 +98,7 @@ export const listRequirementLinksByProjectId = async (projectId: string) => {
     .from("requirement_links")
     .select("*")
     .eq("project_id", projectId)
-    .order("created_at", { ascending: true });
+    .order("updated_at", { ascending: false });
 
   if (error) return { data: null, error: error.message };
   return { data: (data as RequirementLinkRow[]).map(toRequirementLink), error: null };
@@ -280,4 +292,77 @@ export const deleteRequirementLinksByTarget = async (
 
   if (error) return { data: null, error: error.message };
   return { data: true, error: null };
+};
+
+// ========================================
+// High-Level Query APIs (Phase 2)
+// ========================================
+
+/**
+ * SR IDから関連するBR IDsを取得する
+ * @param srId - システム要件ID
+ * @param projectId - プロジェクトID
+ * @returns BR IDの配列（エラー時は空配列）
+ */
+export const listBrIdsBySrId = async (
+  srId: string,
+  projectId: string
+): Promise<string[]> => {
+  const result = await listRequirementLinksBySource("sr", srId, projectId);
+  if (result.error || !result.data) {
+    console.error(`[listBrIdsBySrId] Error:`, result.error);
+    return [];
+  }
+  return result.data
+    .filter((link) => link.targetType === "br" && link.linkType === "derived_from")
+    .map((link) => link.targetId);
+};
+
+/**
+ * BR IDから関連するSR IDsを取得する
+ * @param brId - 業務要件ID
+ * @param projectId - プロジェクトID
+ * @returns SR IDの配列（エラー時は空配列）
+ */
+export const listSrIdsByBrId = async (
+  brId: string,
+  projectId: string
+): Promise<string[]> => {
+  const result = await listRequirementLinksByTarget("br", brId, projectId);
+  if (result.error || !result.data) {
+    console.error(`[listSrIdsByBrId] Error:`, result.error);
+    return [];
+  }
+  return result.data
+    .filter((link) => link.sourceType === "sr" && link.linkType === "derived_from")
+    .map((link) => link.sourceId);
+};
+
+/**
+ * 疑義リンク（suspect=true）の一覧を取得する
+ * @param projectId - プロジェクトID
+ * @returns 疑義リンクの配列（エラー時は空配列）
+ */
+export const listSuspectLinks = async (
+  projectId: string
+): Promise<RequirementLink[]> => {
+  const configError = failIfMissingConfig();
+  if (configError) {
+    console.error(`[listSuspectLinks] Config error:`, configError.error);
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("requirement_links")
+    .select("*")
+    .eq("project_id", projectId)
+    .eq("suspect", true)
+    .order("updated_at", { ascending: false });
+
+  if (error) {
+    console.error(`[listSuspectLinks] Error:`, error.message);
+    return [];
+  }
+
+  return (data as RequirementLinkRow[]).map(toRequirementLink);
 };

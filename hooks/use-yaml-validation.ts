@@ -14,7 +14,7 @@ export function useYamlValidation(
 	options: UseYamlValidationOptions = {}
 ): YamlValidationResult {
 	const { debounceMs = 300, required = false, requiredMessage = "必須です" } = options;
-	const [diag, setDiag] = useState<YamlValidationResult>({ ok: true, message: null });
+	const [diag, setDiag] = useState<YamlValidationResult>({ ok: true });
 
 	useEffect(() => {
 		const timer = window.setTimeout(() => {
@@ -22,7 +22,7 @@ export function useYamlValidation(
 				if (required) {
 					setDiag({ ok: false, message: requiredMessage });
 				} else {
-					setDiag({ ok: true, message: null });
+					setDiag({ ok: true });
 				}
 				return;
 			}

@@ -148,14 +148,15 @@ export default function SystemFunctionDetailPage({
 
 		async function fetchHealth(): Promise<void> {
 			setHealthLoading(true);
-			const [systemReqResult, conceptResult] = await Promise.all([
+			const [systemReqResult, conceptResult, implUnitResult] = await Promise.all([
 				listSystemRequirementsBySrfId(currentSrf.id, projectId),
 				listConcepts(projectId),
+				listImplUnitSdsBySrfId(currentSrf.id, projectId),
 			]);
 
 			if (!active) return;
 
-			const fetchError = systemReqResult.error ?? conceptResult.error;
+			const fetchError = systemReqResult.error ?? conceptResult.error ?? implUnitResult.error;
 			if (fetchError) {
 				setHealthError(fetchError);
 				setHealthSummary(null);
@@ -190,7 +191,10 @@ export default function SystemFunctionDetailPage({
 				businessRequirements: businessReqResult.data ?? [],
 				systemRequirements: systemReqResult.data ?? [],
 				systemFunctions: [currentSrf],
+				implUnitSds: implUnitResult.data ?? [],
 				concepts: conceptResult.data ?? [],
+				conceptCheckTarget: 'system',
+				pageType: 'system',
 			});
 
 			setHealthSummary(summary);
@@ -288,6 +292,7 @@ export default function SystemFunctionDetailPage({
 					error={healthError}
 					maxIssues={5}
 					showStats
+					pageType="system"
 				/>
 			</div>
 

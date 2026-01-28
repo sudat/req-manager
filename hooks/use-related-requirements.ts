@@ -11,10 +11,17 @@ export interface UseRelatedRequirementsResult {
 /**
  * システム機能IDに関連する要件情報を取得するフック
  * @param srfId - システム機能ID
+ * @param options - オプション（requirement_links使用フラグなど）
  * @returns 関連要件情報とローディング・エラー状態
  */
-export function useRelatedRequirements(srfId: string): UseRelatedRequirementsResult {
-	const { relatedRequirements, loading, error } = useRelatedRequirementsData(srfId);
+export function useRelatedRequirements(
+	srfId: string,
+	options: { useRequirementLinks?: boolean } = {}
+): UseRelatedRequirementsResult {
+	const { useRequirementLinks = true } = options;
+	const { relatedRequirements, loading, error } = useRelatedRequirementsData(srfId, {
+		useRequirementLinks,
+	});
 
 	return {
 		data: relatedRequirements,
