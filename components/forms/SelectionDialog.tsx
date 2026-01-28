@@ -148,7 +148,7 @@ export function SelectionDialog({
 							<CheckboxList
 								items={filteredSystemFunctions}
 								emptyMessage="該当するシステム機能がありません。"
-								isChecked={(id) => activeRequirement.srfId === id}
+								isChecked={(id) => activeRequirement.srfIds.includes(id)}
 								onToggle={handleSystemFunctionToggle}
 							/>
 						)}

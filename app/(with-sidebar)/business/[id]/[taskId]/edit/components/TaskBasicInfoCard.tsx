@@ -71,7 +71,7 @@ export function TaskBasicInfoCard({
 				<MarkdownGuide />
 
 				<ProcessStepsField
-					label="process_steps"
+					label="業務プロセス"
 					value={knowledge.processSteps}
 					onChange={(value) => onFieldChange("processSteps", value)}
 					helperText="いつ／誰が／何をするかを入力します（任意）。"

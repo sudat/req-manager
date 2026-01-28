@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil } from "lucide-react";
+import { Pencil, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { use, useMemo } from "react";
 import { HealthScoreCard } from "@/components/health-score/health-score-card";
@@ -78,7 +78,7 @@ export default function TaskDetailPage({ params }: PageProps) {
 		if (systemRequirements.length === 0) return [];
 		const srfIds = new Set(
 			systemRequirements
-				.map((req) => req.srfId)
+				.flatMap((req) => req.srfIds)
 				.filter((id): id is string => Boolean(id)),
 		);
 		return systemFunctionsFull.filter((srf) => srfIds.has(srf.id));
@@ -138,12 +138,20 @@ export default function TaskDetailPage({ params }: PageProps) {
 						<h1 className="text-[32px] font-semibold tracking-tight text-slate-900">
 							業務タスク詳細
 						</h1>
-						<Link href={`/business/${id}/${taskId}/edit`}>
-							<Button variant="outline" className="h-8 gap-2 text-[14px]">
-								<Pencil className="h-4 w-4" />
-								編集
-							</Button>
-						</Link>
+						<div className="flex gap-2">
+							<Link href={`/chat?screen=BT&bdId=${id}&btId=${taskId}`}>
+								<Button className="h-8 gap-2 text-[14px] bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white">
+									<Sparkles className="h-4 w-4" />
+									AIで追加
+								</Button>
+							</Link>
+							<Link href={`/business/${id}/${taskId}/edit`}>
+								<Button variant="outline" className="h-8 gap-2 text-[14px]">
+									<Pencil className="h-4 w-4" />
+									編集
+								</Button>
+							</Link>
+						</div>
 					</div>
 
 					<TaskLoadingStatus

@@ -94,7 +94,7 @@ export function useRequirementTitles(
 			for (const sr of srResult.data ?? []) {
 				map.set(`sr:${sr.id}`, {
 					title: sr.title,
-					srfId: sr.srfId ?? undefined,
+					srfId: sr.srfIds[0] ?? undefined,
 					domainId: sr.systemDomainIds[0], // 最初のdomainIdを使用
 				});
 			}

@@ -111,7 +111,7 @@ export async function saveSystemFunction(
 		const sysReqInputs = systemRequirements.map((req, index) => ({
 			id: req.id,
 			taskId: req.taskId || "",
-			srfId: srfId,
+			srfIds: [srfId],
 			title: req.title,
 			summary: req.summary,
 			conceptIds: req.conceptIds,

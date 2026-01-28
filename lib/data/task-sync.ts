@@ -43,7 +43,7 @@ export function hasRequirementChanged<T extends {
 	constraints?: string;
 	owner?: string;
 	conceptIds: string[];
-	srfId: string | null;
+	srfIds: string[];
 	systemDomainIds: string[];
 	acceptanceCriteria: string[];
 	acceptanceCriteriaJson?: unknown;
@@ -60,7 +60,7 @@ export function hasRequirementChanged<T extends {
 		(req.constraints ?? "") === (existing.constraints ?? "") &&
 		(req.owner ?? "") === (existing.owner ?? "") &&
 		JSON.stringify(req.conceptIds) === JSON.stringify(existing.conceptIds) &&
-		req.srfId === existing.srfId &&
+		JSON.stringify(req.srfIds) === JSON.stringify(existing.srfIds) &&
 		JSON.stringify(req.systemDomainIds) === JSON.stringify(existing.systemDomainIds ?? []) &&
 		JSON.stringify(req.acceptanceCriteria) === JSON.stringify(existing.acceptanceCriteria) &&
 		JSON.stringify(req.acceptanceCriteriaJson ?? []) ===

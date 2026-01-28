@@ -6,7 +6,6 @@ import type { TaskKnowledge } from "@/lib/domain";
 import {
 	syncTaskBasicInfo,
 	syncBusinessRequirements,
-	syncSystemRequirements,
 	syncBrSrLinksToRequirementLinks,
 } from "@/lib/data/task-sync";
 import { saveToStorage, removeFromStorage } from "@/lib/utils/local-storage";
@@ -25,60 +24,8 @@ type UseTaskSaveResult = {
 	clearError: () => void;
 };
 
-const syncLegacyBusinessRequirementLinks = (
-	businessRequirements: TaskKnowledge["businessRequirements"],
-	systemRequirements: TaskKnowledge["systemRequirements"]
-): TaskKnowledge["businessRequirements"] => {
-	const links = new Map<string, Set<string>>(
-		businessRequirements.map((br) => [
-			br.id,
-			new Set(br.relatedSystemRequirementIds ?? []),
-		])
-	);
-
-	for (const sysReq of systemRequirements) {
-		if (sysReq.businessRequirementIds.length === 0) continue;
-
-		for (const set of links.values()) {
-			set.delete(sysReq.id);
-		}
-
-		for (const bizId of sysReq.businessRequirementIds) {
-			if (!links.has(bizId)) {
-				links.set(bizId, new Set());
-			}
-			links.get(bizId)?.add(sysReq.id);
-		}
-	}
-
-	return businessRequirements.map((br) => ({
-		...br,
-		relatedSystemRequirementIds: Array.from(links.get(br.id) ?? []),
-	}));
-};
-
-const syncSystemRequirementLinks = (
-	businessRequirements: TaskKnowledge["businessRequirements"],
-	systemRequirements: TaskKnowledge["systemRequirements"]
-): TaskKnowledge["systemRequirements"] => {
-	// 業務要件のrelatedSystemRequirementIdsから逆引きマップを作成
-	const bizReqIdsBySystemReq = new Map<string, Set<string>>();
-	
-	for (const bizReq of businessRequirements) {
-		for (const sysReqId of bizReq.relatedSystemRequirementIds ?? []) {
-			if (!bizReqIdsBySystemReq.has(sysReqId)) {
-				bizReqIdsBySystemReq.set(sysReqId, new Set());
-			}
-			bizReqIdsBySystemReq.get(sysReqId)?.add(bizReq.id);
-		}
-	}
-
-	// システム要件のbusinessRequirementIdsを更新
-	return systemRequirements.map((sysReq) => ({
-		...sysReq,
-		businessRequirementIds: Array.from(bizReqIdsBySystemReq.get(sysReq.id) ?? []),
-	}));
-};
+// 業務タスク編集画面からはシステム要件を編集しないため、
+// レガシーなリンク同期関数は削除済み
 
 /**
  * タスク保存処理を行うカスタムフック
@@ -127,15 +74,10 @@ export function useTaskSave({
 					return;
 				}
 
-				const syncedBusinessRequirements = syncLegacyBusinessRequirementLinks(
-					knowledge.businessRequirements,
-					knowledge.systemRequirements
-				);
-
 				// 業務要件を同期（変更された要件IDとフィールドを取得）
 				const bizResult = await syncBusinessRequirements(
 					taskId,
-					syncedBusinessRequirements,
+					knowledge.businessRequirements,
 					currentProjectId
 				);
 				if (typeof bizResult === "string") {
@@ -144,45 +86,13 @@ export function useTaskSave({
 				}
 				const changedBrMap = bizResult; // 変更されたBRのIDとフィールドのマップ
 
-				// システム要件のbusinessRequirementIdsを業務要件のrelatedSystemRequirementIdsから更新
-				const syncedSystemRequirements = syncSystemRequirementLinks(
-					syncedBusinessRequirements,
-					knowledge.systemRequirements
-				);
+				// システム要件は業務タスク編集画面から編集しないため同期スキップ
+				// BR↔SRリンク同期も実施しない（システム機能詳細画面で管理）
 
-				// システム要件を同期（変更された要件IDとフィールドを取得）
-				const sysResult = await syncSystemRequirements(
-					taskId,
-					syncedSystemRequirements,
-					currentProjectId
-				);
-				if (typeof sysResult === "string") {
-					setSaveError(sysResult);
-					return;
-				}
-				const changedSrMap = sysResult; // 変更されたSRのIDとフィールドのマップ
-
-				// Phase 3: BR↔SRリンクをrequirement_linksに同期
-				const linkError = await syncBrSrLinksToRequirementLinks(
-					syncedSystemRequirements,
-					currentProjectId
-				);
-				if (linkError) {
-					setSaveError(linkError);
-					return;
-				}
-
-				// Phase 4.5: リンク同期の後に疑義フラグを設定
 				// 変更されたBRに対して疑義フラグを設定
 				for (const [brId, changedFields] of changedBrMap) {
 					const { markChangedFieldsSuspect } = await import("@/lib/data/suspect-detection");
 					await markChangedFieldsSuspect(brId, "br", changedFields, currentProjectId);
-				}
-
-				// 変更されたSRに対して疑義フラグを設定
-				for (const [srId, changedFields] of changedSrMap) {
-					const { markChangedFieldsSuspect } = await import("@/lib/data/suspect-detection");
-					await markChangedFieldsSuspect(srId, "sr", changedFields, currentProjectId);
 				}
 
 				// 成功時はLocalStorageをクリア

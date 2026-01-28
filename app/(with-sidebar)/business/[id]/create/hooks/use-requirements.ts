@@ -29,7 +29,7 @@ export function useRequirements(): UseRequirementsResult {
         constraints: "",
         owner: "",
         conceptIds: [],
-        srfId: null,
+        srfIds: [],
         systemDomainIds: [],
         acceptanceCriteria: [],
         acceptanceCriteriaJson: [],

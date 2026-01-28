@@ -83,7 +83,7 @@ export function useTaskEditForm({
 				constraints: "",
 				owner: "",
 				conceptIds: [],
-				srfId: null,
+				srfIds: [],
 				systemDomainIds: [],
 				acceptanceCriteria: [],
 				acceptanceCriteriaJson: [],
