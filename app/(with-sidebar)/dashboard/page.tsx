@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { HealthScoreCard } from "@/components/health-score/health-score-card";
 import { MobileHeader } from "@/components/layout/mobile-header";
 import { Badge } from "@/components/ui/badge";
@@ -14,17 +15,25 @@ import { listImplUnitSds } from "@/lib/data/impl-unit-sds";
 import { useProject } from "@/components/project/project-context";
 import {
 	buildHealthScoreSummary,
+	healthIssueFilters,
 	type HealthScoreSummary,
 } from "@/lib/health-score";
 import { SuspectLinksCard } from "./components/suspect-links-card";
 
 export default function DashboardPage() {
+	const router = useRouter();
 	const [healthSummary, setHealthSummary] = useState<HealthScoreSummary | null>(
 		null,
 	);
 	const [healthLoading, setHealthLoading] = useState(true);
 	const [healthError, setHealthError] = useState<string | null>(null);
 	const { currentProjectId, loading: projectLoading } = useProject();
+
+	const handleIssueClick = (issueId: string) => {
+		const filter = healthIssueFilters[issueId];
+		if (!filter) return;
+		router.push(`/${filter.targetPath}?filter=${filter.filterParam}`);
+	};
 
 	useEffect(() => {
 		if (projectLoading) return;
@@ -134,17 +143,6 @@ export default function DashboardPage() {
 						</div>
 					</div>
 
-					<div className="mb-6">
-						<HealthScoreCard
-							title="正本ヘルススコア"
-							summary={healthSummary}
-							loading={healthLoading}
-							error={healthError}
-							maxIssues={4}
-							showStats
-						/>
-					</div>
-
 					{/* 疑義リンクカード（Phase 4.7で追加） */}
 					{currentProjectId && (
 						<div className="mb-6">
@@ -154,6 +152,18 @@ export default function DashboardPage() {
 
 					{/* メインコンテンツ */}
 					<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+						{/* ヘルススコア */}
+						<HealthScoreCard
+							title="正本ヘルススコア"
+							summary={healthSummary}
+							loading={healthLoading}
+							error={healthError}
+							maxIssues={4}
+							showStats
+							onIssueClick={handleIssueClick}
+							defaultExpanded
+						/>
+
 						{/* レビュー待ち変更要求 */}
 						<Card className="rounded-md border border-slate-200 bg-white">
 							<CardHeader className="border-b border-slate-100 px-4 py-3">
@@ -252,56 +262,6 @@ export default function DashboardPage() {
 										</li>
 									))}
 								</ul>
-							</CardContent>
-						</Card>
-
-						{/* 業務領域別要件分布 */}
-						<Card className="rounded-md border border-slate-200 bg-white">
-							<CardHeader className="border-b border-slate-100 px-4 py-3">
-								<CardTitle className="text-[15px] font-semibold text-slate-900">
-									業務領域別 要件分布
-								</CardTitle>
-							</CardHeader>
-							<CardContent className="p-4">
-								<div className="flex flex-col gap-3">
-									{[
-										{ label: "AR（債権管理）", count: 45, percent: 38 },
-										{ label: "AP（債務管理）", count: 38, percent: 32 },
-										{ label: "GL（一般会計）", count: 35, percent: 30 },
-									].map((item) => (
-										<div
-											key={item.label}
-											className="grid grid-cols-[100px_1fr_100px] items-center gap-3"
-										>
-											<div className="text-[12px] font-medium text-slate-700">
-												{item.label}
-											</div>
-											<div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
-												<div
-													className="h-full rounded-full bg-slate-600 transition-all duration-300"
-													style={{ width: `${item.percent}%` }}
-												/>
-											</div>
-											<div className="text-right">
-												<span className="font-mono text-[12px] font-semibold tabular-nums text-slate-900">
-													{item.count}
-												</span>
-												<span className="text-[11px] text-slate-500 ml-1">
-													({item.percent}%)
-												</span>
-											</div>
-										</div>
-									))}
-								</div>
-								<div className="mt-4 pt-3 border-t border-slate-100">
-									<div className="text-[11px] text-slate-500">
-										合計:{" "}
-										<span className="font-mono font-semibold text-slate-900">
-											118
-										</span>{" "}
-										件
-									</div>
-								</div>
 							</CardContent>
 						</Card>
 					</div>

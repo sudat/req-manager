@@ -6,7 +6,15 @@ import { use, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Pencil, FileText, Plus, Scissors, Trash2 } from "lucide-react";
+import {
+	Breadcrumb,
+	BreadcrumbList,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { Pencil, FileText, Plus, Scissors, Trash2 } from "lucide-react";
 import { getRelatedRequirements, type RequirementReference } from "@/lib/mock/data";
 import type { Concept } from "@/lib/domain";
 import { getConceptById, deleteConcept } from "@/lib/data/concepts";
@@ -87,11 +95,16 @@ export default function IdeaDetailPage({ params }: { params: Promise<{ id: strin
     <>
         <div className="flex-1 min-h-screen bg-white">
           <div className="mx-auto max-w-[1400px] px-8 py-4">
+            <Breadcrumb className="mb-4">
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbLink asChild>
+                    <Link href="/ideas">概念辞書</Link>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
             <p className="text-sm text-rose-600">{error ?? "概念が見つかりません"}</p>
-            <Link href="/ideas" className="inline-flex items-center gap-2 text-[13px] text-slate-500 hover:text-slate-900 mt-4">
-              <ArrowLeft className="h-4 w-4" />
-              概念辞書に戻る
-            </Link>
           </div>
         </div>
       </>
@@ -102,11 +115,22 @@ export default function IdeaDetailPage({ params }: { params: Promise<{ id: strin
     <>
       <div className="flex-1 min-h-screen bg-white">
         <div className="mx-auto max-w-[1400px] px-8 py-4">
+          {/* Breadcrumb */}
+          <Breadcrumb className="mb-4">
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link href="/ideas">概念辞書</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>{concept?.name ?? '...'}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+
           <div className="flex items-center justify-between mb-4">
-            <Link href="/ideas" className="inline-flex items-center gap-2 text-[13px] text-slate-500 hover:text-slate-900">
-              <ArrowLeft className="h-4 w-4" />
-              概念辞書に戻る
-            </Link>
             <div className="flex items-center gap-2">
               <Link href={`/ideas/${id}/edit`}>
                 <Button variant="outline" className="h-8 px-4 text-[14px] font-medium border-slate-200 hover:bg-slate-50 gap-2">

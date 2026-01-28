@@ -83,6 +83,50 @@ export type HealthScoreInput = {
 	pageType?: 'business' | 'system';
 };
 
+export type HealthIssueFilter = {
+	filterParam: string;
+	targetPath: 'business' | 'system-domains';
+	label: string;
+};
+
+export const healthIssueFilters: Record<string, HealthIssueFilter> = {
+	business_requirements_with_system_requirements: {
+		filterParam: 'missing_sr_link',
+		targetPath: 'business',
+		label: 'システム要件未紐付け',
+	},
+	system_requirements_with_business_requirements: {
+		filterParam: 'missing_br_link',
+		targetPath: 'system-domains',
+		label: '業務要件未紐付け',
+	},
+	impl_unit_sds_with_entry_points: {
+		filterParam: 'missing_entrypoint',
+		targetPath: 'system-domains',
+		label: 'エントリポイント未設定',
+	},
+	concept_terms_with_links: {
+		filterParam: 'missing_concept',
+		targetPath: 'business',
+		label: '概念未紐付け',
+	},
+	business_requirements_with_concepts: {
+		filterParam: 'missing_concept_br',
+		targetPath: 'business',
+		label: '業務要件概念未紐付け',
+	},
+	system_requirements_with_category: {
+		filterParam: 'missing_category',
+		targetPath: 'system-domains',
+		label: '観点種別未設定',
+	},
+	system_requirements_with_acceptance_criteria: {
+		filterParam: 'missing_acceptance',
+		targetPath: 'system-domains',
+		label: '受入条件未設定',
+	},
+};
+
 const severityWeight: Record<HealthScoreSeverity, number> = {
 	high: 2,
 	medium: 1,

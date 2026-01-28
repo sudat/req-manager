@@ -19,6 +19,8 @@ type HealthScoreCardProps = {
 	maxIssues?: number;
 	showStats?: boolean;
 	pageType?: 'business' | 'system';
+	onIssueClick?: (issueId: string) => void;
+	defaultExpanded?: boolean;
 };
 
 const levelLabels = {
@@ -56,9 +58,11 @@ export function HealthScoreCard({
 	maxIssues,
 	showStats = false,
 	pageType,
+	onIssueClick,
+	defaultExpanded = false,
 }: HealthScoreCardProps): React.ReactNode {
 	const issues = summary?.issues.filter((issue) => issue.total > 0) ?? [];
-	const [isOpen, setIsOpen] = useState(false);
+	const [isOpen, setIsOpen] = useState(defaultExpanded);
 
 	return (
 		<Collapsible
@@ -152,7 +156,10 @@ export function HealthScoreCard({
 										{issues.map((issue) => (
 											<li
 												key={issue.id}
-												className="flex items-center justify-between gap-3 text-[12px] text-slate-600 p-2 rounded bg-slate-50 hover:bg-slate-100 transition-colors"
+												className={`flex items-center justify-between gap-3 text-[12px] text-slate-600 p-2 rounded bg-slate-50 hover:bg-slate-100 transition-colors ${
+													issue.completed < issue.total && onIssueClick ? 'cursor-pointer' : ''
+												}`}
+												onClick={() => issue.completed < issue.total && onIssueClick?.(issue.id)}
 											>
 												<div className="flex items-center gap-2">
 													<Badge
