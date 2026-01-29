@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
         projectId: location.projectId,
       };
 
-      const context = await ContextProvider.buildContext(uiLocation);
+      // 初期プロンプトを構築
       contextMessage = ContextProvider.buildInitialPrompt(uiLocation);
     }
 

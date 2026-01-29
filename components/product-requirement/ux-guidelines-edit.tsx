@@ -5,6 +5,7 @@
 "use client";
 
 import { MarkdownTextareaEdit } from "./markdown-textarea-edit";
+import { PRODUCT_REQUIREMENT_FIELD_CONFIGS } from "./field-configs";
 
 interface UxGuidelinesEditProps {
 	value: string;
@@ -13,12 +14,13 @@ interface UxGuidelinesEditProps {
 }
 
 export function UxGuidelinesEdit({ value, onChange, error }: UxGuidelinesEditProps) {
+	const config = PRODUCT_REQUIREMENT_FIELD_CONFIGS.uxGuidelines;
 	return (
 		<MarkdownTextareaEdit
-			label="UXガイドライン"
+			label={config.label}
 			value={value}
 			onChange={onChange}
-			placeholder="操作性、フィードバック、エラー表示方針&#10;&#10;例:&#10;- 操作: 3クリック以内で目的を達成&#10;- フィードバック: 即座の視覚的フィードバック&#10;- エラー: エラー原因と解決策を明示"
+			placeholder={config.placeholder}
 			error={error}
 		/>
 	);

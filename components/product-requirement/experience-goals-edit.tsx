@@ -5,6 +5,7 @@
 "use client";
 
 import { MarkdownTextareaEdit } from "./markdown-textarea-edit";
+import { PRODUCT_REQUIREMENT_FIELD_CONFIGS } from "./field-configs";
 
 interface ExperienceGoalsEditProps {
 	value: string;
@@ -13,12 +14,13 @@ interface ExperienceGoalsEditProps {
 }
 
 export function ExperienceGoalsEdit({ value, onChange, error }: ExperienceGoalsEditProps) {
+	const config = PRODUCT_REQUIREMENT_FIELD_CONFIGS.experienceGoals;
 	return (
 		<MarkdownTextareaEdit
-			label="体験目標"
+			label={config.label}
 			value={value}
 			onChange={onChange}
-			placeholder="ユーザーが得たい価値や行動変容&#10;&#10;例:&#10;- ストレスなくタスクを完遂できる&#10;- 次のアクションが明確にわかる&#10;- 操作に迷わない直感的なUI"
+			placeholder={config.placeholder}
 			error={error}
 		/>
 	);

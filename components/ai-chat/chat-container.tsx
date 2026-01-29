@@ -83,7 +83,13 @@ export function ChatContainer({ config, onClose }: ChatContainerProps) {
       setIsLoading(true);
 
       // アシスタントメッセージの初期値（finallyブロックでアクセスするため）
-      let assistantMessage: ChatMessage | null = null;
+      let assistantMessage: ChatMessage = {
+        id: `assistant-${Date.now()}`,
+        role: 'assistant',
+        content: '',
+        timestamp: new Date(),
+        isStreaming: true,
+      };
 
       // タイムアウト処理（180秒）
       const timeoutId = setTimeout(() => {
@@ -127,13 +133,6 @@ export function ChatContainer({ config, onClose }: ChatContainerProps) {
         }
 
         const decoder = new TextDecoder();
-        assistantMessage = {
-          id: `assistant-${Date.now()}`,
-          role: 'assistant',
-          content: '',
-          timestamp: new Date(),
-          isStreaming: true,
-        };
 
         // アシスタントメッセージを追加
         setMessages((prev) => [...prev, assistantMessage]);
@@ -141,6 +140,9 @@ export function ChatContainer({ config, onClose }: ChatContainerProps) {
         // チャンクタイムアウト検出用
         let lastChunkTime = Date.now();
         const CHUNK_TIMEOUT = 30000; // 30秒間チャンクがない場合は終了とみなす
+
+        // SSEイベントのバッファ（チャンク境界をまたぐデータを保持）
+        let buffer = '';
 
         while (!aborted) {
           const { done, value } = await reader.read();
@@ -151,50 +153,59 @@ export function ChatContainer({ config, onClose }: ChatContainerProps) {
             console.log('[Chat] Chunk received, length:', value.byteLength);
           }
 
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split('\n');
+          // バッファにデコードされたチャンクを追加
+          buffer += decoder.decode(value, { stream: true });
 
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const jsonStr = line.slice(6).trim();
+          // \n\n で区切られたイベントを処理
+          const events = buffer.split('\n\n');
+          // 最後の不完全なイベントをバッファに残す
+          buffer = events.pop() || '';
 
-              // [DONE] マーカーでストリーミング終了
-              if (jsonStr === '[DONE]') {
-                console.log('[Chat] [DONE] marker received');
-                aborted = true;
-                break;
-              }
+          for (const event of events) {
+            const lines = event.split('\n');
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                const jsonStr = line.slice(6).trim();
 
-              try {
-                const data = JSON.parse(jsonStr);
-
-                // エラーデータの検出
-                if (data.error) {
-                  throw new Error(data.message || 'ストリーミングエラーが発生しました');
+                // [DONE] マーカーでストリーミング終了
+                if (jsonStr === '[DONE]') {
+                  console.log('[Chat] [DONE] marker received');
+                  aborted = true;
+                  break;
                 }
 
-                if (data.content) {
-                  assistantMessage.content += data.content;
-                  setMessages((prev) =>
-                    prev.map((msg) =>
-                      msg.id === assistantMessage.id
-                        ? { ...msg, content: assistantMessage.content }
-                        : msg
-                    )
-                  );
-                }
-              } catch (e: any) {
-                // JSONパースエラーは無視（不完全なチャンクの場合）
-                if (e.message && !e.message.includes('JSON')) {
-                  throw e;
+                try {
+                  const data = JSON.parse(jsonStr);
+
+                  // エラーデータの検出
+                  if (data.error) {
+                    throw new Error(data.message || 'ストリーミングエラーが発生しました');
+                  }
+
+                  if (data.content) {
+                    assistantMessage.content += data.content;
+                    setMessages((prev) =>
+                      prev.map((msg) =>
+                        msg.id === assistantMessage.id
+                          ? { ...msg, content: assistantMessage.content }
+                          : msg
+                      )
+                    );
+                  }
+                } catch (e: any) {
+                  // JSONパースエラーは無視（不完全なチャンクの場合）
+                  if (e.message && !e.message.includes('JSON')) {
+                    throw e;
+                  }
                 }
               }
             }
+            if (aborted) break;
           }
 
           // タイムアウトチェック
           if (Date.now() - lastChunkTime > CHUNK_TIMEOUT) {
-            console.warn('[Chat] No chunk received for 5 seconds - assuming stream ended');
+            console.warn('[Chat] No chunk received for 30 seconds - assuming stream ended');
             aborted = true;
             break;
           }
@@ -236,13 +247,15 @@ export function ChatContainer({ config, onClose }: ChatContainerProps) {
         setIsLoading(false);
 
         // isStreamingフラグを解除
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === assistantMessage?.id
-              ? { ...msg, isStreaming: false }
-              : msg
-          )
-        );
+        if (assistantMessage) {
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === assistantMessage.id
+                ? { ...msg, isStreaming: false }
+                : msg
+            )
+          );
+        }
       }
 
       // クリーンアップ関数を返す

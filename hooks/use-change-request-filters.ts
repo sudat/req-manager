@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
 import type { ChangeRequest } from "@/lib/domain/value-objects";
+import { useListFilter } from "./use-list-filter";
 
 export interface UseChangeRequestFiltersReturn {
   searchQuery: string;
@@ -16,23 +16,22 @@ interface UseChangeRequestFiltersProps {
 export function useChangeRequestFilters({
   requests,
 }: UseChangeRequestFiltersProps): UseChangeRequestFiltersReturn {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-
-  const filteredRequests = useMemo(() => {
-    return requests.filter((cr) => {
-      const matchSearch =
-        cr.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        cr.ticketId.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchStatus = statusFilter === "all" || cr.status === statusFilter;
-      return matchSearch && matchStatus;
-    });
-  }, [requests, searchQuery, statusFilter]);
+  const {
+    searchQuery,
+    statusFilter,
+    filteredItems,
+    setSearchQuery,
+    setStatusFilter,
+  } = useListFilter({
+    items: requests,
+    searchFields: (cr) => [cr.title, cr.ticketId],
+    statusField: "status",
+  });
 
   return {
     searchQuery,
     statusFilter,
-    filteredRequests,
+    filteredRequests: filteredItems,
     setSearchQuery,
     setStatusFilter,
   };

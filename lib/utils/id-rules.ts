@@ -120,7 +120,7 @@ export const getSrIdSpecForSystemFunction = (
   if (inferred) return inferred;
 
   const parsed = parseSfId(systemFunctionId);
-  const area = parsed?.area ?? normalizeAreaCode(systemDomainId) || "SD";
+  const area = parsed?.area ?? (normalizeAreaCode(systemDomainId) || "SD");
   const seq = parsed?.seq ?? pad(1, 4);
   return { prefix: `SR-${area}-${seq}-`, padLength: 4 };
 };

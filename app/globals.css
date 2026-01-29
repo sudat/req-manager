@@ -4,6 +4,12 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* カスタムフォントサイズ */
+  --font-size-2xs: 11px;
+  --font-size-xs: 12px;
+  --font-size-sm: 13px;
+  --font-size-base: 14px;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);

@@ -5,6 +5,7 @@
 "use client";
 
 import { MarkdownTextareaEdit } from "./markdown-textarea-edit";
+import { PRODUCT_REQUIREMENT_FIELD_CONFIGS } from "./field-configs";
 
 interface DesignSystemEditProps {
 	value: string;
@@ -13,12 +14,13 @@ interface DesignSystemEditProps {
 }
 
 export function DesignSystemEdit({ value, onChange, error }: DesignSystemEditProps) {
+	const config = PRODUCT_REQUIREMENT_FIELD_CONFIGS.designSystem;
 	return (
 		<MarkdownTextareaEdit
-			label="デザインシステム"
+			label={config.label}
 			value={value}
 			onChange={onChange}
-			placeholder="カラー、タイポグラフィ、コンポーネント方針&#10;&#10;例:&#10;- カラー: ブルー系をプライマリカラー&#10;- タイポグラフィ: Noto Sans JP、基本14px&#10;- コンポーネント: shadcn/uiベース"
+			placeholder={config.placeholder}
 			error={error}
 		/>
 	);

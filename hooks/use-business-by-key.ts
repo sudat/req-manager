@@ -38,6 +38,9 @@ export function useBusinessByKey(businessKey: string | null): UseBusinessByKeyRe
     let active = true;
 
     async function fetchBusiness(): Promise<void> {
+      // この時点でbusinessKeyとcurrentProjectIdはnullではない（上でチェック済み）
+      if (!businessKey || !currentProjectId) return;
+
       setLoading(true);
       const { data, error: fetchError } = await getBusinessByKey(
         businessKey,

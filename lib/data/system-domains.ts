@@ -1,4 +1,4 @@
-import { supabase, getSupabaseConfigError } from "@/lib/supabase/client";
+import { createCrudOperations } from "./crud-factory";
 
 export type SystemDomain = {
   id: string;
@@ -38,129 +38,26 @@ const toSystemDomain = (row: SystemDomainRow): SystemDomain => ({
   updatedAt: row.updated_at,
 });
 
-const toSystemDomainRow = (input: SystemDomainInput) => ({
-  id: input.id,
-  name: input.name,
-  description: input.description,
-  sort_order: input.sortOrder,
+const toSystemDomainRow = (input: Partial<SystemDomainInput>) => {
+  const row: Partial<SystemDomainRow> = {};
+  if (input.id !== undefined) row.id = input.id;
+  if (input.name !== undefined) row.name = input.name;
+  if (input.description !== undefined) row.description = input.description;
+  if (input.sortOrder !== undefined) row.sort_order = input.sortOrder;
+  return row;
+};
+
+// CRUD操作を生成（sort_order + id でソート）
+const crud = createCrudOperations<SystemDomainRow, SystemDomain, SystemDomainInput>({
+  tableName: "system_domains",
+  toEntity: toSystemDomain,
+  toRow: toSystemDomainRow,
+  orderBy: ["sort_order", "id"],
 });
 
-const failIfMissingConfig = () => {
-  const error = getSupabaseConfigError();
-  if (error) {
-    return { data: null, error };
-  }
-  return null;
-};
-
-export const listSystemDomains = async (projectId?: string) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
-
-  let query = supabase
-    .from("system_domains")
-    .select("*")
-    .order("sort_order")
-    .order("id");
-
-  if (projectId) {
-    query = query.eq("project_id", projectId);
-  }
-
-  const { data, error } = await query;
-
-  if (error) return { data: null, error: error.message };
-  return { data: (data as SystemDomainRow[]).map(toSystemDomain), error: null };
-};
-
-export const getSystemDomainById = async (id: string, projectId?: string) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
-
-  let query = supabase
-    .from("system_domains")
-    .select("*")
-    .eq("id", id);
-
-  if (projectId) {
-    query = query.eq("project_id", projectId);
-  }
-
-  const { data, error } = await query.maybeSingle();
-
-  if (error) return { data: null, error: error.message };
-  if (!data) return { data: null, error: null };
-  return { data: toSystemDomain(data as SystemDomainRow), error: null };
-};
-
-export const createSystemDomain = async (input: SystemDomainCreateInput) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
-
-  const now = new Date().toISOString();
-  const payload = {
-    ...toSystemDomainRow(input),
-    project_id: input.projectId,
-    created_at: now,
-    updated_at: now,
-  };
-
-  const { data, error } = await supabase
-    .from("system_domains")
-    .insert(payload)
-    .select("*")
-    .single();
-
-  if (error) return { data: null, error: error.message };
-  return { data: toSystemDomain(data as SystemDomainRow), error: null };
-};
-
-export const updateSystemDomain = async (
-  id: string,
-  input: Omit<SystemDomainInput, "id">,
-  projectId?: string
-) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
-
-  const now = new Date().toISOString();
-  const payload = {
-    ...toSystemDomainRow({ ...input, id }),
-    updated_at: now,
-  };
-
-  let query = supabase
-    .from("system_domains")
-    .update(payload)
-    .eq("id", id);
-
-  if (projectId) {
-    query = query.eq("project_id", projectId);
-  }
-
-  const { data, error } = await query
-    .select("*")
-    .single();
-
-  if (error) return { data: null, error: error.message };
-  return { data: toSystemDomain(data as SystemDomainRow), error: null };
-};
-
-export const deleteSystemDomain = async (id: string, projectId?: string) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
-
-  let query = supabase
-    .from("system_domains")
-    .delete()
-    .eq("id", id);
-
-  if (projectId) {
-    query = query.eq("project_id", projectId);
-  }
-
-  const { error } = await query;
-
-  if (error) return { data: null, error: error.message };
-  return { data: true, error: null };
-};
+// CRUD操作をエクスポート
+export const listSystemDomains = crud.list;
+export const getSystemDomainById = crud.getById;
+export const createSystemDomain = crud.create;
+export const updateSystemDomain = crud.update;
+export const deleteSystemDomain = crud.delete;

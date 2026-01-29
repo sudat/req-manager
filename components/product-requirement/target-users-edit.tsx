@@ -5,6 +5,7 @@
 "use client";
 
 import { MarkdownTextareaEdit } from "./markdown-textarea-edit";
+import { PRODUCT_REQUIREMENT_FIELD_CONFIGS } from "./field-configs";
 
 interface TargetUsersEditProps {
 	value: string;
@@ -13,12 +14,13 @@ interface TargetUsersEditProps {
 }
 
 export function TargetUsersEdit({ value, onChange, error }: TargetUsersEditProps) {
+	const config = PRODUCT_REQUIREMENT_FIELD_CONFIGS.targetUsers;
 	return (
 		<MarkdownTextareaEdit
-			label="ターゲットユーザー"
+			label={config.label}
 			value={value}
 			onChange={onChange}
-			placeholder="ペルソナ、利用シーン、前提知識など&#10;&#10;例:&#10;- ペルソナ: 20代〜40代のビジネスパーソン&#10;- 利用シーン: 通勤中や休憩時間にスマートフォンで閲覧&#10;- 前提知識: 基本的なスマートフォン操作に習熟している"
+			placeholder={config.placeholder}
 			error={error}
 		/>
 	);

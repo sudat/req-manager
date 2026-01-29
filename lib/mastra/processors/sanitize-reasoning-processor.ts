@@ -1,4 +1,4 @@
-import type { Processor } from '@mastra/core/processors';
+import type { InputProcessor, OutputProcessor } from '@mastra/core/processors';
 import type { MastraDBMessage } from '@mastra/core/agent/message-list';
 
 const STRIP_PART_TYPES = new Set([
@@ -62,9 +62,9 @@ const sanitizeMessage = (message: MastraDBMessage): MastraDBMessage => {
 const sanitizeMessages = (messages: MastraDBMessage[]): MastraDBMessage[] =>
   messages.map((message) => sanitizeMessage(message));
 
-export const sanitizeReasoningProcessor: Processor<'sanitize-reasoning'> = {
+export const sanitizeReasoningProcessor = {
   id: 'sanitize-reasoning',
   name: 'Sanitize Reasoning Parts',
-  processInput: ({ messages }) => sanitizeMessages(messages),
-  processOutputResult: ({ messages }) => sanitizeMessages(messages),
-};
+  processInputStep: ({ messages }) => sanitizeMessages(messages),
+  processOutputStep: ({ messages }) => sanitizeMessages(messages),
+} as const satisfies InputProcessor & OutputProcessor;

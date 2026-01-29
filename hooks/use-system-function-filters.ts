@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import type { SystemFunction, SrfCategory, SrfStatus } from "@/lib/domain";
+import { useListFilter } from "./use-list-filter";
 
 export interface UseSystemFunctionFiltersProps {
   functions: SystemFunction[];
@@ -18,29 +19,32 @@ export interface UseSystemFunctionFiltersReturn {
 export const useSystemFunctionFilters = ({
   functions,
 }: UseSystemFunctionFiltersProps): UseSystemFunctionFiltersReturn => {
-  const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<SrfStatus | "all">("all");
   const [categoryFilter, setCategoryFilter] = useState<SrfCategory | "all">("all");
 
+  const {
+    searchQuery: query,
+    statusFilter,
+    filteredItems: statusFilteredFunctions,
+    setSearchQuery: setQuery,
+    setStatusFilter,
+  } = useListFilter({
+    items: functions,
+    searchFields: (fn) => [fn.id, fn.title],
+    statusField: "status",
+  });
+
   const filteredFunctions = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
-    return functions.filter((item) => {
-      const matchesQuery = normalized
-        ? [item.id, item.title].join(" ").toLowerCase().includes(normalized)
-        : true;
-      const matchesStatus = statusFilter === "all" ? true : item.status === statusFilter;
-      const matchesCategory = categoryFilter === "all" ? true : item.category === categoryFilter;
-      return matchesQuery && matchesStatus && matchesCategory;
-    });
-  }, [functions, query, statusFilter, categoryFilter]);
+    if (categoryFilter === "all") return statusFilteredFunctions;
+    return statusFilteredFunctions.filter((fn) => fn.category === categoryFilter);
+  }, [statusFilteredFunctions, categoryFilter]);
 
   return {
     query,
-    statusFilter,
+    statusFilter: statusFilter as SrfStatus | "all",
     categoryFilter,
     filteredFunctions,
     setQuery,
-    setStatusFilter,
+    setStatusFilter: setStatusFilter as (filter: SrfStatus | "all") => void,
     setCategoryFilter,
   };
 };

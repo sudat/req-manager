@@ -2,11 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useProject } from "@/components/project/project-context";
-import {
-	defaultProjectInvestigationSettings,
-	getProjectInvestigationSettings,
-	updateProjectInvestigationSettings,
-} from "@/lib/data/project-settings";
 import type { ProjectInvestigationSettings } from "@/lib/domain";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { useProjectSettings } from "@/hooks/use-project-settings";
+import { ExplorationSettingsSection } from "./exploration-settings-section";
 
 function SectionHeader({
 	title,
@@ -43,101 +40,60 @@ const parseLines = (value: string) =>
 
 export function ProjectSettingsContent() {
 	const { currentProject } = useProject();
-	const [settings, setSettings] = useState<ProjectInvestigationSettings | null>(null);
+	const {
+		settings,
+		loading,
+		saving,
+		error,
+		success,
+		updateSettings,
+		saveSettings,
+		resetSettings,
+	} = useProjectSettings(currentProject?.id ?? null);
+
 	const [includePatternsText, setIncludePatternsText] = useState("");
 	const [excludePatternsText, setExcludePatternsText] = useState("");
 	const [sharedPatternsText, setSharedPatternsText] = useState("");
-	const [loading, setLoading] = useState(true);
-	const [saving, setSaving] = useState(false);
-	const [error, setError] = useState<string | null>(null);
-	const [success, setSuccess] = useState<string | null>(null);
 
 	const currentProjectLabel = useMemo(() => {
 		if (!currentProject) return null;
 		return `${currentProject.name} (${currentProject.id})`;
 	}, [currentProject]);
 
+	// 設定が読み込まれたらテキストフィールドを初期化
 	useEffect(() => {
-		if (!currentProject?.id) {
-			setSettings(null);
-			setIncludePatternsText("");
-			setExcludePatternsText("");
-			setSharedPatternsText("");
-			setLoading(false);
-			return;
+		if (settings) {
+			setIncludePatternsText(settings.exploration.default_include_patterns.join("\n"));
+			setExcludePatternsText(settings.exploration.default_exclude_patterns.join("\n"));
+			setSharedPatternsText(settings.shared_module_patterns.join("\n"));
 		}
-
-		let mounted = true;
-		const fetchSettings = async () => {
-			setLoading(true);
-			setError(null);
-			setSuccess(null);
-
-			const { data, error: fetchError } = await getProjectInvestigationSettings(currentProject.id);
-			if (!mounted) return;
-
-			if (fetchError || !data) {
-				setError(fetchError ?? "設定の取得に失敗しました");
-				setSettings({ ...defaultProjectInvestigationSettings });
-				setIncludePatternsText("");
-				setExcludePatternsText("");
-				setSharedPatternsText("");
-				setLoading(false);
-				return;
-			}
-
-			setSettings(data);
-			setIncludePatternsText(data.exploration.default_include_patterns.join("\n"));
-			setExcludePatternsText(data.exploration.default_exclude_patterns.join("\n"));
-			setSharedPatternsText(data.shared_module_patterns.join("\n"));
-			setLoading(false);
-		};
-
-		fetchSettings();
-		return () => {
-			mounted = false;
-		};
-	}, [currentProject?.id]);
-
-	const updateSettings = (
-		updater: (prev: ProjectInvestigationSettings) => ProjectInvestigationSettings
-	) => {
-		setSettings((prev) => (prev ? updater(prev) : prev));
-	};
+	}, [settings]);
 
 	const handleSave = async () => {
-		if (!currentProject?.id || !settings) return;
-		setSaving(true);
-		setError(null);
-		setSuccess(null);
+		if (!settings) return;
 
-		const payload: ProjectInvestigationSettings = {
-			...settings,
+		// テキストエリアの内容を設定に反映
+		updateSettings((prev) => ({
+			...prev,
 			exploration: {
-				...settings.exploration,
+				...prev.exploration,
 				default_include_patterns: parseLines(includePatternsText),
 				default_exclude_patterns: parseLines(excludePatternsText),
 			},
 			shared_module_patterns: parseLines(sharedPatternsText),
-		};
+		}));
 
-		const { data, error: saveError } = await updateProjectInvestigationSettings(
-			currentProject.id,
-			payload
-		);
+		// 保存
+		await saveSettings();
+	};
 
-		if (saveError || !data) {
-			setError(saveError ?? "保存に失敗しました");
-			setSaving(false);
-			return;
+	const handleReset = () => {
+		resetSettings();
+		if (settings) {
+			setIncludePatternsText(settings.exploration.default_include_patterns.join("\n"));
+			setExcludePatternsText(settings.exploration.default_exclude_patterns.join("\n"));
+			setSharedPatternsText(settings.shared_module_patterns.join("\n"));
 		}
-
-		setSettings(data);
-		setIncludePatternsText(data.exploration.default_include_patterns.join("\n"));
-		setExcludePatternsText(data.exploration.default_exclude_patterns.join("\n"));
-		setSharedPatternsText(data.shared_module_patterns.join("\n"));
-		setSuccess("設定を保存しました");
-		setSaving(false);
 	};
 
 	return (
@@ -571,14 +527,7 @@ export function ProjectSettingsContent() {
 					<div className="flex justify-end gap-3 pt-2">
 						<Button
 							variant="outline"
-							onClick={() => {
-								if (!settings) return;
-								setIncludePatternsText(settings.exploration.default_include_patterns.join("\n"));
-								setExcludePatternsText(settings.exploration.default_exclude_patterns.join("\n"));
-								setSharedPatternsText(settings.shared_module_patterns.join("\n"));
-								setSuccess(null);
-								setError(null);
-							}}
+							onClick={handleReset}
 							disabled={saving}
 							className="h-8 px-6"
 						>

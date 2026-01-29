@@ -1,5 +1,5 @@
-import { supabase, getSupabaseConfigError } from "@/lib/supabase/client";
 import type { Concept, BusinessArea } from "@/lib/domain";
+import { createCrudOperations } from "./crud-factory";
 
 export type ConceptInput = {
   id: string;
@@ -39,131 +39,28 @@ const toConcept = (row: ConceptRow): Concept => ({
   updatedAt: row.updated_at,
 });
 
-const toConceptRow = (input: ConceptInput) => ({
-  id: input.id,
-  name: input.name,
-  synonyms: input.synonyms,
-  areas: input.areas,
-  definition: input.definition,
-  related_docs: input.relatedDocs,
-  requirement_count: input.requirementCount,
+const toConceptRow = (input: Partial<ConceptInput>) => {
+  const row: Partial<ConceptRow> = {};
+  if (input.id !== undefined) row.id = input.id;
+  if (input.name !== undefined) row.name = input.name;
+  if (input.synonyms !== undefined) row.synonyms = input.synonyms;
+  if (input.areas !== undefined) row.areas = input.areas;
+  if (input.definition !== undefined) row.definition = input.definition;
+  if (input.relatedDocs !== undefined) row.related_docs = input.relatedDocs;
+  if (input.requirementCount !== undefined) row.requirement_count = input.requirementCount;
+  return row;
+};
+
+// CRUD操作を生成
+const crud = createCrudOperations<ConceptRow, Concept, ConceptInput>({
+  tableName: "concepts",
+  toEntity: toConcept,
+  toRow: toConceptRow,
 });
 
-const failIfMissingConfig = () => {
-  const error = getSupabaseConfigError();
-  if (error) {
-    return { data: null, error };
-  }
-  return null;
-};
-
-export const listConcepts = async (projectId?: string) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
-
-  let query = supabase
-    .from("concepts")
-    .select("*")
-    .order("id");
-
-  if (projectId) {
-    query = query.eq("project_id", projectId);
-  }
-
-  const { data, error } = await query;
-
-  if (error) return { data: null, error: error.message };
-  return { data: (data as ConceptRow[]).map(toConcept), error: null };
-};
-
-export const getConceptById = async (id: string, projectId?: string) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
-
-  let query = supabase
-    .from("concepts")
-    .select("*")
-    .eq("id", id);
-
-  if (projectId) {
-    query = query.eq("project_id", projectId);
-  }
-
-  const { data, error } = await query.maybeSingle();
-
-  if (error) return { data: null, error: error.message };
-  if (!data) return { data: null, error: null };
-  return { data: toConcept(data as ConceptRow), error: null };
-};
-
-export const createConcept = async (input: ConceptCreateInput) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
-
-  const now = new Date().toISOString();
-  const payload = {
-    ...toConceptRow(input),
-    project_id: input.projectId,
-    created_at: now,
-    updated_at: now,
-  };
-
-  const { data, error } = await supabase
-    .from("concepts")
-    .insert(payload)
-    .select("*")
-    .single();
-
-  if (error) return { data: null, error: error.message };
-  return { data: toConcept(data as ConceptRow), error: null };
-};
-
-export const updateConcept = async (
-  id: string,
-  input: Omit<ConceptInput, "id">,
-  projectId?: string
-) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
-
-  const now = new Date().toISOString();
-  const payload = {
-    ...toConceptRow({ ...input, id }),
-    updated_at: now,
-  };
-
-  let query = supabase
-    .from("concepts")
-    .update(payload)
-    .eq("id", id);
-
-  if (projectId) {
-    query = query.eq("project_id", projectId);
-  }
-
-  const { data, error } = await query
-    .select("*")
-    .single();
-
-  if (error) return { data: null, error: error.message };
-  return { data: toConcept(data as ConceptRow), error: null };
-};
-
-export const deleteConcept = async (id: string, projectId?: string) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
-
-  let query = supabase
-    .from("concepts")
-    .delete()
-    .eq("id", id);
-
-  if (projectId) {
-    query = query.eq("project_id", projectId);
-  }
-
-  const { error } = await query;
-
-  if (error) return { data: null, error: error.message };
-  return { data: true, error: null };
-};
+// CRUD操作をエクスポート
+export const listConcepts = crud.list;
+export const getConceptById = crud.getById;
+export const createConcept = crud.create;
+export const updateConcept = crud.update;
+export const deleteConcept = crud.delete;

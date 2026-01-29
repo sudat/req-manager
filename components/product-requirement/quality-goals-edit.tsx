@@ -5,6 +5,7 @@
 "use client";
 
 import { MarkdownTextareaEdit } from "./markdown-textarea-edit";
+import { PRODUCT_REQUIREMENT_FIELD_CONFIGS } from "./field-configs";
 
 interface QualityGoalsEditProps {
 	value: string;
@@ -13,12 +14,13 @@ interface QualityGoalsEditProps {
 }
 
 export function QualityGoalsEdit({ value, onChange, error }: QualityGoalsEditProps) {
+	const config = PRODUCT_REQUIREMENT_FIELD_CONFIGS.qualityGoals;
 	return (
 		<MarkdownTextareaEdit
-			label="品質目標"
+			label={config.label}
 			value={value}
 			onChange={onChange}
-			placeholder="性能、可用性、セキュリティなど&#10;&#10;例:&#10;- ページ読み込み: 2秒以内&#10;- エラー率: 0.1%以下&#10;- データ保護: GDPR準拠"
+			placeholder={config.placeholder}
 			error={error}
 		/>
 	);

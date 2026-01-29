@@ -169,7 +169,7 @@ export default function BusinessTasksPage({ params }: { params: Promise<{ id: st
                   className="w-full pl-10 pr-3 py-1.5 bg-transparent border-0 text-[14px] text-slate-900 placeholder:text-slate-400 focus:outline-none"
                 />
               </div>
-              <Link href={businessId ? `/chat?screen=BD&bdId=${businessId}` : "/chat"}>
+              <Link href={routeArea ? `/chat?screen=BD&bdId=${routeArea}` : "/chat"}>
                 <Button className="h-8 gap-2 text-[14px] bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white">
                   <Sparkles className="h-4 w-4" />
                   AIで追加

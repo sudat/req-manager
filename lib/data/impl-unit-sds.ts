@@ -1,6 +1,7 @@
 import { supabase, getSupabaseConfigError } from "@/lib/supabase/client";
 import type { ImplUnitSd, ImplUnitType } from "@/lib/domain";
 import { normalizeEntryPoints } from "@/lib/data/structured";
+import { createCrudOperations } from "./crud-factory";
 
 export type ImplUnitSdInput = {
   id: string;
@@ -61,16 +62,18 @@ const toImplUnitSd = (row: ImplUnitSdRow): ImplUnitSd => ({
   updatedAt: row.updated_at,
 });
 
-const toImplUnitSdRowBase = (input: ImplUnitSdInput) => ({
-  id: input.id,
-  srf_id: input.srfId,
-  name: input.name,
-  type: input.type,
-  summary: input.summary,
-  entry_points: input.entryPoints,
-  design_policy: input.designPolicy,
-  details: input.details,
-});
+const toImplUnitSdRow = (input: Partial<ImplUnitSdInput>) => {
+  const row: Partial<ImplUnitSdRow> = {};
+  if (input.id !== undefined) row.id = input.id;
+  if (input.srfId !== undefined) row.srf_id = input.srfId;
+  if (input.name !== undefined) row.name = input.name;
+  if (input.type !== undefined) row.type = input.type;
+  if (input.summary !== undefined) row.summary = input.summary;
+  if (input.entryPoints !== undefined) row.entry_points = input.entryPoints;
+  if (input.designPolicy !== undefined) row.design_policy = input.designPolicy;
+  if (input.details !== undefined) row.details = input.details;
+  return row;
+};
 
 const failIfMissingConfig = () => {
   const error = getSupabaseConfigError();
@@ -80,25 +83,22 @@ const failIfMissingConfig = () => {
   return null;
 };
 
-export const listImplUnitSds = async (projectId?: string) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
+// CRUD操作を生成
+const crud = createCrudOperations<ImplUnitSdRow, ImplUnitSd, ImplUnitSdInput>({
+  tableName: "impl_unit_sds",
+  toEntity: toImplUnitSd,
+  toRow: toImplUnitSdRow,
+  orderBy: ["srf_id", "id"],
+});
 
-  let query = supabase
-    .from("impl_unit_sds")
-    .select("*")
-    .order("srf_id")
-    .order("id");
+// 基本CRUD操作をエクスポート
+export const listImplUnitSds = crud.list;
+export const getImplUnitSdById = crud.getById;
+export const createImplUnitSd = crud.create;
+export const updateImplUnitSd = crud.update;
+export const deleteImplUnitSd = crud.delete;
 
-  if (projectId) {
-    query = query.eq("project_id", projectId);
-  }
-
-  const { data, error } = await query;
-  if (error) return { data: null, error: error.message };
-  return { data: (data as ImplUnitSdRow[]).map(toImplUnitSd), error: null };
-};
-
+// 特殊メソッド（個別実装）
 export const listImplUnitSdsBySrfId = async (srfId: string, projectId?: string) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
@@ -118,48 +118,6 @@ export const listImplUnitSdsBySrfId = async (srfId: string, projectId?: string) 
   return { data: (data as ImplUnitSdRow[]).map(toImplUnitSd), error: null };
 };
 
-export const getImplUnitSdById = async (id: string, projectId?: string) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
-
-  let query = supabase
-    .from("impl_unit_sds")
-    .select("*")
-    .eq("id", id);
-
-  if (projectId) {
-    query = query.eq("project_id", projectId);
-  }
-
-  const { data, error } = await query.maybeSingle();
-
-  if (error) return { data: null, error: error.message };
-  if (!data) return { data: null, error: null };
-  return { data: toImplUnitSd(data as ImplUnitSdRow), error: null };
-};
-
-export const createImplUnitSd = async (input: ImplUnitSdCreateInput) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
-
-  const now = new Date().toISOString();
-  const payload = {
-    ...toImplUnitSdRowBase(input),
-    project_id: input.projectId,
-    created_at: now,
-    updated_at: now,
-  };
-
-  const { data, error } = await supabase
-    .from("impl_unit_sds")
-    .insert(payload)
-    .select("*")
-    .single();
-
-  if (error) return { data: null, error: error.message };
-  return { data: toImplUnitSd(data as ImplUnitSdRow), error: null };
-};
-
 export const createImplUnitSds = async (inputs: ImplUnitSdCreateInput[]) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
@@ -167,7 +125,7 @@ export const createImplUnitSds = async (inputs: ImplUnitSdCreateInput[]) => {
 
   const now = new Date().toISOString();
   const payload = inputs.map((input) => ({
-    ...toImplUnitSdRowBase(input),
+    ...toImplUnitSdRow(input),
     project_id: input.projectId,
     created_at: now,
     updated_at: now,
@@ -180,56 +138,6 @@ export const createImplUnitSds = async (inputs: ImplUnitSdCreateInput[]) => {
 
   if (error) return { data: null, error: error.message };
   return { data: (data as ImplUnitSdRow[]).map(toImplUnitSd), error: null };
-};
-
-export const updateImplUnitSd = async (
-  id: string,
-  input: Omit<ImplUnitSdInput, "id">,
-  projectId?: string
-) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
-
-  const now = new Date().toISOString();
-  const payload = {
-    ...toImplUnitSdRowBase({ ...input, id }),
-    updated_at: now,
-  };
-
-  let query = supabase
-    .from("impl_unit_sds")
-    .update(payload)
-    .eq("id", id);
-
-  if (projectId) {
-    query = query.eq("project_id", projectId);
-  }
-
-  const { data, error } = await query
-    .select("*")
-    .single();
-
-  if (error) return { data: null, error: error.message };
-  return { data: toImplUnitSd(data as ImplUnitSdRow), error: null };
-};
-
-export const deleteImplUnitSd = async (id: string, projectId?: string) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
-
-  let query = supabase
-    .from("impl_unit_sds")
-    .delete()
-    .eq("id", id);
-
-  if (projectId) {
-    query = query.eq("project_id", projectId);
-  }
-
-  const { error } = await query;
-
-  if (error) return { data: null, error: error.message };
-  return { data: true, error: null };
 };
 
 export const deleteImplUnitSdsBySrfId = async (srfId: string, projectId?: string) => {
