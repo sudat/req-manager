@@ -160,6 +160,7 @@ function BusinessRequirementLink({ req }: { req: RelatedRequirementInfo }): Reac
 						title: req.businessReqTitle,
 						taskId: req.taskId,
 						businessId: req.businessId,
+						businessArea: req.businessArea ?? null,
 						suspect: false,
 						suspectReason: null,
 					},
@@ -180,7 +181,8 @@ function BusinessRequirementLink({ req }: { req: RelatedRequirementInfo }): Reac
 			<div className="text-[12px] font-medium text-slate-500 mb-2">関連業務要件</div>
 			<div className="space-y-1.5">
 				{relatedBusinessReqs.map((bizReq) => {
-					const hasLink = bizReq.businessId && bizReq.taskId;
+					const businessArea = bizReq.businessArea ?? req.businessArea ?? "";
+					const hasLink = businessArea.length > 0 && !!bizReq.taskId;
 					const content = (
 						<div className="flex items-center gap-2">
 							<Badge
@@ -215,7 +217,7 @@ function BusinessRequirementLink({ req }: { req: RelatedRequirementInfo }): Reac
 					return (
 						<Link
 							key={bizReq.id}
-							href={`/business/${bizReq.businessId}/${bizReq.taskId}`}
+							href={`/business/${businessArea}/${bizReq.taskId}`}
 							className="block rounded px-2 py-1 hover:bg-slate-100/70 transition-colors"
 						>
 							{content}

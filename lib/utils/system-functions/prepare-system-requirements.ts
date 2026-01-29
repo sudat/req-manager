@@ -27,7 +27,7 @@ export function prepareSystemRequirementInputs(
 		return {
 			id: sr.id,
 			taskId,
-			srfId,
+			srfIds: [srfId],
 			title: sr.title.trim(),
 			summary: sr.summary.trim(),
 			conceptIds: [],

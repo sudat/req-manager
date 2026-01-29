@@ -1,16 +1,17 @@
 "use client";
 
 import { use, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { RequirementListSection } from "@/components/forms/requirement-list-section";
 import { SelectionDialog } from "@/components/forms/SelectionDialog";
 import type { TaskKnowledge, SelectionDialogType, SelectableItem } from "@/lib/domain";
 import { listBusinessRequirementsByTaskId } from "@/lib/data/business-requirements";
-import { listSystemRequirementsByTaskId } from "@/lib/data/system-requirements";
-import { fromBusinessRequirement, fromSystemRequirement } from "@/lib/data/requirement-mapper";
+import { fromBusinessRequirement } from "@/lib/data/requirement-mapper";
 import { getTaskById } from "@/lib/data/tasks";
 import { removeFromStorage } from "@/lib/utils/local-storage";
 import { createEmptyTaskKnowledge } from "@/lib/utils/task-knowledge";
 import { useProject } from "@/components/project/project-context";
+import { useBusinessByKey } from "@/hooks/use-business-by-key";
 
 // Hooks
 import { useMasterData } from "./hooks/useMasterData";
@@ -27,11 +28,14 @@ export default function TaskDetailEditPage({
 }: {
 	params: Promise<{ id: string; taskId: string }>;
 }): React.ReactElement {
-	const { id, taskId } = use(params);
-	const storageKey = `task-knowledge:${id}:${taskId}`;
+	const { id: businessKey, taskId } = use(params);
+	const router = useRouter();
+	const { businessArea } = useBusinessByKey(businessKey);
+	const routeArea = businessArea ?? businessKey;
+	const storageKey = `task-knowledge:${businessKey}:${taskId}`;
 
 	const [defaultKnowledge, setDefaultKnowledge] = useState<TaskKnowledge>(() =>
-		createEmptyTaskKnowledge(id, taskId)
+		createEmptyTaskKnowledge(businessKey, taskId)
 	);
 	const { currentProjectId, loading: projectLoading } = useProject();
 
@@ -68,7 +72,7 @@ export default function TaskDetailEditPage({
 
 	// 保存処理
 	const { handleSave, isSaving, saveError, clearError } = useTaskSave({
-		bizId: id,
+		bizId: routeArea,
 		taskId,
 		storageKey,
 	});
@@ -97,10 +101,9 @@ export default function TaskDetailEditPage({
 			}
 
 			try {
-				const [taskResult, businessReqResult, systemReqResult] = await Promise.all([
+				const [taskResult, businessReqResult] = await Promise.all([
 					getTaskById(taskId, currentProjectId),
 					listBusinessRequirementsByTaskId(taskId, currentProjectId),
-					listSystemRequirementsByTaskId(taskId, currentProjectId),
 				]);
 
 				if (!active) return;
@@ -112,17 +115,12 @@ export default function TaskDetailEditPage({
 				if (businessReqResult.error) {
 					console.error("業務要件読み込みエラー:", businessReqResult.error);
 				}
-				if (systemReqResult.error) {
-					console.error("システム要件読み込みエラー:", systemReqResult.error);
-				}
 
 				const loadedBusinessRequirements =
 					businessReqResult.data?.map((br) => fromBusinessRequirement(br)) ?? [];
-				const loadedSystemRequirements =
-					systemReqResult.data?.map((sr) => fromSystemRequirement(sr)) ?? [];
 
 				const loadedKnowledge: TaskKnowledge = {
-					bizId: task?.businessId ?? id,
+					bizId: businessArea ?? businessKey,
 					taskId,
 					taskName: task?.name ?? "",
 					taskSummary: task?.summary ?? "",
@@ -133,7 +131,7 @@ export default function TaskDetailEditPage({
 					conceptIdsYaml: task?.conceptIdsYaml ?? "",
 					person: task?.person ?? "",
 					businessRequirements: loadedBusinessRequirements,
-					systemRequirements: loadedSystemRequirements,
+					systemRequirements: [],
 					designDocs: [],
 					codeRefs: [],
 				};
@@ -154,7 +152,7 @@ export default function TaskDetailEditPage({
 		return () => {
 			active = false;
 		};
-	}, [id, taskId, setKnowledge, setDefaultKnowledge, currentProjectId, projectLoading]);
+	}, [businessKey, taskId, setKnowledge, setDefaultKnowledge, currentProjectId, projectLoading]);
 
 	// ダイアログ状態管理
 	const [dialogState, setDialogState] = useState<{
@@ -166,11 +164,11 @@ export default function TaskDetailEditPage({
 	const activeRequirement = useMemo(
 		() =>
 			dialogState
-				? [...knowledge.businessRequirements, ...knowledge.systemRequirements].find(
+				? knowledge.businessRequirements.find(
 						(r) => r.id === dialogState.reqId
 				  ) ?? null
 				: null,
-		[dialogState, knowledge.businessRequirements, knowledge.systemRequirements]
+		[dialogState, knowledge.businessRequirements]
 	);
 
 	const businessRequirementMap = useMemo(
@@ -184,17 +182,6 @@ export default function TaskDetailEditPage({
 		[knowledge.businessRequirements]
 	);
 
-	const systemRequirementMap = useMemo(
-		() =>
-			new Map(
-				knowledge.systemRequirements.map((req) => [
-					req.id,
-					req.title || req.id,
-				])
-			),
-		[knowledge.systemRequirements]
-	);
-
 	const businessRequirementItems: SelectableItem[] = useMemo(
 		() =>
 			knowledge.businessRequirements.map((req) => ({
@@ -204,14 +191,11 @@ export default function TaskDetailEditPage({
 		[knowledge.businessRequirements]
 	);
 
-	const systemRequirementItems: SelectableItem[] = useMemo(
-		() =>
-			knowledge.systemRequirements.map((req) => ({
-				id: req.id,
-				name: req.title || req.id,
-			})),
-		[knowledge.systemRequirements]
-	);
+	useEffect(() => {
+		if (businessArea && businessArea !== businessKey) {
+			router.replace(`/business/${businessArea}/${taskId}/edit`);
+		}
+	}, [businessArea, businessKey, taskId, router]);
 
 	// ダイアログハンドラー
 	function handleOpenDialog(type: SelectionDialogType, reqId: string): void {
@@ -227,7 +211,7 @@ export default function TaskDetailEditPage({
 			<div className="mx-auto max-w-[1400px] px-8 py-6">
 				{/* ヘッダー */}
 				<TaskEditHeader
-					bizId={id}
+					bizId={routeArea}
 					taskId={taskId}
 					isLoading={isLoading}
 					isSaving={isSaving}
@@ -243,43 +227,28 @@ export default function TaskDetailEditPage({
 				{/* ローディング・エラー表示 */}
 				<SaveStatusAlert isLoading={isLoading} saveError={saveError} />
 
-				{/* 基本情報カード */}
-				<TaskBasicInfoCard
-					knowledge={knowledge}
-					onFieldChange={updateField}
-					concepts={concepts}
-				/>
+				<div className="space-y-8">
+					{/* 基本情報カード */}
+					<TaskBasicInfoCard
+						knowledge={knowledge}
+						onFieldChange={updateField}
+						concepts={concepts}
+					/>
 
-				{/* 業務要件セクション */}
-				<RequirementListSection
-					title="業務要件"
-					requirements={knowledge.businessRequirements}
-					onAdd={() => addRequirement("業務要件")}
-					onUpdate={(reqId, patch) => updateRequirement("businessRequirements", reqId, patch)}
-					onRemove={(reqId) => removeRequirement("businessRequirements", reqId)}
-					conceptMap={conceptMap}
-					systemFunctionMap={systemFunctionMap}
-					systemDomainMap={systemDomainMap}
-					businessRequirementMap={businessRequirementMap}
-					systemRequirementMap={systemRequirementMap}
-					onOpenDialog={handleOpenDialog}
-				/>
-
-				{/* システム要件セクション */}
-				<RequirementListSection
-					title="システム要件"
-					requirements={knowledge.systemRequirements}
-					onAdd={() => addRequirement("システム要件")}
-					onUpdate={(reqId, patch) =>
-						updateRequirement("systemRequirements", reqId, patch)
-					}
-					onRemove={(reqId) => removeRequirement("systemRequirements", reqId)}
-					conceptMap={conceptMap}
-					systemFunctionMap={systemFunctionMap}
-					systemDomainMap={systemDomainMap}
-					businessRequirementMap={businessRequirementMap}
-					onOpenDialog={handleOpenDialog}
-				/>
+					{/* 業務要件セクション */}
+					<RequirementListSection
+						title="業務要件"
+						requirements={knowledge.businessRequirements}
+						onAdd={() => addRequirement("業務要件")}
+						onUpdate={(reqId, patch) => updateRequirement("businessRequirements", reqId, patch)}
+						onRemove={(reqId) => removeRequirement("businessRequirements", reqId)}
+						conceptMap={conceptMap}
+						systemFunctionMap={systemFunctionMap}
+						systemDomainMap={systemDomainMap}
+						businessRequirementMap={businessRequirementMap}
+						onOpenDialog={handleOpenDialog}
+					/>
+				</div>
 			</div>
 
 			{/* 選択ダイアログ */}
@@ -291,13 +260,10 @@ export default function TaskDetailEditPage({
 				systemFunctions={systemFunctions}
 				systemDomains={systemDomains}
 				businessRequirements={businessRequirementItems}
-				systemRequirements={systemRequirementItems}
+				systemRequirements={[]}
 				deliverables={[]}
 				onUpdateRequirement={(reqId, patch) => {
-					const listKey = knowledge.businessRequirements.find((r) => r.id === reqId)
-						? "businessRequirements"
-						: "systemRequirements";
-					updateRequirement(listKey, reqId, patch);
+					updateRequirement("businessRequirements", reqId, patch);
 				}}
 			/>
 		</div>

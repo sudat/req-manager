@@ -1,8 +1,9 @@
 "use client";
 
-import { Pencil } from "lucide-react";
+import { Pencil, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { use, useMemo } from "react";
+import { use, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { HealthScoreCard } from "@/components/health-score/health-score-card";
 import { MobileHeader } from "@/components/layout/mobile-header";
 import {
@@ -19,13 +20,17 @@ import { TaskLoadingStatus } from "./components/TaskLoadingStatus";
 import { TaskSummaryCard } from "./components/TaskSummaryCard";
 import { BusinessRequirementsSection } from "./components/BusinessRequirementsSection";
 import { useTaskDetail } from "./use-task-detail";
+import { useBusinessByKey } from "@/hooks/use-business-by-key";
 
 type PageProps = {
 	params: Promise<{ id: string; taskId: string }>;
 };
 
 export default function TaskDetailPage({ params }: PageProps) {
-	const { id, taskId } = use(params);
+	const { id: businessKey, taskId } = use(params);
+	const router = useRouter();
+	const { businessId, businessArea } = useBusinessByKey(businessKey);
+	const routeArea = businessArea ?? businessKey;
 	const {
 		task,
 		taskLoading,
@@ -46,9 +51,9 @@ export default function TaskDetailPage({ params }: PageProps) {
 		systemDomainMap,
 		systemFunctions,
 		systemFunctionsFull,
-	} = useTaskDetail({ bizId: id, taskId });
+	} = useTaskDetail({ bizId: businessKey, taskId });
 
-	const displayBizId = task?.businessId ?? knowledge.bizId;
+	const displayBizId = routeArea ?? task?.businessId ?? knowledge.bizId;
 	const displayTaskName = task?.name ?? knowledge.taskName;
 	const displayTaskSummary = task?.summary ?? knowledge.taskSummary;
 	const displayBusinessContext = task?.businessContext ?? knowledge.businessContext;
@@ -78,7 +83,7 @@ export default function TaskDetailPage({ params }: PageProps) {
 		if (systemRequirements.length === 0) return [];
 		const srfIds = new Set(
 			systemRequirements
-				.map((req) => req.srfId)
+				.flatMap((req) => req.srfIds)
 				.filter((id): id is string => Boolean(id)),
 		);
 		return systemFunctionsFull.filter((srf) => srfIds.has(srf.id));
@@ -107,6 +112,12 @@ export default function TaskDetailPage({ params }: PageProps) {
 		healthError,
 	]);
 
+	useEffect(() => {
+		if (businessArea && businessArea !== businessKey) {
+			router.replace(`/business/${businessArea}/${taskId}`);
+		}
+	}, [businessArea, businessKey, taskId, router]);
+
 	return (
 		<>
 			<MobileHeader />
@@ -116,16 +127,16 @@ export default function TaskDetailPage({ params }: PageProps) {
 					<Breadcrumb className="mb-4">
 						<BreadcrumbList>
 							<BreadcrumbItem>
-								<BreadcrumbLink asChild>
-									<Link href="/business">業務領域一覧</Link>
-								</BreadcrumbLink>
-							</BreadcrumbItem>
-							<BreadcrumbSeparator />
-							<BreadcrumbItem>
-								<BreadcrumbLink asChild>
-									<Link href={`/business/${id}`}>業務一覧（詳細）</Link>
-								</BreadcrumbLink>
-							</BreadcrumbItem>
+							<BreadcrumbLink asChild>
+								<Link href="/business">業務領域一覧</Link>
+							</BreadcrumbLink>
+						</BreadcrumbItem>
+						<BreadcrumbSeparator />
+						<BreadcrumbItem>
+							<BreadcrumbLink asChild>
+								<Link href={`/business/${routeArea}`}>業務一覧（詳細）</Link>
+							</BreadcrumbLink>
+						</BreadcrumbItem>
 							<BreadcrumbSeparator />
 							<BreadcrumbItem>
 								<BreadcrumbPage>業務タスク詳細</BreadcrumbPage>
@@ -138,12 +149,20 @@ export default function TaskDetailPage({ params }: PageProps) {
 						<h1 className="text-[32px] font-semibold tracking-tight text-slate-900">
 							業務タスク詳細
 						</h1>
-						<Link href={`/business/${id}/${taskId}/edit`}>
-							<Button variant="outline" className="h-8 gap-2 text-[14px]">
-								<Pencil className="h-4 w-4" />
-								編集
-							</Button>
-						</Link>
+						<div className="flex gap-2">
+							<Link href={businessId ? `/chat?screen=BT&bdId=${businessId}&btId=${taskId}` : "/chat"}>
+								<Button className="h-8 gap-2 text-[14px] bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white">
+									<Sparkles className="h-4 w-4" />
+									AIで追加
+								</Button>
+							</Link>
+							<Link href={`/business/${routeArea}/${taskId}/edit`}>
+								<Button variant="outline" className="h-8 gap-2 text-[14px]">
+									<Pencil className="h-4 w-4" />
+									編集
+								</Button>
+							</Link>
+						</div>
 					</div>
 
 					<TaskLoadingStatus

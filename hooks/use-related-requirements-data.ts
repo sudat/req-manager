@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { RelatedRequirementInfo } from "@/lib/domain/value-objects";
 import { listBusinessRequirementsByTaskIds } from "@/lib/data/business-requirements";
+import { listBusinesses } from "@/lib/data/businesses";
 import { listConcepts } from "@/lib/data/concepts";
 import { listSystemRequirementsBySrfId } from "@/lib/data/system-requirements";
 import { listTasksByIds } from "@/lib/data/tasks";
@@ -89,13 +90,14 @@ export function useRelatedRequirementsData(
 			const businessReqs = bizReqs ?? [];
 
 			// 3. タスクとコンセプトを並行取得
-			const [taskResult, conceptResult] = await Promise.all([
+			const [taskResult, conceptResult, businessResult] = await Promise.all([
 				listTasksByIds(taskIds, projectId),
 				listConcepts(projectId),
+				listBusinesses(projectId),
 			]);
 			if (!active) return;
 
-			const fetchError = taskResult.error ?? conceptResult.error;
+			const fetchError = taskResult.error ?? conceptResult.error ?? businessResult.error;
 			if (fetchError) {
 				setError(fetchError);
 				setLoading(false);
@@ -104,6 +106,7 @@ export function useRelatedRequirementsData(
 
 			const taskData = taskResult.data ?? [];
 			const conceptData = conceptResult.data ?? [];
+			const businessData = businessResult.data ?? [];
 
 			// 4. マップを構築（ハイブリッド方式）
 			const sysReqToBizReqsMap = useRequirementLinks
@@ -136,7 +139,20 @@ export function useRelatedRequirementsData(
 						conceptMap
 					);
 
-			setRelatedRequirements(result);
+			const businessAreaMap = new Map(
+				businessData.map((biz) => [biz.id, biz.area])
+			);
+
+			const resultWithArea = result.map((req) => ({
+				...req,
+				businessArea: req.businessId ? businessAreaMap.get(req.businessId) ?? null : null,
+				relatedBusinessReqs: req.relatedBusinessReqs?.map((bizReq) => ({
+					...bizReq,
+					businessArea: bizReq.businessId ? businessAreaMap.get(bizReq.businessId) ?? null : null,
+				})),
+			}));
+
+			setRelatedRequirements(resultWithArea);
 			setLoading(false);
 		}
 

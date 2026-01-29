@@ -27,12 +27,12 @@ import { listTasksByBusinessId, deleteTask } from "@/lib/data/tasks";
 import { stripMarkdown } from "@/lib/utils";
 import { parseYamlKeySourceList } from "@/lib/utils/yaml";
 import { TableSkeleton } from "@/components/skeleton";
-import { getBusinessById } from "@/lib/data/businesses";
+import { useBusinessByKey } from "@/hooks/use-business-by-key";
 import { confirmDelete } from "@/lib/ui/confirm";
 import { useProject } from "@/components/project/project-context";
 
 export default function BusinessTasksPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+  const { id: businessKey } = use(params);
   const router = useRouter();
   const [items, setItems] = useState<Task[]>([]);
   const [businessArea, setBusinessArea] = useState<string | null>(null);
@@ -40,15 +40,26 @@ export default function BusinessTasksPage({ params }: { params: Promise<{ id: st
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const { currentProjectId, loading: projectLoading } = useProject();
+  const { businessId, businessArea: resolvedArea, loading: businessLoading, error: businessError } =
+    useBusinessByKey(businessKey);
+
+  const routeArea = resolvedArea ?? businessKey;
 
   const handleRowClick = (taskId: string) => {
-    router.push(`/business/${id}/${taskId}`);
+    router.push(`/business/${routeArea}/${taskId}`);
   };
 
   useEffect(() => {
-    if (projectLoading) return;
+    if (projectLoading || businessLoading) return;
     if (!currentProjectId) {
       setError("プロジェクトが選択されていません");
+      setItems([]);
+      setBusinessArea(null);
+      setLoading(false);
+      return;
+    }
+    if (!businessId) {
+      setError(businessError ?? "指定された業務領域が見つかりません");
       setItems([]);
       setBusinessArea(null);
       setLoading(false);
@@ -57,9 +68,8 @@ export default function BusinessTasksPage({ params }: { params: Promise<{ id: st
     let active = true;
     const fetchData = async () => {
       setLoading(true);
-      const [{ data: taskRows, error: taskError }, { data: business, error: businessError }] = await Promise.all([
-        listTasksByBusinessId(id, currentProjectId),
-        getBusinessById(id, currentProjectId),
+      const [{ data: taskRows, error: taskError }] = await Promise.all([
+        listTasksByBusinessId(businessId, currentProjectId),
       ]);
       if (!active) return;
       const mergedError = taskError ?? businessError;
@@ -70,7 +80,7 @@ export default function BusinessTasksPage({ params }: { params: Promise<{ id: st
       } else {
         setError(null);
         setItems(taskRows ?? []);
-        setBusinessArea(business?.area ?? null);
+        setBusinessArea(resolvedArea ?? null);
       }
       setLoading(false);
     };
@@ -78,7 +88,13 @@ export default function BusinessTasksPage({ params }: { params: Promise<{ id: st
     return () => {
       active = false;
     };
-  }, [id, currentProjectId, projectLoading]);
+  }, [businessId, businessError, currentProjectId, projectLoading, businessLoading, resolvedArea]);
+
+  useEffect(() => {
+    if (businessArea && businessArea !== businessKey) {
+      router.replace(`/business/${businessArea}`);
+    }
+  }, [businessArea, businessKey, router]);
 
   const filtered = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -118,13 +134,13 @@ export default function BusinessTasksPage({ params }: { params: Promise<{ id: st
           <Breadcrumb className="mb-4">
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                  <Link href="/business">業務領域一覧</Link>
-                </BreadcrumbLink>
+              <BreadcrumbLink asChild>
+                <Link href="/business">業務領域一覧</Link>
+              </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbPage>業務一覧（詳細）</BreadcrumbPage>
+              <BreadcrumbPage>業務一覧（詳細）</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -134,7 +150,7 @@ export default function BusinessTasksPage({ params }: { params: Promise<{ id: st
             <div className="flex items-center gap-3 mb-2">
               <h1 className="text-[32px] font-semibold tracking-tight text-slate-900">業務一覧（詳細）</h1>
               <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] font-mono px-2 py-0.5">
-                {businessArea ?? id}
+                {businessArea ?? routeArea}
               </Badge>
             </div>
             <p className="text-[13px] text-slate-500">業務領域内の業務タスク（業務プロセスの細分）</p>
@@ -153,13 +169,19 @@ export default function BusinessTasksPage({ params }: { params: Promise<{ id: st
                   className="w-full pl-10 pr-3 py-1.5 bg-transparent border-0 text-[14px] text-slate-900 placeholder:text-slate-400 focus:outline-none"
                 />
               </div>
-              <Link href={`/business/${id}/ai-order`}>
+              <Link href={businessId ? `/chat?screen=BD&bdId=${businessId}` : "/chat"}>
+                <Button className="h-8 gap-2 text-[14px] bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white">
+                  <Sparkles className="h-4 w-4" />
+                  AIで追加
+                </Button>
+              </Link>
+              <Link href={`/business/${routeArea}/ai-order`}>
                 <Button className="h-8 gap-2 text-[14px] bg-slate-900 hover:bg-slate-800">
                   <Sparkles className="h-4 w-4" />
                   AI修正指示
                 </Button>
               </Link>
-              <Link href={`/business/${id}/create`}>
+              <Link href={`/business/${routeArea}/create`}>
                 <Button className="h-8 gap-2 text-[14px] bg-slate-900 hover:bg-slate-800">
                   <Plus className="h-4 w-4" />
                   新規作成
@@ -201,7 +223,7 @@ export default function BusinessTasksPage({ params }: { params: Promise<{ id: st
                     <TaskTableRow
                       key={task.id}
                       task={task}
-                      businessId={id}
+                      businessArea={routeArea}
                       onRowClick={() => handleRowClick(task.id)}
                       onDelete={() => handleDelete(task)}
                     />
@@ -218,12 +240,12 @@ export default function BusinessTasksPage({ params }: { params: Promise<{ id: st
 
 type TaskTableRowProps = {
   task: Task;
-  businessId: string;
+  businessArea: string;
   onRowClick: () => void;
   onDelete: () => void;
 };
 
-function TaskTableRow({ task, businessId, onRowClick, onDelete }: TaskTableRowProps) {
+function TaskTableRow({ task, businessArea, onRowClick, onDelete }: TaskTableRowProps) {
   const formatKeySource = (value: string) => {
     const parsed = parseYamlKeySourceList(value);
     const items = parsed.value.filter((item) => item.name || item.source);
@@ -268,12 +290,12 @@ function TaskTableRow({ task, businessId, onRowClick, onDelete }: TaskTableRowPr
       </TableCell>
       <TableCell className="px-4 py-3">
         <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
-          <Link href={`/business/${businessId}/${task.id}`}>
+          <Link href={`/business/${businessArea}/${task.id}`}>
             <Button size="icon" variant="outline" title="照会" className="h-8 w-8 rounded-md border-slate-200 hover:bg-slate-900 hover:text-white hover:border-slate-900">
               <Eye className="h-4 w-4" />
             </Button>
           </Link>
-          <Link href={`/business/${businessId}/${task.id}/edit`}>
+          <Link href={`/business/${businessArea}/${task.id}/edit`}>
             <Button size="icon" variant="outline" title="編集" className="h-8 w-8 rounded-md border-slate-200 hover:bg-slate-900 hover:text-white hover:border-slate-900">
               <Pencil className="h-4 w-4" />
             </Button>

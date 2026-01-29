@@ -36,7 +36,7 @@ export async function linkBusinessRequirements(
 					constraints: bizReq.constraints,
 					owner: bizReq.owner,
 					conceptIds: bizReq.conceptIds,
-					srfId: bizReq.srfId,
+					srfIds: bizReq.srfIds,
 					systemDomainIds: bizReq.systemDomainIds,
 					impacts: bizReq.impacts,
 					relatedSystemRequirementIds: updatedIds,

@@ -33,18 +33,15 @@ export function BusinessRequirementCard({
   relatedSystemRequirements,
 }: BusinessRequirementCardProps) {
   const [isOpen, setIsOpen] = useState(true);
-  const srfId = requirement.srfId ?? null;
-  const srfName = srfId ? systemFunctionMap.get(srfId) ?? srfId : null;
-  const srfDomainId = srfId ? systemFunctionDomainMap.get(srfId) : null;
 
   // 関連するシステム要件の概要を抽出
   const relatedSystemRequirementSummaries = useMemo(() => {
-    if (!srfId || relatedSystemRequirements.length === 0) return [];
+    if (requirement.srfIds.length === 0 || relatedSystemRequirements.length === 0) return [];
     return relatedSystemRequirements
-      .filter(sr => sr.srfId === srfId)
+      .filter(sr => sr.srfIds.some(srfId => requirement.srfIds.includes(srfId)))
       .map(sr => sr.summary)
       .filter(Boolean);
-  }, [srfId, relatedSystemRequirements]);
+  }, [requirement.srfIds, relatedSystemRequirements]);
 
   const firstSummary = relatedSystemRequirementSummaries[0] ?? "";
   const summaryCount = relatedSystemRequirementSummaries.length;
@@ -115,23 +112,29 @@ export function BusinessRequirementCard({
         </div>
       )}
 
-      {srfId && srfName && (
+      {requirement.srfIds.length > 0 && (
         <div className="border-t border-slate-100 pt-3 space-y-2">
           <div className="text-[12px] font-medium text-slate-500">関連システム機能</div>
           <div className="flex flex-wrap gap-2">
-            <Link href={srfDomainId ? `/system-domains/${srfDomainId}/${srfId}` : "/system-domains"}>
-              <Badge
-                variant="outline"
-                className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] hover:bg-slate-100 max-w-[200px] truncate px-2.5 py-1"
-                title={
-                  summaryCount > 1
-                    ? `${firstSummary}\n\n（他${summaryCount - 1}件の要件があります）`
-                    : firstSummary || srfName || undefined
-                }
-              >
-                {srfName}
-              </Badge>
-            </Link>
+            {requirement.srfIds.map((srfId) => {
+              const srfName = systemFunctionMap.get(srfId) ?? srfId;
+              const srfDomainId = systemFunctionDomainMap.get(srfId);
+              return (
+                <Link key={srfId} href={srfDomainId ? `/system/${srfDomainId}/${srfId}` : "/system"}>
+                  <Badge
+                    variant="outline"
+                    className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] hover:bg-slate-100 max-w-[200px] truncate px-2.5 py-1"
+                    title={
+                      summaryCount > 1
+                        ? `${firstSummary}\n\n（他${summaryCount - 1}件の要件があります）`
+                        : firstSummary || srfName || undefined
+                    }
+                  >
+                    {srfName}
+                  </Badge>
+                </Link>
+              );
+            })}
           </div>
         </div>
       )}
@@ -154,9 +157,10 @@ export function BusinessRequirementCard({
           <div className="text-[12px] font-medium text-slate-500">関連システム要件</div>
           <div className="flex flex-wrap gap-2">
             {relatedSystemRequirements.map((sr) => {
-              const srDomainId = sr.srfId ? systemFunctionDomainMap.get(sr.srfId) : null;
+              const srDomainId = sr.srfIds.length > 0 ? systemFunctionDomainMap.get(sr.srfIds[0]) : null;
+              const srSrfId = sr.srfIds.length > 0 ? sr.srfIds[0] : null;
               return (
-                <Link key={sr.id} href={srDomainId && sr.srfId ? `/system-domains/${srDomainId}/${sr.srfId}` : "/system-domains"}>
+                <Link key={sr.id} href={srDomainId && srSrfId ? `/system/${srDomainId}/${srSrfId}` : "/system"}>
                   <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] hover:bg-slate-100 max-w-[200px] truncate px-2.5 py-1" title={sr.title ?? undefined}>
                     {sr.title}
                   </Badge>

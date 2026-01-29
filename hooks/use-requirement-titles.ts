@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { RequirementLink } from "@/lib/domain";
 import { listBusinessRequirementsByIds } from "@/lib/data/business-requirements";
+import { listBusinesses } from "@/lib/data/businesses";
 import { listSystemRequirementsByIds } from "@/lib/data/system-requirements";
 import { listTasksByIds } from "@/lib/data/tasks";
 
@@ -10,6 +11,7 @@ export type RequirementTitleInfo = {
 	title: string;
 	taskId?: string;       // for BR
 	businessId?: string;   // for BR
+	businessArea?: string; // for BR
 	srfId?: string;        // for SR
 	domainId?: string;     // for SR
 };
@@ -72,10 +74,17 @@ export function useRequirementTitles(
 			const uniqueTaskIds = Array.from(new Set(taskIds));
 
 			let taskBusinessMap = new Map<string, string>();
+			let businessAreaMap = new Map<string, string>();
 			if (uniqueTaskIds.length > 0) {
-				const taskResult = await listTasksByIds(uniqueTaskIds, projectId);
+				const [taskResult, businessResult] = await Promise.all([
+					listTasksByIds(uniqueTaskIds, projectId),
+					listBusinesses(projectId),
+				]);
 				if (!taskResult.error && taskResult.data) {
 					taskBusinessMap = new Map(taskResult.data.map((task) => [task.id, task.businessId]));
+				}
+				if (!businessResult.error && businessResult.data) {
+					businessAreaMap = new Map(businessResult.data.map((biz) => [biz.id, biz.area]));
 				}
 			}
 
@@ -84,17 +93,19 @@ export function useRequirementTitles(
 
 			for (const br of brResult.data ?? []) {
 				const businessId = taskBusinessMap.get(br.taskId);
+				const businessArea = businessId ? businessAreaMap.get(businessId) : undefined;
 				map.set(`br:${br.id}`, {
 					title: br.title,
 					taskId: br.taskId,
 					businessId: businessId,
+					businessArea,
 				});
 			}
 
 			for (const sr of srResult.data ?? []) {
 				map.set(`sr:${sr.id}`, {
 					title: sr.title,
-					srfId: sr.srfId ?? undefined,
+					srfId: sr.srfIds[0] ?? undefined,
 					domainId: sr.systemDomainIds[0], // 最初のdomainIdを使用
 				});
 			}
@@ -125,10 +136,11 @@ export function getRequirementUrl(
 	info: RequirementTitleInfo | undefined
 ): string {
 	if (type === "br" && info?.businessId && info.taskId) {
-		return `/business/${info.businessId}/${info.taskId}`;
+		const area = info.businessArea ?? info.businessId;
+		return `/business/${area}/${info.taskId}`;
 	}
 	if (type === "sr" && info?.domainId && info?.srfId) {
-		return `/system-domains/${info.domainId}/${info.srfId}`;
+		return `/system/${info.domainId}/${info.srfId}`;
 	}
 	return "#";
 }

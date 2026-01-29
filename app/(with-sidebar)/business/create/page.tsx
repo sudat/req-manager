@@ -104,12 +104,6 @@ export default function BusinessCreatePage() {
           <Card className="p-6">
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div className="space-y-2">
-                <Label>業務ID</Label>
-                <Input value={nextId} disabled />
-                <p className="text-xs text-slate-500">業務IDは保存時に自動採番されます</p>
-              </div>
-
-              <div className="space-y-2">
                 <Label>
                   業務名<span className="text-rose-500">*</span>
                 </Label>

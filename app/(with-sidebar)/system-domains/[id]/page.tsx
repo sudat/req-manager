@@ -25,7 +25,7 @@ export default function SystemDomainFunctionsPage({ params }: { params: Promise<
   } = useSystemFunctionFilters({ functions });
 
   const handleRowClick = (srfId: string) => {
-    router.push(`/system-domains/${id}/${srfId}`);
+    router.push(`/system/${id}/${srfId}`);
   };
 
   const handleDelete = async (srf: typeof functions[number]) => {

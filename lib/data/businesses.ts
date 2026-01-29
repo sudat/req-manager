@@ -94,6 +94,43 @@ export const getBusinessById = async (id: string, projectId?: string) => {
   return { data: toBusiness(data as BusinessRow), error: null };
 };
 
+export const getBusinessByArea = async (area: string, projectId?: string) => {
+  const configError = failIfMissingConfig();
+  if (configError) return configError;
+
+  const normalizedArea = area.trim().toUpperCase();
+  if (!normalizedArea) return { data: null, error: null };
+
+  let query = supabase
+    .from("business_domains")
+    .select("*")
+    .eq("area", normalizedArea);
+
+  if (projectId) {
+    query = query.eq("project_id", projectId);
+  }
+
+  const { data, error } = await query.maybeSingle();
+
+  if (error) return { data: null, error: error.message };
+  if (!data) return { data: null, error: null };
+  return { data: toBusiness(data as BusinessRow), error: null };
+};
+
+export const getBusinessByKey = async (key: string, projectId?: string) => {
+  const trimmed = key.trim();
+  if (!trimmed) return { data: null, error: null };
+
+  const isBizId = /^BIZ-\d+$/i.test(trimmed);
+  const primary = isBizId ? getBusinessById : getBusinessByArea;
+  const fallback = isBizId ? getBusinessByArea : getBusinessById;
+
+  const primaryResult = await primary(trimmed, projectId);
+  if (primaryResult.error || primaryResult.data) return primaryResult;
+
+  return fallback(trimmed, projectId);
+};
+
 export const createBusiness = async (input: BusinessCreateInput) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;

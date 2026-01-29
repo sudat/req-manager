@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil } from "lucide-react";
+import { Pencil, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import { HealthScoreCard } from "@/components/health-score/health-score-card";
@@ -75,7 +75,7 @@ function NotFoundState({
 					システム機能が見つかりません
 				</h1>
 				{error && <p className="text-sm text-rose-600 mb-4">{error}</p>}
-				<Link href={`/system-domains/${domainId}`}>
+				<Link href={`/system/${domainId}`}>
 					<Button className="bg-slate-900 hover:bg-slate-800">
 						システム機能一覧に戻る
 					</Button>
@@ -254,13 +254,13 @@ export default function SystemFunctionDetailPage({
 				<BreadcrumbList>
 					<BreadcrumbItem>
 						<BreadcrumbLink asChild>
-							<Link href="/system-domains">システム領域一覧</Link>
+							<Link href="/system">システム領域一覧</Link>
 						</BreadcrumbLink>
 					</BreadcrumbItem>
 					<BreadcrumbSeparator />
 					<BreadcrumbItem>
 						<BreadcrumbLink asChild>
-							<Link href={`/system-domains/${id}`}>システム機能一覧</Link>
+							<Link href={`/system/${id}`}>システム機能一覧</Link>
 						</BreadcrumbLink>
 					</BreadcrumbItem>
 					<BreadcrumbSeparator />
@@ -275,12 +275,20 @@ export default function SystemFunctionDetailPage({
 				<h1 className="text-[32px] font-semibold tracking-tight text-slate-900">
 					システム機能詳細
 				</h1>
-				<Link href={`/system-domains/${id}/${srf.id}/edit`}>
-					<Button variant="outline" className="h-8 gap-2 text-[14px]">
-						<Pencil className="h-4 w-4" />
-						編集
-					</Button>
-				</Link>
+				<div className="flex gap-2">
+					<Link href={`/chat?screen=SF&sdId=${id}&sfId=${srfId}`}>
+						<Button className="h-8 gap-2 text-[14px] bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white">
+							<Sparkles className="h-4 w-4" />
+							AIで追加
+						</Button>
+					</Link>
+					<Link href={`/system/${id}/${srf.id}/edit`}>
+						<Button variant="outline" className="h-8 gap-2 text-[14px]">
+							<Pencil className="h-4 w-4" />
+							編集
+						</Button>
+					</Link>
+				</div>
 			</div>
 
 			<div className="space-y-4">

@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useMemo, useState, type FormEvent } from "react";
+import { use, useEffect, useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
@@ -18,10 +18,10 @@ import { useManualAddData } from "./hooks/use-manual-add-data";
 import { useRequirements } from "./hooks/use-requirements";
 
 type BusinessTaskCreatePageContentProps = {
-  bizId: string;
+  businessKey: string;
 };
 
-function BusinessTaskCreatePageContent({ bizId }: BusinessTaskCreatePageContentProps) {
+function BusinessTaskCreatePageContent({ businessKey }: BusinessTaskCreatePageContentProps) {
   const router = useRouter();
   const { currentProjectId, loading: projectLoading } = useProject();
 
@@ -31,12 +31,14 @@ function BusinessTaskCreatePageContent({ bizId }: BusinessTaskCreatePageContentP
     optionsError,
     taskId,
     sortOrder,
+    businessId,
+    businessArea,
     businessName,
     concepts,
     systemFunctions,
     systemDomains,
     systemRequirements,
-  } = useManualAddData(bizId);
+  } = useManualAddData(businessKey);
 
   const {
     requirements,
@@ -58,14 +60,14 @@ function BusinessTaskCreatePageContent({ bizId }: BusinessTaskCreatePageContentP
 
   const canSubmit = useMemo(
     () =>
-      !!bizId &&
+      !!businessId &&
       !!businessName &&
       taskName.trim().length > 0 &&
       taskSummary.trim().length > 0 &&
       businessContext.trim().length > 0 &&
       !loading,
     [
-      bizId,
+      businessId,
       businessName,
       taskName,
       taskSummary,
@@ -91,6 +93,12 @@ function BusinessTaskCreatePageContent({ bizId }: BusinessTaskCreatePageContentP
     [requirements]
   );
 
+  useEffect(() => {
+    if (businessArea && businessArea !== businessKey) {
+      router.replace(`/business/${businessArea}/create`);
+    }
+  }, [businessArea, businessKey, router]);
+
   function handleOpenDialog(type: SelectionDialogType, reqId: string): void {
     setDialogState({ type, reqId });
   }
@@ -101,7 +109,7 @@ function BusinessTaskCreatePageContent({ bizId }: BusinessTaskCreatePageContentP
 
   async function handleSubmit(event: FormEvent): Promise<void> {
     event.preventDefault();
-    if (!bizId || !canSubmit) return;
+    if (!businessId || !canSubmit) return;
     const projectId = requireProjectId({
       currentProjectId,
       projectLoading,
@@ -114,7 +122,7 @@ function BusinessTaskCreatePageContent({ bizId }: BusinessTaskCreatePageContentP
 
     const { error: saveError } = await createTask({
       id: taskId,
-      businessId: bizId,
+      businessId,
       name: taskName.trim(),
       summary: taskSummary.trim(),
       businessContext: businessContext.trim(),
@@ -143,7 +151,7 @@ function BusinessTaskCreatePageContent({ bizId }: BusinessTaskCreatePageContentP
         constraints: req.constraints.trim(),
         owner: req.owner.trim(),
         conceptIds: req.conceptIds,
-        srfId: req.srfId,
+        srfIds: req.srfIds,
         systemDomainIds: req.systemDomainIds,
         impacts: [],
         relatedSystemRequirementIds: req.relatedSystemRequirementIds ?? [],
@@ -194,7 +202,7 @@ function BusinessTaskCreatePageContent({ bizId }: BusinessTaskCreatePageContentP
           
           await updateSystemRequirement(sysReq.id, {
             taskId: sysReq.taskId,
-            srfId: sysReq.srfId,
+            srfIds: sysReq.srfIds,
             title: sysReq.title,
             summary: sysReq.summary,
             conceptIds: sysReq.conceptIds,
@@ -210,7 +218,7 @@ function BusinessTaskCreatePageContent({ bizId }: BusinessTaskCreatePageContentP
       }
     }
 
-    router.push(`/business/${bizId}`);
+    router.push(`/business/${businessArea ?? businessKey}`);
   }
 
   return (
@@ -219,7 +227,7 @@ function BusinessTaskCreatePageContent({ bizId }: BusinessTaskCreatePageContentP
       <div className="flex-1 min-h-screen bg-white">
         <div className="mx-auto max-w-[1400px] px-8 py-6">
           <Link
-            href={`/business/${bizId}`}
+            href={`/business/${businessArea ?? businessKey}`}
             className="inline-flex items-center gap-2 text-[14px] font-medium text-slate-600 hover:text-slate-900 mb-6"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -231,7 +239,7 @@ function BusinessTaskCreatePageContent({ bizId }: BusinessTaskCreatePageContentP
           </h1>
 
           <TaskForm
-            bizId={bizId}
+            businessArea={businessArea ?? businessKey}
             taskId={taskId}
             loading={loading}
             businessName={businessName}
@@ -293,12 +301,12 @@ type BusinessTaskCreatePageProps = {
 };
 
 export default function BusinessTaskCreatePage({ params }: BusinessTaskCreatePageProps) {
-  const { id } = use(params);
+  const { id: businessKey } = use(params);
 
   return (
     <>
       <MobileHeader />
-      <BusinessTaskCreatePageContent bizId={id} />
+      <BusinessTaskCreatePageContent businessKey={businessKey} />
     </>
   );
 }

@@ -112,7 +112,7 @@ export interface SystemFunctionFormActions {
 // カスタムフック
 // ============================================
 
-export function useSystemFunctionForm(srfId: string): {
+export function useSystemFunctionForm(srfId: string, systemDomainId?: string): {
 	state: SystemFunctionFormState;
 	actions: SystemFunctionFormActions;
 } {
@@ -144,6 +144,7 @@ export function useSystemFunctionForm(srfId: string): {
 	// アクション
 	const actions = useSystemFunctionFormActions({
 		srfId,
+		systemDomainId,
 		newDesignItem: state.newDesignItem,
 		setSystemDesign: state.setSystemDesign,
 		setNewDesignItem: state.setNewDesignItem,

@@ -59,11 +59,13 @@ import type { Business } from "@/lib/domain";
 
 const businessColumns: ColumnDef<Business>[] = [
 	{
-		id: "id",
-		header: "ID",
+		id: "area",
+		header: "領域コード",
 		className: "px-4 py-3",
 		cell: (biz) => (
-			<span className="font-mono text-[12px] text-slate-400">{biz.id}</span>
+			<Badge variant="outline" className="font-mono text-[12px] font-medium border-slate-200 bg-slate-50 text-slate-600 px-2 py-0.5">
+				{biz.area}
+			</Badge>
 		),
 	},
 	{
@@ -72,16 +74,6 @@ const businessColumns: ColumnDef<Business>[] = [
 		className: "px-4 py-3",
 		cell: (biz) => (
 			<span className="text-[14px] font-medium text-slate-900">{biz.name}</span>
-		),
-	},
-	{
-		id: "area",
-		header: "領域",
-		className: "px-4 py-3",
-		cell: (biz) => (
-			<Badge variant="outline" className="font-mono text-[12px] font-medium border-slate-200 bg-slate-50 text-slate-600 px-2 py-0.5">
-				{biz.area}
-			</Badge>
 		),
 	},
 	{
@@ -121,25 +113,25 @@ const businessColumns: ColumnDef<Business>[] = [
 export const businessListConfig: ResourceListConfig<Business> = {
 	title: "業務一覧",
 	description: "業務体系の管理（ベースライン/仕様）",
-	searchPlaceholder: "業務名、ID、領域で検索...",
+	searchPlaceholder: "業務名、領域で検索...",
 	createHref: "/business/create",
 	emptyMessage: "該当する業務がありません。",
-	errorColSpan: 7,
+	errorColSpan: 6,
 	columns: businessColumns,
 	actions: (biz) => [
 		{
 			icon: Eye,
 			label: "照会",
-			href: () => `/business/${biz.id}`,
+			href: () => `/business/${biz.area}`,
 		},
 		{
 			icon: Pencil,
 			label: "編集",
-			href: () => `/business/${biz.id}/edit`,
+			href: () => `/business/${biz.area}/edit`,
 		},
 	],
-	getRowHref: (biz) => `/business/${biz.id}`,
-	getSearchText: (biz) => [biz.id, biz.name, biz.area, biz.summary].join(" "),
+	getRowHref: (biz) => `/business/${biz.area}`,
+	getSearchText: (biz) => [biz.area, biz.id, biz.name, biz.summary].join(" "),
 };
 
 // ============================================================================
@@ -188,7 +180,7 @@ export const systemDomainListConfig: ResourceListConfig<SystemDomain & { functio
 	title: "システム領域一覧",
 	description: "システム領域ごとに機能を整理します",
 	searchPlaceholder: "システム領域を検索...",
-	createHref: "/system-domains/create",
+	createHref: "/system/create",
 	emptyMessage: "該当するシステム領域がありません。",
 	errorColSpan: 5,
 	columns: systemDomainColumns,
@@ -196,15 +188,15 @@ export const systemDomainListConfig: ResourceListConfig<SystemDomain & { functio
 		{
 			icon: Eye,
 			label: "照会",
-			href: () => `/system-domains/${domain.id}`,
+			href: () => `/system/${domain.id}`,
 		},
 		{
 			icon: Pencil,
 			label: "編集",
-			href: () => `/system-domains/${domain.id}/edit`,
+			href: () => `/system/${domain.id}/edit`,
 		},
 	],
-	getRowHref: (domain) => `/system-domains/${domain.id}`,
+	getRowHref: (domain) => `/system/${domain.id}`,
 	getSearchText: (domain) => `${domain.id} ${domain.name} ${domain.description}`,
 };
 

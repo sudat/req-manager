@@ -61,7 +61,7 @@ function NotFoundState({
 							システム機能が見つかりません
 						</h1>
 						{error && <p className="text-sm text-rose-600 mb-4">{error}</p>}
-						<Link href={`/system-domains/${systemDomainId}`}>
+						<Link href={`/system/${systemDomainId}`}>
 							<Button className="bg-slate-900 hover:bg-slate-800">
 								システム機能一覧に戻る
 							</Button>
@@ -86,7 +86,7 @@ function PageHeader({ srf }: PageHeaderProps) {
     <>
 			<div className="flex items-center justify-between mb-6">
 				<Link
-					href={`/system-domains/${srf.systemDomainId}/${srf.id}`}
+					href={`/system/${srf.systemDomainId}/${srf.id}`}
 					className="inline-flex items-center gap-2 text-[14px] font-medium text-slate-600 hover:text-slate-900"
 				>
 					<ArrowLeft className="h-4 w-4" />
@@ -125,7 +125,7 @@ function ActionButtons({
 }: ActionButtonsProps) {
 	return (
 		<div className="flex gap-3">
-			<Link href={`/system-domains/${systemDomainId}/${srfId}`}>
+			<Link href={`/system/${systemDomainId}/${srfId}`}>
 				<Button type="button" variant="outline">
 					キャンセル
 				</Button>
@@ -151,7 +151,7 @@ export default function SystemFunctionEditPage({
 }: PageProps) {
 	const { id, srfId } = use(params);
 	const router = useRouter();
-	const { state, actions } = useSystemFunctionForm(srfId);
+	const { state, actions } = useSystemFunctionForm(srfId, id);
 
 	// マスターデータ取得
 	const {
@@ -204,7 +204,7 @@ export default function SystemFunctionEditPage({
 	async function handleSave(): Promise<void> {
 		const success = await actions.save(id);
 		if (success) {
-			router.push(`/system-domains/${id}/${srfId}`);
+			router.push(`/system/${id}/${srfId}`);
 		}
 	}
 

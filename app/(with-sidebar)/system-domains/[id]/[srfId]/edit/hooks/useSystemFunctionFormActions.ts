@@ -1,6 +1,8 @@
 import { useCallback } from "react";
 import type { SystemDesignItem } from "@/lib/domain";
 import type { Requirement } from "@/lib/domain/forms";
+import { getSrIdSpecForSystemFunction } from "@/lib/utils/id-rules";
+import { nextSequentialId } from "@/lib/utils/requirement-id";
 import type { NewDesignItem, CodeRef } from "./types";
 
 const INITIAL_DESIGN_ITEM: NewDesignItem = {
@@ -18,6 +20,7 @@ const INITIAL_CODE_REF: CodeRef = {
 
 type UseSystemFunctionFormActionsInput = {
 	srfId: string;
+	systemDomainId?: string;
 	newDesignItem: NewDesignItem;
 	setSystemDesign: (fn: (prev: SystemDesignItem[]) => SystemDesignItem[]) => void;
 	setNewDesignItem: (item: NewDesignItem) => void;
@@ -34,6 +37,7 @@ type UseSystemFunctionFormActionsInput = {
 export function useSystemFunctionFormActions(input: UseSystemFunctionFormActionsInput) {
 	const {
 		srfId,
+		systemDomainId,
 		newDesignItem,
 		setSystemDesign,
 		setNewDesignItem,
@@ -114,7 +118,10 @@ export function useSystemFunctionFormActions(input: UseSystemFunctionFormActions
 
 	// システム要件を追加
 	const addSystemRequirement = useCallback((): void => {
-		const newId = `SR-${srfId}-${String(systemRequirements.length + 1).padStart(3, "0")}`;
+		const existingIds = systemRequirements.map((req) => req.id);
+		const spec = getSrIdSpecForSystemFunction(systemDomainId ?? "", srfId, existingIds);
+		const prefix = spec.prefix.endsWith("-") ? spec.prefix.slice(0, -1) : spec.prefix;
+		const newId = nextSequentialId(prefix, existingIds, spec.padLength);
 		const existingTaskId = systemRequirements[0]?.taskId ?? "";
 
 		setSystemRequirements((prev) => [
@@ -128,7 +135,7 @@ export function useSystemFunctionFormActions(input: UseSystemFunctionFormActions
 				constraints: "",
 				owner: "",
 				conceptIds: [],
-				srfId: srfId,
+				srfIds: [srfId],
 				systemDomainIds: [],
 				acceptanceCriteria: [],
 				acceptanceCriteriaJson: [],

@@ -78,7 +78,7 @@ export default function SystemDomainEditPage({ params }: { params: Promise<{ id:
       setError(saveError);
       return;
     }
-    router.push("/system-domains");
+    router.push("/system");
   };
 
   if (loading) {
@@ -103,7 +103,7 @@ export default function SystemDomainEditPage({ params }: { params: Promise<{ id:
         <div className="flex-1 min-h-screen bg-slate-50">
           <div className="mx-auto max-w-[1200px] p-8">
             <p className="text-sm text-rose-600">{error ?? "システム領域が見つかりません"}</p>
-            <Link href="/system-domains" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900 mt-4">
+            <Link href="/system" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900 mt-4">
               <ArrowLeft className="h-4 w-4" />
               システム領域一覧に戻る
             </Link>
@@ -117,7 +117,7 @@ export default function SystemDomainEditPage({ params }: { params: Promise<{ id:
     <>
       <div className="flex-1 min-h-screen bg-slate-50">
         <div className="mx-auto max-w-[1200px] p-8">
-          <Link href="/system-domains" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900 mb-4">
+          <Link href="/system" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900 mb-4">
             <ArrowLeft className="h-4 w-4" />
             システム領域一覧に戻る
           </Link>
@@ -157,7 +157,7 @@ export default function SystemDomainEditPage({ params }: { params: Promise<{ id:
               {error && <p className="text-sm text-rose-600">{error}</p>}
 
               <div className="flex gap-3">
-                <Link href="/system-domains">
+                <Link href="/system">
                   <Button type="button" variant="outline">
                     キャンセル
                   </Button>

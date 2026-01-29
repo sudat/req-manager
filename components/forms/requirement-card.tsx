@@ -207,7 +207,7 @@ export function RequirementCard({
           />
           <SelectionField
             label="関連システム機能"
-            selectedIds={requirement.srfId ? [requirement.srfId] : []}
+            selectedIds={requirement.srfIds ?? []}
             nameMap={systemFunctionMap}
             onOpenDialog={() => onOpenDialog("system")}
           />
