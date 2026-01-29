@@ -1,5 +1,6 @@
 import { supabase, getSupabaseConfigError } from "@/lib/supabase/client";
 import type { Project } from "@/lib/domain";
+import { createCrudOperations } from "./crud-factory";
 
 export type ProjectInput = {
   name: string;
@@ -39,29 +40,20 @@ const toProjectRow = (input: ProjectInput) => ({
   auto_save: input.autoSave ?? true,
 });
 
-const toProjectRowPartial = (input: Partial<ProjectInput>) => {
-  const row: Partial<ProjectRow> = {};
-  if (input.name !== undefined) row.name = input.name;
-  if (input.description !== undefined) row.description = input.description ?? null;
-  if (input.githubUrl !== undefined) row.github_url = input.githubUrl;
-  if (input.reviewLinkThreshold !== undefined) {
-    row.review_link_threshold = input.reviewLinkThreshold ?? 'medium';
-  }
-  if (input.autoSave !== undefined) row.auto_save = input.autoSave ?? true;
-  return row;
-};
+// crud-factoryを使用した基本CRUD操作
+// projectsテーブルはproject_idカラムを持たないので、projectIdColumnは存在しないカラム名を指定
+const projectCrud = createCrudOperations<ProjectRow, Project, ProjectInput>({
+  tableName: "projects",
+  toEntity: toProject,
+  toRow: toProjectRow,
+  orderBy: ["created_at"],
+  projectIdColumn: "_no_project_id_",  // projectsテーブルはproject_idでフィルタしない
+});
 
-const failIfMissingConfig = () => {
-  const error = getSupabaseConfigError();
-  if (error) {
-    return { data: null, error };
-  }
-  return null;
-};
-
+// listProjectsはprojectIdを受け取らない独自実装にする必要がある
 export const listProjects = async () => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
+  const configError = getSupabaseConfigError();
+  if (configError) return { data: null, error: configError };
 
   const { data, error } = await supabase
     .from("projects")
@@ -73,71 +65,19 @@ export const listProjects = async () => {
 };
 
 export const getProjectById = async (id: string) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
-
-  const { data, error } = await supabase
-    .from("projects")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
-
-  if (error) return { data: null, error: error.message };
-  if (!data) return { data: null, error: null };
-  return { data: toProject(data as ProjectRow), error: null };
+  // projectIdパラメータなしでgetByIdを呼び出す
+  return projectCrud.getById(id);
 };
 
+// createProjectはprojectIdを必要としないので、ダミーのprojectIdを渡す
 export const createProject = async (input: ProjectInput) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
-
-  const now = new Date().toISOString();
-  const payload = {
-    ...toProjectRow(input),
-    created_at: now,
-    updated_at: now,
-  };
-
-  const { data, error } = await supabase
-    .from("projects")
-    .insert(payload)
-    .select("*")
-    .single();
-
-  if (error) return { data: null, error: error.message };
-  return { data: toProject(data as ProjectRow), error: null };
+  return projectCrud.create({ ...input, projectId: "" });
 };
 
 export const updateProject = async (id: string, input: Partial<ProjectInput>) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
-
-  const now = new Date().toISOString();
-  const payload = {
-    ...toProjectRowPartial(input),
-    updated_at: now,
-  };
-
-  const { data, error } = await supabase
-    .from("projects")
-    .update(payload)
-    .eq("id", id)
-    .select("*")
-    .single();
-
-  if (error) return { data: null, error: error.message };
-  return { data: toProject(data as ProjectRow), error: null };
+  return projectCrud.update(id, input);
 };
 
 export const deleteProject = async (id: string) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
-
-  const { error } = await supabase
-    .from("projects")
-    .delete()
-    .eq("id", id);
-
-  if (error) return { data: null, error: error.message };
-  return { data: true, error: null };
+  return projectCrud.delete(id);
 };

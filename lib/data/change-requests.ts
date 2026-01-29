@@ -4,6 +4,7 @@ import type {
 	ChangeRequestStatus,
 	ChangeRequestPriority,
 } from "@/lib/domain/value-objects";
+import { createCrudOperations } from "./crud-factory";
 
 export type ChangeRequestInput = {
 	ticketId: string;
@@ -69,56 +70,21 @@ const toChangeRequestRowBase = (input: Omit<ChangeRequestInput, "ticketId"> & { 
 	requested_by: input.requestedBy ?? null,
 });
 
-const failIfMissingConfig = () => {
-	const error = getSupabaseConfigError();
-	if (error) {
-		return { data: null, error };
-	}
-	return null;
-};
+// crud-factoryを使用した基本CRUD操作
+const changeRequestCrud = createCrudOperations<ChangeRequestRow, ChangeRequest, ChangeRequestInput>({
+  tableName: "change_requests",
+  toEntity: toChangeRequest,
+  toRow: toChangeRequestRowBase as (input: ChangeRequestInput) => Partial<ChangeRequestRow>,
+  orderBy: ["created_at"],
+});
 
-export const listChangeRequests = async (projectId?: string) => {
-	const configError = failIfMissingConfig();
-	if (configError) return configError;
+export const listChangeRequests = changeRequestCrud.list;
+export const getChangeRequestById = changeRequestCrud.getById;
 
-	let query = supabase
-		.from("change_requests")
-		.select("*")
-		.order("created_at", { ascending: false });
-
-	if (projectId) {
-		query = query.eq("project_id", projectId);
-	}
-
-	const { data, error } = await query;
-
-	if (error) return { data: null, error: error.message };
-	return { data: (data as ChangeRequestRow[]).map(toChangeRequest), error: null };
-};
-
-export const getChangeRequestById = async (id: string, projectId?: string) => {
-	const configError = failIfMissingConfig();
-	if (configError) return configError;
-
-	let query = supabase
-		.from("change_requests")
-		.select("*")
-		.eq("id", id);
-
-	if (projectId) {
-		query = query.eq("project_id", projectId);
-	}
-
-	const { data, error } = await query.maybeSingle();
-
-	if (error) return { data: null, error: error.message };
-	if (!data) return { data: null, error: null };
-	return { data: toChangeRequest(data as ChangeRequestRow), error: null };
-};
-
+// 独自検索メソッド（ticket_id による検索）
 export const getChangeRequestByTicketId = async (ticketId: string, projectId?: string) => {
-	const configError = failIfMissingConfig();
-	if (configError) return configError;
+	const configError = getSupabaseConfigError();
+	if (configError) return { data: null, error: configError };
 
 	let query = supabase
 		.from("change_requests")
@@ -136,35 +102,16 @@ export const getChangeRequestByTicketId = async (ticketId: string, projectId?: s
 	return { data: toChangeRequest(data as ChangeRequestRow), error: null };
 };
 
-export const createChangeRequest = async (input: ChangeRequestCreateInput) => {
-	const configError = failIfMissingConfig();
-	if (configError) return configError;
+export const createChangeRequest = changeRequestCrud.create;
 
-	const now = new Date().toISOString();
-	const payload = {
-		...toChangeRequestRowBase(input),
-		project_id: input.projectId,
-		created_at: now,
-		updated_at: now,
-	};
-
-	const { data, error } = await supabase
-		.from("change_requests")
-		.insert(payload)
-		.select("*")
-		.single();
-
-	if (error) return { data: null, error: error.message };
-	return { data: toChangeRequest(data as ChangeRequestRow), error: null };
-};
-
+// updateChangeRequestはticketIdを除外する必要があるため独自実装
 export const updateChangeRequest = async (
 	id: string,
 	input: Omit<ChangeRequestInput, "ticketId">,
 	projectId?: string
 ) => {
-	const configError = failIfMissingConfig();
-	if (configError) return configError;
+	const configError = getSupabaseConfigError();
+	if (configError) return { data: null, error: configError };
 
 	const now = new Date().toISOString();
 	const payload = {
@@ -191,32 +138,16 @@ export const updateChangeRequest = async (
 	return { data: toChangeRequest(data as ChangeRequestRow), error: null };
 };
 
-export const deleteChangeRequest = async (id: string, projectId?: string) => {
-	const configError = failIfMissingConfig();
-	if (configError) return configError;
+export const deleteChangeRequest = changeRequestCrud.delete;
 
-	let query = supabase
-		.from("change_requests")
-		.delete()
-		.eq("id", id);
-
-	if (projectId) {
-		query = query.eq("project_id", projectId);
-	}
-
-	const { error } = await query;
-
-	if (error) return { data: null, error: error.message };
-	return { data: true, error: null };
-};
-
+// 追加の検索・更新メソッド（独自実装のまま維持）
 export const updateChangeRequestStatus = async (
 	id: string,
 	status: ChangeRequestStatus,
 	projectId?: string
 ) => {
-	const configError = failIfMissingConfig();
-	if (configError) return configError;
+	const configError = getSupabaseConfigError();
+	if (configError) return { data: null, error: configError };
 
 	const now = new Date().toISOString();
 	const normalizedStatus = normalizeStatus(status);
@@ -239,8 +170,8 @@ export const updateChangeRequestStatus = async (
 };
 
 export const listChangeRequestsByStatus = async (status: ChangeRequestStatus, projectId?: string) => {
-	const configError = failIfMissingConfig();
-	if (configError) return configError;
+	const configError = getSupabaseConfigError();
+	if (configError) return { data: null, error: configError };
 
 	const normalizedStatus = normalizeStatus(status);
 
@@ -260,8 +191,8 @@ export const listChangeRequestsByStatus = async (status: ChangeRequestStatus, pr
 };
 
 export const listChangeRequestsByPriority = async (priority: ChangeRequestPriority, projectId?: string) => {
-	const configError = failIfMissingConfig();
-	if (configError) return configError;
+	const configError = getSupabaseConfigError();
+	if (configError) return { data: null, error: configError };
 
 	const normalizedPriority = normalizePriority(priority);
 

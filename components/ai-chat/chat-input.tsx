@@ -1,10 +1,21 @@
 import { useState, KeyboardEvent } from 'react';
 import { Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import type { ReasoningEffort } from '@/lib/mastra/reasoning-effort';
+import { reasoningEffortOptions } from '@/lib/mastra/reasoning-effort';
 
 type ChatInputProps = {
   onSendMessage: (message: string) => void;
+  reasoningEffort: ReasoningEffort;
+  onReasoningEffortChange: (effort: ReasoningEffort) => void;
   disabled?: boolean;
   placeholder?: string;
 };
@@ -16,6 +27,8 @@ type ChatInputProps = {
  */
 export function ChatInput({
   onSendMessage,
+  reasoningEffort,
+  onReasoningEffortChange,
   disabled,
   placeholder = 'メッセージを入力...',
 }: ChatInputProps) {
@@ -49,14 +62,35 @@ export function ChatInput({
           className="flex-1 min-h-[44px] max-h-[200px] resize-none text-[14px] border-slate-200 focus:border-slate-900 focus:ring-slate-900"
           rows={1}
         />
-        <Button
-          onClick={handleSend}
-          disabled={disabled || !message.trim()}
-          className="h-11 w-11 flex-shrink-0 bg-slate-900 hover:bg-slate-800"
-          size="icon"
-        >
-          <Send className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Select
+            value={reasoningEffort}
+            onValueChange={(value) => onReasoningEffortChange(value as ReasoningEffort)}
+            disabled={disabled}
+          >
+            <SelectTrigger
+              className="h-11 w-[120px] border-slate-200 text-[12px]"
+              aria-label="Reasoning effort"
+            >
+              <SelectValue placeholder="Effort" />
+            </SelectTrigger>
+            <SelectContent>
+              {reasoningEffortOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            onClick={handleSend}
+            disabled={disabled || !message.trim()}
+            className="h-11 w-11 flex-shrink-0 bg-slate-900 hover:bg-slate-800"
+            size="icon"
+          >
+            <Send className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
       <div className="text-center mt-2">
         <span className="text-[11px] text-slate-400">

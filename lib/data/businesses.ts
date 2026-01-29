@@ -1,5 +1,6 @@
 import { supabase, getSupabaseConfigError } from "@/lib/supabase/client";
 import type { Business, BusinessArea } from "@/lib/domain";
+import { createCrudOperations } from "./crud-factory";
 
 export type BusinessInput = {
   id: string;
@@ -39,64 +40,21 @@ const toBusinessRow = (input: BusinessInput) => ({
   summary: input.summary,
 });
 
-const toBusinessRowPartial = (input: Partial<BusinessInput>) => {
-  const row: Partial<BusinessRow> = {};
-  if (input.name !== undefined) row.name = input.name;
-  if (input.area !== undefined) row.area = input.area;
-  if (input.summary !== undefined) row.summary = input.summary;
-  return row;
-};
+// crud-factoryを使用した基本CRUD操作
+const businessCrud = createCrudOperations<BusinessRow, Business, BusinessInput>({
+  tableName: "business_domains",
+  toEntity: toBusiness,
+  toRow: toBusinessRow,
+  orderBy: ["id"],
+});
 
-const failIfMissingConfig = () => {
-  const error = getSupabaseConfigError();
-  if (error) {
-    return { data: null, error };
-  }
-  return null;
-};
+export const listBusinesses = businessCrud.list;
+export const getBusinessById = businessCrud.getById;
 
-export const listBusinesses = async (projectId?: string) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
-
-  let query = supabase
-    .from("business_domains")
-    .select("*")
-    .order("id");
-
-  if (projectId) {
-    query = query.eq("project_id", projectId);
-  }
-
-  const { data, error } = await query;
-
-  if (error) return { data: null, error: error.message };
-  return { data: (data as BusinessRow[]).map(toBusiness), error: null };
-};
-
-export const getBusinessById = async (id: string, projectId?: string) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
-
-  let query = supabase
-    .from("business_domains")
-    .select("*")
-    .eq("id", id);
-
-  if (projectId) {
-    query = query.eq("project_id", projectId);
-  }
-
-  const { data, error } = await query.maybeSingle();
-
-  if (error) return { data: null, error: error.message };
-  if (!data) return { data: null, error: null };
-  return { data: toBusiness(data as BusinessRow), error: null };
-};
-
+// 独自検索メソッド（area による検索）
 export const getBusinessByArea = async (area: string, projectId?: string) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
+  const configError = getSupabaseConfigError();
+  if (configError) return { data: null, error: configError };
 
   const normalizedArea = area.trim().toUpperCase();
   if (!normalizedArea) return { data: null, error: null };
@@ -131,81 +89,13 @@ export const getBusinessByKey = async (key: string, projectId?: string) => {
   return fallback(trimmed, projectId);
 };
 
-export const createBusiness = async (input: BusinessCreateInput) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
-
-  const now = new Date().toISOString();
-  const payload = {
-    ...toBusinessRow(input),
-    project_id: input.projectId,
-    created_at: now,
-    updated_at: now,
-  };
-
-  const { data, error } = await supabase
-    .from("business_domains")
-    .insert(payload)
-    .select("*")
-    .single();
-
-  if (error) return { data: null, error: error.message };
-  return { data: toBusiness(data as BusinessRow), error: null };
-};
-
-export const updateBusiness = async (
-  id: string,
-  input: Partial<Omit<BusinessInput, "id">>,
-  projectId?: string
-) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
-
-  const now = new Date().toISOString();
-  const payload = {
-    ...toBusinessRowPartial(input),
-    updated_at: now,
-  };
-
-  let query = supabase
-    .from("business_domains")
-    .update(payload)
-    .eq("id", id);
-
-  if (projectId) {
-    query = query.eq("project_id", projectId);
-  }
-
-  const { data, error } = await query
-    .select("*")
-    .single();
-
-  if (error) return { data: null, error: error.message };
-  return { data: toBusiness(data as BusinessRow), error: null };
-};
-
-export const deleteBusiness = async (id: string, projectId?: string) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
-
-  let query = supabase
-    .from("business_domains")
-    .delete()
-    .eq("id", id);
-
-  if (projectId) {
-    query = query.eq("project_id", projectId);
-  }
-
-  const { error } = await query;
-
-  if (error) return { data: null, error: error.message };
-  return { data: true, error: null };
-};
+export const createBusiness = businessCrud.create;
+export const updateBusiness = businessCrud.update;
+export const deleteBusiness = businessCrud.delete;
 
 export const listBusinessesWithRequirementCounts = async (projectId?: string) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
+  const configError = getSupabaseConfigError();
+  if (configError) return { data: null, error: configError };
 
   let query = supabase
     .from("business_domains")

@@ -1,5 +1,19 @@
 import type { AcceptanceCriterionJson } from "@/lib/data/structured";
 import type { EntryPoint } from "@/lib/domain";
+import {
+	calculateBusinessRequirementWithSystemRequirementsIssue,
+	calculateBusinessRequirementWithConceptsIssue,
+} from "./business-requirement-issues";
+import {
+	calculateSystemRequirementWithBusinessRequirementsIssue,
+	calculateSystemRequirementWithCategoryIssue,
+	calculateSystemRequirementWithAcceptanceCriteriaIssue,
+	allowedCategories,
+} from "./system-requirement-issues";
+import {
+	calculateImplUnitSdWithEntryPointsIssue,
+	calculateConceptTermsWithLinksIssue,
+} from "./linkage-issues";
 
 export type HealthScoreSeverity = "high" | "medium";
 export type HealthScoreLevel = "good" | "warning" | "critical";
@@ -132,13 +146,6 @@ const severityWeight: Record<HealthScoreSeverity, number> = {
 	medium: 1,
 };
 
-const allowedCategories = new Set([
-	"function",
-	"data",
-	"exception",
-	"non_functional",
-]);
-
 const acceptanceLintTerms = [
 	"使いやすい",
 	"見やすい",
@@ -157,30 +164,10 @@ const acceptanceLintTerms = [
 
 const normalizeText = (value: string): string => value.toLowerCase();
 
-const ensureArray = <T>(value: T[] | undefined): T[] => value ?? [];
-
-const createIssue = (
-	id: string,
-	label: string,
-	severity: HealthScoreSeverity,
-	completed: number,
-	total: number
-): HealthScoreIssue => ({
-	id,
-	label,
-	severity,
-	completed,
-	total,
-	ratio: total === 0 ? 1 : completed / total,
-});
-
 const buildAcceptanceText = (item: AcceptanceCriterionJson): string =>
 	[item.description, item.givenText, item.whenText, item.thenText]
 		.filter((value): value is string => typeof value === "string" && value.trim().length > 0)
 		.join(" ");
-
-const hasAcceptanceCriteria = (items: AcceptanceCriterionJson[]): boolean =>
-	items.some((item) => buildAcceptanceText(item).trim().length > 0);
 
 const hasAcceptanceLintWarning = (items: AcceptanceCriterionJson[]): boolean => {
 	if (items.length === 0) return false;
@@ -231,106 +218,41 @@ export const buildHealthScoreSummary = ({
 
 	// 業務要件にシステム要件が紐づいている（業務要件ページのみ表示）
 	if (pageType !== 'system') {
-		issues.push(
-			createIssue(
-				"business_requirements_with_system_requirements",
-				"業務要件にシステム要件が紐づいている",
-				"high",
-				businessRequirements.filter((req) => req.relatedSystemRequirementIds.length > 0).length,
-				businessRequirements.length
-			)
-		);
+		issues.push(calculateBusinessRequirementWithSystemRequirementsIssue(businessRequirements));
 	}
 
 	// システム要件に業務要件が紐づいている（システム要件ページのみ表示）
 	if (pageType !== 'business') {
-		issues.push(
-			createIssue(
-				"system_requirements_with_business_requirements",
-				"システム要件に業務要件が紮づいている",
-				"high",
-				systemRequirements.filter((req) => req.businessRequirementIds.length > 0).length,
-				systemRequirements.length
-			)
-		);
+		issues.push(calculateSystemRequirementWithBusinessRequirementsIssue(systemRequirements));
 	}
 
 	// 実装単位SDにエントリポイントが設定されている（システム要件ページのみ表示）
 	if (pageType !== 'business') {
-		issues.push(
-			createIssue(
-				"impl_unit_sds_with_entry_points",
-				"実装単位SDにエントリポイントが設定されている",
-				"high",
-				implUnitSds.filter((sd) => ensureArray(sd.entryPoints).length > 0).length,
-				implUnitSds.length
-			)
-		);
+		issues.push(calculateImplUnitSdWithEntryPointsIssue(implUnitSds));
 	}
 
-	// 概念辞書の用語にリンクされている（単純な紐付け率に変更）
-	const target = conceptCheckTarget;
-	const requirementsWithConcepts =
-		target === 'system' ?
-			systemRequirements.filter((req) => req.conceptIds.length > 0) :
-		target === 'all' ?
-			[...businessRequirements, ...systemRequirements].filter((req) => req.conceptIds.length > 0) :
-			businessRequirements.filter((req) => req.conceptIds.length > 0);
-
-	const totalRequirements =
-		target === 'system' ? systemRequirements.length :
-		target === 'all' ? businessRequirements.length + systemRequirements.length :
-		businessRequirements.length;
-
+	// 概念辞書の用語にリンクされている
 	issues.push(
-		createIssue(
-			"concept_terms_with_links",
-			"概念辞書の用語にリンクされている",
-			"medium",
-			requirementsWithConcepts.length,
-			totalRequirements
+		calculateConceptTermsWithLinksIssue(
+			businessRequirements,
+			systemRequirements,
+			conceptCheckTarget
 		)
 	);
 
 	// 業務要件に概念が紐づいている（業務要件ページのみ表示）
 	if (pageType !== 'system') {
-		issues.push(
-			createIssue(
-				"business_requirements_with_concepts",
-				"業務要件に概念が紐づいている",
-				"high",
-				businessRequirements.filter((req) => req.conceptIds.length > 0).length,
-				businessRequirements.length
-			)
-		);
+		issues.push(calculateBusinessRequirementWithConceptsIssue(businessRequirements));
 	}
 
 	// システム要件に観点種別が設定されている（システム要件ページのみ表示）
 	if (pageType !== 'business') {
-		issues.push(
-			createIssue(
-				"system_requirements_with_category",
-				"システム要件に観点種別が設定されている",
-				"high",
-				systemRequirements.filter((req) => req.categoryRaw && allowedCategories.has(req.categoryRaw))
-					.length,
-				systemRequirements.length
-			)
-		);
+		issues.push(calculateSystemRequirementWithCategoryIssue(systemRequirements));
 	}
 
 	// システム要件に受入条件が設定されている（システム要件ページのみ表示）
 	if (pageType !== 'business') {
-		issues.push(
-			createIssue(
-				"system_requirements_with_acceptance_criteria",
-				"システム要件に受入条件が設定されている",
-				"high",
-				systemRequirements.filter((req) => hasAcceptanceCriteria(req.acceptanceCriteriaJson))
-					.length,
-				systemRequirements.length
-			)
-		);
+		issues.push(calculateSystemRequirementWithAcceptanceCriteriaIssue(systemRequirements));
 	}
 
 	const scoredIssues = issues.filter((issue) => issue.total > 0);
@@ -354,7 +276,7 @@ export const buildHealthScoreSummary = ({
 
 	const warnings: HealthScoreWarning[] = [];
 	const implUnitSdsWithEntryPoints = implUnitSds.filter(
-		(sd) => ensureArray(sd.entryPoints).length > 0
+		(sd) => (sd.entryPoints ?? []).length > 0
 	).length;
 	const entryPointCoverage =
 		implUnitSds.length === 0 ? 1 : implUnitSdsWithEntryPoints / implUnitSds.length;

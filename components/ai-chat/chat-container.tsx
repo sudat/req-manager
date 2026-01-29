@@ -12,6 +12,8 @@ import type { Draft, DraftAction } from './draft-preview';
 import type { ConceptCandidate, ConceptAction, ConceptApproval } from './concept-suggestion';
 import { ContextProvider } from '@/lib/mastra/context/provider';
 import { useProject } from '@/components/project/project-context';
+import type { ReasoningEffort } from '@/lib/mastra/reasoning-effort';
+import { DEFAULT_REASONING_EFFORT } from '@/lib/mastra/reasoning-effort';
 
 type ChatContainerProps = {
   config: ChatConfig;
@@ -30,6 +32,9 @@ export function ChatContainer({ config, onClose }: ChatContainerProps) {
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [conceptCandidates, setConceptCandidates] = useState<ConceptCandidate[]>([]);
   const [showConceptForm, setShowConceptForm] = useState<string | null>(null);
+  const [reasoningEffort, setReasoningEffort] = useState<ReasoningEffort>(
+    DEFAULT_REASONING_EFFORT
+  );
 
   // threadIdを生成（locationがあればそれを使用、なければデフォルト）
   const [threadId] = useState<string>(() => {
@@ -117,6 +122,7 @@ export function ChatContainer({ config, onClose }: ChatContainerProps) {
             projectId: currentProjectId || config.location?.projectId,
             location: config.location,
             streaming: true,
+            reasoningEffort,
           }),
           signal: abortController.signal,
         });
@@ -264,7 +270,7 @@ export function ChatContainer({ config, onClose }: ChatContainerProps) {
         abortController.abort();
       };
     },
-    [threadId, config.resourceId, config.location, currentProjectId]
+    [threadId, config.resourceId, config.location, currentProjectId, reasoningEffort]
   );
 
   /**
@@ -408,7 +414,12 @@ export function ChatContainer({ config, onClose }: ChatContainerProps) {
         )}
       </div>
 
-      <ChatInput onSendMessage={sendMessage} disabled={isLoading} />
+      <ChatInput
+        onSendMessage={sendMessage}
+        reasoningEffort={reasoningEffort}
+        onReasoningEffortChange={setReasoningEffort}
+        disabled={isLoading}
+      />
     </div>
   );
 }

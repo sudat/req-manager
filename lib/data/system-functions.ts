@@ -8,6 +8,7 @@ import {
 	normalizeCodeRefs,
 } from "@/lib/data/structured";
 import { migrateToDeliverables } from "./deliverable-migration";
+import { createCrudOperations } from "./crud-factory";
 
 export type SystemFunctionInput = {
   id: string;
@@ -92,49 +93,46 @@ const toSystemFunction = (row: SystemFunctionRow): SystemFunction => {
 	};
 };
 
-const toSystemFunctionRowBase = (input: SystemFunctionInput) => ({
-	id: input.id,
-	system_domain_id: input.systemDomainId,
-	category: input.category,
-	title: input.title,
-	summary: input.summary,
-	design_policy: input.designPolicy,
-	status: input.status,
-	related_task_ids: input.relatedTaskIds,
-	requirement_ids: input.requirementIds,
-	system_design: input.systemDesign,
-	deliverables: input.deliverables,
+const toSystemFunctionRowBase = (input: SystemFunctionInput) => {
+	const entryPoints =
+		input.entryPoints !== undefined ? input.entryPoints : codeRefsToEntryPoints(input.codeRefs);
+
+	return {
+		id: input.id,
+		system_domain_id: input.systemDomainId,
+		category: input.category,
+		title: input.title,
+		summary: input.summary,
+		design_policy: input.designPolicy,
+		status: input.status,
+		related_task_ids: input.relatedTaskIds,
+		requirement_ids: input.requirementIds,
+		system_design: input.systemDesign,
+		deliverables: input.deliverables,
+		entry_points: entryPoints,
+		code_refs:
+			input.codeRefs.length > 0
+				? input.codeRefs
+				: entryPoints.length > 0
+					? (entryPointsToCodeRefs(entryPoints) as SystemFunction["codeRefs"])
+					: [],
+	};
+};
+
+// crud-factoryを使用した基本CRUD操作
+const systemFunctionCrud = createCrudOperations<SystemFunctionRow, SystemFunction, SystemFunctionInput>({
+  tableName: "system_functions",
+  toEntity: toSystemFunction,
+  toRow: toSystemFunctionRowBase,
+  orderBy: ["id"],
 });
 
-const failIfMissingConfig = () => {
-  const error = getSupabaseConfigError();
-  if (error) {
-    return { data: null, error };
-  }
-  return null;
-};
+export const listSystemFunctions = systemFunctionCrud.list;
 
-export const listSystemFunctions = async (projectId?: string) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
-
-  let query = supabase
-    .from("system_functions")
-    .select("*")
-    .order("id");
-
-  if (projectId) {
-    query = query.eq("project_id", projectId);
-  }
-
-  const { data, error } = await query;
-  if (error) return { data: null, error: error.message };
-  return { data: (data as SystemFunctionRow[]).map(toSystemFunction), error: null };
-};
-
+// 独自検索メソッド（system_domain_id による検索）
 export const listSystemFunctionsByDomain = async (systemDomainId: string, projectId?: string) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
+  const configError = getSupabaseConfigError();
+  if (configError) return { data: null, error: configError };
 
   let query = supabase
     .from("system_functions")
@@ -151,29 +149,12 @@ export const listSystemFunctionsByDomain = async (systemDomainId: string, projec
   return { data: (data as SystemFunctionRow[]).map(toSystemFunction), error: null };
 };
 
-export const getSystemFunctionById = async (id: string, projectId?: string) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
+export const getSystemFunctionById = systemFunctionCrud.getById;
 
-  let query = supabase
-    .from("system_functions")
-    .select("*")
-    .eq("id", id);
-
-  if (projectId) {
-    query = query.eq("project_id", projectId);
-  }
-
-  const { data, error } = await query.maybeSingle();
-
-  if (error) return { data: null, error: error.message };
-  if (!data) return { data: null, error: null };
-  return { data: toSystemFunction(data as SystemFunctionRow), error: null };
-};
-
+// createSystemFunctionは特殊な処理（entry_pointsとcode_refsの相互変換）があるため独自実装
 export const createSystemFunction = async (input: SystemFunctionCreateInput) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
+  const configError = getSupabaseConfigError();
+  if (configError) return { data: null, error: configError };
 
   const now = new Date().toISOString();
 	const entryPoints =
@@ -202,13 +183,14 @@ export const createSystemFunction = async (input: SystemFunctionCreateInput) => 
   return { data: toSystemFunction(data as SystemFunctionRow), error: null };
 };
 
+// updateSystemFunctionは特殊な処理（既存entry_pointsとのマージ処理）があるため独自実装
 export const updateSystemFunction = async (
   id: string,
   input: Omit<SystemFunctionInput, "id">,
   projectId?: string
 ) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
+  const configError = getSupabaseConfigError();
+  if (configError) return { data: null, error: configError };
 
 	let fetchQuery = supabase
 		.from("system_functions")
@@ -265,24 +247,7 @@ export const updateSystemFunction = async (
   return { data: toSystemFunction(data as SystemFunctionRow), error: null };
 };
 
-export const deleteSystemFunction = async (id: string, projectId?: string) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
-
-  let query = supabase
-    .from("system_functions")
-    .delete()
-    .eq("id", id);
-
-  if (projectId) {
-    query = query.eq("project_id", projectId);
-  }
-
-  const { error } = await query;
-
-  if (error) return { data: null, error: error.message };
-  return { data: true, error: null };
-};
+export const deleteSystemFunction = systemFunctionCrud.delete;
 
 export const getDesignCategoryLabel = (category: DesignItemCategory): string => {
   const labels: Record<DesignItemCategory, string> = {

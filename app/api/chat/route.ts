@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requirementsAgent } from '@/lib/mastra/agents/requirements-agent';
 import { ContextProvider } from '@/lib/mastra/context/provider';
 import type { UILocation } from '@/lib/mastra/context/types';
+import { isReasoningEffort } from '@/lib/mastra/reasoning-effort';
 
 /**
  * チャットAPI（POST）
@@ -19,10 +20,19 @@ export async function POST(request: NextRequest) {
       resourceId,
       projectId,
       location,
-      streaming = true
+      streaming = true,
+      reasoningEffort,
     } = body;
 
-    console.log('[Chat API] Body:', { message, threadId, resourceId, projectId, location, streaming });
+    console.log('[Chat API] Body:', {
+      message,
+      threadId,
+      resourceId,
+      projectId,
+      location,
+      streaming,
+      reasoningEffort,
+    });
 
     // バリデーション
     if (!message || typeof message !== 'string') {
@@ -100,6 +110,14 @@ export async function POST(request: NextRequest) {
       fullMessage = `[System Context]\nProjectID: ${projectId}\n\n---\n\n${fullMessage}`;
     }
 
+    const validatedReasoningEffort = isReasoningEffort(reasoningEffort)
+      ? reasoningEffort
+      : undefined;
+
+    const providerOptions = validatedReasoningEffort
+      ? { openai: { reasoningEffort: validatedReasoningEffort } }
+      : undefined;
+
     // ストリーミングレスポンス
     if (streaming) {
       console.log('[Chat API] Calling requirementsAgent.stream()...');
@@ -112,6 +130,7 @@ export async function POST(request: NextRequest) {
           thread: threadId || 'default',
           resource: resourceId,
         },
+        ...(providerOptions ? { providerOptions } : {}),
       });
       console.log('[Chat API] Stream created successfully');
 
@@ -178,6 +197,7 @@ export async function POST(request: NextRequest) {
         thread: threadId || 'default',
         resource: resourceId,
       },
+      ...(providerOptions ? { providerOptions } : {}),
     });
 
     return NextResponse.json({
