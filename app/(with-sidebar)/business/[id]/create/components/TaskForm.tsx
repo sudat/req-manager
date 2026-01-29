@@ -14,7 +14,7 @@ import { ProcessStepsField } from "@/components/forms/process-steps-field";
 import type { SelectableItem } from "@/lib/domain/forms";
 
 type TaskFormProps = {
-  bizId: string;
+  businessArea: string;
   taskId: string;
   loading: boolean;
   businessName: string | null;
@@ -41,7 +41,7 @@ type TaskFormProps = {
 };
 
 export function TaskForm({
-  bizId,
+  businessArea,
   taskId,
   loading,
   businessName,
@@ -70,7 +70,7 @@ export function TaskForm({
     <Card className="rounded-md border border-slate-200 p-3">
       <form className="space-y-3" onSubmit={onSubmit}>
         <div className="flex items-center gap-3 text-[12px] text-slate-500">
-          <span className="font-mono">{bizId}</span>
+          <span className="font-mono">{businessArea}</span>
           <span className="text-slate-300">/</span>
           <span className="font-mono">
             {loading ? <Skeleton className="h-4 w-16 inline-block align-middle" /> : taskId}
@@ -155,7 +155,7 @@ export function TaskForm({
         {optionsError && <p className="text-sm text-rose-600">{optionsError}</p>}
 
         <div className="flex gap-2 pt-2">
-          <Link href={`/business/${bizId}`}>
+          <Link href={`/business/${businessArea}`}>
             <Button type="button" variant="outline" className="h-8 text-[14px]">
               キャンセル
             </Button>

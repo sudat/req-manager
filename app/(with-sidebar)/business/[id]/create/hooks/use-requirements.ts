@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { nextSequentialId } from "@/lib/data/id";
+import { getBrIdSpecForTask } from "@/lib/utils/id-rules";
 import type { Requirement } from "@/lib/domain/forms";
 
 type UseRequirementsResult = {
@@ -17,8 +18,8 @@ export function useRequirements(): UseRequirementsResult {
   const addRequirement = useCallback((taskId: string) => {
     setRequirements((prev) => {
       const existingIds = prev.map((r) => r.id);
-      const prefix = `BR-${taskId}-`;
-      const id = nextSequentialId(prefix, existingIds, 3);
+      const spec = getBrIdSpecForTask(taskId, existingIds);
+      const id = nextSequentialId(spec.prefix, existingIds, spec.padLength);
 
       const nextReq: Requirement = {
         id,

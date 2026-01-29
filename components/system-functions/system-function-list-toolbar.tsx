@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Sparkles } from "lucide-react";
 import type { SrfCategory, SrfStatus } from "@/lib/domain";
 
 interface SystemFunctionListToolbarProps {
@@ -64,7 +64,13 @@ export const SystemFunctionListToolbar = ({
           <SelectItem value="interface">IF</SelectItem>
         </SelectContent>
       </Select>
-      <Link href={`/system-domains/${domainId}/create`}>
+      <Link href={`/chat?screen=SF&sdId=${domainId}`}>
+        <Button className="h-8 gap-2 text-[14px] bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white">
+          <Sparkles className="h-4 w-4" />
+          AIで追加
+        </Button>
+      </Link>
+      <Link href={`/system/${domainId}/create`}>
         <Button className="h-8 px-4 text-[14px] font-medium bg-slate-900 hover:bg-slate-800 gap-2">
           <Plus className="h-4 w-4" />
           新規作成

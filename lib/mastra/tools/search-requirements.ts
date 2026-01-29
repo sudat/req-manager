@@ -1,6 +1,7 @@
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
 import { supabase } from '@/lib/supabase/client';
+import { escapeLikePattern, buildOrLikeConditions } from '@/lib/mastra/utils/sql-helpers';
 
 /**
  * search_requirements Tool
@@ -23,13 +24,16 @@ export const searchRequirementsTool = createTool({
 
       const searchTypes = types || ['bt', 'br', 'sf', 'sr'];
 
+      // SQL Injection対策: ユーザー入力をエスケープ
+      const escapedQuery = escapeLikePattern(query);
+
       // BT検索
       if (searchTypes.includes('bt')) {
         const { data } = await supabase
           .from('business_tasks')
           .select('id, code, name, description, business_domain_id')
           .eq('business_domain_id', projectId) // TODO: project_idで絞る
-          .or(`name.ilike.%${query}%,description.ilike.%${query}%`)
+          .or(`name.ilike.%${escapedQuery}%,description.ilike.%${escapedQuery}%`)
           .limit(10);
 
         if (data) {
@@ -44,7 +48,7 @@ export const searchRequirementsTool = createTool({
         const { data } = await supabase
           .from('business_requirements')
           .select('id, code, requirement, rationale, business_task_id')
-          .or(`requirement.ilike.%${query}%,rationale.ilike.%${query}%`)
+          .or(`requirement.ilike.%${escapedQuery}%,rationale.ilike.%${escapedQuery}%`)
           .limit(10);
 
         if (data) {
@@ -59,7 +63,7 @@ export const searchRequirementsTool = createTool({
         const { data } = await supabase
           .from('system_functions')
           .select('id, code, name, description, system_domain_id')
-          .or(`name.ilike.%${query}%,description.ilike.%${query}%`)
+          .or(`name.ilike.%${escapedQuery}%,description.ilike.%${escapedQuery}%`)
           .limit(10);
 
         if (data) {
@@ -74,7 +78,7 @@ export const searchRequirementsTool = createTool({
         const { data } = await supabase
           .from('system_requirements')
           .select('id, code, type, requirement, rationale, system_function_id')
-          .or(`requirement.ilike.%${query}%,rationale.ilike.%${query}%`)
+          .or(`requirement.ilike.%${escapedQuery}%,rationale.ilike.%${escapedQuery}%`)
           .limit(10);
 
         if (data) {

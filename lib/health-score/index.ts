@@ -85,7 +85,7 @@ export type HealthScoreInput = {
 
 export type HealthIssueFilter = {
 	filterParam: string;
-	targetPath: 'business' | 'system-domains';
+	targetPath: 'business' | 'system';
 	label: string;
 };
 
@@ -97,12 +97,12 @@ export const healthIssueFilters: Record<string, HealthIssueFilter> = {
 	},
 	system_requirements_with_business_requirements: {
 		filterParam: 'missing_br_link',
-		targetPath: 'system-domains',
+		targetPath: 'system',
 		label: '業務要件未紐付け',
 	},
 	impl_unit_sds_with_entry_points: {
 		filterParam: 'missing_entrypoint',
-		targetPath: 'system-domains',
+		targetPath: 'system',
 		label: 'エントリポイント未設定',
 	},
 	concept_terms_with_links: {
@@ -117,12 +117,12 @@ export const healthIssueFilters: Record<string, HealthIssueFilter> = {
 	},
 	system_requirements_with_category: {
 		filterParam: 'missing_category',
-		targetPath: 'system-domains',
+		targetPath: 'system',
 		label: '観点種別未設定',
 	},
 	system_requirements_with_acceptance_criteria: {
 		filterParam: 'missing_acceptance',
-		targetPath: 'system-domains',
+		targetPath: 'system',
 		label: '受入条件未設定',
 	},
 };

@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { RequirementListSection } from "@/components/forms/requirement-list-section";
 import { SelectionDialog } from "@/components/forms/SelectionDialog";
 import type { TaskKnowledge, SelectionDialogType, SelectableItem } from "@/lib/domain";
@@ -10,6 +11,7 @@ import { getTaskById } from "@/lib/data/tasks";
 import { removeFromStorage } from "@/lib/utils/local-storage";
 import { createEmptyTaskKnowledge } from "@/lib/utils/task-knowledge";
 import { useProject } from "@/components/project/project-context";
+import { useBusinessByKey } from "@/hooks/use-business-by-key";
 
 // Hooks
 import { useMasterData } from "./hooks/useMasterData";
@@ -26,11 +28,14 @@ export default function TaskDetailEditPage({
 }: {
 	params: Promise<{ id: string; taskId: string }>;
 }): React.ReactElement {
-	const { id, taskId } = use(params);
-	const storageKey = `task-knowledge:${id}:${taskId}`;
+	const { id: businessKey, taskId } = use(params);
+	const router = useRouter();
+	const { businessArea } = useBusinessByKey(businessKey);
+	const routeArea = businessArea ?? businessKey;
+	const storageKey = `task-knowledge:${businessKey}:${taskId}`;
 
 	const [defaultKnowledge, setDefaultKnowledge] = useState<TaskKnowledge>(() =>
-		createEmptyTaskKnowledge(id, taskId)
+		createEmptyTaskKnowledge(businessKey, taskId)
 	);
 	const { currentProjectId, loading: projectLoading } = useProject();
 
@@ -67,7 +72,7 @@ export default function TaskDetailEditPage({
 
 	// 保存処理
 	const { handleSave, isSaving, saveError, clearError } = useTaskSave({
-		bizId: id,
+		bizId: routeArea,
 		taskId,
 		storageKey,
 	});
@@ -115,7 +120,7 @@ export default function TaskDetailEditPage({
 					businessReqResult.data?.map((br) => fromBusinessRequirement(br)) ?? [];
 
 				const loadedKnowledge: TaskKnowledge = {
-					bizId: task?.businessId ?? id,
+					bizId: businessArea ?? businessKey,
 					taskId,
 					taskName: task?.name ?? "",
 					taskSummary: task?.summary ?? "",
@@ -147,7 +152,7 @@ export default function TaskDetailEditPage({
 		return () => {
 			active = false;
 		};
-	}, [id, taskId, setKnowledge, setDefaultKnowledge, currentProjectId, projectLoading]);
+	}, [businessKey, taskId, setKnowledge, setDefaultKnowledge, currentProjectId, projectLoading]);
 
 	// ダイアログ状態管理
 	const [dialogState, setDialogState] = useState<{
@@ -186,6 +191,12 @@ export default function TaskDetailEditPage({
 		[knowledge.businessRequirements]
 	);
 
+	useEffect(() => {
+		if (businessArea && businessArea !== businessKey) {
+			router.replace(`/business/${businessArea}/${taskId}/edit`);
+		}
+	}, [businessArea, businessKey, taskId, router]);
+
 	// ダイアログハンドラー
 	function handleOpenDialog(type: SelectionDialogType, reqId: string): void {
 		setDialogState({ type, reqId });
@@ -200,7 +211,7 @@ export default function TaskDetailEditPage({
 			<div className="mx-auto max-w-[1400px] px-8 py-6">
 				{/* ヘッダー */}
 				<TaskEditHeader
-					bizId={id}
+					bizId={routeArea}
 					taskId={taskId}
 					isLoading={isLoading}
 					isSaving={isSaving}

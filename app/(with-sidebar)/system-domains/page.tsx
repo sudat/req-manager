@@ -171,7 +171,7 @@ function SystemDomainsPageContent(): React.ReactNode {
 									ヘルススコア フィルタ適用中: {healthIssueFilters[healthFilter]?.label || healthFilter}
 								</span>
 							</div>
-							<Link href="/system-domains" className="text-[13px] text-amber-700 underline hover:no-underline">
+							<Link href="/system" className="text-[13px] text-amber-700 underline hover:no-underline">
 								クリア
 							</Link>
 						</div>
@@ -189,7 +189,7 @@ function SystemDomainsPageContent(): React.ReactNode {
 								className="w-full pl-10 pr-3 py-1.5 bg-transparent border-0 text-[14px] text-slate-900 placeholder:text-slate-400 focus:outline-none"
 							/>
 						</div>
-						<Link href="/system-domains/create">
+						<Link href="/system/create">
 							<Button className="h-8 px-4 text-[14px] font-medium bg-slate-900 hover:bg-slate-800 gap-2">
 								<Plus className="h-4 w-4" />
 								新規作成
@@ -241,7 +241,7 @@ function SystemDomainsPageContent(): React.ReactNode {
 											className="cursor-pointer border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition-colors"
 											onClick={() => {
 												if (typeof window !== 'undefined') {
-													window.location.href = `/system-domains/${domain.id}`;
+													window.location.href = `/system/${domain.id}`;
 												}
 											}}
 										>
@@ -264,7 +264,7 @@ function SystemDomainsPageContent(): React.ReactNode {
 											</TableCell>
 											<TableCell className="px-4 py-3">
 												<div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
-													<Link href={`/system-domains/${domain.id}`}>
+													<Link href={`/system/${domain.id}`}>
 														<Button
 															size="icon"
 															variant="outline"
@@ -274,7 +274,7 @@ function SystemDomainsPageContent(): React.ReactNode {
 															<span className="text-xs">👁</span>
 														</Button>
 													</Link>
-													<Link href={`/system-domains/${domain.id}/edit`}>
+													<Link href={`/system/${domain.id}/edit`}>
 														<Button
 															size="icon"
 															variant="outline"

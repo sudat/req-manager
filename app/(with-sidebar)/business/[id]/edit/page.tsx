@@ -9,14 +9,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { getBusinessById, updateBusiness } from "@/lib/data/businesses";
+import { getBusinessByKey, updateBusiness } from "@/lib/data/businesses";
 import { useProject } from "@/components/project/project-context";
 import type { Business } from "@/lib/domain";
 
 const areaPattern = /^[A-Z_-]+$/;
 
 export default function BusinessEditPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+  const { id: businessKey } = use(params);
   const router = useRouter();
   const [business, setBusiness] = useState<Business | null>(null);
   const [name, setName] = useState("");
@@ -38,7 +38,7 @@ export default function BusinessEditPage({ params }: { params: Promise<{ id: str
     let active = true;
     const fetchData = async () => {
       setLoading(true);
-      const { data, error: fetchError } = await getBusinessById(id, currentProjectId);
+      const { data, error: fetchError } = await getBusinessByKey(businessKey, currentProjectId);
       if (!active) return;
       if (fetchError) {
         setError(fetchError);
@@ -58,7 +58,13 @@ export default function BusinessEditPage({ params }: { params: Promise<{ id: str
     return () => {
       active = false;
     };
-  }, [id, currentProjectId, projectLoading]);
+  }, [businessKey, currentProjectId, projectLoading]);
+
+  useEffect(() => {
+    if (business?.area && business.area !== businessKey) {
+      router.replace(`/business/${business.area}/edit`);
+    }
+  }, [business?.area, businessKey, router]);
 
   const isAreaValid = useMemo(() => areaPattern.test(area.trim()), [area]);
   const canSubmit = useMemo(() => name.trim().length > 0 && isAreaValid, [name, isAreaValid]);
@@ -72,7 +78,12 @@ export default function BusinessEditPage({ params }: { params: Promise<{ id: str
       setSaving(false);
       return;
     }
-    const { error: saveError } = await updateBusiness(id, {
+    if (!business?.id) {
+      setError("業務が見つかりません");
+      setSaving(false);
+      return;
+    }
+    const { error: saveError } = await updateBusiness(business.id, {
       name: name.trim(),
       area: area.trim(),
       summary: summary.trim(),
@@ -130,12 +141,6 @@ export default function BusinessEditPage({ params }: { params: Promise<{ id: str
 
           <Card className="p-6">
             <form className="space-y-6" onSubmit={handleSubmit}>
-              <div className="space-y-2">
-                <Label>業務ID</Label>
-                <Input value={business.id} disabled />
-                <p className="text-xs text-slate-500">業務IDは変更できません</p>
-              </div>
-
               <div className="space-y-2">
                 <Label>
                   業務名<span className="text-rose-500">*</span>

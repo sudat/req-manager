@@ -21,7 +21,7 @@ export const SystemFunctionActions = ({
 }: SystemFunctionActionsProps) => {
   return (
     <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
-      <Link href={`/system-domains/${domainId}/${srfId}`} onClick={onView}>
+      <Link href={`/system/${domainId}/${srfId}`} onClick={onView}>
         <Button
           size="icon"
           variant="outline"
@@ -31,7 +31,7 @@ export const SystemFunctionActions = ({
           <Eye className="h-4 w-4" />
         </Button>
       </Link>
-      <Link href={`/system-domains/${domainId}/${srfId}/edit`} onClick={onEdit}>
+      <Link href={`/system/${domainId}/${srfId}/edit`} onClick={onEdit}>
         <Button
           size="icon"
           variant="outline"

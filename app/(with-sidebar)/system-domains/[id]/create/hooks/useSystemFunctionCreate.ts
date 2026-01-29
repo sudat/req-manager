@@ -16,6 +16,7 @@ import {
 import { createSystemFunctionWithRelations } from "@/lib/utils/system-functions/create-system-function";
 import type { ImplUnitSdDraft } from "@/components/forms/impl-unit-sd-list";
 import type { SystemRequirementCard } from "../types";
+import { normalizeAreaCode } from "@/lib/utils/id-rules";
 
 type UseSystemFunctionCreateResult = {
 	// フォーム状態
@@ -54,9 +55,10 @@ type UseSystemFunctionCreateResult = {
  */
 export function useSystemFunctionCreate(systemDomainId: string): UseSystemFunctionCreateResult {
 	const router = useRouter();
+	const normalizedDomainId = normalizeAreaCode(systemDomainId) || "SD";
 
 	// フォーム状態
-	const [nextId, setNextId] = useState("SRF-001");
+	const [nextId, setNextId] = useState(`SF-${normalizedDomainId}-0001`);
 	const [title, setTitle] = useState("");
 	const [summary, setSummary] = useState("");
 	const [designPolicy, setDesignPolicy] = useState("");
@@ -94,7 +96,8 @@ export function useSystemFunctionCreate(systemDomainId: string): UseSystemFuncti
 			if (srfError) {
 				setError(srfError);
 			} else {
-				setNextId(nextSequentialIdFrom("SRF-", srfData ?? [], (srf) => srf.id));
+				const prefix = `SF-${normalizedDomainId}-`;
+				setNextId(nextSequentialIdFrom(prefix, srfData ?? [], (srf) => srf.id, 4));
 			}
 
 			if (brError) {
@@ -170,7 +173,7 @@ export function useSystemFunctionCreate(systemDomainId: string): UseSystemFuncti
 
 				// 成功時に一覧画面へ遷移
 				setSaving(false);
-				router.push(`/system-domains/${systemDomainId}`);
+				router.push(`/system/${systemDomainId}`);
 			} catch (e) {
 				setError(e instanceof Error ? e.message : String(e));
 				setSaving(false);

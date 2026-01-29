@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Bot, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { MarkdownRenderer } from '@/components/markdown/markdown-renderer';
 import type { ChatMessage } from './types';
 
 type ChatMessagesProps = {
@@ -118,12 +119,21 @@ function MessageBubble({ message }: MessageBubbleProps) {
               : 'bg-slate-100 text-slate-900'
           )}
         >
-          <div className="whitespace-pre-wrap break-words">
-            {message.content}
-            {message.isStreaming && (
-              <span className="inline-block w-1 h-4 ml-1 bg-current animate-pulse" />
-            )}
-          </div>
+          {isUser ? (
+            <div className="whitespace-pre-wrap break-words">
+              {message.content}
+            </div>
+          ) : (
+            <>
+              <MarkdownRenderer
+                content={message.content}
+                className="prose prose-sm prose-slate max-w-none"
+              />
+              {message.isStreaming && (
+                <span className="inline-block w-1 h-4 ml-1 bg-current animate-pulse" />
+              )}
+            </>
+          )}
         </div>
         <div className="mt-1 px-1">
           <span className="text-[11px] text-slate-400">

@@ -22,7 +22,7 @@ export interface Business {
  * Task（業務タスク）
  */
 export interface Task {
-  id: string;              // TASK-001
+  id: string;              // BT-AR-0001
   businessId: string;      // BIZ-001 (外部キー)
   name: string;            // 請求書発行
   summary: string;         // 業務概要（description）
@@ -86,7 +86,7 @@ export interface Concept {
  * SystemFunction（システム機能）
  */
 export interface SystemFunction {
-  id: string;              // SRF-001
+  id: string;              // SF-AR-0001
   systemDomainId?: string | null; // システム領域ID（例: AR）
   /** @deprecated 成果物の種別で代替。deliverables[].type を使用してください */
   category: SrfCategory;   // screen
@@ -94,8 +94,8 @@ export interface SystemFunction {
   summary: string;         // 説明
   designPolicy: string;    // 横断的な設計方針
   status: SrfStatus;       // implemented
-  relatedTaskIds: string[];  // [TASK-001] (外部キー配列)
-  requirementIds: string[];  // [SR-TASK-001-001] (関連要件ID)
+  relatedTaskIds: string[];  // [BT-AR-0001] (外部キー配列)
+  requirementIds: string[];  // [SR-AR-0001-0001] (関連要件ID)
   /** @deprecated deliverablesに移行中。新規はdeliverables[].designを使用してください */
   systemDesign: (SystemDesignItem | SystemDesignItemV2)[];  // システム設計項目配列（V2とレガシーの混在対応）
   /** @deprecated deliverablesに統合されました。deliverables[].entryPointを使用してください */
@@ -184,8 +184,8 @@ export interface ProductRequirement {
 export type AcceptanceCriterionStatus = "unverified" | "verified_ok" | "verified_ng";
 
 export interface AcceptanceCriterion {
-  id: string;              // AC-001
-  systemRequirementId: string; // SR-XXX
+  id: string;              // AC-SR-AR-0001-0001-001
+  systemRequirementId: string; // SR-AR-0001-0001
   projectId: string;       // UUID
   description: string;
   givenText: string | null;

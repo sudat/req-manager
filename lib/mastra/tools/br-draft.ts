@@ -1,6 +1,7 @@
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
 import { supabase } from '@/lib/supabase/client';
+import { getOpenAIApiKey } from '@/lib/config/env';
 
 /**
  * br_draft Tool
@@ -53,10 +54,54 @@ export const brDraftTool = createTool({
       const lastNumber = parseInt(lastCode.split('-').pop() || '0', 10);
       const newCode = `${bt.code}-${String(lastNumber + 1).padStart(3, '0')}`;
 
-      // 4. 自然言語から要件と根拠を抽出（簡易版）
-      // TODO: 実際にはLLMを使って整形する
-      const requirement = naturalLanguageInput.trim();
-      const rationale = '業務を効率的に実行するため'; // デフォルト
+      // 4. LLMで要件と根拠を抽出・生成
+      const llmPrompt = `
+以下の業務要件説明から、要件文と根拠を抽出・生成してください。
+
+【業務タスク】
+${bt.code} - ${bt.name}
+
+【要件説明】
+${naturalLanguageInput}
+
+【出力形式（JSON）】
+{
+  "requirement": "〜できる（能動態で記述）",
+  "rationale": "なぜこの要件が必要か、ビジネス上の理由"
+}
+
+【生成ルール】
+- requirementは「〜できる」「〜する」で終わる能動態の文にする
+- rationaleはビジネス価値・背景を記述する（「〜のため」で終わる）
+`;
+
+      const openaiApiKey = getOpenAIApiKey();
+
+      const llmResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${openaiApiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'gpt-5-mini',
+          messages: [
+            { role: 'system', content: 'あなたは要件定義の専門家です。' },
+            { role: 'user', content: llmPrompt },
+          ],
+          response_format: { type: 'json_object' },
+        }),
+      });
+
+      if (!llmResponse.ok) {
+        throw new Error(`OpenAI API error: ${llmResponse.statusText}`);
+      }
+
+      const llmResult = await llmResponse.json();
+      const llmContent = JSON.parse(llmResult.choices[0].message.content);
+
+      const requirement = llmContent.requirement || naturalLanguageInput.trim();
+      const rationale = llmContent.rationale || '業務を効率的に実行するため';
 
       // 5. 重複チェック（既存BRとの類似度確認）
       const isDuplicate = existingBRs?.some(

@@ -1,6 +1,8 @@
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
 import { supabase } from '@/lib/supabase/client';
+import { getOpenAIApiKey } from '@/lib/config/env';
+import { normalizeAreaCode } from '@/lib/utils/id-rules';
 
 /**
  * system_draft Tool
@@ -64,7 +66,7 @@ export const systemDraftTool = createTool({
       // 1. BR群を取得
       const { data: brs } = await supabase
         .from('business_requirements')
-        .select('*, business_task:business_tasks(code, name, business_domain:business_domains(code, project_id))')
+        .select('*, business_task:business_tasks(id, name, business_domain:business_domains(id, project_id))')
         .in('id', brIds);
 
       if (!brs || brs.length === 0) {
@@ -87,48 +89,123 @@ export const systemDraftTool = createTool({
       // 4. システム領域を取得または作成（簡易版：1つ目のSDを使用）
       const { data: existingSDs } = await supabase
         .from('system_domains')
-        .select('id, code')
+        .select('id, name')
         .eq('project_id', projectId)
         .limit(1);
 
       let systemDomainId = existingSDs?.[0]?.id;
-      let sdCode = existingSDs?.[0]?.code || 'SD-001';
+      let sdId = existingSDs?.[0]?.id || 'SD-001';
 
       if (!systemDomainId) {
         throw new Error('システム領域が存在しません。先にSDを作成してください。');
       }
 
-      // 5. SF草案を生成（簡易版）
-      // TODO: 実際にはLLMでBR群を分析してSFを自動生成
+      // 5. LLMでSF/SR/ACを生成
+      const openaiApiKey = getOpenAIApiKey();
+
       const sfDrafts = [];
+
+      const normalizedDomainId = normalizeAreaCode(systemDomainId ?? sdId) || 'SD';
 
       for (let i = 0; i < brs.length; i++) {
         const br = brs[i];
-        const sfCode = `SF-${sdCode.split('-')[1]}-${String(i + 1).padStart(3, '0')}`;
+        const sfCode = `SF-${normalizedDomainId}-${String(i + 1).padStart(4, '0')}`;
+        const sfSeq = sfCode.split('-')[2] || String(i + 1).padStart(4, '0');
 
-        // SRを生成
-        const srs = [
-          {
-            code: `${sfCode}-001`,
-            type: 'functional',
-            requirement: `${br.requirement}をシステムで実現できる`,
-            rationale: br.rationale || '業務要件を実現するため',
+        // LLMでSR/ACを生成
+        const llmPrompt = `
+以下の業務要件（BR）から、システム要件（SR）と受入基準（AC）を生成してください。
+
+【業務要件】
+- ID: ${br.id}
+- 要件: ${br.title || br.requirement}
+- 根拠: ${br.rationale || br.goal}
+
+【技術スタック】
+${pr?.tech_stack_profile || 'Next.js + TypeScript'}
+
+【出力形式（JSON）】
+{
+  "sr": {
+    "requirement": "システムで実現すべき具体的な機能",
+    "rationale": "なぜこのシステム要件が必要か"
+  },
+  "acs": [
+    {
+      "given": "前提条件（具体的に）",
+      "when": "ユーザーアクション（具体的に）",
+      "then": "期待される結果（具体的に）"
+    }
+  ]
+}
+
+【生成ルール】
+- SR は具体的なシステム機能として記述（例: 「〇〇画面で△△を入力・保存できる」）
+- AC は Given-When-Then 形式で具体的に記述
+- AC は正常系・異常系を含めて2-3個生成
+- 技術的な実現可能性を考慮する
+`;
+
+        const llmResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${openaiApiKey}`,
+          },
+          body: JSON.stringify({
+            model: 'gpt-5-mini',
+            messages: [
+              { role: 'system', content: 'あなたはシステム設計の専門家です。業務要件からシステム要件と受入基準を生成します。' },
+              { role: 'user', content: llmPrompt },
+            ],
+            response_format: { type: 'json_object' },
+          }),
+        });
+
+        let llmContent: any;
+        if (!llmResponse.ok) {
+          console.error(`[system_draft] OpenAI API error for BR ${br.id}`);
+          // フォールバック: 機械的生成
+          llmContent = {
+            sr: {
+              requirement: `${br.title || br.requirement}をシステムで実現できる`,
+              rationale: br.rationale || br.goal || '業務要件を実現するため',
+            },
             acs: [
               {
-                code: `${sfCode}-001-001`,
                 given: '正常な入力がある',
-                when: `${br.requirement}を実行する`,
+                when: `${br.title || br.requirement}を実行する`,
                 then: '正常に処理が完了する',
               },
             ],
+          };
+        } else {
+          const llmResult = await llmResponse.json();
+          llmContent = JSON.parse(llmResult.choices[0].message.content);
+        }
+
+        // SRを生成
+        const srCode = `SR-${normalizedDomainId}-${sfSeq}-${String(1).padStart(4, '0')}`;
+        const srs = [
+          {
+            code: srCode,
+            type: 'functional',
+            requirement: llmContent.sr.requirement,
+            rationale: llmContent.sr.rationale,
+            acs: llmContent.acs.map((ac: any, acIndex: number) => ({
+              code: `AC-${srCode}-${String(acIndex + 1).padStart(3, '0')}`,
+              given: ac.given,
+              when: ac.when,
+              then: ac.then,
+            })),
           },
         ];
 
         // 実装単位SDを生成
         const implUnits = [
           {
-            code: `IU-${sfCode.split('-')[1]}-001`,
-            name: `${br.requirement}実装`,
+            code: `IU-${sfCode}-001`,
+            name: `${br.title || br.requirement}実装`,
             entry_point: pr?.coding_conventions?.includes('App Router')
               ? `app/(with-sidebar)/feature/page.tsx`
               : `pages/feature/index.tsx`,
@@ -138,8 +215,8 @@ export const systemDraftTool = createTool({
 
         sfDrafts.push({
           code: sfCode,
-          name: `${br.requirement}機能`,
-          description: `${br.requirement}を実現する機能`,
+          name: `${br.title || br.requirement}機能`,
+          description: `${br.title || br.requirement}を実現する機能`,
           system_domain_id: systemDomainId,
           srs,
           implUnits,

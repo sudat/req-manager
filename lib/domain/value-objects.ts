@@ -6,22 +6,24 @@ import type { AcceptanceCriterionJson } from "@/lib/data/structured";
  * 関連要件情報
  */
 export interface RelatedRequirementInfo {
-  systemReqId: string;       // SR-TASK-003-001
+  systemReqId: string;       // SR-AR-0003-0001
   systemReqTitle: string;
   systemReqSummary?: string;           // システム要件の概要
   systemReqConcepts?: { id: string; name: string }[];  // 関連概念
   systemReqImpacts?: string[];         // 影響領域
   systemReqAcceptanceCriteria?: string[];  // 受入条件（レガシー）
   systemReqAcceptanceCriteriaJson?: AcceptanceCriterionJson[];  // 受入条件（構造化）
-  businessReqId: string;     // BR-TASK-003-001
+  businessReqId: string;     // BR-AR-0003-0001
   businessReqTitle: string;
   businessId: string;        // BIZ-001
-  taskId: string;            // TASK-003
+  businessArea?: string | null;  // AR/AP/GL
+  taskId: string;            // BT-AR-0003
   relatedBusinessReqs?: Array<{    // 関連する業務要件のリスト（複数の場合）
     id: string;
     title: string;
     taskId: string;
     businessId: string;
+    businessArea?: string | null;
     suspect?: boolean;              // 疑義フラグ（Phase 4.6で追加）
     suspectReason?: string | null;  // 疑義理由（Phase 4.6で追加）
   }>;
@@ -31,7 +33,7 @@ export interface RelatedRequirementInfo {
  * チケット詳細用：要件参照
  */
 export interface TicketRequirementReference {
-  id: string;      // "BR-TASK-003-001" or "BR-TICKET-CR-004-001"
+  id: string;      // "BR-AR-0003-0001" or "BR-TICKET-CR-004-001"
   title: string;   // "適格請求書（インボイス）形式で請求書を発行する"
   type: "業務要件" | "システム要件";
   businessName?: string; // 例: 債権管理

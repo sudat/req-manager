@@ -1094,9 +1094,15 @@ export const getRelatedRequirements = (conceptId: string): RequirementReference[
 
   // Step 4: 要件情報を整形
   return requirementIds.map(reqId => {
-    // SR-TASK-XXX-YYY または BR-TASK-XXX-YYY 形式からTASK-XXXを抽出
+    // SR-TASK-XXX-YYY or BR-TASK-XXX-YYY -> TASK-XXX
+    // SR-AR-0003-0001 or BR-AR-0003-0001 -> BT-AR-0003
     const parts = reqId.split('-');
-    const taskId = parts.length >= 3 ? `TASK-${parts[1]}-${parts[2]}` : null;
+    let taskId: string | null = null;
+    if (parts.length >= 4 && parts[1] === "TASK") {
+      taskId = `TASK-${parts[2]}`;
+    } else if (parts.length >= 4) {
+      taskId = `BT-${parts[1]}-${parts[2]}`;
+    }
     const task = taskId ? tasks.find(t => t.id === taskId) : null;
 
     return {
