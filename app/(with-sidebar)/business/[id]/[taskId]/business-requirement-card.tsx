@@ -120,7 +120,7 @@ export function BusinessRequirementCard({
               const srfName = systemFunctionMap.get(srfId) ?? srfId;
               const srfDomainId = systemFunctionDomainMap.get(srfId);
               return (
-                <Link key={srfId} href={srfDomainId ? `/system-domains/${srfDomainId}/${srfId}` : "/system-domains"}>
+                <Link key={srfId} href={srfDomainId ? `/system/${srfDomainId}/${srfId}` : "/system"}>
                   <Badge
                     variant="outline"
                     className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] hover:bg-slate-100 max-w-[200px] truncate px-2.5 py-1"
@@ -160,7 +160,7 @@ export function BusinessRequirementCard({
               const srDomainId = sr.srfIds.length > 0 ? systemFunctionDomainMap.get(sr.srfIds[0]) : null;
               const srSrfId = sr.srfIds.length > 0 ? sr.srfIds[0] : null;
               return (
-                <Link key={sr.id} href={srDomainId && srSrfId ? `/system-domains/${srDomainId}/${srSrfId}` : "/system-domains"}>
+                <Link key={sr.id} href={srDomainId && srSrfId ? `/system/${srDomainId}/${srSrfId}` : "/system"}>
                   <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] hover:bg-slate-100 max-w-[200px] truncate px-2.5 py-1" title={sr.title ?? undefined}>
                     {sr.title}
                   </Badge>

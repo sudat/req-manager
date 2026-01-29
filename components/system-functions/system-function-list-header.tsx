@@ -24,7 +24,7 @@ export const SystemFunctionListHeader = ({
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href="/system-domains">システム領域一覧</Link>
+              <Link href="/system">システム領域一覧</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />

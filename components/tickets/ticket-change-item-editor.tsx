@@ -47,7 +47,7 @@ export function TicketChangeItemEditor({
                   <Input
                     value={item.refId}
                     onChange={(e) => updateChangeItem(index, "refId", e.target.value)}
-                    placeholder="例: BR-TASK-003-001"
+                    placeholder="例: BR-AR-0003-0001"
                   />
                 </div>
                 <div className="space-y-2">

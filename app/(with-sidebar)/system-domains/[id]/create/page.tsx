@@ -80,7 +80,7 @@ export default function SystemFunctionCreatePage({
 				<MobileHeader />
 				<div className="mx-auto max-w-[1200px] p-8">
 					<Link
-						href={`/system-domains/${id}`}
+						href={`/system/${id}`}
 						className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900 mb-4"
 					>
 						<ArrowLeft className="h-4 w-4" />
@@ -110,7 +110,7 @@ export default function SystemFunctionCreatePage({
 								businessRequirements={businessRequirements}
 								deliverables={[]}
 								loading={loading}
-								onAddSystemRequirement={() => addSystemRequirement(id)}
+								onAddSystemRequirement={() => addSystemRequirement(id, nextId)}
 								onUpdateSystemRequirement={updateSystemRequirement}
 								onRemoveSystemRequirement={removeSystemRequirement}
 								onOpenBusinessRequirementDialog={(sysReqId) =>
@@ -136,7 +136,7 @@ export default function SystemFunctionCreatePage({
 							{error && <p className="text-sm text-rose-600">{error}</p>}
 
 							<div className="flex gap-3">
-								<Link href={`/system-domains/${id}`}>
+								<Link href={`/system/${id}`}>
 									<Button type="button" variant="outline">
 										キャンセル
 									</Button>

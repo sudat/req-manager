@@ -75,7 +75,7 @@ function NotFoundState({
 					システム機能が見つかりません
 				</h1>
 				{error && <p className="text-sm text-rose-600 mb-4">{error}</p>}
-				<Link href={`/system-domains/${domainId}`}>
+				<Link href={`/system/${domainId}`}>
 					<Button className="bg-slate-900 hover:bg-slate-800">
 						システム機能一覧に戻る
 					</Button>
@@ -254,13 +254,13 @@ export default function SystemFunctionDetailPage({
 				<BreadcrumbList>
 					<BreadcrumbItem>
 						<BreadcrumbLink asChild>
-							<Link href="/system-domains">システム領域一覧</Link>
+							<Link href="/system">システム領域一覧</Link>
 						</BreadcrumbLink>
 					</BreadcrumbItem>
 					<BreadcrumbSeparator />
 					<BreadcrumbItem>
 						<BreadcrumbLink asChild>
-							<Link href={`/system-domains/${id}`}>システム機能一覧</Link>
+							<Link href={`/system/${id}`}>システム機能一覧</Link>
 						</BreadcrumbLink>
 					</BreadcrumbItem>
 					<BreadcrumbSeparator />
@@ -282,7 +282,7 @@ export default function SystemFunctionDetailPage({
 							AIで追加
 						</Button>
 					</Link>
-					<Link href={`/system-domains/${id}/${srf.id}/edit`}>
+					<Link href={`/system/${id}/${srf.id}/edit`}>
 						<Button variant="outline" className="h-8 gap-2 text-[14px]">
 							<Pencil className="h-4 w-4" />
 							編集

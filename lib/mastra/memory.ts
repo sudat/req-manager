@@ -1,5 +1,6 @@
 import { Memory } from '@mastra/memory';
 import { LibSQLStore, LibSQLVector } from '@mastra/libsql';
+import { WorkingMemorySchema } from './memory/working-memory-schema';
 
 /**
  * Mastra Memory設定
@@ -8,6 +9,7 @@ import { LibSQLStore, LibSQLVector } from '@mastra/libsql';
  * - LibSQLVector: セマンティック検索用ベクトルDB
  * - embedder: OpenAIのembeddingモデル
  * - options: メモリ管理オプション
+ * - workingMemory.schema: Zodスキーマによる構造化されたセッション状態管理
  */
 export const memory = new Memory({
   storage: new LibSQLStore({
@@ -32,26 +34,10 @@ export const memory = new Memory({
       },
     },
 
-    // ワーキングメモリ設定
+    // ワーキングメモリ設定（Schema-based方式）
     workingMemory: {
       enabled: true,
-      template: `
-# セッションコンテキスト
-
-## 現在位置
-- プロジェクトID:
-- 画面位置:
-- 親要素:
-
-## 作業中の草案
-- BT草案:
-- BR草案:
-- SF/SR/AC草案:
-
-## 未確定事項
-- 要確認項目:
-- 保留中の決定:
-`,
+      schema: WorkingMemorySchema,
     },
   },
 });

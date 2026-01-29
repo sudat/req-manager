@@ -18,7 +18,7 @@ const footerSections: FooterSection[] = [
 		links: [
 			{ href: "/dashboard", label: "ダッシュボード" },
 			{ href: "/business", label: "業務一覧" },
-			{ href: "/system-domains", label: "システム領域" },
+			{ href: "/system", label: "システム領域" },
 			{ href: "/baseline", label: "ベースライン履歴" },
 		],
 	},

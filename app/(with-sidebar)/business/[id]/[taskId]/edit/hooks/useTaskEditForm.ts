@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import type { TaskKnowledge, Requirement } from "@/lib/domain";
 import { nextSequentialId } from "@/lib/utils/requirement-id";
+import { getBrIdSpecForTask, getSrIdSpecForTask } from "@/lib/utils/id-rules";
 
 type UseTaskEditFormResult = {
 	knowledge: TaskKnowledge;
@@ -71,8 +72,12 @@ export function useTaskEditForm({
 			const existingIds = [...prev.businessRequirements, ...prev.systemRequirements].map(
 				(r) => r.id
 			);
-			const prefix = type === "業務要件" ? `BR-${taskId}` : `SR-${taskId}`;
-			const newId = nextSequentialId(prefix, existingIds);
+			const spec =
+				type === "業務要件"
+					? getBrIdSpecForTask(taskId, existingIds)
+					: getSrIdSpecForTask(taskId, existingIds);
+			const prefix = spec.prefix.endsWith("-") ? spec.prefix.slice(0, -1) : spec.prefix;
+			const newId = nextSequentialId(prefix, existingIds, spec.padLength);
 
 			const nextReq: Requirement = {
 				id: newId,

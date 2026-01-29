@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useProject } from "@/components/project/project-context";
-import { getBusinessById } from "@/lib/data/businesses";
+import { getBusinessByKey } from "@/lib/data/businesses";
 import { listConcepts } from "@/lib/data/concepts";
-import { nextSequentialIdFrom } from "@/lib/data/id";
 import { listSystemFunctions } from "@/lib/data/system-functions";
 import { listSystemDomains, type SystemDomain } from "@/lib/data/system-domains";
 import { listSystemRequirements } from "@/lib/data/system-requirements";
 import { listTasks, listTasksByBusinessId } from "@/lib/data/tasks";
 import type { SelectableItem } from "@/lib/domain/forms";
+import { getNextBtId } from "@/lib/utils/id-rules";
 
 type UseManualAddDataResult = {
   loading: boolean;
@@ -17,6 +17,8 @@ type UseManualAddDataResult = {
   optionsError: string | null;
   taskId: string;
   sortOrder: number;
+  businessId: string | null;
+  businessArea: string | null;
   businessName: string | null;
   concepts: SelectableItem[];
   systemFunctions: SelectableItem[];
@@ -24,12 +26,14 @@ type UseManualAddDataResult = {
   systemRequirements: SelectableItem[];
 };
 
-export function useManualAddData(bizId: string | null): UseManualAddDataResult {
+export function useManualAddData(businessKey: string | null): UseManualAddDataResult {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [optionsError, setOptionsError] = useState<string | null>(null);
-  const [taskId, setTaskId] = useState("TASK-001");
+  const [taskId, setTaskId] = useState("BT-BD-0001");
   const [sortOrder, setSortOrder] = useState(1);
+  const [businessId, setBusinessId] = useState<string | null>(null);
+  const [businessArea, setBusinessArea] = useState<string | null>(null);
   const [businessName, setBusinessName] = useState<string | null>(null);
   const [concepts, setConcepts] = useState<SelectableItem[]>([]);
   const [systemFunctions, setSystemFunctions] = useState<SelectableItem[]>([]);
@@ -47,12 +51,14 @@ export function useManualAddData(bizId: string | null): UseManualAddDataResult {
     let active = true;
 
     async function fetchTaskData(): Promise<void> {
-      if (!bizId) {
+      if (!businessKey) {
         if (!active) return;
         setLoading(false);
         setBusinessName(null);
+        setBusinessId(null);
+        setBusinessArea(null);
         setError(null);
-        setTaskId("TASK-001");
+        setTaskId("BT-BD-0001");
         setSortOrder(1);
         return;
       }
@@ -61,17 +67,15 @@ export function useManualAddData(bizId: string | null): UseManualAddDataResult {
 
       const [
         { data: allTasks, error: allError },
-        { data: bizTasks, error: bizError },
         { data: business, error: businessError },
       ] = await Promise.all([
         listTasks(currentProjectId ?? undefined),
-        listTasksByBusinessId(bizId!, currentProjectId ?? undefined),
-        getBusinessById(bizId!, currentProjectId ?? undefined),
+        getBusinessByKey(businessKey!, currentProjectId ?? undefined),
       ]);
 
       if (!active) return;
 
-      const fetchError = allError ?? bizError ?? businessError;
+      const fetchError = allError ?? businessError;
       if (fetchError) {
         setError(fetchError);
         setLoading(false);
@@ -81,11 +85,26 @@ export function useManualAddData(bizId: string | null): UseManualAddDataResult {
       if (!business) {
         setError("指定された業務が見つかりません。");
         setBusinessName(null);
+        setBusinessId(null);
+        setBusinessArea(null);
         setLoading(false);
         return;
       }
 
-      const nextId = nextSequentialIdFrom("TASK-", allTasks ?? [], (task) => task.id);
+      const { data: bizTasks, error: bizError } = await listTasksByBusinessId(
+        business.id,
+        currentProjectId ?? undefined
+      );
+
+      if (!active) return;
+
+      if (bizError) {
+        setError(bizError);
+        setLoading(false);
+        return;
+      }
+
+      const nextId = getNextBtId(business.area ?? "BD", (allTasks ?? []).map((task) => task.id));
       const maxOrder = (bizTasks ?? []).reduce(
         (max, task) => Math.max(max, task.sortOrder ?? 0),
         0
@@ -93,6 +112,8 @@ export function useManualAddData(bizId: string | null): UseManualAddDataResult {
 
       setTaskId(nextId);
       setSortOrder(maxOrder + 1);
+      setBusinessId(business.id);
+      setBusinessArea(business.area ?? null);
       setBusinessName(business.name);
       setError(null);
       setLoading(false);
@@ -108,7 +129,7 @@ export function useManualAddData(bizId: string | null): UseManualAddDataResult {
     return () => {
       active = false;
     };
-  }, [bizId, currentProjectId, projectLoading]);
+  }, [businessKey, currentProjectId, projectLoading]);
 
   useEffect(() => {
     if (projectLoading) return;
@@ -171,6 +192,8 @@ export function useManualAddData(bizId: string | null): UseManualAddDataResult {
     optionsError,
     taskId,
     sortOrder,
+    businessId,
+    businessArea,
     businessName,
     concepts,
     systemFunctions,

@@ -17,11 +17,12 @@ export async function POST(request: NextRequest) {
       message,
       threadId,
       resourceId,
+      projectId,
       location,
       streaming = true
     } = body;
 
-    console.log('[Chat API] Body:', { message, threadId, resourceId, location, streaming });
+    console.log('[Chat API] Body:', { message, threadId, resourceId, projectId, location, streaming });
 
     // バリデーション
     if (!message || typeof message !== 'string') {
@@ -90,16 +91,28 @@ export async function POST(request: NextRequest) {
     }
 
     // メッセージ構築
-    const fullMessage = contextMessage
+    let fullMessage = contextMessage
       ? `${contextMessage}\n\n---\n\nユーザーからの質問: ${message}`
       : message;
+
+    // projectId をシステムコンテキストとして追加
+    if (projectId) {
+      fullMessage = `[System Context]\nProjectID: ${projectId}\n\n---\n\n${fullMessage}`;
+    }
 
     // ストリーミングレスポンス
     if (streaming) {
       console.log('[Chat API] Calling requirementsAgent.stream()...');
       console.log('[Chat API] Message:', fullMessage);
+      console.log('[dbg] threadId:', threadId, 'resourceId:', resourceId);
 
-      const stream = await requirementsAgent.stream(fullMessage);
+      // [dbg] Memoryオプションを渡していない！これが原因か？
+      const stream = await requirementsAgent.stream(fullMessage, {
+        memory: {
+          thread: threadId || 'default',
+          resource: resourceId,
+        },
+      });
       console.log('[Chat API] Stream created successfully');
 
       // ストリーミング用のReadableStreamを作成
@@ -108,16 +121,43 @@ export async function POST(request: NextRequest) {
         async start(controller) {
           try {
             console.log('[Chat API] Starting text stream...');
+            console.log('[Chat API] ThreadId:', threadId, 'ResourceId:', resourceId);
+
+            // stream.textを使用して完了を確実に待機する（二重保障）
+            const textPromise = stream.text;
+
             for await (const chunk of stream.textStream) {
-              console.log('[Chat API] Chunk received:', chunk);
               const data = encoder.encode(`data: ${JSON.stringify({ content: chunk })}\n\n`);
               controller.enqueue(data);
             }
-            console.log('[Chat API] Stream completed');
+
+            // textPromiseが解決するのを待ってから終了
+            await textPromise;
+            console.log('[Chat API] Stream text completed');
+
+            // finishReasonをチェックして異常終了を検出
+            const finishReason = await stream.finishReason;
+            console.log('[Chat API] Stream finishReason:', finishReason);
+
+            if (finishReason && typeof finishReason === 'object') {
+              const { unified, raw } = finishReason;
+              if (unified === 'error' || unified === 'length' || unified === 'content-filter') {
+                throw new Error(`Stream ended abnormally: ${unified} (raw: ${raw})`);
+              }
+            }
+
+            // 正常終了を通知
+            controller.enqueue(encoder.encode('data: [DONE]\n\n'));
             controller.close();
           } catch (error: any) {
             console.error('[Chat API] Stream error:', error);
-            controller.error(error);
+            // エラー情報をSSE形式で送信
+            const errorData = {
+              error: true,
+              message: error.message || 'ストリーミングエラーが発生しました',
+            };
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify(errorData)}\n\n`));
+            controller.close();
           }
         },
       });
@@ -132,7 +172,13 @@ export async function POST(request: NextRequest) {
     }
 
     // 非ストリーミングレスポンス
-    const result = await requirementsAgent.generate(fullMessage);
+    console.log('[dbg] Non-streaming mode, threadId:', threadId, 'resourceId:', resourceId);
+    const result = await requirementsAgent.generate(fullMessage, {
+      memory: {
+        thread: threadId || 'default',
+        resource: resourceId,
+      },
+    });
 
     return NextResponse.json({
       content: result.text,

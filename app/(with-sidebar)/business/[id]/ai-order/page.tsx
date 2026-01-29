@@ -26,7 +26,7 @@ export default function AiOrderPage({
 }: {
   params: Promise<{ id: string }>
 }) {
-  const { id } = use(params)
+  const { id: businessKey } = use(params)
   const router = useRouter()
   const [inputText, setInputText] = useState("")
   const [diffCandidates, setDiffCandidates] = useState<DiffCandidate[]>([])
@@ -92,7 +92,7 @@ export default function AiOrderPage({
   const handleConfirm = () => {
     const selected = diffCandidates.filter(c => c.checked)
     alert(`${selected.length}件の差分候補を確定しました（LLM連携は未実装）`)
-    router.push(`/business/${id}/tasks`)
+    router.push(`/business/${businessKey}`)
   }
 
   return (
@@ -101,7 +101,7 @@ export default function AiOrderPage({
         <div className="mx-auto max-w-[1400px] px-8 py-4">
           {/* ヘッダー */}
           <div className="flex items-center gap-3 mb-6">
-            <Link href={`/business/${id}`} className="inline-flex items-center gap-2 text-[14px] font-medium text-slate-600 hover:text-slate-900">
+            <Link href={`/business/${businessKey}`} className="inline-flex items-center gap-2 text-[14px] font-medium text-slate-600 hover:text-slate-900">
               <ArrowLeft className="h-4 w-4" />
               戻る
             </Link>
@@ -188,7 +188,7 @@ export default function AiOrderPage({
           {/* ボタンエリア */}
           {diffCandidates.length > 0 && (
             <div className="flex items-center gap-3">
-              <Link href={`/business/${id}`}>
+              <Link href={`/business/${businessKey}`}>
                 <Button variant="outline" className="h-9">
                   キャンセル
                 </Button>

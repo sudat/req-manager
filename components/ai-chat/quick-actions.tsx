@@ -19,14 +19,14 @@ export function QuickActions({ onActionClick, disabled }: QuickActionsProps) {
       label: 'BT登録',
       description: '業務タスクを登録する',
       icon: FileText,
-      prompt: '業務タスクを登録したいです。業務内容を教えてください。',
+      prompt: '業務タスクを登録したいです。',
     },
     {
       id: 'br_register',
       label: 'BR登録',
       description: '業務要件を登録する',
       icon: ListChecks,
-      prompt: '業務要件を登録したいです。要件内容を教えてください。',
+      prompt: '業務要件を登録したいです。',
     },
     {
       id: 'system_generate',
