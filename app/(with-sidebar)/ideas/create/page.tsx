@@ -97,6 +97,7 @@ export default function IdeaCreatePage() {
       definition: definition.trim(),
       relatedDocs: splitLines(relatedDocs),
       requirementCount: 0,
+      sortOrder: 0,
       projectId,
     });
     setSaving(false);

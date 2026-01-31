@@ -14,6 +14,7 @@ export interface Business {
   summary: string;         // 業務の概要説明
   businessReqCount: number;  // 業務要件数
   systemReqCount: number;    // システム要件数
+  sortOrder: number;       // 表示順序
   createdAt: string;       // ISO日付
   updatedAt: string;       // ISO日付
 }
@@ -78,6 +79,7 @@ export interface Concept {
   definition: string;      // 定義・説明
   relatedDocs: string[];   // 関連ドキュメントURL
   requirementCount: number;  // 使用要件数
+  sortOrder: number;       // 表示順序
   createdAt: string;
   updatedAt: string;
 }
@@ -106,6 +108,7 @@ export interface SystemFunction {
     paths: string[];
     note?: string;
   }[];
+  sortOrder: number;       // 表示順序
   createdAt: string;
   updatedAt: string;
 }

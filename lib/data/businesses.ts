@@ -1,12 +1,13 @@
 import { supabase, getSupabaseConfigError } from "@/lib/supabase/client";
 import type { Business, BusinessArea } from "@/lib/domain";
-import { createCrudOperations } from "./crud-factory";
+import { createCrudOperations, failIfMissingConfig } from "./crud-factory";
 
 export type BusinessInput = {
   id: string;
   name: string;
   area: BusinessArea;
   summary: string;
+  sortOrder: number;
 };
 
 export type BusinessCreateInput = BusinessInput & {
@@ -18,6 +19,7 @@ type BusinessRow = {
   name: string;
   area: string;
   summary: string;
+  sort_order: number | null;
   created_at: string;
   updated_at: string;
 };
@@ -29,23 +31,27 @@ const toBusiness = (row: BusinessRow): Business => ({
   summary: row.summary,
   businessReqCount: 0,
   systemReqCount: 0,
+  sortOrder: row.sort_order ?? 0,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });
 
-const toBusinessRow = (input: BusinessInput) => ({
-  id: input.id,
-  name: input.name,
-  area: input.area,
-  summary: input.summary,
-});
+const toBusinessRow = (input: BusinessInput) => {
+  const row: Partial<BusinessRow> = {};
+  if (input.id !== undefined) row.id = input.id;
+  if (input.name !== undefined) row.name = input.name;
+  if (input.area !== undefined) row.area = input.area;
+  if (input.summary !== undefined) row.summary = input.summary;
+  if (input.sortOrder !== undefined) row.sort_order = input.sortOrder;
+  return row;
+};
 
 // crud-factoryを使用した基本CRUD操作
 const businessCrud = createCrudOperations<BusinessRow, Business, BusinessInput>({
   tableName: "business_domains",
   toEntity: toBusiness,
   toRow: toBusinessRow,
-  orderBy: ["id"],
+  orderBy: ["sort_order", "id"],
 });
 
 export const listBusinesses = businessCrud.list;
@@ -100,6 +106,7 @@ export const listBusinessesWithRequirementCounts = async (projectId?: string) =>
   let query = supabase
     .from("business_domains")
     .select("id")
+    .order("sort_order")
     .order("id");
 
   if (projectId) {
@@ -185,4 +192,42 @@ export const listBusinessesWithRequirementCounts = async (projectId?: string) =>
   }));
 
   return { data: result, error: null };
+};
+
+// 並び替え用型
+export type BusinessSortOrderUpdate = {
+	id: string;
+	sortOrder: number;
+};
+
+// 並び替え一括更新
+export const updateBusinessesSortOrder = async (
+	updates: BusinessSortOrderUpdate[],
+	projectId?: string
+): Promise<{ data: boolean | null; error: string | null }> => {
+	const configError = failIfMissingConfig();
+	if (configError) return configError;
+
+	// 個別にUPDATEを実行
+	const updatePromises = updates.map((update) => {
+		let query = supabase
+			.from("business_domains")
+			.update({ sort_order: update.sortOrder, updated_at: new Date().toISOString() })
+			.eq("id", update.id);
+
+		// projectIdがある場合のみフィルタを適用
+		if (projectId) {
+			query = query.eq("project_id", projectId);
+		}
+
+		return query;
+	});
+
+	const results = await Promise.all(updatePromises);
+
+	// いずれかのUPDATEでエラーがあれば最初のエラーを返す
+	const firstError = results.find((r) => r.error)?.error;
+	if (firstError) return { data: null, error: firstError.message };
+
+	return { data: true, error: null };
 };

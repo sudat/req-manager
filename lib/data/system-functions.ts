@@ -44,6 +44,7 @@ type SystemFunctionRow = {
 	entry_points: unknown | null;
   deliverables: unknown | null;
   code_refs: unknown | null;
+  sort_order: number | null;
   created_at: string;
   updated_at: string;
 };
@@ -88,6 +89,7 @@ const toSystemFunction = (row: SystemFunctionRow): SystemFunction => {
 		entryPoints,
 		deliverables,
 		codeRefs,
+		sortOrder: row.sort_order ?? 0,
 		createdAt: row.created_at,
 		updatedAt: row.updated_at,
 	};
@@ -124,7 +126,7 @@ const systemFunctionCrud = createCrudOperations<SystemFunctionRow, SystemFunctio
   tableName: "system_functions",
   toEntity: toSystemFunction,
   toRow: toSystemFunctionRowBase,
-  orderBy: ["id"],
+  orderBy: ["sort_order", "id"],
 });
 
 export const listSystemFunctions = systemFunctionCrud.list;
@@ -138,6 +140,7 @@ export const listSystemFunctionsByDomain = async (systemDomainId: string, projec
     .from("system_functions")
     .select("*")
     .eq("system_domain_id", systemDomainId)
+    .order("sort_order")
     .order("id");
 
   if (projectId) {
@@ -248,6 +251,44 @@ export const updateSystemFunction = async (
 };
 
 export const deleteSystemFunction = systemFunctionCrud.delete;
+
+// 並び替え用型
+export type SystemFunctionSortOrderUpdate = {
+	id: string;
+	sortOrder: number;
+};
+
+// 並び替え一括更新
+export const updateSystemFunctionsSortOrder = async (
+	updates: SystemFunctionSortOrderUpdate[],
+	projectId?: string
+): Promise<{ data: boolean | null; error: string | null }> => {
+	const configError = getSupabaseConfigError();
+	if (configError) return { data: null, error: configError };
+
+	// 個別にUPDATEを実行
+	const updatePromises = updates.map((update) => {
+		let query = supabase
+			.from("system_functions")
+			.update({ sort_order: update.sortOrder, updated_at: new Date().toISOString() })
+			.eq("id", update.id);
+
+		// projectIdがある場合のみフィルタを適用
+		if (projectId) {
+			query = query.eq("project_id", projectId);
+		}
+
+		return query;
+	});
+
+	const results = await Promise.all(updatePromises);
+
+	// いずれかのUPDATEでエラーがあれば最初のエラーを返す
+	const firstError = results.find((r) => r.error)?.error;
+	if (firstError) return { data: null, error: firstError.message };
+
+	return { data: true, error: null };
+};
 
 export const getDesignCategoryLabel = (category: DesignItemCategory): string => {
   const labels: Record<DesignItemCategory, string> = {

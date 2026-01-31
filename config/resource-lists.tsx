@@ -142,6 +142,11 @@ export const businessListConfig: ResourceListConfig<Business> = {
 	],
 	getRowHref: (biz) => `/business/${biz.area}`,
 	getSearchText: (biz) => [biz.area, biz.id, biz.name, biz.summary].join(" "),
+	enableReorder: true,
+	onReorderSave: async (updates) => {
+		const { updateBusinessesSortOrder } = await import("@/lib/data/businesses");
+		return await updateBusinessesSortOrder(updates);
+	},
 };
 
 // ============================================================================
@@ -309,4 +314,9 @@ export const conceptListConfig: ResourceListConfig<Concept> = {
 	],
 	getRowHref: (concept) => `/ideas/${concept.id}`,
 	getSearchText: (concept) => [concept.id, concept.name, ...concept.synonyms, ...concept.areas].join(" "),
+	enableReorder: true,
+	onReorderSave: async (updates) => {
+		const { updateConceptsSortOrder } = await import("@/lib/data/concepts");
+		return await updateConceptsSortOrder(updates);
+	},
 };

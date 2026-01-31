@@ -1,9 +1,8 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { LabeledInput } from "@/components/ui/labeled-input";
+import { LabeledTextarea } from "@/components/ui/labeled-textarea";
 import { KeySourceListField } from "@/components/forms/key-source-list-field";
 import { ConceptIdsField } from "@/components/forms/concept-ids-field";
 import { ProcessStepsField } from "@/components/forms/process-steps-field";
@@ -34,39 +33,30 @@ export function TaskBasicInfoCard({
 					<span className="font-mono">{knowledge.taskId}</span>
 				</div>
 
-				<div className="space-y-1.5">
-					<Label className="text-[12px] font-medium text-slate-500">
-						業務タスク<span className="text-rose-500">*</span>
-					</Label>
-					<Input
-						value={knowledge.taskName}
-						onChange={(e) => onFieldChange("taskName", e.target.value)}
-						className="text-[16px] font-semibold"
-					/>
-				</div>
+				<LabeledInput
+					label="業務タスク"
+					required
+					value={knowledge.taskName}
+					onChange={(value) => onFieldChange("taskName", value)}
+					className="text-[16px] font-semibold"
+				/>
 
-				<div className="space-y-1.5">
-					<Label className="text-[12px] font-medium text-slate-500">
-						業務概要<span className="text-rose-500">*</span>
-					</Label>
-					<Textarea
-						value={knowledge.taskSummary}
-						onChange={(e) => onFieldChange("taskSummary", e.target.value)}
-						className="min-h-[110px] text-[14px]"
-					/>
-				</div>
+				<LabeledTextarea
+					label="業務概要"
+					required
+					value={knowledge.taskSummary}
+					onChange={(value) => onFieldChange("taskSummary", value)}
+					minHeight="min-h-[110px]"
+				/>
 
-				<div className="space-y-1.5">
-					<Label className="text-[12px] font-medium text-slate-500">
-						業務コンテキスト<span className="text-rose-500">*</span>
-					</Label>
-					<Textarea
-						value={knowledge.businessContext}
-						onChange={(e) => onFieldChange("businessContext", e.target.value)}
-						className="min-h-[120px] text-[14px]"
-						placeholder="実施組織・ロール、タイミング、前後の業務、業務ルールなど"
-					/>
-				</div>
+				<LabeledTextarea
+					label="業務コンテキスト"
+					required
+					value={knowledge.businessContext}
+					onChange={(value) => onFieldChange("businessContext", value)}
+					placeholder="実施組織・ロール、タイミング、前後の業務、業務ルールなど"
+					minHeight="min-h-[120px]"
+				/>
 
 				<MarkdownGuide />
 

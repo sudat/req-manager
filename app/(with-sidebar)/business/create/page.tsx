@@ -80,6 +80,7 @@ export default function BusinessCreatePage() {
       name: name.trim(),
       area: area.trim() as BusinessArea,
       summary: summary.trim(),
+      sortOrder: 0,
       projectId,
     });
     setSaving(false);

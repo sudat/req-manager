@@ -3,9 +3,8 @@
 import type { FormEvent } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+import { LabeledInput } from "@/components/ui/labeled-input";
+import { LabeledTextarea } from "@/components/ui/labeled-textarea";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { KeySourceListField } from "@/components/forms/key-source-list-field";
@@ -83,42 +82,32 @@ export function TaskForm({
           )}
         </div>
 
-        <div className="space-y-1.5">
-          <Label className="text-[12px] font-medium text-slate-500">
-            業務タスク<span className="text-slate-900">*</span>
-          </Label>
-          <Input
-            placeholder="例: 請求書発行"
-            required
-            className="text-[16px] font-semibold"
-            value={taskName}
-            onChange={(e) => onTaskNameChange(e.target.value)}
-          />
-        </div>
+        <LabeledInput
+          label="業務タスク"
+          required
+          value={taskName}
+          onChange={onTaskNameChange}
+          placeholder="例: 請求書発行"
+          className="text-[16px] font-semibold"
+        />
 
-        <div className="space-y-1.5">
-          <Label className="text-[12px] font-medium text-slate-500">
-            業務概要<span className="text-slate-900">*</span>
-          </Label>
-          <Textarea
-            placeholder="この業務タスクで何をするのかを入力してください"
-            className="min-h-[100px] text-[14px]"
-            value={taskSummary}
-            onChange={(e) => onTaskSummaryChange(e.target.value)}
-          />
-        </div>
+        <LabeledTextarea
+          label="業務概要"
+          required
+          value={taskSummary}
+          onChange={onTaskSummaryChange}
+          placeholder="この業務タスクで何をするのかを入力してください"
+          minHeight="min-h-[100px]"
+        />
 
-        <div className="space-y-1.5">
-          <Label className="text-[12px] font-medium text-slate-500">
-            業務コンテキスト<span className="text-slate-900">*</span>
-          </Label>
-          <Textarea
-            placeholder="実施組織・ロール、タイミング・頻度、前後の業務、業務ルールなど"
-            className="min-h-[120px] text-[14px]"
-            value={businessContext}
-            onChange={(e) => onBusinessContextChange(e.target.value)}
-          />
-        </div>
+        <LabeledTextarea
+          label="業務コンテキスト"
+          required
+          value={businessContext}
+          onChange={onBusinessContextChange}
+          placeholder="実施組織・ロール、タイミング・頻度、前後の業務、業務ルールなど"
+          minHeight="min-h-[120px]"
+        />
 
         <ProcessStepsField
           label="業務プロセス"
