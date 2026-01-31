@@ -1,4 +1,5 @@
-import { supabase, getSupabaseConfigError } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase/client";
+import { failIfMissingConfig } from "./crud-factory";
 import type { AcceptanceCriterionJson } from "@/lib/data/structured";
 
 export type BusinessRequirement = {
@@ -101,13 +102,6 @@ const toBusinessRequirementRowBase = (input: BusinessRequirementInput) => {
 	};
 };
 
-const failIfMissingConfig = () => {
-  const error = getSupabaseConfigError();
-  if (error) {
-    return { data: null, error };
-  }
-  return null;
-};
 
 export const listBusinessRequirementsByTaskId = async (taskId: string, projectId?: string) => {
   const configError = failIfMissingConfig();

@@ -2,6 +2,7 @@ import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
 import { ContextProvider } from '../context';
 import type { UILocation } from '../context/types';
+import { toolSuccess, toolError } from '@/lib/mastra/utils/tool-helpers';
 
 /**
  * get_context Tool
@@ -34,17 +35,11 @@ export const getContextTool = createTool({
       // Context Providerでコンテキストを構築
       const agentContext = await ContextProvider.buildContext(location);
 
-      return {
-        success: true,
+      return toolSuccess('コンテキスト情報を取得しました', {
         context: agentContext,
-        message: 'コンテキスト情報を取得しました',
-      };
+      });
     } catch (error: any) {
-      return {
-        success: false,
-        error: error.message,
-        message: 'コンテキスト取得に失敗しました',
-      };
+      return toolError(error, 'コンテキスト取得に失敗しました');
     }
   },
 });

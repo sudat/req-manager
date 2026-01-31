@@ -37,8 +37,20 @@ export type CrudConfig<Row, Entity, Input> = {
 
 /**
  * Supabase設定エラーチェック
+ *
+ * Supabase接続設定が正しく設定されているかチェックする。
+ * 設定エラーがある場合はエラーオブジェクトを返す。
+ *
+ * @returns 設定エラーがある場合は { data: null, error: string }、正常な場合は null
+ *
+ * @example
+ * ```ts
+ * const configError = failIfMissingConfig();
+ * if (configError) return configError;
+ * // 以降のSupabase操作を実行
+ * ```
  */
-const failIfMissingConfig = () => {
+export const failIfMissingConfig = (): DataResult<never> | null => {
   const error = getSupabaseConfigError();
   if (error) {
     return { data: null, error };

@@ -13,7 +13,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Eye, Pencil, Trash2, Search, Sparkles } from "lucide-react";
+import { Sparkles, Plus, Loader2 } from "lucide-react";
+import { SearchToolbar } from "@/components/ui/search-toolbar";
+import { TableRowActions } from "@/components/ui/table-row-actions";
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -30,6 +32,9 @@ import { TableSkeleton } from "@/components/skeleton";
 import { useBusinessByKey } from "@/hooks/use-business-by-key";
 import { confirmDelete } from "@/lib/ui/confirm";
 import { useProject } from "@/components/project/project-context";
+import { DndContext, closestCenter, DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { SortableTaskRow } from "@/components/tasks/sortable-task-row";
 
 export default function BusinessTasksPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: businessKey } = use(params);
@@ -39,6 +44,9 @@ export default function BusinessTasksPage({ params }: { params: Promise<{ id: st
   const [query, setQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isReorderMode, setIsReorderMode] = useState(false);
+  const [reorderedItems, setReorderedItems] = useState<Task[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
   const { currentProjectId, loading: projectLoading } = useProject();
   const { businessId, businessArea: resolvedArea, loading: businessLoading, error: businessError } =
     useBusinessByKey(businessKey);
@@ -126,6 +134,66 @@ export default function BusinessTasksPage({ params }: { params: Promise<{ id: st
     setItems((prev) => prev.filter((item) => item.id !== task.id));
   };
 
+  // 並び替えモード開始
+  const handleEnterReorderMode = () => {
+    setReorderedItems(filtered);
+    setIsReorderMode(true);
+    setQuery(""); // 検索フィルタをクリア
+  };
+
+  // ドラッグ終了時の処理
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    setReorderedItems((items) => {
+      const oldIndex = items.findIndex((item) => item.id === active.id);
+      const newIndex = items.findIndex((item) => item.id === over.id);
+      return arrayMove(items, oldIndex, newIndex);
+    });
+  };
+
+  // 並び替え保存
+  const handleSaveReorder = async () => {
+    setIsSaving(true);
+    try {
+      const updates = reorderedItems.map((task, index) => ({
+        id: task.id,
+        sortOrder: index,
+      }));
+
+      const response = await fetch("/api/business/tasks/reorder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ updates, projectId: currentProjectId }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "保存に失敗しました");
+      }
+
+      // 成功：データを再読み込み
+      const { data: taskRows, error: taskError } = await listTasksByBusinessId(businessId!, currentProjectId);
+      if (taskError) {
+        alert("保存しましたが、データの再読み込みに失敗しました");
+      } else {
+        setItems(taskRows ?? []);
+      }
+      setIsReorderMode(false);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "保存に失敗しました");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // 並び替えキャンセル
+  const handleCancelReorder = () => {
+    setReorderedItems([]);
+    setIsReorderMode(false);
+  };
+
   return (
     <>
       <div className="flex-1 min-h-screen bg-white">
@@ -157,81 +225,122 @@ export default function BusinessTasksPage({ params }: { params: Promise<{ id: st
           </div>
 
           {/* ツールバー */}
-          <div className="mb-4 flex flex-wrap items-center gap-4">
-            <div className="flex flex-1 gap-3 min-w-[300px] rounded-md border border-slate-200 bg-slate-50/50 px-4 py-3">
-              <div className="relative flex-1 min-w-[200px]">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="業務タスク名、ID、業務概要、inputs/outputsで検索..."
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  className="w-full pl-10 pr-3 py-1.5 bg-transparent border-0 text-[14px] text-slate-900 placeholder:text-slate-400 focus:outline-none"
-                />
-              </div>
-              <Link href={routeArea ? `/chat?screen=BD&bdId=${routeArea}` : "/chat"}>
-                <Button className="h-8 gap-2 text-[14px] bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white">
-                  <Sparkles className="h-4 w-4" />
-                  AIで追加
-                </Button>
-              </Link>
-              <Link href={`/business/${routeArea}/ai-order`}>
-                <Button className="h-8 gap-2 text-[14px] bg-slate-900 hover:bg-slate-800">
-                  <Sparkles className="h-4 w-4" />
-                  AI修正指示
-                </Button>
-              </Link>
-              <Link href={`/business/${routeArea}/create`}>
-                <Button className="h-8 gap-2 text-[14px] bg-slate-900 hover:bg-slate-800">
-                  <Plus className="h-4 w-4" />
-                  新規作成
-                </Button>
-              </Link>
-            </div>
-          </div>
+          <SearchToolbar
+            value={query}
+            onChange={setQuery}
+            placeholder="業務タスク名、ID、業務概要、inputs/outputsで検索..."
+            disabled={isReorderMode}
+            actions={[
+              ...(!isReorderMode ? [
+                {
+                  label: 'AIで追加',
+                  href: routeArea ? `/chat?screen=BD&bdId=${routeArea}` : '/chat',
+                  icon: Sparkles,
+                  variant: 'ai' as const,
+                },
+                {
+                  label: '新規作成',
+                  href: `/business/${routeArea}/create`,
+                  icon: Plus,
+                },
+              ] : []),
+              ...(isReorderMode ? [
+                {
+                  label: '保存',
+                  onClick: handleSaveReorder,
+                  disabled: isSaving,
+                  icon: isSaving ? undefined : Plus,
+                } as const,
+                {
+                  label: 'キャンセル',
+                  onClick: handleCancelReorder,
+                  disabled: isSaving,
+                } as const,
+              ] : [{
+                label: '並び替え',
+                onClick: handleEnterReorderMode,
+                disabled: filtered.length < 2,
+              } as const]),
+            ]}
+          />
 
           {/* テーブル */}
-          <div className="rounded-md border border-slate-200 bg-white overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-b border-slate-200">
-                  <TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">業務タスクID</TableHead>
-                  <TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">業務タスク</TableHead>
-                  <TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">業務概要</TableHead>
-                  <TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">インプット</TableHead>
-                  <TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">アウトプット</TableHead>
-                  <TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">操作</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableSkeleton cols={6} rows={5} />
-                ) : error ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="px-4 py-10 text-center text-[14px] text-rose-600">
-                      {error}
-                    </TableCell>
+          {isReorderMode ? (
+            // 並び替えモードのテーブル
+            <div className="rounded-md border border-slate-200 bg-white overflow-hidden">
+              <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={reorderedItems.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-b border-slate-200">
+                        <TableHead className="w-10 px-2 py-3"></TableHead>
+                        <TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">業務タスクID</TableHead>
+                        <TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">業務タスク</TableHead>
+                        <TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">業務概要</TableHead>
+                        <TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">インプット</TableHead>
+                        <TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">アウトプット</TableHead>
+                        <TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">操作</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {reorderedItems.map((task) => (
+                        <SortableTaskRow
+                          key={task.id}
+                          task={task}
+                          businessArea={routeArea}
+                          onRowClick={() => handleRowClick(task.id)}
+                          onDelete={() => handleDelete(task)}
+                        />
+                      ))}
+                    </TableBody>
+                  </Table>
+                </SortableContext>
+              </DndContext>
+            </div>
+          ) : (
+            // 通常のテーブル
+            <div className="rounded-md border border-slate-200 bg-white overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-b border-slate-200">
+                    <TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">業務タスクID</TableHead>
+                    <TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">業務タスク</TableHead>
+                    <TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">業務概要</TableHead>
+                    <TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">インプット</TableHead>
+                    <TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">アウトプット</TableHead>
+                    <TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">操作</TableHead>
                   </TableRow>
-                ) : filtered.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="px-4 py-10 text-center text-[14px] text-slate-500">
-                      該当する業務タスクがありません。
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filtered.map((task) => (
-                    <TaskTableRow
-                      key={task.id}
-                      task={task}
-                      businessArea={routeArea}
-                      onRowClick={() => handleRowClick(task.id)}
-                      onDelete={() => handleDelete(task)}
-                    />
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
+                    <TableSkeleton cols={6} rows={5} />
+                  ) : error ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="px-4 py-10 text-center text-[14px] text-rose-600">
+                        {error}
+                      </TableCell>
+                    </TableRow>
+                  ) : filtered.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="px-4 py-10 text-center text-[14px] text-slate-500">
+                        該当する業務タスクがありません。
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filtered.map((task) => (
+                      <TaskTableRow
+                        key={task.id}
+                        task={task}
+                        businessArea={routeArea}
+                        onRowClick={() => handleRowClick(task.id)}
+                        onDelete={() => handleDelete(task)}
+                      />
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </div>
       </div>
     </>
@@ -289,21 +398,11 @@ function TaskTableRow({ task, businessArea, onRowClick, onDelete }: TaskTableRow
         </div>
       </TableCell>
       <TableCell className="px-4 py-3">
-        <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
-          <Link href={`/business/${businessArea}/${task.id}`}>
-            <Button size="icon" variant="outline" title="照会" className="h-8 w-8 rounded-md border-slate-200 hover:bg-slate-900 hover:text-white hover:border-slate-900">
-              <Eye className="h-4 w-4" />
-            </Button>
-          </Link>
-          <Link href={`/business/${businessArea}/${task.id}/edit`}>
-            <Button size="icon" variant="outline" title="編集" className="h-8 w-8 rounded-md border-slate-200 hover:bg-slate-900 hover:text-white hover:border-slate-900">
-              <Pencil className="h-4 w-4" />
-            </Button>
-          </Link>
-          <Button size="icon" variant="outline" title="削除" className="h-8 w-8 rounded-md border-slate-200 hover:bg-slate-900 hover:text-white hover:border-slate-900" onClick={onDelete}>
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
+        <TableRowActions
+          viewHref={`/business/${businessArea}/${task.id}`}
+          editHref={`/business/${businessArea}/${task.id}/edit`}
+          onDelete={onDelete}
+        />
       </TableCell>
     </TableRow>
   );

@@ -1,19 +1,21 @@
 import type { InputProcessor, OutputProcessor } from '@mastra/core/processors';
 import type { MastraDBMessage } from '@mastra/core/agent/message-list';
 
-const STRIP_PART_TYPES = new Set([
-  'reasoning',
-  'redacted_reasoning',
-  'redacted-reasoning',
-  'reasoning_signature',
-  'reasoning-signature',
-  'tool-invocation',
-  'tool-result',
+const STRIP_PART_TYPES_INPUT = new Set<string>([
   'step-start',
   'step-finish',
 ]);
 
-const sanitizeMessage = (message: MastraDBMessage): MastraDBMessage => {
+const STRIP_PART_TYPES_OUTPUT = new Set<string>([
+  'redacted_reasoning',
+  'redacted-reasoning',
+  ...STRIP_PART_TYPES_INPUT,
+]);
+
+const sanitizeMessage = (
+  message: MastraDBMessage,
+  stripPartTypes: Set<string>
+): MastraDBMessage => {
   const content = message.content;
   if (!content || !Array.isArray(content.parts)) {
     return message;
@@ -21,8 +23,11 @@ const sanitizeMessage = (message: MastraDBMessage): MastraDBMessage => {
 
   const filteredParts = content.parts
     .filter((part) => {
+      if (!stripPartTypes.size) {
+        return true;
+      }
       const type = (part as { type?: string }).type;
-      return !type || !STRIP_PART_TYPES.has(type);
+      return !type || !stripPartTypes.has(type);
     })
     .map((part) => {
       if (!part || typeof part !== 'object') {
@@ -37,19 +42,12 @@ const sanitizeMessage = (message: MastraDBMessage): MastraDBMessage => {
 
   if (
     filteredParts.length === content.parts.length &&
-    content.reasoning === undefined &&
-    content.toolInvocations === undefined &&
     content.providerMetadata === undefined
   ) {
     return message;
   }
 
-  const {
-    reasoning: _reasoning,
-    toolInvocations: _toolInvocations,
-    providerMetadata: _providerMetadata,
-    ...rest
-  } = content;
+  const { providerMetadata: _providerMetadata, ...rest } = content;
   return {
     ...message,
     content: {
@@ -59,12 +57,18 @@ const sanitizeMessage = (message: MastraDBMessage): MastraDBMessage => {
   };
 };
 
-const sanitizeMessages = (messages: MastraDBMessage[]): MastraDBMessage[] =>
-  messages.map((message) => sanitizeMessage(message));
+const sanitizeMessages = (messages: MastraDBMessage[], stripPartTypes: Set<string>) =>
+  messages.map((message) => sanitizeMessage(message, stripPartTypes));
 
-export const sanitizeReasoningProcessor = {
-  id: 'sanitize-reasoning',
-  name: 'Sanitize Reasoning Parts',
-  processInputStep: ({ messages }) => sanitizeMessages(messages),
-  processOutputStep: ({ messages }) => sanitizeMessages(messages),
-} as const satisfies InputProcessor & OutputProcessor;
+export const sanitizeReasoningInputProcessor = {
+  id: 'sanitize-reasoning-input',
+  name: 'Sanitize Reasoning Parts (Input)',
+  processInputStep: ({ messages }) => sanitizeMessages(messages, STRIP_PART_TYPES_INPUT),
+} as const satisfies InputProcessor;
+
+export const sanitizeReasoningOutputProcessor = {
+  id: 'sanitize-reasoning-output',
+  name: 'Sanitize Reasoning Parts (Output)',
+  processOutputStep: ({ messages }) =>
+    sanitizeMessages(messages, STRIP_PART_TYPES_OUTPUT),
+} as const satisfies OutputProcessor;

@@ -1,7 +1,7 @@
-import { supabase, getSupabaseConfigError } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase/client";
 import type { ImplUnitSd, ImplUnitType } from "@/lib/domain";
 import { normalizeEntryPoints } from "@/lib/data/structured";
-import { createCrudOperations } from "./crud-factory";
+import { createCrudOperations, failIfMissingConfig } from "./crud-factory";
 
 export type ImplUnitSdInput = {
   id: string;
@@ -73,14 +73,6 @@ const toImplUnitSdRow = (input: Partial<ImplUnitSdInput>) => {
   if (input.designPolicy !== undefined) row.design_policy = input.designPolicy;
   if (input.details !== undefined) row.details = input.details;
   return row;
-};
-
-const failIfMissingConfig = () => {
-  const error = getSupabaseConfigError();
-  if (error) {
-    return { data: null, error };
-  }
-  return null;
 };
 
 // CRUD操作を生成

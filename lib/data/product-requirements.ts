@@ -1,4 +1,5 @@
-import { supabase, getSupabaseConfigError } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase/client";
+import { failIfMissingConfig } from "./crud-factory";
 import type { ProductRequirement } from "@/lib/domain";
 
 export type ProductRequirementInput = {
@@ -73,13 +74,6 @@ const toProductRequirementRowPartial = (input: Partial<ProductRequirementInput>)
   return row;
 };
 
-const failIfMissingConfig = () => {
-  const error = getSupabaseConfigError();
-  if (error) {
-    return { data: null, error };
-  }
-  return null;
-};
 
 export const listProductRequirements = async (projectId?: string) => {
   const configError = failIfMissingConfig();

@@ -1,4 +1,5 @@
-import { supabase, getSupabaseConfigError } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase/client";
+import { failIfMissingConfig } from "./crud-factory";
 import type { AcceptanceCriterion, AcceptanceCriterionStatus } from "@/lib/domain";
 import type { AcceptanceCriterionJson } from "@/lib/data/structured";
 
@@ -143,13 +144,6 @@ const toAcceptanceCriterionRowBase = (input: AcceptanceCriterionInput) => ({
   sort_order: input.sortOrder ?? 0,
 });
 
-const failIfMissingConfig = () => {
-  const error = getSupabaseConfigError();
-  if (error) {
-    return { data: null, error };
-  }
-  return null;
-};
 
 export const listAcceptanceCriteriaBySystemRequirementId = async (
   systemRequirementId: string,

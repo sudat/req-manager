@@ -1,4 +1,5 @@
-import { supabase, getSupabaseConfigError } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase/client";
+import { failIfMissingConfig } from "./crud-factory";
 import type { SystemRequirementCategory } from "@/lib/domain";
 import type { AcceptanceCriterion } from "@/lib/domain";
 import {
@@ -128,13 +129,6 @@ const toSystemRequirementRowBase = (input: SystemRequirementInput) => ({
 	sort_order: input.sortOrder,
 });
 
-const failIfMissingConfig = () => {
-	const error = getSupabaseConfigError();
-	if (error) {
-		return { data: null, error };
-	}
-	return null;
-};
 
 const mergeAcceptanceCriteriaFromCanonical = async (
 	requirements: SystemRequirement[],

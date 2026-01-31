@@ -2,6 +2,7 @@ import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
 import { supabase } from '@/lib/supabase/client';
 import { escapeLikePattern, buildOrLikeConditions } from '@/lib/mastra/utils/sql-helpers';
+import { toolSuccess, toolError } from '@/lib/mastra/utils/tool-helpers';
 
 /**
  * search_requirements Tool
@@ -91,18 +92,12 @@ export const searchRequirementsTool = createTool({
         }
       }
 
-      return {
-        success: true,
+      return toolSuccess(`${results.length}件の要件が見つかりました`, {
         results,
         count: results.length,
-        message: `${results.length}件の要件が見つかりました`,
-      };
+      });
     } catch (error: any) {
-      return {
-        success: false,
-        error: error.message,
-        message: '要件検索に失敗しました',
-      };
+      return toolError(error, '要件検索に失敗しました');
     }
   },
 });

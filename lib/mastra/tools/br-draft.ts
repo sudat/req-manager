@@ -1,7 +1,7 @@
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
 import { supabase } from '@/lib/supabase/client';
-import { getOpenAIApiKey } from '@/lib/config/env';
+import { callOpenAI } from '@/lib/mastra/utils/llm-helpers';
 
 /**
  * br_draft Tool
@@ -75,30 +75,16 @@ ${naturalLanguageInput}
 - rationaleはビジネス価値・背景を記述する（「〜のため」で終わる）
 `;
 
-      const openaiApiKey = getOpenAIApiKey();
-
-      const llmResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${openaiApiKey}`,
-        },
-        body: JSON.stringify({
-          model: 'gpt-5-mini',
-          messages: [
-            { role: 'system', content: 'あなたは要件定義の専門家です。' },
-            { role: 'user', content: llmPrompt },
-          ],
-          response_format: { type: 'json_object' },
-        }),
+      const llmResponse = await callOpenAI<{
+        requirement?: string;
+        rationale?: string;
+      }>({
+        systemPrompt: 'あなたは要件定義の専門家です。',
+        userPrompt: llmPrompt,
+        jsonMode: true,
       });
 
-      if (!llmResponse.ok) {
-        throw new Error(`OpenAI API error: ${llmResponse.statusText}`);
-      }
-
-      const llmResult = await llmResponse.json();
-      const llmContent = JSON.parse(llmResult.choices[0].message.content);
+      const llmContent = llmResponse.content;
 
       const requirement = llmContent.requirement || naturalLanguageInput.trim();
       const rationale = llmContent.rationale || '業務を効率的に実行するため';

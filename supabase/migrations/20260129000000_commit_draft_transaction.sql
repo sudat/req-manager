@@ -60,24 +60,12 @@ BEGIN
         p_content->>'name',
         p_content->>'summary',
         p_content->>'businessContext',
-        -- array to string (processSteps)
-        CASE
-          WHEN jsonb_typeof(p_content->'processSteps') = 'array'
-          THEN array_to_string(ARRAY(SELECT jsonb_array_elements_text(p_content->'processSteps')), E'\n')
-          ELSE NULL
-        END,
-        -- array to string (input)
-        CASE
-          WHEN jsonb_typeof(p_content->'input') = 'array'
-          THEN array_to_string(ARRAY(SELECT jsonb_array_elements_text(p_content->'input')), E'\n')
-          ELSE NULL
-        END,
-        -- array to string (output)
-        CASE
-          WHEN jsonb_typeof(p_content->'output') = 'array'
-          THEN array_to_string(ARRAY(SELECT jsonb_array_elements_text(p_content->'output')), E'\n')
-          ELSE NULL
-        END,
+        -- jsonb (processSteps)
+        p_content->'processSteps',
+        -- jsonb (input)
+        p_content->'input',
+        -- jsonb (output)
+        p_content->'output',
         -- array (concepts)
         CASE
           WHEN jsonb_typeof(p_content->'concepts') = 'array'
@@ -168,9 +156,9 @@ BEGIN
       INSERT INTO acceptance_criteria (
         system_requirement_id,
         code,
-        given,
-        when,
-        then
+        given_text,
+        when_text,
+        then_text
       )
       VALUES (
         p_content->>'system_requirement_id',

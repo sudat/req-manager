@@ -1,4 +1,5 @@
-import { createCrudOperations } from "./crud-factory";
+import { createCrudOperations, failIfMissingConfig } from "./crud-factory";
+import { supabase } from "@/lib/supabase/client";
 
 export type SystemDomain = {
   id: string;
@@ -61,3 +62,41 @@ export const getSystemDomainById = crud.getById;
 export const createSystemDomain = crud.create;
 export const updateSystemDomain = crud.update;
 export const deleteSystemDomain = crud.delete;
+
+// 並び替え用型
+export type SystemDomainSortOrderUpdate = {
+	id: string;
+	sortOrder: number;
+};
+
+// 並び替え一括更新
+export const updateSystemDomainsSortOrder = async (
+	updates: SystemDomainSortOrderUpdate[],
+	projectId?: string
+): Promise<{ data: boolean | null; error: string | null }> => {
+	const configError = failIfMissingConfig();
+	if (configError) return configError;
+
+	// RPC関数を使わず、個別にUPDATEを実行
+	const updatePromises = updates.map((update) => {
+		let query = supabase
+			.from("system_domains")
+			.update({ sort_order: update.sortOrder, updated_at: new Date().toISOString() })
+			.eq("id", update.id);
+
+		// projectIdがある場合のみフィルタを適用
+		if (projectId) {
+			query = query.eq("project_id", projectId);
+		}
+
+		return query;
+	});
+
+	const results = await Promise.all(updatePromises);
+
+	// いずれかのUPDATEでエラーがあれば最初のエラーを返す
+	const firstError = results.find((r) => r.error)?.error;
+	if (firstError) return { data: null, error: firstError.message };
+
+	return { data: true, error: null };
+};

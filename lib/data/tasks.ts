@@ -1,6 +1,8 @@
-import { supabase, getSupabaseConfigError } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase/client";
 import type { Task } from "@/lib/domain";
-import { createCrudOperations } from "./crud-factory";
+import { createCrudOperations, failIfMissingConfig } from "./crud-factory";
+import { parseDocument } from "yaml";
+import { YAML_PARSE_OPTIONS, toYamlText } from "@/lib/utils/yaml";
 
 export type TaskInput = {
   id: string;
@@ -27,15 +29,29 @@ type TaskRow = {
   name: string;
   summary: string;
   business_context: string | null;
-  process_steps: string | null;
+  process_steps: unknown | null;
   person: string | null;
-  input: string | null;
-  output: string | null;
+  input: unknown | null;
+  output: unknown | null;
   concept_ids_yaml: string | null;
   concepts: string[] | null;
   sort_order: number | null;
   created_at: string;
   updated_at: string;
+};
+
+const parseYamlToJson = (value?: string | null) => {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  try {
+    const doc = parseDocument(trimmed, YAML_PARSE_OPTIONS);
+    if (doc.errors?.length) return trimmed;
+    return doc.toJSON();
+  } catch {
+    return value;
+  }
 };
 
 const toTask = (row: TaskRow): Task => ({
@@ -44,10 +60,10 @@ const toTask = (row: TaskRow): Task => ({
   name: row.name,
   summary: row.summary,
   businessContext: row.business_context ?? "",
-  processSteps: row.process_steps ?? "",
+  processSteps: toYamlText(row.process_steps),
   person: row.person ?? "",
-  input: row.input ?? "",
-  output: row.output ?? "",
+  input: toYamlText(row.input),
+  output: toYamlText(row.output),
   conceptIdsYaml: row.concept_ids_yaml ?? "",
   concepts: row.concepts ?? [],
   businessReqCount: 0,
@@ -64,22 +80,14 @@ const toTaskRow = (input: Partial<TaskInput>) => {
   if (input.name !== undefined) row.name = input.name;
   if (input.summary !== undefined) row.summary = input.summary;
   if (input.businessContext !== undefined) row.business_context = input.businessContext;
-  if (input.processSteps !== undefined) row.process_steps = input.processSteps;
+  if (input.processSteps !== undefined) row.process_steps = parseYamlToJson(input.processSteps);
   if (input.person !== undefined) row.person = input.person;
-  if (input.input !== undefined) row.input = input.input;
-  if (input.output !== undefined) row.output = input.output;
+  if (input.input !== undefined) row.input = parseYamlToJson(input.input);
+  if (input.output !== undefined) row.output = parseYamlToJson(input.output);
   if (input.conceptIdsYaml !== undefined) row.concept_ids_yaml = input.conceptIdsYaml;
   if (input.concepts !== undefined) row.concepts = input.concepts;
   if (input.sortOrder !== undefined) row.sort_order = input.sortOrder;
   return row;
-};
-
-const failIfMissingConfig = () => {
-  const error = getSupabaseConfigError();
-  if (error) {
-    return { data: null, error };
-  }
-  return null;
 };
 
 // CRUD操作を生成
@@ -135,4 +143,40 @@ export const listTasksByIds = async (ids: string[], projectId?: string) => {
   const { data, error } = await query;
   if (error) return { data: null, error: error.message };
   return { data: (data as TaskRow[]).map(toTask), error: null };
+};
+
+export type TaskSortOrderUpdate = {
+  id: string;
+  sortOrder: number;
+};
+
+export const updateTasksSortOrder = async (
+  updates: TaskSortOrderUpdate[],
+  projectId?: string
+): Promise<{ data: boolean | null; error: string | null }> => {
+  const configError = failIfMissingConfig();
+  if (configError) return configError;
+
+  // RPC関数を使わず、個別にUPDATEを実行
+  const updatePromises = updates.map((update) => {
+    let query = supabase
+      .from("business_tasks")
+      .update({ sort_order: update.sortOrder, updated_at: new Date().toISOString() })
+      .eq("id", update.id);
+
+    // projectIdがある場合のみフィルタを適用
+    if (projectId) {
+      query = query.eq("project_id", projectId);
+    }
+
+    return query;
+  });
+
+  const results = await Promise.all(updatePromises);
+
+  // いずれかのUPDATEでエラーがあれば最初のエラーを返す
+  const firstError = results.find((r) => r.error)?.error;
+  if (firstError) return { data: null, error: firstError.message };
+
+  return { data: true, error: null };
 };

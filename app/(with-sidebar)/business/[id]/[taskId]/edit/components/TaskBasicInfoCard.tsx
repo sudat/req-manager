@@ -98,7 +98,6 @@ export function TaskBasicInfoCard({
 					value={knowledge.conceptIdsYaml}
 					onChange={(value) => onFieldChange("conceptIdsYaml", value)}
 					concepts={concepts}
-					helperText="関連概念IDをバッジで管理します（任意）。"
 				/>
 			</CardContent>
 		</Card>

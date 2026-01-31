@@ -1,7 +1,7 @@
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
 import { supabase } from '@/lib/supabase/client';
-import { getOpenAIApiKey } from '@/lib/config/env';
+import { callOpenAI } from '@/lib/mastra/utils/llm-helpers';
 import { normalizeAreaCode } from '@/lib/utils/id-rules';
 
 /**
@@ -101,8 +101,6 @@ export const systemDraftTool = createTool({
       }
 
       // 5. LLMでSF/SR/ACを生成
-      const openaiApiKey = getOpenAIApiKey();
-
       const sfDrafts = [];
 
       const normalizedDomainId = normalizeAreaCode(systemDomainId ?? sdId) || 'SD';
@@ -146,25 +144,27 @@ ${pr?.tech_stack_profile || 'Next.js + TypeScript'}
 - 技術的な実現可能性を考慮する
 `;
 
-        const llmResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${openaiApiKey}`,
-          },
-          body: JSON.stringify({
-            model: 'gpt-5-mini',
-            messages: [
-              { role: 'system', content: 'あなたはシステム設計の専門家です。業務要件からシステム要件と受入基準を生成します。' },
-              { role: 'user', content: llmPrompt },
-            ],
-            response_format: { type: 'json_object' },
-          }),
-        });
-
         let llmContent: any;
-        if (!llmResponse.ok) {
-          console.error(`[system_draft] OpenAI API error for BR ${br.id}`);
+        try {
+          const llmResponse = await callOpenAI<{
+            sr: {
+              requirement: string;
+              rationale: string;
+            };
+            acs: Array<{
+              given: string;
+              when: string;
+              then: string;
+            }>;
+          }>({
+            systemPrompt: 'あなたはシステム設計の専門家です。業務要件からシステム要件と受入基準を生成します。',
+            userPrompt: llmPrompt,
+            jsonMode: true,
+          });
+
+          llmContent = llmResponse.content;
+        } catch (error) {
+          console.error(`[system_draft] LLM error for BR ${br.id}:`, error);
           // フォールバック: 機械的生成
           llmContent = {
             sr: {
@@ -179,9 +179,6 @@ ${pr?.tech_stack_profile || 'Next.js + TypeScript'}
               },
             ],
           };
-        } else {
-          const llmResult = await llmResponse.json();
-          llmContent = JSON.parse(llmResult.choices[0].message.content);
         }
 
         // SRを生成

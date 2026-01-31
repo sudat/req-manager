@@ -62,19 +62,19 @@ export function ChatInput({
           className="flex-1 min-h-[44px] max-h-[200px] resize-none text-[14px] border-slate-200 focus:border-slate-900 focus:ring-slate-900"
           rows={1}
         />
-        <div className="flex items-center gap-2">
+        <div className="flex items-end gap-2">
           <Select
             value={reasoningEffort}
             onValueChange={(value) => onReasoningEffortChange(value as ReasoningEffort)}
             disabled={disabled}
           >
             <SelectTrigger
-              className="h-11 w-[120px] border-slate-200 text-[12px]"
+              className="min-h-[44px] py-2 w-[120px] border-slate-200 text-[12px]"
               aria-label="Reasoning effort"
             >
               <SelectValue placeholder="Effort" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent side="top">
               {reasoningEffortOptions.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}

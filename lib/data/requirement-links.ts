@@ -1,4 +1,5 @@
-import { supabase, getSupabaseConfigError } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase/client";
+import { failIfMissingConfig } from "./crud-factory";
 import type { RequirementLink, RequirementLinkNodeType } from "@/lib/domain";
 
 export type RequirementLinkType = "derived_from";
@@ -82,13 +83,6 @@ const toRequirementLinkRowPartial = (input: Partial<RequirementLinkInput>) => {
   return row;
 };
 
-const failIfMissingConfig = () => {
-  const error = getSupabaseConfigError();
-  if (error) {
-    return { data: null, error };
-  }
-  return null;
-};
 
 export const listRequirementLinksByProjectId = async (projectId: string) => {
   const configError = failIfMissingConfig();

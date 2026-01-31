@@ -1,7 +1,7 @@
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
 import { supabase } from '@/lib/supabase/client';
-import { getOpenAIApiKey } from '@/lib/config/env';
+import { callOpenAI } from '@/lib/mastra/utils/llm-helpers';
 
 /**
  * impl_unit_draft Tool
@@ -94,8 +94,6 @@ export const implUnitDraftTool = createTool({
       if (naturalLanguageInput) {
         designNotes = naturalLanguageInput;
       } else {
-        const openaiApiKey = getOpenAIApiKey();
-
         const llmPrompt = `
 以下のシステム機能の実装設計案を生成してください。
 
@@ -150,36 +148,13 @@ ${entryPoint}
 `;
 
         try {
-          const llmResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${openaiApiKey}`,
-            },
-            body: JSON.stringify({
-              model: 'gpt-5-mini',
-              messages: [
-                { role: 'system', content: 'あなたはフロントエンド設計の専門家です。実装可能な詳細設計書を生成します。' },
-                { role: 'user', content: llmPrompt },
-              ],
-            }),
+          const llmResponse = await callOpenAI({
+            systemPrompt: 'あなたはフロントエンド設計の専門家です。実装可能な詳細設計書を生成します。',
+            userPrompt: llmPrompt,
+            jsonMode: false, // テキスト形式で出力
           });
 
-          if (llmResponse.ok) {
-            const llmResult = await llmResponse.json();
-            designNotes = llmResult.choices[0].message.content;
-          } else {
-            console.error('[impl_unit_draft] OpenAI API error');
-            // フォールバック
-            designNotes =
-              `${sfName}の実装設計\n\n` +
-              `技術スタック: ${pr?.tech_stack_profile || 'Next.js + TypeScript'}\n` +
-              `エントリーポイント: ${entryPoint}\n\n` +
-              `主な実装項目:\n` +
-              `- UIコンポーネント\n` +
-              `- データ取得・更新ロジック\n` +
-              `- バリデーション\n`;
-          }
+          designNotes = llmResponse.content;
         } catch (error) {
           console.error('[impl_unit_draft] LLM generation error:', error);
           // フォールバック

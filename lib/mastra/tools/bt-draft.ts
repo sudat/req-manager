@@ -3,7 +3,8 @@ import { z } from 'zod';
 import { supabase } from '@/lib/supabase/client';
 import { buildOrLikeConditions } from '@/lib/mastra/utils/sql-helpers';
 import { getNextBtId, normalizeAreaCode } from '@/lib/utils/id-rules';
-import { getOpenAIApiKey } from '@/lib/config/env';
+import { callOpenAI } from '@/lib/mastra/utils/llm-helpers';
+import { toolSuccess, toolError } from '@/lib/mastra/utils/tool-helpers';
 
 /**
  * bt_draft Tool
@@ -24,36 +25,13 @@ export const btDraftTool = createTool({
 注意:
 - bdIdとbdNameの両方が提供された場合はbdIdを優先
 - bdNameが提供された場合、完全一致または部分一致で検索
-- 草案は自動保存されないため、save_to_draft Toolを使用してください`,
+- 草案はマークダウン形式でユーザーに提示し、「はい」で即座にcommitDraftToolを呼び出して登録する`,
   inputSchema: z.object({
     naturalLanguageInput: z.string().describe('ユーザーが入力した業務内容の説明'),
     bdId: z.string().optional().describe('業務領域ID（例: "BIZ-001", "BIZ-GL-001"など、searchBusinessDomainsToolが返すid）'),
     bdName: z.string().optional().describe('業務領域名（例: "GL", "一般会計"）- bdIdがない場合に使用。searchBusinessDomainsToolで業務領域を検索してからbdIdを取得することを推奨'),
     projectId: z.string().describe('プロジェクトID（UUID形式）。必須。'),
     generateBR: z.boolean().optional().default(false).describe('同時にBR草案も生成するか'),
-  }),
-  outputSchema: z.object({
-    success: z.boolean(),
-    message: z.string(),
-    btDraft: z.object({
-      code: z.string(),
-      name: z.string(),
-      summary: z.string(),
-      businessContext: z.string(),
-      processSteps: z.array(z.string()),
-      input: z.array(z.string()),
-      output: z.array(z.string()),
-      business_domain_id: z.string(),
-      concept_ids: z.array(z.string()).optional(),
-    }).optional(),
-    brDrafts: z.array(z.any()).optional(),
-    conceptCandidates: z.array(z.string()).optional(),
-    uncertainties: z.array(z.object({
-      field: z.string(),
-      question: z.string(),
-      suggestion: z.string().optional(),
-    })).optional(),
-    previewAvailable: z.boolean(),
   }),
   execute: async (inputData) => {
     const { naturalLanguageInput, bdId, bdName, projectId, generateBR } = inputData;
@@ -125,17 +103,33 @@ ${naturalLanguageInput}
 【業務領域】
 ${bd.id} - ${bd.name}
 
+【厳密な出力形式 - 絶対に守ること】
+- 以下のJSONスキーマに厳密に従うこと
+- マークダウン記法（#, ##, -, 1. など）は使用しないこと
+- 説明文は一切含めないこと
+- 純粋なJSONオブジェクトのみを出力すること
+
 【出力形式（JSON）】
 {
   "name": "業務タスク名（簡潔に、50文字以内）",
   "summary": "業務概要（1-2文、200文字以内）",
   "businessContext": "なぜこの業務が必要か、ビジネス上の背景（300文字以内）",
-  "processSteps": ["ステップ1", "ステップ2", "..."],
-  "input": ["インプット1", "インプット2", "..."],
-  "output": ["アウトプット1", "アウトプット2", "..."],
+  "processSteps": [
+    \{ "when": "月初", "who": "経理担当", "action": "データを集計する" \},
+    \{ "when": "月中", "who": "上司", "action": "内容をレビューする" \},
+    \{ "when": "月末", "who": "経理担当", "action": "書類を提出する" \}
+  ],
+  "input": [
+    \{ "name": "請求書データ", "source": "販売管理システム" \},
+    \{ "name": "入金データ", "source": "銀行システム" \}
+  ],
+  "output": [
+    \{ "name": "売上管理表", "source": "Excel" \},
+    \{ "name": "入金確認リスト", "source": "社内DB" \}
+  ],
   "concepts": ["概念1", "概念2", "..."],
   "uncertainties": [
-    { "field": "processSteps", "question": "具体的な手順は？", "suggestion": "一般的には..." }
+    \{ "field": "processSteps", "question": "具体的な手順は？", "suggestion": "一般的には..." \}
   ]
 }
 
@@ -143,47 +137,37 @@ ${bd.id} - ${bd.name}
 - nameは業務の本質を表す簡潔な名前にする
 - summaryは「〜する業務」という形式で記述
 - businessContextはビジネス価値・背景を記述
-- processStepsは実際の作業手順を時系列で列挙（3-7ステップ程度）
-- inputは業務に必要な入力情報・資料を列挙
-- outputは業務の成果物を列挙
+- processStepsは「いつ・だれが・何を」の構造で時系列で列挙（3-7ステップ程度）
+- inputは「名称」と「ソース（取得元）」の構造で列挙
+- outputは「名称」と「ソース（出力先）」の構造で列挙
 - conceptsは業務で使われる重要な概念・用語を抽出
 - uncertaintiesは不明確な項目とその質問・提案を記述
+
+【重要 - 絶対に守ること】
+- 出力は純粋なJSONのみとし、説明文やマークダウンは含めない
+- JSONの前後に\`\`\`や説明テキストを付けない
+- パース可能な有効なJSONのみを出力する
 `;
 
       // LLM呼び出し（OpenAI API）
-      const openaiApiKey = getOpenAIApiKey();
-
-      const llmResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${openaiApiKey}`,
-        },
-        body: JSON.stringify({
-          model: 'gpt-5-mini',
-          messages: [
-            { role: 'system', content: 'あなたは業務分析の専門家です。業務説明から構造化されたデータを抽出します。' },
-            { role: 'user', content: llmPrompt },
-          ],
-          response_format: { type: 'json_object' },
-        }),
+      const llmResponse = await callOpenAI<{
+        name?: string;
+        summary?: string;
+        businessContext?: string;
+        processSteps?: Array<{ when: string; who: string; action: string }>;
+        input?: Array<{ name: string; source: string }>;
+        output?: Array<{ name: string; source: string }>;
+        concepts?: string[];
+        uncertainties?: Array<{ field: string; question: string; suggestion?: string }>;
+      }>({
+        systemPrompt: 'あなたは業務分析の専門家です。業務説明から構造化されたデータを抽出します。',
+        userPrompt: llmPrompt,
+        jsonMode: true,
       });
 
-      if (!llmResponse.ok) {
-        const errorBody = await llmResponse.text();
-        console.error('[bt_draft] OpenAI API error:', { status: llmResponse.status, body: errorBody });
-        throw new Error(`OpenAI API error: ${llmResponse.statusText}`);
-      }
+      console.log('[bt_draft] LLM Response:', { model: llmResponse.model, usage: llmResponse.usage });
 
-      const llmResult = await llmResponse.json();
-      console.log('[bt_draft] LLM Response:', { model: llmResult.model, usage: llmResult.usage });
-
-      if (!llmResult.choices?.[0]?.message?.content) {
-        console.error('[bt_draft] Invalid LLM response:', llmResult);
-        throw new Error('LLMのレスポンスが不正です');
-      }
-
-      const llmContent = JSON.parse(llmResult.choices[0].message.content);
+      const llmContent = llmResponse.content;
       console.log('[bt_draft] LLM Content:', { name: llmContent.name, hasProcessSteps: !!llmContent.processSteps });
 
       // 5. BT草案を生成
@@ -219,15 +203,16 @@ ${bd.id} - ${bd.name}
       const uncertainties: Array<{ field: string; question: string; suggestion?: string }> =
         llmContent.uncertainties || [];
 
-      return {
-        success: true,
-        message: `業務タスク「${btDraft.name}」の草案を生成しました（コード: ${newCode}）`,
-        btDraft,
-        brDrafts: generateBR ? brDrafts : undefined,
-        conceptCandidates,
-        uncertainties,
-        previewAvailable: true,
-      };
+      return toolSuccess(
+        `業務タスク「${btDraft.name}」の草案を生成しました（コード: ${newCode}）`,
+        {
+          btDraft,
+          brDrafts: generateBR ? brDrafts : undefined,
+          conceptCandidates,
+          uncertainties,
+          previewAvailable: true,
+        }
+      );
     } catch (error: any) {
       console.error('[bt_draft] Error:', {
         message: error.message,
@@ -237,15 +222,7 @@ ${bd.id} - ${bd.name}
         bdName,
         projectId,
       });
-      return {
-        success: false,
-        message: `BT草案生成に失敗: ${error.message}`,
-        btDraft: undefined,
-        brDrafts: undefined,
-        conceptCandidates: undefined,
-        uncertainties: undefined,
-        previewAvailable: false,
-      };
+      return toolError(error, 'BT草案生成に失敗しました');
     }
   },
 });

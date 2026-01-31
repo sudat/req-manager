@@ -3,6 +3,21 @@
  */
 
 /**
+ * BT草案の型定義
+ */
+export type BtDraft = {
+  code: string;
+  name: string;
+  summary: string;
+  businessContext: string;
+  processSteps: { when: string; who: string; action: string }[];
+  input: { name: string; source: string }[];
+  output: { name: string; source: string }[];
+  business_domain_id: string;
+  concept_ids?: string[];
+};
+
+/**
  * チャットメッセージ
  */
 export type ChatMessage = {
@@ -11,6 +26,19 @@ export type ChatMessage = {
   content: string;
   timestamp: Date;
   isStreaming?: boolean;
+  progressSteps?: ChatProgressStep[];
+  btDraft?: BtDraft;
+};
+
+/**
+ * 途中経過のステップ情報
+ */
+export type ChatProgressStep = {
+  id: string;
+  index: number;
+  title: string;
+  status: 'running' | 'done' | 'error';
+  detail?: string;
 };
 
 /**

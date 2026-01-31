@@ -27,6 +27,12 @@ export type ColumnDef<T> = {
 	cell: CellRenderer<T>;
 };
 
+/** 並び替え用型 */
+export type SortOrderUpdate = {
+	id: string;
+	sortOrder: number;
+};
+
 /** リスト設定 */
 export type ResourceListConfig<T> = {
 	/** ページタイトル */
@@ -49,6 +55,10 @@ export type ResourceListConfig<T> = {
 	getRowHref?: (item: T) => string;
 	/** 検索用テキスト抽出 */
 	getSearchText: (item: T) => string;
+	/** 並び替え機能を有効にする */
+	enableReorder?: boolean;
+	/** 並び替え保存時のコールバック */
+	onReorderSave?: (updates: SortOrderUpdate[]) => Promise<{ data: boolean | null; error: string | null }>;
 };
 
 // ============================================================================
@@ -198,6 +208,11 @@ export const systemDomainListConfig: ResourceListConfig<SystemDomain & { functio
 	],
 	getRowHref: (domain) => `/system/${domain.id}`,
 	getSearchText: (domain) => `${domain.id} ${domain.name} ${domain.description}`,
+	enableReorder: true,
+	onReorderSave: async (updates) => {
+		const { updateSystemDomainsSortOrder } = await import("@/lib/data/system-domains");
+		return await updateSystemDomainsSortOrder(updates);
+	},
 };
 
 // ============================================================================

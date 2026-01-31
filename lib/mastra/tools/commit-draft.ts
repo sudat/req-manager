@@ -1,6 +1,7 @@
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
 import { supabase } from '@/lib/supabase/client';
+import { toolSuccess, toolError } from '@/lib/mastra/utils/tool-helpers';
 
 /**
  * ドラフトタイプごとのコンテンツスキーマ定義
@@ -14,9 +15,19 @@ const btContentSchema = z.object({
   name: z.string(),
   summary: z.string().optional(),
   businessContext: z.string().optional(),
-  processSteps: z.array(z.string()).optional(),
-  input: z.array(z.string()).optional(),
-  output: z.array(z.string()).optional(),
+  processSteps: z.array(z.object({
+    when: z.string(),
+    who: z.string(),
+    action: z.string(),
+  })).optional(),
+  input: z.array(z.object({
+    name: z.string(),
+    source: z.string(),
+  })).optional(),
+  output: z.array(z.object({
+    name: z.string(),
+    source: z.string(),
+  })).optional(),
   concepts: z.array(z.string()).optional(),
   conceptIdsYaml: z.string().optional(),
   person: z.string().optional(),
@@ -90,11 +101,10 @@ export const commitDraftTool = createTool({
         typeof value === 'object' && value !== null && !Array.isArray(value);
 
       if (!isPlainObject(content)) {
-        return {
-          success: false,
-          error: 'Invalid content payload',
-          message: '草案の内容が不正です。草案データを確認してください。',
-        };
+        return toolError(
+          'Invalid content payload',
+          '草案の内容が不正です。草案データを確認してください。'
+        );
       }
 
       const now = new Date().toISOString();
@@ -102,17 +112,6 @@ export const commitDraftTool = createTool({
       const shouldRetryWithoutProjectId = (error: any) => {
         const message = `${error?.message ?? ''} ${error?.details ?? ''}`.toLowerCase();
         return message.includes('project_id') && message.includes('does not exist');
-      };
-
-      const toNewlineText = (value?: string[] | null) => {
-        if (!value) return null;
-        if (Array.isArray(value)) return value.join('\n');
-        return String(value);
-      };
-
-      const toTextArray = (value?: string[] | null) => {
-        if (!value) return null;
-        return Array.isArray(value) ? value : [String(value)];
       };
 
       const toTextArrayOrEmpty = (value?: string[] | null) => {
@@ -190,9 +189,9 @@ export const commitDraftTool = createTool({
             name: validatedContent.name,
             summary: validatedContent.summary ?? null,
             business_context: validatedContent.businessContext ?? null,
-            process_steps: toNewlineText(validatedContent.processSteps),
-            input: toNewlineText(validatedContent.input),
-            output: toNewlineText(validatedContent.output),
+            process_steps: validatedContent.processSteps ?? null,
+            input: validatedContent.input ?? null,
+            output: validatedContent.output ?? null,
             concepts: toTextArrayOrEmpty(validatedContent.concepts),
             concept_ids_yaml: validatedContent.conceptIdsYaml ?? null,
             person: validatedContent.person ?? null,
@@ -266,9 +265,9 @@ export const commitDraftTool = createTool({
           const row = {
             system_requirement_id: validatedContent.system_requirement_id,
             code: validatedContent.code,
-            given: validatedContent.given,
-            when: validatedContent.when,
-            then: validatedContent.then,
+            given_text: validatedContent.given,
+            when_text: validatedContent.when,
+            then_text: validatedContent.then,
             ...(projectId ? { project_id: projectId } : {}),
             created_at: now,
             updated_at: now,
@@ -300,23 +299,17 @@ export const commitDraftTool = createTool({
       }
 
       console.log('[commit_draft] Insert succeeded', { type, id: insertedId });
-      return {
-        success: true,
+      return toolSuccess(`草案を正本に登録しました（${type} ID: ${insertedId ?? draftId}）`, {
         id: insertedId ?? draftId,
         type,
-        message: `草案を正本に登録しました（${type} ID: ${insertedId ?? draftId}）`,
-      };
+      });
     } catch (error: any) {
       console.error('[commit_draft] Error:', {
         message: error?.message,
         code: error?.code,
         details: error?.details,
       });
-      return {
-        success: false,
-        error: error.message,
-        message: '草案の確定に失敗しました',
-      };
+      return toolError(error, '草案の確定に失敗しました');
     }
   },
 });

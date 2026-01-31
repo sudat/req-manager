@@ -5,10 +5,9 @@ import { ChatHeader } from './chat-header';
 import { QuickActions } from './quick-actions';
 import { ChatMessages } from './chat-messages';
 import { ChatInput } from './chat-input';
-import { DraftPreviewCard } from './draft-preview';
+// Note: DraftPreviewCard removed - drafts are now displayed as markdown in chat
 import { ConceptSuggestionCard, ConceptApprovalForm } from './concept-suggestion';
-import type { ChatMessage, ChatConfig, QuickAction } from './types';
-import type { Draft, DraftAction } from './draft-preview';
+import type { ChatMessage, ChatConfig, QuickAction, ChatProgressStep } from './types';
 import type { ConceptCandidate, ConceptAction, ConceptApproval } from './concept-suggestion';
 import { ContextProvider } from '@/lib/mastra/context/provider';
 import { useProject } from '@/components/project/project-context';
@@ -20,6 +19,27 @@ type ChatContainerProps = {
   onClose: () => void;
 };
 
+const upsertProgressStep = (
+  steps: ChatProgressStep[] | undefined,
+  incoming: ChatProgressStep
+) => {
+  const nextSteps = steps ? [...steps] : [];
+  const existingIndex = nextSteps.findIndex((step) => step.id === incoming.id);
+
+  if (existingIndex >= 0) {
+    const existing = nextSteps[existingIndex];
+    nextSteps[existingIndex] = {
+      ...existing,
+      ...incoming,
+      detail: incoming.detail ?? existing.detail,
+    };
+  } else {
+    nextSteps.push(incoming);
+  }
+
+  return nextSteps.sort((a, b) => a.index - b.index);
+};
+
 /**
  * チャットコンテナ
  *
@@ -29,7 +49,7 @@ export function ChatContainer({ config, onClose }: ChatContainerProps) {
   const { currentProjectId } = useProject();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [drafts, setDrafts] = useState<Draft[]>([]);
+  // Note: drafts state removed - drafts are now displayed as markdown in chat
   const [conceptCandidates, setConceptCandidates] = useState<ConceptCandidate[]>([]);
   const [showConceptForm, setShowConceptForm] = useState<string | null>(null);
   const [reasoningEffort, setReasoningEffort] = useState<ReasoningEffort>(
@@ -94,6 +114,7 @@ export function ChatContainer({ config, onClose }: ChatContainerProps) {
         content: '',
         timestamp: new Date(),
         isStreaming: true,
+        progressSteps: [],
       };
 
       // タイムアウト処理（180秒）
@@ -186,6 +207,34 @@ export function ChatContainer({ config, onClose }: ChatContainerProps) {
                   // エラーデータの検出
                   if (data.error) {
                     throw new Error(data.message || 'ストリーミングエラーが発生しました');
+                  }
+
+                  if (data.event === 'progress' && data.step) {
+                    const step = data.step as ChatProgressStep;
+                    assistantMessage.progressSteps = upsertProgressStep(
+                      assistantMessage.progressSteps,
+                      step
+                    );
+                    setMessages((prev) =>
+                      prev.map((msg) =>
+                        msg.id === assistantMessage.id
+                          ? { ...msg, progressSteps: assistantMessage.progressSteps }
+                          : msg
+                      )
+                    );
+                    continue;
+                  }
+
+                  if (data.event === 'draft' && data.draft) {
+                    assistantMessage.btDraft = data.draft;
+                    setMessages((prev) =>
+                      prev.map((msg) =>
+                        msg.id === assistantMessage.id
+                          ? { ...msg, btDraft: assistantMessage.btDraft }
+                          : msg
+                      )
+                    );
+                    continue;
                   }
 
                   if (data.content) {
@@ -283,35 +332,7 @@ export function ChatContainer({ config, onClose }: ChatContainerProps) {
     [sendMessage]
   );
 
-  /**
-   * 草案アクションを処理する
-   */
-  const handleDraftAction = useCallback(
-    async (draft: Draft, action: DraftAction) => {
-      switch (action) {
-        case 'commit':
-          // TODO: commit_draft Tool呼び出し
-          console.log('Commit draft:', draft.id);
-          setDrafts((prev) => prev.filter((d) => d.id !== draft.id));
-          break;
-
-        case 'edit':
-          // TODO: 編集画面に遷移
-          console.log('Edit draft:', draft.id);
-          break;
-
-        case 'discard':
-          setDrafts((prev) => prev.filter((d) => d.id !== draft.id));
-          break;
-
-        case 'retry':
-          // TODO: 再生成
-          console.log('Retry draft:', draft.id);
-          break;
-      }
-    },
-    []
-  );
+  // Note: handleDraftAction removed - drafts are now committed via chat using commitDraftTool
 
   /**
    * 概念候補アクションを処理する
@@ -370,26 +391,11 @@ export function ChatContainer({ config, onClose }: ChatContainerProps) {
       <div className="flex-1 overflow-y-auto">
         <ChatMessages messages={messages} isLoading={isLoading} />
 
-        {/* 草案プレビュー */}
-        {drafts.length > 0 && (
-          <div className="px-6 py-4 space-y-3 max-w-3xl mx-auto">
-            <div className="text-[11px] font-medium text-slate-500 uppercase tracking-wide mb-2">
-              生成された草案
-            </div>
-            {drafts.map((draft) => (
-              <DraftPreviewCard
-                key={draft.id}
-                draft={draft}
-                onAction={(action) => handleDraftAction(draft, action)}
-                disabled={isLoading}
-              />
-            ))}
-          </div>
-        )}
+        {/* Note: Draft preview removed - drafts are now displayed as markdown in chat */}
 
         {/* 概念候補提案 */}
         {conceptCandidates.length > 0 && (
-          <div className="px-6 py-4 space-y-3 max-w-3xl mx-auto">
+          <div className="px-6 py-4 space-y-3 max-w-4xl mx-auto">
             <div className="text-[11px] font-medium text-slate-500 uppercase tracking-wide mb-2">
               検出された概念候補
             </div>

@@ -25,7 +25,7 @@ export default function SettingsPage() {
 					{/* Stateベースのタブ */}
 					<Tabs defaultValue="project" className="w-full">
 						<TabsList className="w-full justify-start">
-							<TabsTrigger value="project" className="px-6">プロジェクト設定</TabsTrigger>
+							<TabsTrigger value="project" className="px-6">プロジェクト調査設定</TabsTrigger>
 							<TabsTrigger value="llm" className="px-6">LLM設定</TabsTrigger>
 							<TabsTrigger value="notification" className="px-6">通知設定</TabsTrigger>
 						</TabsList>

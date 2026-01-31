@@ -1,4 +1,5 @@
-import { supabase, getSupabaseConfigError } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase/client";
+import { failIfMissingConfig } from "./crud-factory";
 import type { ProjectInvestigationSettings } from "@/lib/domain";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -154,13 +155,6 @@ export const normalizeProjectInvestigationSettings = (
   };
 };
 
-const failIfMissingConfig = () => {
-  const error = getSupabaseConfigError();
-  if (error) {
-    return { data: null, error };
-  }
-  return null;
-};
 
 export const getProjectInvestigationSettings = async (projectId: string) => {
   const configError = failIfMissingConfig();

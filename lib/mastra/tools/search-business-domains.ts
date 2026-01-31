@@ -2,6 +2,7 @@ import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
 import { supabase } from '@/lib/supabase/client';
 import { escapeLikePattern, buildOrLikeConditions } from '@/lib/mastra/utils/sql-helpers';
+import { toolSuccess, toolError } from '@/lib/mastra/utils/tool-helpers';
 
 /**
  * search_business_domains Tool
@@ -23,16 +24,6 @@ export const searchBusinessDomainsTool = createTool({
   inputSchema: z.object({
     projectId: z.string().describe('プロジェクトID'),
     query: z.string().describe('検索キーワード（codeまたはname）'),
-  }),
-  outputSchema: z.object({
-    success: z.boolean(),
-    results: z.array(z.object({
-      id: z.string(),
-      name: z.string(),
-      area: z.string().optional(),
-    })),
-    count: z.number(),
-    message: z.string(),
   }),
   execute: async (inputData) => {
     const { projectId, query } = inputData;
@@ -59,28 +50,19 @@ export const searchBusinessDomainsTool = createTool({
       console.log('[searchBusinessDomains] Result:', { count: bds?.length, bds });
 
       if (!bds || bds.length === 0) {
-        return {
-          success: true,
-          results: [],
-          count: 0,
-          message: `業務領域「${query}」が見つかりませんでした。検索対象: code, name, area。projectId: ${projectId}`,
-        };
+        return toolSuccess(
+          `業務領域「${query}」が見つかりませんでした。検索対象: code, name, area。projectId: ${projectId}`,
+          { results: [], count: 0 }
+        );
       }
 
-      return {
-        success: true,
-        results: bds,
-        count: bds.length,
-        message: `${bds.length}件の業務領域が見つかりました: ${bds.map(bd => `${bd.id}: ${bd.name}`).join(', ')}`,
-      };
+      return toolSuccess(
+        `${bds.length}件の業務領域が見つかりました: ${bds.map(bd => `${bd.id}: ${bd.name}`).join(', ')}`,
+        { results: bds, count: bds.length }
+      );
     } catch (error: any) {
       console.error('[searchBusinessDomains] Exception:', error);
-      return {
-        success: false,
-        results: [],
-        count: 0,
-        message: `業務領域の検索に失敗しました: ${error.message}`,
-      };
+      return toolError(error, '業務領域の検索に失敗しました');
     }
   },
 });

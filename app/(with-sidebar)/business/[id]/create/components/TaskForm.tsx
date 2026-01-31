@@ -121,7 +121,7 @@ export function TaskForm({
         </div>
 
         <ProcessStepsField
-          label="process_steps"
+          label="業務プロセス"
           value={processSteps}
           onChange={onProcessStepsChange}
           helperText="いつ／誰が／何をするかを入力します（任意）。"
@@ -148,7 +148,6 @@ export function TaskForm({
           value={conceptIdsYaml}
           onChange={onConceptIdsYamlChange}
           concepts={concepts}
-          helperText="関連概念IDをバッジで管理します（任意）。"
         />
 
         {error && <p className="text-sm text-rose-600">{error}</p>}

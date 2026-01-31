@@ -32,7 +32,7 @@ export function BusinessRequirementCard({
   optionsError,
   relatedSystemRequirements,
 }: BusinessRequirementCardProps) {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
 
   // 関連するシステム要件の概要を抽出
   const relatedSystemRequirementSummaries = useMemo(() => {
@@ -56,13 +56,16 @@ export function BusinessRequirementCard({
       onOpenChange={setIsOpen}
       className="rounded-md border border-slate-200 bg-slate-50/50 hover:bg-white hover:border-slate-300 transition-colors p-4"
     >
-      <CollapsibleTrigger className="flex flex-wrap items-start justify-between gap-2 mb-3 w-full text-left hover:bg-slate-50/50 rounded px-2 -mx-2 py-1 transition-colors cursor-pointer">
+      <CollapsibleTrigger className="flex flex-wrap items-start justify-between gap-2 w-full text-left hover:bg-slate-50/50 rounded px-2 -mx-2 py-1 transition-colors cursor-pointer">
         <div className="flex-1">
           <div className="font-mono text-[11px] text-slate-400">{requirement.id}</div>
           <div className="text-[14px] font-medium text-slate-900 mt-1">{requirement.title}</div>
           {displayGoal && (
-            <div className="mt-2 text-[13px] text-slate-700">
-              <MarkdownRenderer content={displayGoal} />
+            <div className="mt-2">
+              <div className="text-[12px] font-medium text-slate-500">ゴール</div>
+              <div className="text-[13px] text-slate-700 mt-1">
+                <MarkdownRenderer content={displayGoal} />
+              </div>
             </div>
           )}
         </div>
@@ -81,14 +84,14 @@ export function BusinessRequirementCard({
 
       {requirement.owner && (
         <div className="border-t border-slate-100 pt-3 space-y-2">
-          <div className="text-[12px] font-medium text-slate-500">owner</div>
+          <div className="text-[12px] font-medium text-slate-500">オーナー</div>
           <div className="text-[13px] text-slate-700">{requirement.owner}</div>
         </div>
       )}
 
       {constraintItems.length > 0 && (
         <div className="border-t border-slate-100 pt-3 space-y-2">
-          <div className="text-[12px] font-medium text-slate-500">constraints</div>
+          <div className="text-[12px] font-medium text-slate-500">制約条件</div>
           <ul className="list-disc pl-4 text-[13px] text-slate-700 space-y-1">
             {constraintItems.map((item, index) => (
               <li key={`${requirement.id}-constraint-${index}`}>{item}</li>

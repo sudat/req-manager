@@ -1,4 +1,5 @@
-import { supabase, getSupabaseConfigError } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase/client";
+import { failIfMissingConfig } from "./crud-factory";
 import type {
 	ImpactScope,
 	ImpactScopeTargetType,
@@ -66,13 +67,6 @@ const toImpactScopeRowBase = (input: ImpactScopeInput) => ({
 	confirmed_at: input.confirmedAt ?? null,
 });
 
-const failIfMissingConfig = () => {
-	const error = getSupabaseConfigError();
-	if (error) {
-		return { data: null, error };
-	}
-	return null;
-};
 
 export const listImpactScopesByChangeRequestId = async (changeRequestId: string) => {
 	const configError = failIfMissingConfig();

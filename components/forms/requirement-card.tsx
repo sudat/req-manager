@@ -89,8 +89,11 @@ export function RequirementCard({
   onOpenDialog,
 }: RequirementCardProps) {
   return (
-    <Card className="rounded-md border border-slate-200">
-      <CardContent className="p-3 space-y-3">
+    <Card
+      className="rounded-md border border-slate-200"
+      style={{ backgroundColor: 'rgb(248, 250, 252)' }}
+    >
+      <CardContent className="p-3 space-y-3 rounded-md">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2">
             <span className="font-mono text-[11px] text-slate-400">
@@ -127,7 +130,7 @@ export function RequirementCard({
           <>
             <div className="space-y-1.5">
               <Label className="text-[12px] font-medium text-slate-500">
-                goal
+                ゴール
               </Label>
               <Textarea
                 className="min-h-[90px] text-[14px]"
@@ -136,15 +139,14 @@ export function RequirementCard({
               />
             </div>
             <YamlListField
-              label="constraints"
+              label="制約条件"
               value={requirement.constraints}
               onChange={(value) => onUpdate({ constraints: value })}
               itemPlaceholder="例: 計上日は出荷日基準とする"
-              helperText="守るべき業務ルールや制度を箇条書きで記載します。"
             />
             <div className="space-y-1.5">
               <Label className="text-[12px] font-medium text-slate-500">
-                owner
+                オーナー
               </Label>
               <Input
                 value={requirement.owner}

@@ -1,4 +1,5 @@
-import { supabase, getSupabaseConfigError } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase/client";
+import { failIfMissingConfig } from "./crud-factory";
 import type {
 	AcceptanceConfirmation,
 	AcceptanceCriterionSourceType,
@@ -77,13 +78,6 @@ const toAcceptanceConfirmationRowBase = (input: AcceptanceConfirmationInput) => 
 	evidence: input.evidence ?? null,
 });
 
-const failIfMissingConfig = () => {
-	const error = getSupabaseConfigError();
-	if (error) {
-		return { data: null, error };
-	}
-	return null;
-};
 
 export const listAcceptanceConfirmationsByChangeRequestId = async (changeRequestId: string) => {
 	const configError = failIfMissingConfig();
