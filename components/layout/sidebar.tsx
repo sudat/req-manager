@@ -14,8 +14,8 @@ import {
   ListChecks,
   Menu,
   Bot,
+  PanelLeft,
   Settings,
-  X,
 } from "lucide-react"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
@@ -133,7 +133,7 @@ export function Sidebar() {
           onClick={toggleCollapsed}
           className="absolute right-3 top-5 z-10"
         >
-          {isCollapsed ? <Menu className="h-5 w-5" /> : <X className="h-5 w-5" />}
+          {isCollapsed ? <Menu className="h-5 w-5" /> : <PanelLeft className="h-5 w-5" />}
         </Button>
 
         {!isCollapsed && (

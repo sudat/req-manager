@@ -2,6 +2,7 @@ import { updateSystemFunction } from "@/lib/data/system-functions";
 import {
 	deleteSystemRequirementsBySrfId,
 	createSystemRequirements,
+	listSystemRequirementsBySrfId,
 } from "@/lib/data/system-requirements";
 import {
 	deleteImplUnitSdsBySrfId,
@@ -11,9 +12,7 @@ import {
 	createAcceptanceCriteria,
 	acceptanceCriteriaJsonToInputs,
 } from "@/lib/data/acceptance-criteria";
-import { listBusinessRequirementsByIds } from "@/lib/data/business-requirements";
-import { linkBusinessRequirements } from "./link-business-requirements";
-import type { SystemRequirementLinkCard } from "./link-business-requirements";
+import { syncBrSrLinksToRequirementLinks } from "@/lib/data/task-sync";
 import { normalizeEntryPointsInput } from "./entry-points";
 import { parseYamlObject } from "@/lib/utils/yaml";
 import type { Requirement } from "@/lib/domain/forms";
@@ -40,14 +39,6 @@ type SaveSystemFunctionInput = {
 	codeRefs: CodeRef[];
 	systemRequirements: Requirement[];
 	projectId: string;
-};
-
-type SystemRequirementCard = {
-	id: string;
-	title: string;
-	summary: string;
-	businessRequirementIds: string[];
-	acceptanceCriteriaJson: unknown[];
 };
 
 /**
@@ -104,7 +95,15 @@ export async function saveSystemFunction(
 		return { error: saveError };
 	}
 
-	// 2. システム要件を保存（既存削除 + 再作成）
+	// 2. 既存SRのIDを取得（リンク削除用）
+	const { data: existingSystemReqs, error: existingSrError } =
+		await listSystemRequirementsBySrfId(srfId, projectId);
+	if (existingSrError) {
+		return { error: existingSrError };
+	}
+	const existingSrIds = (existingSystemReqs ?? []).map((req) => req.id);
+
+	// 3. システム要件を保存（既存削除 + 再作成）
 	await deleteSystemRequirementsBySrfId(srfId, projectId);
 
 	if (systemRequirements.length > 0) {
@@ -117,7 +116,6 @@ export async function saveSystemFunction(
 			conceptIds: req.conceptIds,
 			impacts: [],
 			category: req.category,
-			businessRequirementIds: req.businessRequirementIds ?? [],
 			relatedDeliverableIds: req.relatedDeliverableIds ?? [],
 			acceptanceCriteriaJson: req.acceptanceCriteriaJson,
 			acceptanceCriteria: req.acceptanceCriteria,
@@ -132,7 +130,7 @@ export async function saveSystemFunction(
 		}
 	}
 
-	// 3. 受入基準を保存
+	// 4. 受入基準を保存
 	const acceptanceInputs = systemRequirements.flatMap((req) =>
 		acceptanceCriteriaJsonToInputs(req.acceptanceCriteriaJson ?? [], req.id, projectId)
 	);
@@ -141,7 +139,7 @@ export async function saveSystemFunction(
 		return { error: acError };
 	}
 
-	// 4. 実装単位SDを保存（既存削除 + 再作成）
+	// 5. 実装単位SDを保存（既存削除 + 再作成）
 	const { error: implDeleteError } = await deleteImplUnitSdsBySrfId(srfId, projectId);
 	if (implDeleteError) {
 		return { error: implDeleteError };
@@ -165,35 +163,17 @@ export async function saveSystemFunction(
 		}
 	}
 
-	// 5. 双方向参照の同期
-	const relatedBizReqIds = Array.from(
-		new Set(systemRequirements.flatMap((req) => req.businessRequirementIds ?? []))
+	// 6. requirement_linksにSR↔BRリンクを同期
+	const linkError = await syncBrSrLinksToRequirementLinks(
+		systemRequirements.map((req) => ({
+			id: req.id,
+			businessRequirementIds: req.businessRequirementIds ?? [],
+		})),
+		projectId,
+		{ deleteSourceIds: existingSrIds }
 	);
-
-	if (relatedBizReqIds.length > 0) {
-		const { data: relatedBizReqs, error: bizFetchError } =
-			await listBusinessRequirementsByIds(relatedBizReqIds, projectId);
-
-		if (!bizFetchError && relatedBizReqs && relatedBizReqs.length > 0) {
-			const sysReqCards: SystemRequirementCard[] = systemRequirements
-				.filter((req) => (req.businessRequirementIds?.length ?? 0) > 0)
-				.map((req) => ({
-					id: req.id,
-					title: req.title,
-					summary: req.summary,
-					businessRequirementIds: req.businessRequirementIds ?? [],
-					acceptanceCriteriaJson: req.acceptanceCriteriaJson ?? [],
-				}));
-
-			const linkError = await linkBusinessRequirements(
-				sysReqCards as SystemRequirementLinkCard[],
-				relatedBizReqs,
-				projectId
-			);
-			if (linkError) {
-				return { error: `双方向参照同期エラー: ${linkError}` };
-			}
-		}
+	if (linkError) {
+		return { error: `リンク同期エラー: ${linkError}` };
 	}
 
 	return { error: null };

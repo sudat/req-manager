@@ -33,7 +33,6 @@ export function prepareSystemRequirementInputs(
 			conceptIds: [],
 			impacts: [],
 			category: sr.category ?? "function",
-			businessRequirementIds: sr.businessRequirementIds,
 			relatedDeliverableIds: sr.relatedDeliverableIds ?? [],
 			acceptanceCriteriaJson: sr.acceptanceCriteriaJson ?? [],
 			acceptanceCriteria: acceptanceCriteriaJsonToLegacy(sr.acceptanceCriteriaJson ?? []),

@@ -18,6 +18,7 @@ import {
 	healthIssueFilters,
 	type HealthScoreSummary,
 } from "@/lib/health-score";
+import { buildBusinessRequirementsForHealth } from "@/lib/health-score/utils";
 import { SuspectLinksCard } from "./components/suspect-links-card";
 
 export default function DashboardPage() {
@@ -73,8 +74,13 @@ export default function DashboardPage() {
 				return;
 			}
 
+			const businessRequirementsForHealth = buildBusinessRequirementsForHealth(
+				businessResult.data ?? [],
+				systemResult.data ?? []
+			);
+
 			const summary = buildHealthScoreSummary({
-				businessRequirements: businessResult.data ?? [],
+				businessRequirements: businessRequirementsForHealth,
 				systemRequirements: systemResult.data ?? [],
 				systemFunctions: functionResult.data ?? [],
 				implUnitSds: implUnitResult.data ?? [],

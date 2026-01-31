@@ -82,6 +82,7 @@ export const systemFunctions: SystemFunction[] = [
     createdAt: "2024-01-01T00:00:00Z",
     deliverables: [],
     updatedAt: "2024-01-15T00:00:00Z",
+    sortOrder: 0,
   },
   {
     id: "SRF-002",
@@ -156,6 +157,7 @@ export const systemFunctions: SystemFunction[] = [
     createdAt: "2024-01-01T00:00:00Z",
     deliverables: [],
     updatedAt: "2024-01-15T00:00:00Z",
+    sortOrder: 1,
   },
   {
     id: "SRF-003",
@@ -230,6 +232,7 @@ export const systemFunctions: SystemFunction[] = [
     createdAt: "2024-01-01T00:00:00Z",
     deliverables: [],
     updatedAt: "2024-03-01T00:00:00Z",
+    sortOrder: 2,
   },
   {
     id: "SRF-004",
@@ -304,6 +307,7 @@ export const systemFunctions: SystemFunction[] = [
     createdAt: "2024-01-01T00:00:00Z",
     deliverables: [],
     updatedAt: "2024-03-10T00:00:00Z",
+    sortOrder: 3,
   },
   {
     id: "SRF-005",
@@ -378,6 +382,7 @@ export const systemFunctions: SystemFunction[] = [
     createdAt: "2024-01-01T00:00:00Z",
     deliverables: [],
     updatedAt: "2024-01-01T00:00:00Z",
+    sortOrder: 4,
   },
   {
     id: "SRF-006",
@@ -451,6 +456,7 @@ export const systemFunctions: SystemFunction[] = [
     createdAt: "2024-02-01T00:00:00Z",
     deliverables: [],
     updatedAt: "2024-03-15T00:00:00Z",
+    sortOrder: 5,
   },
   {
     id: "SRF-007",
@@ -525,6 +531,7 @@ export const systemFunctions: SystemFunction[] = [
     createdAt: "2024-02-01T00:00:00Z",
     deliverables: [],
     updatedAt: "2024-02-01T00:00:00Z",
+    sortOrder: 6,
   },
   {
     id: "SRF-008",
@@ -598,6 +605,7 @@ export const systemFunctions: SystemFunction[] = [
     createdAt: "2024-02-15T00:00:00Z",
     deliverables: [],
     updatedAt: "2024-04-01T00:00:00Z",
+    sortOrder: 7,
   },
   // AP関連（8件）
   {
@@ -665,6 +673,7 @@ export const systemFunctions: SystemFunction[] = [
     createdAt: "2024-01-15T00:00:00Z",
     deliverables: [],
     updatedAt: "2024-02-01T00:00:00Z",
+    sortOrder: 8,
   },
   {
     id: "SRF-010",
@@ -731,6 +740,7 @@ export const systemFunctions: SystemFunction[] = [
     createdAt: "2024-01-15T00:00:00Z",
     deliverables: [],
     updatedAt: "2024-03-05T00:00:00Z",
+    sortOrder: 9,
   },
   {
     id: "SRF-011",
@@ -804,6 +814,7 @@ export const systemFunctions: SystemFunction[] = [
     createdAt: "2024-01-15T00:00:00Z",
     deliverables: [],
     updatedAt: "2024-03-20T00:00:00Z",
+    sortOrder: 10,
   },
   {
     id: "SRF-012",
@@ -878,6 +889,7 @@ export const systemFunctions: SystemFunction[] = [
     createdAt: "2024-02-01T00:00:00Z",
     deliverables: [],
     updatedAt: "2024-02-01T00:00:00Z",
+    sortOrder: 11,
   },
   {
     id: "SRF-013",
@@ -951,6 +963,7 @@ export const systemFunctions: SystemFunction[] = [
     createdAt: "2024-01-15T00:00:00Z",
     deliverables: [],
     updatedAt: "2024-02-15T00:00:00Z",
+    sortOrder: 12,
   },
   {
     id: "SRF-014",
@@ -1017,6 +1030,7 @@ export const systemFunctions: SystemFunction[] = [
     createdAt: "2024-02-01T00:00:00Z",
     deliverables: [],
     updatedAt: "2024-03-25T00:00:00Z",
+    sortOrder: 13,
   },
   {
     id: "SRF-015",
@@ -1091,6 +1105,7 @@ export const systemFunctions: SystemFunction[] = [
     createdAt: "2024-03-01T00:00:00Z",
     deliverables: [],
     updatedAt: "2024-03-01T00:00:00Z",
+    sortOrder: 14,
   },
   {
     id: "SRF-016",
@@ -1164,6 +1179,7 @@ export const systemFunctions: SystemFunction[] = [
     createdAt: "2024-02-15T00:00:00Z",
     deliverables: [],
     updatedAt: "2024-04-05T00:00:00Z",
+    sortOrder: 15,
   },
   // GL関連（8件）
   {
@@ -1239,6 +1255,7 @@ export const systemFunctions: SystemFunction[] = [
     createdAt: "2024-01-01T00:00:00Z",
     deliverables: [],
     updatedAt: "2024-02-01T00:00:00Z",
+    sortOrder: 16,
   },
   {
     id: "SRF-018",
@@ -1312,6 +1329,7 @@ export const systemFunctions: SystemFunction[] = [
     createdAt: "2024-01-01T00:00Z",
     deliverables: [],
     updatedAt: "2024-02-01T00:00:00Z",
+    sortOrder: 17,
   },
   {
     id: "SRF-019",
@@ -1385,6 +1403,7 @@ export const systemFunctions: SystemFunction[] = [
     createdAt: "2024-01-15T00:00:00Z",
     deliverables: [],
     updatedAt: "2024-02-15T00:00:00Z",
+    sortOrder: 18,
   },
   {
     id: "SRF-020",
@@ -1459,6 +1478,7 @@ export const systemFunctions: SystemFunction[] = [
     createdAt: "2024-01-15T00:00:00Z",
     deliverables: [],
     updatedAt: "2024-03-10T00:00:00Z",
+    sortOrder: 19,
   },
   {
     id: "SRF-021",
@@ -1532,6 +1552,7 @@ export const systemFunctions: SystemFunction[] = [
     createdAt: "2024-02-01T00:00:00Z",
     deliverables: [],
     updatedAt: "2024-04-01T00:00:00Z",
+    sortOrder: 20,
   },
   {
     id: "SRF-022",
@@ -1607,6 +1628,7 @@ export const systemFunctions: SystemFunction[] = [
     createdAt: "2024-03-01T00:00:00Z",
     deliverables: [],
     updatedAt: "2024-03-01T00:00:00Z",
+    sortOrder: 21,
   },
   {
     id: "SRF-023",
@@ -1681,6 +1703,7 @@ export const systemFunctions: SystemFunction[] = [
     createdAt: "2024-03-01T00:00:00Z",
     deliverables: [],
     updatedAt: "2024-03-20T00:00:00Z",
+    sortOrder: 22,
   },
   {
     id: "SRF-024",
@@ -1757,6 +1780,7 @@ export const systemFunctions: SystemFunction[] = [
     createdAt: "2024-03-15T00:00:00Z",
     deliverables: [],
     updatedAt: "2024-03-15T00:00:00Z",
+    sortOrder: 23,
   },
 ];
 

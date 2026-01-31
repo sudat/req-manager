@@ -14,7 +14,6 @@ export type BusinessRequirement = {
 	srfIds: string[];
 	systemDomainIds: string[];
 	impacts: string[];
-	relatedSystemRequirementIds: string[];
 	acceptanceCriteriaJson: AcceptanceCriterionJson[];
 	acceptanceCriteria: string[];
 	sortOrder: number;
@@ -33,7 +32,6 @@ export type BusinessRequirementInput = {
 	srfIds: string[];
 	systemDomainIds: string[];
 	impacts: string[];
-	relatedSystemRequirementIds: string[];
 	sortOrder: number;
 };
 
@@ -53,7 +51,6 @@ type BusinessRequirementRow = {
 	srf_ids: string[] | null;
 	system_domain_ids: string[] | null;
 	impacts: string[] | null;
-	related_system_requirement_ids: string[] | null;
 	sort_order: number | null;
 	created_at: string;
 	updated_at: string;
@@ -75,7 +72,6 @@ const toBusinessRequirement = (row: BusinessRequirementRow): BusinessRequirement
 		srfIds: row.srf_ids ?? [],
 		systemDomainIds: row.system_domain_ids ?? [],
 		impacts: row.impacts ?? [],
-		relatedSystemRequirementIds: row.related_system_requirement_ids ?? [],
 		acceptanceCriteriaJson: [],
 		acceptanceCriteria: [],
 		sortOrder: row.sort_order ?? 0,
@@ -97,7 +93,6 @@ const toBusinessRequirementRowBase = (input: BusinessRequirementInput) => {
 		srf_ids: input.srfIds,
 		system_domain_ids: input.systemDomainIds,
 		impacts: input.impacts,
-		related_system_requirement_ids: input.relatedSystemRequirementIds,
 		sort_order: input.sortOrder,
 	};
 };

@@ -10,6 +10,7 @@ import {
 	acceptanceCriteriaToJson,
 	listAcceptanceCriteriaBySystemRequirementIds,
 } from "@/lib/data/acceptance-criteria";
+import { listRequirementLinksBySourceIds } from "@/lib/data/requirement-links";
 
 export const getSystemRequirementCategoryLabel = (category: SystemRequirementCategory): string => {
 	const labels: Record<SystemRequirementCategory, string> = {
@@ -50,7 +51,6 @@ export type SystemRequirementInput = {
 	conceptIds: string[];
 	impacts: string[];
 	category?: SystemRequirementCategory;
-	businessRequirementIds?: string[];
 	relatedDeliverableIds?: string[];
 	acceptanceCriteriaJson?: AcceptanceCriterionJson[];
 	acceptanceCriteria: string[];
@@ -71,7 +71,6 @@ type SystemRequirementRow = {
 	concept_ids: string[] | null;
 	impacts: string[] | null;
 	category: string | null;
-	business_requirement_ids: string[] | null;
 	related_deliverable_ids: string[] | null;
 	acceptance_criteria_json: unknown | null;
 	acceptance_criteria: string[] | null;
@@ -105,7 +104,7 @@ const toSystemRequirement = (row: SystemRequirementRow): SystemRequirement => {
 		impacts: row.impacts ?? [],
 		category: normalizeCategory(row.category),
 		categoryRaw: row.category,
-		businessRequirementIds: row.business_requirement_ids ?? [],
+		businessRequirementIds: [],
 		relatedDeliverableIds: row.related_deliverable_ids ?? [],
 		// 受入条件は正本テーブル acceptance_criteria からマージする
 		acceptanceCriteriaJson: [],
@@ -167,6 +166,36 @@ const mergeAcceptanceCriteriaFromCanonical = async (
 	return { data: merged, error: null };
 };
 
+const mergeBusinessRequirementIdsFromLinks = async (
+	requirements: SystemRequirement[],
+	projectId?: string
+) => {
+	if (requirements.length === 0) return { data: [], error: null };
+	if (!projectId) return { data: requirements, error: null };
+
+	const ids = requirements.map((req) => req.id);
+	const { data: links, error } = await listRequirementLinksBySourceIds("sr", ids, projectId);
+	if (error) return { data: null, error };
+
+	const linkMap = new Map<string, string[]>();
+	for (const link of links ?? []) {
+		if (link.targetType !== "br" || link.linkType !== "derived_from") continue;
+		const list = linkMap.get(link.sourceId);
+		if (list) {
+			list.push(link.targetId);
+		} else {
+			linkMap.set(link.sourceId, [link.targetId]);
+		}
+	}
+
+	const merged = requirements.map((req) => ({
+		...req,
+		businessRequirementIds: linkMap.get(req.id) ?? [],
+	}));
+
+	return { data: merged, error: null };
+};
+
 export const listSystemRequirementsByTaskId = async (taskId: string, projectId?: string) => {
 	const configError = failIfMissingConfig();
 	if (configError) return configError;
@@ -185,7 +214,9 @@ export const listSystemRequirementsByTaskId = async (taskId: string, projectId?:
 	const { data, error } = await query;
 	if (error) return { data: null, error: error.message };
 	const mapped = (data as SystemRequirementRow[]).map(toSystemRequirement);
-	return mergeAcceptanceCriteriaFromCanonical(mapped, projectId);
+	const withAcceptance = await mergeAcceptanceCriteriaFromCanonical(mapped, projectId);
+	if (withAcceptance.error || !withAcceptance.data) return withAcceptance;
+	return mergeBusinessRequirementIdsFromLinks(withAcceptance.data, projectId);
 };
 
 export const listSystemRequirementsByIds = async (ids: string[], projectId?: string) => {
@@ -202,7 +233,9 @@ export const listSystemRequirementsByIds = async (ids: string[], projectId?: str
 	const { data, error } = await query;
 	if (error) return { data: null, error: error.message };
 	const mapped = (data as SystemRequirementRow[]).map(toSystemRequirement);
-	return mergeAcceptanceCriteriaFromCanonical(mapped, projectId);
+	const withAcceptance = await mergeAcceptanceCriteriaFromCanonical(mapped, projectId);
+	if (withAcceptance.error || !withAcceptance.data) return withAcceptance;
+	return mergeBusinessRequirementIdsFromLinks(withAcceptance.data, projectId);
 };
 
 export const listSystemRequirements = async (projectId?: string) => {
@@ -218,7 +251,9 @@ export const listSystemRequirements = async (projectId?: string) => {
 	const { data, error } = await query;
 	if (error) return { data: null, error: error.message };
 	const mapped = (data as SystemRequirementRow[]).map(toSystemRequirement);
-	return mergeAcceptanceCriteriaFromCanonical(mapped, projectId);
+	const withAcceptance = await mergeAcceptanceCriteriaFromCanonical(mapped, projectId);
+	if (withAcceptance.error || !withAcceptance.data) return withAcceptance;
+	return mergeBusinessRequirementIdsFromLinks(withAcceptance.data, projectId);
 };
 
 export const createSystemRequirements = async (inputs: SystemRequirementCreateInput[]) => {
@@ -232,7 +267,6 @@ export const createSystemRequirements = async (inputs: SystemRequirementCreateIn
 			...toSystemRequirementRowBase(input),
 			project_id: input.projectId,
 			category: input.category ?? "function",
-			business_requirement_ids: input.businessRequirementIds ?? [],
 			related_deliverable_ids: input.relatedDeliverableIds ?? [],
 			created_at: now,
 			updated_at: now,
@@ -266,7 +300,9 @@ export const listSystemRequirementsBySrfId = async (srfId: string, projectId?: s
 	const { data, error } = await query;
 	if (error) return { data: null, error: error.message };
 	const mapped = (data as SystemRequirementRow[]).map(toSystemRequirement);
-	return mergeAcceptanceCriteriaFromCanonical(mapped, projectId);
+	const withAcceptance = await mergeAcceptanceCriteriaFromCanonical(mapped, projectId);
+	if (withAcceptance.error || !withAcceptance.data) return withAcceptance;
+	return mergeBusinessRequirementIdsFromLinks(withAcceptance.data, projectId);
 };
 
 export const createSystemRequirement = async (input: SystemRequirementCreateInput) => {
@@ -278,7 +314,6 @@ export const createSystemRequirement = async (input: SystemRequirementCreateInpu
     ...toSystemRequirementRowBase(input),
 		project_id: input.projectId,
 		category: input.category ?? "function",
-		business_requirement_ids: input.businessRequirementIds ?? [],
 		related_deliverable_ids: input.relatedDeliverableIds ?? [],
     created_at: now,
     updated_at: now,
@@ -304,7 +339,7 @@ export const updateSystemRequirement = async (
 
 	let fetchQuery = supabase
 		.from("system_requirements")
-		.select("category, business_requirement_ids, related_deliverable_ids")
+		.select("category, related_deliverable_ids")
 		.eq("id", id);
 
 	if (projectId) {
@@ -320,7 +355,6 @@ export const updateSystemRequirement = async (
 	const payload = {
 		...toSystemRequirementRowBase({ ...input, id }),
 		category: input.category ?? normalizeCategory(existingRow?.category),
-		business_requirement_ids: input.businessRequirementIds ?? existingRow?.business_requirement_ids ?? [],
 		related_deliverable_ids: input.relatedDeliverableIds ?? existingRow?.related_deliverable_ids ?? [],
 		updated_at: now,
 	};

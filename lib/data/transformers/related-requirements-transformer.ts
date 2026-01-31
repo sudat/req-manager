@@ -1,7 +1,9 @@
 import type { RelatedRequirementInfo } from "@/lib/domain/value-objects";
 import type { AcceptanceCriterionJson } from "@/lib/data/structured";
-import { listBrIdsBySrId, listRequirementLinksBySource } from "@/lib/data/requirement-links";
-import type { RequirementLink } from "@/lib/domain";
+import {
+	listRequirementLinksBySource,
+	listRequirementLinksBySourceIds,
+} from "@/lib/data/requirement-links";
 
 // ========================================
 // Type Definitions
@@ -172,17 +174,27 @@ export async function buildSysReqToBizReqsMapFromLinks(
 ): Promise<Map<string, string[]>> {
 	const map = new Map<string, string[]>();
 
-	// 各SR IDに対して並列でBR IDsを取得
-	const promises = systemRequirementIds.map(async (srId) => {
-		const brIds = await listBrIdsBySrId(srId, projectId);
-		return { srId, brIds };
-	});
+	if (systemRequirementIds.length === 0) {
+		return map;
+	}
 
-	const results = await Promise.all(promises);
+	const { data: links, error } = await listRequirementLinksBySourceIds(
+		"sr",
+		systemRequirementIds,
+		projectId
+	);
 
-	for (const { srId, brIds } of results) {
-		if (brIds.length > 0) {
-			map.set(srId, brIds);
+	if (error || !links) {
+		return map;
+	}
+
+	for (const link of links) {
+		if (link.targetType !== "br" || link.linkType !== "derived_from") continue;
+		const list = map.get(link.sourceId);
+		if (list) {
+			list.push(link.targetId);
+		} else {
+			map.set(link.sourceId, [link.targetId]);
 		}
 	}
 

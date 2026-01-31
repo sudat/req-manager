@@ -2,6 +2,14 @@ import { MarkdownRenderer } from "@/components/markdown/markdown-renderer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
+import {
 	parseYamlIdList,
 	parseYamlKeySourceList,
 	parseYamlProcessSteps,
@@ -50,8 +58,8 @@ export function TaskSummaryCard({
 				<div className="pt-3 border-t border-slate-100 space-y-4">
 					<MarkdownBlock label="業務コンテキスト" value={displayBusinessContext} />
 					<ProcessStepsBlock label="業務プロセス" value={displayProcessSteps} />
-					<KeySourceListBlock label="inputs" value={displayInput ?? ""} />
-					<KeySourceListBlock label="outputs" value={displayOutput ?? ""} />
+					<KeySourceListBlock label="インプット" value={displayInput ?? ""} />
+					<KeySourceListBlock label="アウトプット" value={displayOutput ?? ""} />
 					<ConceptIdsBlock
 						label="concept_ids"
 						value={displayConceptIds}
@@ -70,8 +78,8 @@ type TextBlockProps = {
 
 function MarkdownBlock({ label, value }: TextBlockProps) {
 	return (
-		<div className="space-y-1">
-			<p className="text-[12px] text-slate-500">{label}</p>
+		<div className="space-y-2">
+			<p className="text-[14px] font-bold text-slate-900">{label}</p>
 			{value.trim().length > 0 ? (
 				<MarkdownRenderer content={value} />
 			) : (
@@ -93,26 +101,32 @@ function ProcessStepsBlock({ label, value }: ProcessStepsBlockProps) {
 	);
 
 	return (
-		<div className="space-y-1">
-			<p className="text-[12px] text-slate-500">{label}</p>
+		<div className="space-y-2">
+			<p className="text-[14px] font-bold text-slate-900">{label}</p>
 			{steps.length === 0 ? (
 				<p className="text-[14px] text-slate-400">—</p>
 			) : (
-				<div className="space-y-1">
-					{steps.map((step, index) => (
-						<div key={`${label}-${index}`} className="text-[14px] text-slate-700">
-							<span className="font-medium text-slate-900 mr-2">
-								{index + 1}.
-							</span>
-							<span className="font-medium text-slate-900">
-								{step.when || "—"}
-							</span>
-							<span className="text-slate-400"> / </span>
-							<span>{step.who || "—"}</span>
-							<span className="text-slate-400"> / </span>
-							<span className="text-slate-600">{step.action || "—"}</span>
-						</div>
-					))}
+				<div className="rounded-md border border-slate-200 overflow-hidden inline-block">
+					<Table className="w-auto">
+						<TableHeader>
+							<TableRow className="bg-slate-50 hover:bg-slate-50">
+								<TableHead className="w-[40px] text-center text-[11px] font-semibold text-slate-600 py-2">#</TableHead>
+								<TableHead className="w-[160px] text-[11px] font-semibold text-slate-600 py-2">タイミング</TableHead>
+								<TableHead className="w-[160px] text-[11px] font-semibold text-slate-600 py-2">担当者</TableHead>
+								<TableHead className="min-w-[400px] text-[11px] font-semibold text-slate-600 py-2">アクション</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{steps.map((step, index) => (
+								<TableRow key={`${label}-${index}`} className="text-[13px]">
+									<TableCell className="w-[40px] text-center text-slate-500 font-medium py-2">{index + 1}</TableCell>
+									<TableCell className="w-[160px] text-slate-700 py-2">{step.when || "—"}</TableCell>
+									<TableCell className="w-[160px] text-slate-700 py-2">{step.who || "—"}</TableCell>
+									<TableCell className="min-w-[400px] text-slate-600 py-2">{step.action || "—"}</TableCell>
+								</TableRow>
+							))}
+						</TableBody>
+					</Table>
 				</div>
 			)}
 		</div>
@@ -124,19 +138,30 @@ function KeySourceListBlock({ label, value }: TextBlockProps) {
 	const items = parsed.value.filter((item) => item.name || item.source);
 
 	return (
-		<div className="space-y-1">
-			<p className="text-[12px] text-slate-500">{label}</p>
+		<div className="space-y-2">
+			<p className="text-[14px] font-bold text-slate-900">{label}</p>
 			{items.length === 0 ? (
 				<p className="text-[14px] text-slate-400">—</p>
 			) : (
-				<div className="space-y-1">
-					{items.map((item, index) => (
-						<div key={`${label}-${index}`} className="flex items-center gap-3 text-[14px] text-slate-700">
-							<span className="font-medium text-slate-900">{item.name || "（名称なし）"}</span>
-							<span className="text-slate-400">/</span>
-							<span className="text-slate-600">{item.source || "—"}</span>
-						</div>
-					))}
+				<div className="rounded-md border border-slate-200 overflow-hidden inline-block">
+					<Table className="w-auto">
+						<TableHeader>
+							<TableRow className="bg-slate-50 hover:bg-slate-50">
+								<TableHead className="w-[40px] text-center text-[11px] font-semibold text-slate-600 py-2">#</TableHead>
+								<TableHead className="min-w-[320px] text-[11px] font-semibold text-slate-600 py-2">名称</TableHead>
+								<TableHead className="min-w-[320px] text-[11px] font-semibold text-slate-600 py-2">ソース</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{items.map((item, index) => (
+								<TableRow key={`${label}-${index}`} className="text-[13px]">
+									<TableCell className="w-[40px] text-center text-slate-500 font-medium py-2">{index + 1}</TableCell>
+									<TableCell className="min-w-[320px] text-slate-700 py-2">{item.name || "（名称なし）"}</TableCell>
+									<TableCell className="min-w-[320px] text-slate-600 py-2">{item.source || "—"}</TableCell>
+								</TableRow>
+							))}
+						</TableBody>
+					</Table>
 				</div>
 			)}
 		</div>
@@ -155,7 +180,7 @@ function ConceptIdsBlock({ label, value, conceptMap }: ConceptIdsBlockProps) {
 
 	return (
 		<div className="space-y-1">
-			<p className="text-[12px] text-slate-500">{label}</p>
+			<p className="text-[14px] font-bold text-slate-900">{label}</p>
 			<div className="flex flex-wrap gap-2">
 				{ids.length === 0 && <span className="text-[14px] text-slate-400">—</span>}
 				{ids.map((id) => (

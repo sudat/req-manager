@@ -19,7 +19,7 @@ export default function BusinessPage() {
 		<ResourceListPage
 			config={businessListConfig}
 			fetchData={fetchData}
-			deleteItem={(id) => {
+			deleteItem={(id: string) => {
 				if (projectLoading || !currentProjectId) {
 					return Promise.resolve({ data: null, error: "プロジェクトが選択されていません" });
 				}

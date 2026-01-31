@@ -320,3 +320,220 @@ export const conceptListConfig: ResourceListConfig<Concept> = {
 		return await updateConceptsSortOrder(updates);
 	},
 };
+
+// ============================================================================
+// SystemFunction 用設定
+// ============================================================================
+
+import type { SystemFunction } from "@/lib/domain";
+
+const systemFunctionColumns: ColumnDef<SystemFunction>[] = [
+	{
+		id: "id",
+		header: "機能ID",
+		className: "px-4 py-3",
+		cell: (sf) => (
+			<Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 font-mono text-[12px] font-medium px-2 py-0.5">
+				{sf.id}
+			</Badge>
+		),
+	},
+	{
+		id: "title",
+		header: "機能名",
+		className: "px-4 py-3",
+		cell: (sf) => <span className="text-[14px] font-medium text-slate-900">{sf.title}</span>,
+	},
+	{
+		id: "category",
+		header: "カテゴリ",
+		className: "px-4 py-3",
+		cell: (sf) => {
+			const categoryLabels: Record<SystemFunction["category"], string> = {
+				screen: "画面",
+				internal: "内部処理",
+				interface: "外部連携",
+			};
+			return (
+				<Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] px-2 py-0.5">
+					{categoryLabels[sf.category]}
+				</Badge>
+			);
+		},
+	},
+	{
+		id: "status",
+		header: "ステータス",
+		className: "px-4 py-3",
+		cell: (sf) => {
+			const statusConfig: Record<
+				SystemFunction["status"],
+				{ label: string; className: string }
+			> = {
+				not_implemented: { label: "未実装", className: "border-slate-300 bg-slate-100 text-slate-600" },
+				implementing: { label: "実装中", className: "border-blue-300 bg-blue-50 text-blue-700" },
+				testing: { label: "テスト中", className: "border-amber-300 bg-amber-50 text-amber-700" },
+				implemented: { label: "実装済", className: "border-emerald-300 bg-emerald-50 text-emerald-700" },
+			};
+			const config = statusConfig[sf.status];
+			return (
+				<Badge variant="outline" className={`text-[12px] px-2 py-0.5 ${config.className}`}>
+					{config.label}
+				</Badge>
+			);
+		},
+	},
+	{
+		id: "summary",
+		header: "概要",
+		className: "px-4 py-3",
+		cell: (sf) => (
+			<div className="max-w-[300px] truncate text-[13px] text-slate-600" title={stripMarkdown(sf.summary)}>
+				{stripMarkdown(sf.summary)}
+			</div>
+		),
+	},
+];
+
+export const createSystemFunctionListConfig = (
+	domainId: string
+): ResourceListConfig<SystemFunction> => ({
+	title: "システム機能一覧",
+	description: "システム領域に属する機能の一覧",
+	searchPlaceholder: "機能名、IDで検索...",
+	createHref: `/system/${domainId}/create`,
+	emptyMessage: "該当する機能がありません。",
+	errorColSpan: 6,
+	columns: systemFunctionColumns,
+	actions: (sf) => [
+		{
+			icon: Eye,
+			label: "照会",
+			href: () => `/system/${domainId}/${sf.id}`,
+		},
+		{
+			icon: Pencil,
+			label: "編集",
+			href: () => `/system/${domainId}/${sf.id}/edit`,
+		},
+	],
+	getRowHref: (sf) => `/system/${domainId}/${sf.id}`,
+	getSearchText: (sf) => [sf.id, sf.title, sf.summary].join(" "),
+	enableReorder: true,
+	onReorderSave: async (updates) => {
+		const { updateSystemFunctionsSortOrder } = await import("@/lib/data/system-functions");
+		return await updateSystemFunctionsSortOrder(updates);
+	},
+});
+
+// ============================================================================
+// BusinessTask 用設定
+// ============================================================================
+
+import type { Task } from "@/lib/domain";
+import { parseYamlKeySourceList } from "@/lib/utils/yaml";
+
+/** formatKeySource を共通関数として抽出（Task用） */
+const formatTaskKeySource = (value: string): string => {
+	const parsed = parseYamlKeySourceList(value);
+	const items = parsed.value.filter((item) => item.name || item.source);
+	if (items.length === 0) return value;
+	return items
+		.map((item) => {
+			const name = item.name || "—";
+			const source = item.source ? ` / ${item.source}` : "";
+			return `${name}${source}`;
+		})
+		.join(" | ");
+};
+
+const businessTaskColumns: ColumnDef<Task>[] = [
+	{
+		id: "id",
+		header: "業務タスクID",
+		className: "px-4 py-3",
+		cell: (task) => <span className="font-mono text-[12px] text-slate-400">{task.id}</span>,
+	},
+	{
+		id: "name",
+		header: "業務タスク",
+		className: "px-4 py-3",
+		cell: (task) => <span className="text-[14px] font-medium text-slate-900">{task.name}</span>,
+	},
+	{
+		id: "summary",
+		header: "業務概要",
+		className: "px-4 py-3",
+		cell: (task) => (
+			<div className="max-w-[300px] truncate text-[13px] text-slate-600" title={stripMarkdown(task.summary)}>
+				{stripMarkdown(task.summary)}
+			</div>
+		),
+	},
+	{
+		id: "input",
+		header: "インプット",
+		className: "px-4 py-3",
+		cell: (task) => {
+			const label = formatTaskKeySource(task.input);
+			return (
+				<div className="max-w-[150px] truncate text-[13px] text-slate-600" title={label}>
+					{label}
+				</div>
+			);
+		},
+	},
+	{
+		id: "output",
+		header: "アウトプット",
+		className: "px-4 py-3",
+		cell: (task) => {
+			const label = formatTaskKeySource(task.output);
+			return (
+				<div className="max-w-[150px] truncate text-[13px] text-slate-600" title={label}>
+					{label}
+				</div>
+			);
+		},
+	},
+];
+
+export const createBusinessTaskListConfig = (
+	businessArea: string
+): ResourceListConfig<Task> => ({
+	title: "業務一覧（詳細）",
+	description: "業務領域内の業務タスク（業務プロセスの細分）",
+	searchPlaceholder: "業務タスク名、ID、業務概要、inputs/outputsで検索...",
+	createHref: `/business/${businessArea}/create`,
+	emptyMessage: "該当する業務タスクがありません。",
+	errorColSpan: 6,
+	columns: businessTaskColumns,
+	actions: (task) => [
+		{
+			icon: Eye,
+			label: "照会",
+			href: () => `/business/${businessArea}/${task.id}`,
+		},
+		{
+			icon: Pencil,
+			label: "編集",
+			href: () => `/business/${businessArea}/${task.id}/edit`,
+		},
+	],
+	getRowHref: (task) => `/business/${businessArea}/${task.id}`,
+	getSearchText: (task) => [
+		task.id,
+		task.name,
+		task.summary,
+		task.businessContext,
+		task.processSteps,
+		task.input,
+		task.output,
+		task.conceptIdsYaml,
+	].join(" "),
+	enableReorder: true,
+	onReorderSave: async (updates) => {
+		const { updateTasksSortOrder } = await import("@/lib/data/tasks");
+		return await updateTasksSortOrder(updates);
+	},
+});

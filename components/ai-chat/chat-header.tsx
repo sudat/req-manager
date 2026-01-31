@@ -1,19 +1,17 @@
-import { X, MapPin } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import type { ChatLocation } from './types';
 
 type ChatHeaderProps = {
   location?: ChatLocation;
-  onClose: () => void;
 };
 
 /**
  * チャットヘッダー
  *
- * 現在位置表示と閉じるボタンを含む。
+ * 現在位置表示を含む。
  */
-export function ChatHeader({ location, onClose }: ChatHeaderProps) {
+export function ChatHeader({ location }: ChatHeaderProps) {
   const getLocationLabel = () => {
     if (!location) return 'AI要件アシスタント';
 
@@ -49,15 +47,6 @@ export function ChatHeader({ location, onClose }: ChatHeaderProps) {
           </div>
         )}
       </div>
-
-      <Button
-        size="icon"
-        variant="ghost"
-        onClick={onClose}
-        className="h-8 w-8 hover:bg-slate-100"
-      >
-        <X className="h-4 w-4" />
-      </Button>
     </div>
   );
 }

@@ -23,7 +23,7 @@ type ChatInputProps = {
 /**
  * メッセージ入力フォーム
  *
- * テキストエリアと送信ボタンを含む。
+ * ChatGPT風の統合入力エリアと送信ボタンを含む。
  */
 export function ChatInput({
   onSendMessage,
@@ -52,50 +52,61 @@ export function ChatInput({
 
   return (
     <div className="px-6 py-4 border-t border-slate-200 bg-white">
-      <div className="flex gap-3 max-w-3xl mx-auto">
-        <Textarea
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          disabled={disabled}
-          className="flex-1 min-h-[44px] max-h-[200px] resize-none text-[14px] border-slate-200 focus:border-slate-900 focus:ring-slate-900"
-          rows={1}
-        />
-        <div className="flex items-end gap-2">
-          <Select
-            value={reasoningEffort}
-            onValueChange={(value) => onReasoningEffortChange(value as ReasoningEffort)}
+      <div className="max-w-3xl mx-auto">
+        {/* ChatGPT風の統合入力エリア */}
+        <div className="relative flex flex-col border border-slate-300 rounded-2xl bg-white shadow-sm">
+          {/* テキストエリア */}
+          <Textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={placeholder}
             disabled={disabled}
-          >
-            <SelectTrigger
-              className="min-h-[44px] py-2 w-[120px] border-slate-200 text-[12px]"
-              aria-label="Reasoning effort"
+            className="flex-1 min-h-[60px] max-h-[200px] resize-none text-[14px] border-0 focus:border-0 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-4 py-3 bg-transparent"
+            rows={1}
+          />
+
+          {/* ボトムバー：プルダウンと送信ボタン */}
+          <div className="flex items-center justify-end p-3 gap-2">
+            {/* リーズニングエフォートプルダウン（送信ボタンのすぐ左） */}
+            <Select
+              value={reasoningEffort}
+              onValueChange={(value) => onReasoningEffortChange(value as ReasoningEffort)}
+              disabled={disabled}
             >
-              <SelectValue placeholder="Effort" />
-            </SelectTrigger>
-            <SelectContent side="top">
-              {reasoningEffortOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button
-            onClick={handleSend}
-            disabled={disabled || !message.trim()}
-            className="h-11 w-11 flex-shrink-0 bg-slate-900 hover:bg-slate-800"
-            size="icon"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
+              <SelectTrigger
+                className="h-8 w-[100px] border-0 bg-transparent text-[12px] text-slate-600 hover:bg-slate-100 rounded-lg focus:ring-0 focus:ring-offset-0"
+                aria-label="Reasoning effort"
+              >
+                <SelectValue placeholder="Effort" />
+              </SelectTrigger>
+              <SelectContent side="top">
+                {reasoningEffortOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* 送信ボタン */}
+            <Button
+              onClick={handleSend}
+              disabled={disabled || !message.trim()}
+              className="h-8 w-8 rounded-full bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 disabled:opacity-100 p-0"
+              size="icon"
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
-      </div>
-      <div className="text-center mt-2">
-        <span className="text-[11px] text-slate-400">
-          Shift + Enter で改行、Enter で送信
-        </span>
+
+        {/* ヒントテキスト */}
+        <div className="text-center mt-2">
+          <span className="text-[11px] text-slate-400">
+            Shift + Enter で改行、Enter で送信
+          </span>
+        </div>
       </div>
     </div>
   );

@@ -11,7 +11,7 @@ export interface SearchToolbarAction {
   /** アイコンコンポーネント（Sparkles, Plusなど） */
   icon?: React.ComponentType<{ className?: string }>;
   /** ボタンのスタイル種別（デフォルト: 'default'） */
-  variant?: 'ai' | 'default';
+  variant?: 'ai' | 'default' | 'outline';
   /** ボタンのonClickハンドラ */
   onClick?: () => void;
   /** ボタンを無効化するか */
@@ -78,13 +78,17 @@ export function SearchToolbar({
         {actions.map((action, index) => {
           const Icon = action.icon;
           const isAiVariant = action.variant === 'ai';
+          const isOutlineVariant = action.variant === 'outline';
 
           // onClickがある場合はボタン、そうでなければリンク
           const buttonElement = (
             <Button
+              variant={isOutlineVariant ? 'outline' : undefined}
               className={
                 isAiVariant
                   ? 'h-8 gap-2 text-[14px] bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white'
+                  : isOutlineVariant
+                  ? 'h-8 gap-2 text-[14px] border-slate-200 hover:bg-slate-50'
                   : 'h-8 gap-2 text-[14px] bg-slate-900 hover:bg-slate-800'
               }
               disabled={action.disabled}

@@ -8,8 +8,8 @@ import { SelectionDialog } from "@/components/forms/SelectionDialog";
 import { MobileHeader } from "@/components/layout/mobile-header";
 import { useProject } from "@/components/project/project-context";
 import { createBusinessRequirements } from "@/lib/data/business-requirements";
-import { listSystemRequirementsByIds, updateSystemRequirement } from "@/lib/data/system-requirements";
 import { createTask, deleteTask } from "@/lib/data/tasks";
+import { createRequirementLinks, type RequirementLinkCreateInput } from "@/lib/data/requirement-links";
 import type { SelectableItem, SelectionDialogState, SelectionDialogType } from "@/lib/domain/forms";
 import { requireProjectId } from "@/lib/utils/project";
 import { RequirementsSection } from "./components/RequirementsSection";
@@ -154,7 +154,6 @@ function BusinessTaskCreatePageContent({ businessKey }: BusinessTaskCreatePageCo
         srfIds: req.srfIds,
         systemDomainIds: req.systemDomainIds,
         impacts: [],
-        relatedSystemRequirementIds: req.relatedSystemRequirementIds ?? [],
         sortOrder: index + 1,
         projectId,
       };
@@ -174,47 +173,32 @@ function BusinessTaskCreatePageContent({ businessKey }: BusinessTaskCreatePageCo
       return;
     }
 
-    // 業務要件のrelatedSystemRequirementIdsからシステム要件を更新
-    const allSystemReqIds = new Set<string>();
-    const bizReqIdsBySystemReq = new Map<string, Set<string>>();
-    
-    for (const bizReq of requirementPayload) {
+    // requirement_linksにSR↔BRリンクを追加
+    const linkInputs: RequirementLinkCreateInput[] = [];
+    const linkKeys = new Set<string>();
+    for (const bizReq of requirements) {
       for (const sysReqId of bizReq.relatedSystemRequirementIds ?? []) {
-        allSystemReqIds.add(sysReqId);
-        if (!bizReqIdsBySystemReq.has(sysReqId)) {
-          bizReqIdsBySystemReq.set(sysReqId, new Set());
-        }
-        bizReqIdsBySystemReq.get(sysReqId)?.add(bizReq.id);
+        const key = `${sysReqId}:${bizReq.id}`;
+        if (linkKeys.has(key)) continue;
+        linkKeys.add(key);
+        linkInputs.push({
+          projectId,
+          sourceType: "sr",
+          sourceId: sysReqId,
+          targetType: "br",
+          targetId: bizReq.id,
+          linkType: "derived_from",
+          suspect: false,
+        });
       }
     }
 
-    if (allSystemReqIds.size > 0) {
-      const { data: existingSystemReqs } = await listSystemRequirementsByIds(
-        Array.from(allSystemReqIds),
-        projectId
-      );
-      
-      if (existingSystemReqs) {
-        for (const sysReq of existingSystemReqs) {
-          const newBizReqIds = bizReqIdsBySystemReq.get(sysReq.id) ?? new Set();
-          const existingBizReqIds = new Set(sysReq.businessRequirementIds);
-          const mergedBizReqIds = Array.from(new Set([...existingBizReqIds, ...newBizReqIds]));
-          
-          await updateSystemRequirement(sysReq.id, {
-            taskId: sysReq.taskId,
-            srfIds: sysReq.srfIds,
-            title: sysReq.title,
-            summary: sysReq.summary,
-            conceptIds: sysReq.conceptIds,
-            impacts: sysReq.impacts,
-            category: sysReq.category,
-            businessRequirementIds: mergedBizReqIds,
-            acceptanceCriteriaJson: sysReq.acceptanceCriteriaJson,
-            acceptanceCriteria: sysReq.acceptanceCriteria,
-            systemDomainIds: sysReq.systemDomainIds,
-            sortOrder: sysReq.sortOrder,
-          }, projectId);
-        }
+    if (linkInputs.length > 0) {
+      const { error: linkError } = await createRequirementLinks(linkInputs);
+      if (linkError) {
+        setError(`要件リンクの保存に失敗しました: ${linkError}`);
+        setSaving(false);
+        return;
       }
     }
 

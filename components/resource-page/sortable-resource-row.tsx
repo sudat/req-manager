@@ -40,20 +40,16 @@ export function SortableResourceRow<T extends { id: string }>({
 		<TableRow
 			ref={setNodeRef}
 			style={style}
-			className="cursor-pointer border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition-colors"
-			onClick={onRowClick}
+			{...attributes}
+			{...listeners}
+			className="cursor-grab active:cursor-grabbing border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition-colors"
+			aria-label="ドラッグして並び替え"
 		>
 			{/* ドラッグハンドル列 */}
 			<TableCell className="w-10 px-2 py-3">
-				<button
-					{...attributes}
-					{...listeners}
-					className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600"
-					aria-label="ドラッグして並び替え"
-					onClick={(e) => e.stopPropagation()}
-				>
+				<div className="text-slate-400" aria-hidden="true">
 					<GripVertical className="h-4 w-4" />
-				</button>
+				</div>
 			</TableCell>
 			{config.columns.map((col) => (
 				<TableCell key={col.id} className={col.className}>

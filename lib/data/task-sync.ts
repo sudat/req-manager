@@ -21,7 +21,7 @@ import {
 	toSystemRequirementInput,
 } from "@/lib/data/requirement-mapper";
 import {
-	deleteRequirementLinksBySource,
+	deleteRequirementLinksBySourceIds,
 	createRequirementLinks,
 	type RequirementLinkCreateInput,
 } from "@/lib/data/requirement-links";
@@ -311,21 +311,32 @@ export async function syncTaskBasicInfo(
  */
 export async function syncBrSrLinksToRequirementLinks(
 	systemRequirements: Array<{ id: string; businessRequirementIds: string[] }>,
-	projectId: string
+	projectId: string,
+	options?: { deleteSourceIds?: string[] }
 ): Promise<string | null> {
 	try {
-		// 各SRについて、既存リンクを削除して新規リンクを挿入
-		for (const sr of systemRequirements) {
-			// 1. このSRをsourceとする既存リンクをすべて削除
-			const { error: deleteError } = await deleteRequirementLinksBySource("sr", sr.id, projectId);
-			if (deleteError) {
-				console.error(`[syncBrSrLinksToRequirementLinks] リンク削除エラー (SR: ${sr.id}):`, deleteError);
-				return `リンク削除エラー (SR: ${sr.id}): ${deleteError}`;
-			}
+		const deleteSourceIds =
+			options?.deleteSourceIds ?? systemRequirements.map((sr) => sr.id);
 
-			// 2. 新規リンクを作成（SR→BRの関係）
-			if (sr.businessRequirementIds.length > 0) {
-				const linkInputs: RequirementLinkCreateInput[] = sr.businessRequirementIds.map((brId) => ({
+		// 1. 対象SRの既存リンクを削除
+		if (deleteSourceIds.length > 0) {
+			const { error: deleteError } = await deleteRequirementLinksBySourceIds(
+				"sr",
+				deleteSourceIds,
+				projectId,
+				"derived_from"
+			);
+			if (deleteError) {
+				console.error(`[syncBrSrLinksToRequirementLinks] リンク削除エラー:`, deleteError);
+				return `リンク削除エラー: ${deleteError}`;
+			}
+		}
+
+		// 2. 新規リンクを一括作成（SR→BR）
+		const linkInputs: RequirementLinkCreateInput[] = [];
+		for (const sr of systemRequirements) {
+			for (const brId of sr.businessRequirementIds) {
+				linkInputs.push({
 					projectId,
 					sourceType: "sr",
 					sourceId: sr.id,
@@ -333,17 +344,21 @@ export async function syncBrSrLinksToRequirementLinks(
 					targetId: brId,
 					linkType: "derived_from",
 					suspect: false,
-				}));
-
-				const { error: createError } = await createRequirementLinks(linkInputs);
-				if (createError) {
-					console.error(`[syncBrSrLinksToRequirementLinks] リンク作成エラー (SR: ${sr.id}):`, createError);
-					return `リンク作成エラー (SR: ${sr.id}): ${createError}`;
-				}
+				});
 			}
 		}
 
-		console.log(`[syncBrSrLinksToRequirementLinks] 同期完了: ${systemRequirements.length}件のSRに対するリンクを更新`);
+		if (linkInputs.length > 0) {
+			const { error: createError } = await createRequirementLinks(linkInputs);
+			if (createError) {
+				console.error(`[syncBrSrLinksToRequirementLinks] リンク作成エラー:`, createError);
+				return `リンク作成エラー: ${createError}`;
+			}
+		}
+
+		console.log(
+			`[syncBrSrLinksToRequirementLinks] 同期完了: ${systemRequirements.length}件のSRに対するリンクを更新`
+		);
 		return null;
 	} catch (e) {
 		const message = e instanceof Error ? e.message : String(e);

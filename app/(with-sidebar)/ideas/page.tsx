@@ -19,7 +19,7 @@ export default function IdeasPage() {
 		<ResourceListPage
 			config={conceptListConfig}
 			fetchData={fetchData}
-			deleteItem={(id) => {
+			deleteItem={(id: string) => {
 				if (projectLoading || !currentProjectId) {
 					return Promise.resolve({ data: null, error: "プロジェクトが選択されていません" });
 				}

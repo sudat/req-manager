@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { buildHealthScoreSummary } from "@/lib/health-score";
+import { buildBusinessRequirementsForHealth } from "@/lib/health-score/utils";
 import { TaskLoadingStatus } from "./components/TaskLoadingStatus";
 import { TaskSummaryCard } from "./components/TaskSummaryCard";
 import { BusinessRequirementsSection } from "./components/BusinessRequirementsSection";
@@ -96,8 +97,12 @@ export default function TaskDetailPage({ params }: PageProps) {
 
 	const healthSummary = useMemo(() => {
 		if (healthLoading || healthError) return null;
-		return buildHealthScoreSummary({
+		const businessRequirementsForHealth = buildBusinessRequirementsForHealth(
 			businessRequirements,
+			systemRequirements
+		);
+		return buildHealthScoreSummary({
+			businessRequirements: businessRequirementsForHealth,
 			systemRequirements,
 			systemFunctions: relatedSystemFunctions,
 			concepts,

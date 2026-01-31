@@ -318,6 +318,11 @@ export async function POST(request: NextRequest) {
               const chunk = normalizeChunk(rawChunk);
               const payload = resolvePayload(chunk);
               const chunkType = (chunk as { type?: string }).type;
+              
+              // デバッグ: すべてのチャンクタイプをログ出力
+              if (chunkType && chunkType !== 'text-delta') {
+                console.log('[Chat API] Chunk type:', chunkType, 'Payload keys:', Object.keys(payload));
+              }
 
               if (chunkType === 'text-delta') {
                 const delta =
@@ -367,6 +372,7 @@ export async function POST(request: NextRequest) {
 
               if (chunkType === 'tool-result') {
                 const meta = resolveToolMeta(chunk as Record<string, unknown>, payload);
+                console.log('[Chat API] tool-result received:', { toolName: meta.toolName, toolCallId: meta.toolCallId });
                 const stepId = meta.toolCallId ?? `tool-${stepCounter + 1}`;
                 let index = stepIndexByToolCallId.get(stepId);
                 if (!index) {
@@ -389,10 +395,15 @@ export async function POST(request: NextRequest) {
                 });
 
                 // bt_draftツールの結果を検出してdraftイベントを送信
-                if (meta.toolName === 'bt_draft') {
+                console.log('[Chat API] Checking tool name:', meta.toolName, '=== btDraftTool:', meta.toolName === 'btDraftTool');
+                if (meta.toolName === 'btDraftTool') {
                   const output = meta.output as { btDraft?: any };
+                  console.log('[Chat API] bt_draft tool completed, output:', JSON.stringify(output, null, 2));
                   if (output?.btDraft) {
+                    console.log('[Chat API] Sending draft event with btDraft:', output.btDraft.code);
                     sendData({ event: 'draft', draft: output.btDraft });
+                  } else {
+                    console.log('[Chat API] btDraft not found in output');
                   }
                 }
 

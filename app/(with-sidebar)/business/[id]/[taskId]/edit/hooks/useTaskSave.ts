@@ -6,7 +6,6 @@ import type { TaskKnowledge } from "@/lib/domain";
 import {
 	syncTaskBasicInfo,
 	syncBusinessRequirements,
-	syncBrSrLinksToRequirementLinks,
 } from "@/lib/data/task-sync";
 import { saveToStorage, removeFromStorage } from "@/lib/utils/local-storage";
 import { useProject } from "@/components/project/project-context";

@@ -30,6 +30,7 @@ import {
 	buildHealthScoreSummary,
 	type HealthScoreSummary,
 } from "@/lib/health-score";
+import { buildBusinessRequirementsForHealth } from "@/lib/health-score/utils";
 
 // ============================================================
 // Page Layout Components
@@ -187,8 +188,13 @@ export default function SystemFunctionDetailPage({
 				return;
 			}
 
+			const businessRequirementsForHealth = buildBusinessRequirementsForHealth(
+				businessReqResult.data ?? [],
+				systemReqs
+			);
+
 			const summary = buildHealthScoreSummary({
-				businessRequirements: businessReqResult.data ?? [],
+				businessRequirements: businessRequirementsForHealth,
 				systemRequirements: systemReqResult.data ?? [],
 				systemFunctions: [currentSrf],
 				implUnitSds: implUnitResult.data ?? [],

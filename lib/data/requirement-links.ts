@@ -122,6 +122,31 @@ export const listRequirementLinksBySource = async (
   return { data: (data as RequirementLinkRow[]).map(toRequirementLink), error: null };
 };
 
+export const listRequirementLinksBySourceIds = async (
+  sourceType: RequirementLinkNodeType,
+  sourceIds: string[],
+  projectId?: string
+) => {
+  const configError = failIfMissingConfig();
+  if (configError) return configError;
+  if (sourceIds.length === 0) return { data: [], error: null };
+
+  let query = supabase
+    .from("requirement_links")
+    .select("*")
+    .eq("source_type", sourceType)
+    .in("source_id", sourceIds)
+    .order("created_at", { ascending: true });
+
+  if (projectId) {
+    query = query.eq("project_id", projectId);
+  }
+
+  const { data, error } = await query;
+  if (error) return { data: null, error: error.message };
+  return { data: (data as RequirementLinkRow[]).map(toRequirementLink), error: null };
+};
+
 export const listRequirementLinksByTarget = async (
   targetType: RequirementLinkNodeType,
   targetId: string,
@@ -253,6 +278,36 @@ export const deleteRequirementLinksBySource = async (
     .delete()
     .eq("source_type", sourceType)
     .eq("source_id", sourceId);
+
+  if (projectId) {
+    query = query.eq("project_id", projectId);
+  }
+
+  const { error } = await query;
+
+  if (error) return { data: null, error: error.message };
+  return { data: true, error: null };
+};
+
+export const deleteRequirementLinksBySourceIds = async (
+  sourceType: RequirementLinkNodeType,
+  sourceIds: string[],
+  projectId?: string,
+  linkType?: string
+) => {
+  const configError = failIfMissingConfig();
+  if (configError) return configError;
+  if (sourceIds.length === 0) return { data: true, error: null };
+
+  let query = supabase
+    .from("requirement_links")
+    .delete()
+    .eq("source_type", sourceType)
+    .in("source_id", sourceIds);
+
+  if (linkType) {
+    query = query.eq("link_type", linkType);
+  }
 
   if (projectId) {
     query = query.eq("project_id", projectId);

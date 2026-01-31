@@ -122,7 +122,7 @@ export const commitDraftTool = createTool({
       const insertRow = async (table: string, row: Record<string, any>) => {
         let { data, error } = await supabase
           .from(table)
-          .upsert(row, { onConflict: 'id', ignoreDuplicates: true })
+          .upsert(row, { onConflict: 'id' })
           .select('id')
           .maybeSingle();
 

@@ -24,7 +24,6 @@ export function toBusinessRequirementInput(
 		srfIds: requirement.srfIds,
 		systemDomainIds: requirement.systemDomainIds,
 		impacts: [], // 影響領域は廃止
-		relatedSystemRequirementIds: requirement.relatedSystemRequirementIds ?? [],
 		sortOrder,
 	};
 }
@@ -48,7 +47,7 @@ export function fromBusinessRequirement(
 		acceptanceCriteriaJson: br.acceptanceCriteriaJson,
 		category: undefined,
 		businessRequirementIds: [],
-		relatedSystemRequirementIds: br.relatedSystemRequirementIds ?? [],
+		relatedSystemRequirementIds: [],
 	};
 }
 
@@ -71,7 +70,6 @@ export function toSystemRequirementInput(
 		conceptIds: requirement.conceptIds,
 		impacts: [], // 影響領域は廃止
 		category: requirement.category,
-		businessRequirementIds: requirement.businessRequirementIds ?? [],
 		relatedDeliverableIds: requirement.relatedDeliverableIds ?? [],
 		acceptanceCriteriaJson,
 		acceptanceCriteria: acceptanceCriteriaJsonToLegacy(acceptanceCriteriaJson),

@@ -69,10 +69,22 @@ export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
 
   return (
     <div ref={containerRef} className="flex-1 overflow-y-auto px-6 py-4">
-      <div className="space-y-4 max-w-4xl mx-auto">
-        {messages.map((message) => (
-          <MessageBubble key={message.id} message={message} />
-        ))}
+      <div className="max-w-4xl mx-auto">
+        {messages.map((message, index) => {
+          const prevMessage = index > 0 ? messages[index - 1] : null;
+          const isRoleChanged = prevMessage && prevMessage.role !== message.role;
+          return (
+            <div
+              key={message.id}
+              className={cn(
+                'transition-all duration-300 ease-out',
+                isRoleChanged ? 'mt-8' : 'mt-4'
+              )}
+            >
+              <MessageBubble message={message} />
+            </div>
+          );
+        })}
         {isLoading && !hasStreamingMessage && (
           <div className="flex gap-3">
             <div className="flex-shrink-0">
@@ -143,10 +155,10 @@ function MessageBubble({ message }: MessageBubbleProps) {
       <div className={cn('flex-1 min-w-0', isUser && 'flex justify-end')}>
         <div
           className={cn(
-            'inline-block px-4 py-2 rounded-lg text-[14px] leading-relaxed max-w-[80%] transition-all duration-300 ease-out',
+            'inline-block text-[14px] leading-relaxed transition-all duration-300 ease-out',
             isUser
-              ? 'bg-slate-900 text-white'
-              : 'bg-slate-100 text-slate-900'
+              ? 'px-4 py-2 rounded-lg bg-slate-900 text-white max-w-[80%]'
+              : 'text-slate-900 max-w-full'
           )}
         >
           {isUser ? (
@@ -277,7 +289,9 @@ function ProgressSteps({ steps, isStreaming }: ProgressStepsProps) {
               </div>
               {step.detail && (
                 <div className="mt-1 text-[12px] text-slate-600 whitespace-pre-wrap break-words">
-                  {step.detail}
+                  {step.status === 'done' && step.detail === '回答を生成中です。'
+                    ? '回答完了'
+                    : step.detail}
                 </div>
               )}
             </div>
