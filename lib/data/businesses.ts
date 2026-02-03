@@ -1,9 +1,8 @@
 import { supabase, getSupabaseConfigError } from "@/lib/supabase/client";
 import type { Business, BusinessArea } from "@/lib/domain";
-import { createCrudOperations, failIfMissingConfig } from "./crud-factory";
+import { createCrudOperations, createSortOrderUpdater } from "./crud-factory";
 
 export type BusinessInput = {
-  id: string;
   name: string;
   area: BusinessArea;
   summary: string;
@@ -15,7 +14,6 @@ export type BusinessCreateInput = BusinessInput & {
 };
 
 type BusinessRow = {
-  id: string;
   name: string;
   area: string;
   summary: string;
@@ -25,7 +23,7 @@ type BusinessRow = {
 };
 
 const toBusiness = (row: BusinessRow): Business => ({
-  id: row.id,
+  id: row.area,
   name: row.name,
   area: row.area as BusinessArea,
   summary: row.summary,
@@ -38,7 +36,6 @@ const toBusiness = (row: BusinessRow): Business => ({
 
 const toBusinessRow = (input: BusinessInput) => {
   const row: Partial<BusinessRow> = {};
-  if (input.id !== undefined) row.id = input.id;
   if (input.name !== undefined) row.name = input.name;
   if (input.area !== undefined) row.area = input.area;
   if (input.summary !== undefined) row.summary = input.summary;
@@ -51,12 +48,11 @@ const businessCrud = createCrudOperations<BusinessRow, Business, BusinessInput>(
   tableName: "business_domains",
   toEntity: toBusiness,
   toRow: toBusinessRow,
-  orderBy: ["sort_order", "id"],
+  idColumn: "area",
+  orderBy: ["sort_order", "area"],
 });
 
 export const listBusinesses = businessCrud.list;
-export const getBusinessById = businessCrud.getById;
-
 // 独自検索メソッド（area による検索）
 export const getBusinessByArea = async (area: string, projectId?: string) => {
   const configError = getSupabaseConfigError();
@@ -84,15 +80,7 @@ export const getBusinessByArea = async (area: string, projectId?: string) => {
 export const getBusinessByKey = async (key: string, projectId?: string) => {
   const trimmed = key.trim();
   if (!trimmed) return { data: null, error: null };
-
-  const isBizId = /^BIZ-\d+$/i.test(trimmed);
-  const primary = isBizId ? getBusinessById : getBusinessByArea;
-  const fallback = isBizId ? getBusinessByArea : getBusinessById;
-
-  const primaryResult = await primary(trimmed, projectId);
-  if (primaryResult.error || primaryResult.data) return primaryResult;
-
-  return fallback(trimmed, projectId);
+  return getBusinessByArea(trimmed, projectId);
 };
 
 export const createBusiness = businessCrud.create;
@@ -105,9 +93,9 @@ export const listBusinessesWithRequirementCounts = async (projectId?: string) =>
 
   let query = supabase
     .from("business_domains")
-    .select("id")
+    .select("area")
     .order("sort_order")
-    .order("id");
+    .order("area");
 
   if (projectId) {
     query = query.eq("project_id", projectId);
@@ -118,12 +106,18 @@ export const listBusinessesWithRequirementCounts = async (projectId?: string) =>
   if (bizError) return { data: null, error: bizError.message };
   if (!businesses || businesses.length === 0) return { data: [], error: null };
 
-  const businessIds = businesses.map((b) => b.id);
+  const businessAreas = businesses.map((b) => b.area);
 
-  const { data: tasks, error: taskError } = await supabase
+  let taskQuery = supabase
     .from("business_tasks")
-    .select("id, business_id")
-    .in("business_id", businessIds);
+    .select("id, business_area")
+    .in("business_area", businessAreas);
+
+  if (projectId) {
+    taskQuery = taskQuery.eq("project_id", projectId);
+  }
+
+  const { data: tasks, error: taskError } = await taskQuery;
 
   if (taskError) return { data: null, error: taskError.message };
 
@@ -157,28 +151,28 @@ export const listBusinessesWithRequirementCounts = async (projectId?: string) =>
   if (srError) return { data: null, error: srError.message };
 
   const taskToBusiness = Object.fromEntries(
-    tasks?.map((t) => [t.id, t.business_id]) ?? []
+    tasks?.map((t) => [t.id, t.business_area]) ?? []
   );
 
   const businessBrCounts: Record<string, number> = {};
   const businessSrCounts: Record<string, number> = {};
 
-  businessIds.forEach((id) => {
-    businessBrCounts[id] = 0;
-    businessSrCounts[id] = 0;
+  businessAreas.forEach((area) => {
+    businessBrCounts[area] = 0;
+    businessSrCounts[area] = 0;
   });
 
   businessReqs?.forEach((req) => {
-    const businessId = taskToBusiness[req.task_id];
-    if (businessId) {
-      businessBrCounts[businessId] = (businessBrCounts[businessId] ?? 0) + 1;
+    const businessArea = taskToBusiness[req.task_id];
+    if (businessArea) {
+      businessBrCounts[businessArea] = (businessBrCounts[businessArea] ?? 0) + 1;
     }
   });
 
   systemReqs?.forEach((req) => {
-    const businessId = taskToBusiness[req.task_id];
-    if (businessId) {
-      businessSrCounts[businessId] = (businessSrCounts[businessId] ?? 0) + 1;
+    const businessArea = taskToBusiness[req.task_id];
+    if (businessArea) {
+      businessSrCounts[businessArea] = (businessSrCounts[businessArea] ?? 0) + 1;
     }
   });
 
@@ -187,47 +181,11 @@ export const listBusinessesWithRequirementCounts = async (projectId?: string) =>
 
   const result = fullBusinesses.map((biz) => ({
     ...biz,
-    businessReqCount: businessBrCounts[biz.id] ?? 0,
-    systemReqCount: businessSrCounts[biz.id] ?? 0,
+    businessReqCount: businessBrCounts[biz.area] ?? 0,
+    systemReqCount: businessSrCounts[biz.area] ?? 0,
   }));
 
   return { data: result, error: null };
 };
 
-// 並び替え用型
-export type BusinessSortOrderUpdate = {
-	id: string;
-	sortOrder: number;
-};
-
-// 並び替え一括更新
-export const updateBusinessesSortOrder = async (
-	updates: BusinessSortOrderUpdate[],
-	projectId?: string
-): Promise<{ data: boolean | null; error: string | null }> => {
-	const configError = failIfMissingConfig();
-	if (configError) return configError;
-
-	// 個別にUPDATEを実行
-	const updatePromises = updates.map((update) => {
-		let query = supabase
-			.from("business_domains")
-			.update({ sort_order: update.sortOrder, updated_at: new Date().toISOString() })
-			.eq("id", update.id);
-
-		// projectIdがある場合のみフィルタを適用
-		if (projectId) {
-			query = query.eq("project_id", projectId);
-		}
-
-		return query;
-	});
-
-	const results = await Promise.all(updatePromises);
-
-	// いずれかのUPDATEでエラーがあれば最初のエラーを返す
-	const firstError = results.find((r) => r.error)?.error;
-	if (firstError) return { data: null, error: firstError.message };
-
-	return { data: true, error: null };
-};
+export const updateBusinessesSortOrder = createSortOrderUpdater("business_domains", "area");

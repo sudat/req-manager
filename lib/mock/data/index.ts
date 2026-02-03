@@ -6,10 +6,10 @@ import { concepts } from "./concepts/concepts";
 export type { RelatedRequirementInfo, DesignItemCategory } from '@/lib/domain';
 
 // Businessデータ
-export { businesses, getBusinessById, getBusinessesByArea } from './businesses/businesses';
+export { businesses, getBusinessByArea, getBusinessesByArea } from './businesses/businesses';
 
 // Taskデータ
-export { tasks, getTaskById, getTasksByBusinessId, getTasksByArea } from './tasks/tasks';
+export { tasks, getTaskById, getTasksByBusinessArea, getTasksByArea } from './tasks/tasks';
 
 // Ticketデータ
 export { tickets, getTicketById, getTicketsByArea, getTicketsByStatus } from './tickets/tickets';

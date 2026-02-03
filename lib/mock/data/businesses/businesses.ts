@@ -2,7 +2,7 @@ import type { Business } from '@/lib/domain';
 
 export const businesses: Business[] = [
   {
-    id: "BIZ-001",
+    id: "AR",
     name: "債権管理",
     area: "AR",
     summary: "売掛金の管理、請求書発行、入金消込、債権回収を行う",
@@ -13,7 +13,7 @@ export const businesses: Business[] = [
     updatedAt: "2024-01-01T00:00:00Z",
   },
   {
-    id: "BIZ-002",
+    id: "AP",
     name: "債務管理",
     area: "AP",
     summary: "買掛金の管理、支払処理、仕入先管理を行う",
@@ -24,7 +24,7 @@ export const businesses: Business[] = [
     updatedAt: "2024-01-01T00:00:00Z",
   },
   {
-    id: "BIZ-003",
+    id: "GL",
     name: "一般会計",
     area: "GL",
     summary: "仕訳計上、総勘定元帳、財務諸表、決算処理を行う",
@@ -36,8 +36,8 @@ export const businesses: Business[] = [
   },
 ];
 
-export const getBusinessById = (id: string): Business | undefined => {
-  return businesses.find(b => b.id === id);
+export const getBusinessByArea = (area: string): Business | undefined => {
+  return businesses.find(b => b.area === area);
 };
 
 export const getBusinessesByArea = (area: string): Business[] => {

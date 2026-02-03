@@ -54,7 +54,7 @@ export type CascadeFetchReturn<L1, L2, L3> = {
  *   error,
  * } = useCascadeFetch({
  *   fetchLevel1: (projectId) => listBusinesses(projectId),
- *   fetchLevel2: (businessId, projectId) => listTasksByBusinessId(businessId, projectId),
+ *   fetchLevel2: (businessArea, projectId) => listTasksByBusinessArea(businessArea, projectId),
  *   fetchLevel3: (taskId, projectId) => listBusinessRequirementsByTaskId(taskId, projectId),
  * });
  * ```

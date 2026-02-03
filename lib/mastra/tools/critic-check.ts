@@ -9,7 +9,38 @@ import { supabase } from '@/lib/supabase/client';
  */
 export const criticCheckTool = createTool({
   id: 'critic_check',
-  description: '要件の曖昧さ・矛盾・漏れを検出する',
+  description: `要件の品質チェックを行い、曖昧さ・矛盾・漏れを検出するツールです。
+
+【使用タイミング】
+- ユーザーが「品質チェックして」「チェックして」「レビューして」などと言った場合
+- ユーザーが要件IDを指定した場合（例: 「BT-AP-0001-0001を品質チェックして」）
+
+【入力パラメータ】
+- targetIds: 要件IDの配列（例: ["BT-AP-0001-0001", "BR-AP-0001-0001", "SR-AP-0001-0001"]）
+- checkLevel: チェックレベル（オプション、デフォルト: "standard"）
+  - "quick": 高速チェック（主要な問題のみ）
+  - "standard": 標準チェック（推奨）
+  - "thorough": 徹底チェック（時間がかかる）
+
+【出力】
+- issues: 検出された問題リスト
+  - severity: 致命度（critical: 致命的、warning: 警告、info: 情報）
+  - category: カテゴリ（ambiguity: 曖昧さ、verifiability: 検証可能性、completeness: 完全性など）
+  - message: 問題の説明
+  - targetId: 対象の要件ID
+  - suggestion: 修正案
+- suggestions: 全体的な改善提案
+- summary: サマリー（critical/warning/infoの件数）
+
+【チェック項目】
+- BT: 業務タスク名・説明の曖昧さ
+- BR: 業務要件の形式（動詞で終わる）、根拠の有無
+- SR: システム要件の曖昧な表現、ACの検証可能性
+
+【重要】
+- ユーザーが要件IDをメッセージに含めている場合は、必ずそれを抽出して使う
+- 要件IDが不明な場合は、必ずユーザーに要件IDを尋ねる
+- BT/BR/SRのどのタイプでも自動判定してチェックする`,
   inputSchema: z.object({
     targetIds: z.array(z.string()),
     checkLevel: z.enum(['quick', 'standard', 'thorough']).optional().default('standard'),

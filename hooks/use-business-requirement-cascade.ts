@@ -1,5 +1,5 @@
 import { listBusinesses } from "@/lib/data/businesses";
-import { listTasksByBusinessId } from "@/lib/data/tasks";
+import { listTasksByBusinessArea } from "@/lib/data/tasks";
 import { listBusinessRequirementsByTaskId } from "@/lib/data/business-requirements";
 import type { BusinessRequirement } from "@/lib/data/business-requirements";
 import type { Business, Task } from "@/lib/domain/entities";
@@ -34,7 +34,7 @@ export function useBusinessRequirementCascade(): UseBusinessRequirementCascadeRe
 		error,
 	} = useCascadeFetch<Business, Task, BusinessRequirement>({
 		fetchLevel1: listBusinesses,
-		fetchLevel2: listTasksByBusinessId,
+		fetchLevel2: listTasksByBusinessArea,
 		fetchLevel3: listBusinessRequirementsByTaskId,
 	});
 

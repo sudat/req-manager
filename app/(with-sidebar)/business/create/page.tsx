@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
@@ -10,8 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { listBusinesses, createBusiness } from "@/lib/data/businesses";
-import { nextSequentialIdFrom } from "@/lib/data/id";
+import { createBusiness } from "@/lib/data/businesses";
 import type { BusinessArea } from "@/lib/domain";
 import { requireProjectId } from "@/lib/utils/project";
 
@@ -19,7 +18,6 @@ const areaPattern = /^[A-Z_-]+$/;
 
 export default function BusinessCreatePage() {
   const router = useRouter();
-  const [nextId, setNextId] = useState("BIZ-001");
   const [name, setName] = useState("");
   const defaultArea: BusinessArea = "AR";
   const [area, setArea] = useState<string>(defaultArea);
@@ -27,37 +25,6 @@ export default function BusinessCreatePage() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const { currentProjectId, loading: projectLoading } = useProject();
-
-  useEffect(() => {
-    if (
-      !requireProjectId({
-        currentProjectId,
-        projectLoading,
-        onMissing: setError,
-      })
-    )
-      return;
-    let active = true;
-    async function fetchNextId(): Promise<void> {
-      const projectId = requireProjectId({
-        currentProjectId,
-        projectLoading,
-        onMissing: setError,
-      });
-      if (!projectId) return;
-      const { data, error: fetchError } = await listBusinesses(projectId);
-      if (!active) return;
-      if (fetchError) {
-        setError(fetchError);
-        return;
-      }
-      setNextId(nextSequentialIdFrom("BIZ-", data ?? [], (biz) => biz.id));
-    }
-    fetchNextId();
-    return () => {
-      active = false;
-    };
-  }, [currentProjectId, projectLoading]);
 
   const isAreaValid = useMemo(() => areaPattern.test(area.trim()), [area]);
   const canSubmit = useMemo(() => name.trim().length > 0 && isAreaValid, [name, isAreaValid]);
@@ -76,7 +43,6 @@ export default function BusinessCreatePage() {
       return;
     }
     const { error: saveError } = await createBusiness({
-      id: nextId,
       name: name.trim(),
       area: area.trim() as BusinessArea,
       summary: summary.trim(),

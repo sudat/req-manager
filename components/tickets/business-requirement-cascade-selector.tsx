@@ -38,11 +38,11 @@ export function BusinessRequirementCascadeSelector({
 					<div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
 						{businesses.map((biz) => (
 							<button
-								key={biz.id}
+								key={biz.area}
 								type="button"
-								onClick={() => selectBusinessId(biz.id)}
+								onClick={() => selectBusinessId(biz.area)}
 								className={`p-3 text-left rounded-lg border transition-colors ${
-									selectedBusinessId === biz.id
+									selectedBusinessId === biz.area
 										? "border-slate-900 bg-slate-900 text-white"
 										: "border-slate-200 hover:border-slate-400"
 								}`}
@@ -50,7 +50,7 @@ export function BusinessRequirementCascadeSelector({
 								<div className="font-medium text-sm">{biz.name}</div>
 								<div
 									className={`text-xs mt-1 ${
-										selectedBusinessId === biz.id ? "text-slate-300" : "text-slate-500"
+										selectedBusinessId === biz.area ? "text-slate-300" : "text-slate-500"
 									}`}
 								>
 									{biz.area}

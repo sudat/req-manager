@@ -1,7 +1,15 @@
 import type { Task } from '@/lib/domain';
 import { buildYamlProcessSteps, buildYamlKeySourceList, buildYamlIdList } from '@/lib/utils/yaml';
 
-export const tasks: Task[] = [
+const LEGACY_BUSINESS_ID_TO_AREA: Record<string, string> = {
+  "BIZ-001": "AR",
+  "BIZ-002": "AP",
+  "BIZ-003": "GL",
+};
+
+type LegacyTask = Omit<Task, "businessArea"> & { businessId: string };
+
+const legacyTasks: LegacyTask[] = [
   // AR領域（6件）
   {
     id: "TASK-001",
@@ -697,14 +705,19 @@ export const tasks: Task[] = [
   },
 ];
 
+export const tasks: Task[] = legacyTasks.map(({ businessId, ...rest }) => ({
+  ...rest,
+  businessArea: LEGACY_BUSINESS_ID_TO_AREA[businessId] ?? businessId,
+}));
+
 export const getTaskById = (id: string): Task | undefined => {
   return tasks.find(t => t.id === id);
 };
 
-export const getTasksByBusinessId = (businessId: string): Task[] => {
-  return tasks.filter(t => t.businessId === businessId);
+export const getTasksByBusinessArea = (businessArea: string): Task[] => {
+  return tasks.filter(t => t.businessArea === businessArea);
 };
 
 export const getTasksByArea = (area: string): Task[] => {
-  return tasks.filter(t => t.id.startsWith("TASK-") && t.businessId === (area === "AR" ? "BIZ-001" : area === "AP" ? "BIZ-002" : "BIZ-003"));
+  return tasks.filter(t => t.id.startsWith("TASK-") && t.businessArea === area);
 };

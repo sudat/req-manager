@@ -15,7 +15,7 @@ export const searchBusinessDomainsTool = createTool({
 
 使用方法:
 - ユーザーが「GL」「一般会計」などと言った場合、このToolで検索する
-- code、name、areaのいずれかで部分一致検索が可能
+- name、areaのいずれかで部分一致検索が可能
 - プロジェクトIDで絞り込みが可能
 
 注意:
@@ -23,7 +23,7 @@ export const searchBusinessDomainsTool = createTool({
 - 「一般会計」はnameフィールドで検索するとマッチする`,
   inputSchema: z.object({
     projectId: z.string().describe('プロジェクトID'),
-    query: z.string().describe('検索キーワード（codeまたはname）'),
+    query: z.string().describe('検索キーワード（areaまたはname）'),
   }),
   execute: async (inputData) => {
     const { projectId, query } = inputData;
@@ -32,12 +32,12 @@ export const searchBusinessDomainsTool = createTool({
 
     try {
       // SQL Injection対策: ユーザー入力をエスケープ
-      const orCondition = buildOrLikeConditions(query, ['id', 'name', 'area']);
+      const orCondition = buildOrLikeConditions(query, ['name', 'area']);
 
       // 検索条件: idが前方一致、またはname/areaが部分一致
       const { data: bds, error } = await supabase
         .from('business_domains')
-        .select('id, name, area')
+        .select('area, name')
         .eq('project_id', projectId)
         .or(orCondition)
         .limit(10);
@@ -51,13 +51,13 @@ export const searchBusinessDomainsTool = createTool({
 
       if (!bds || bds.length === 0) {
         return toolSuccess(
-          `業務領域「${query}」が見つかりませんでした。検索対象: code, name, area。projectId: ${projectId}`,
+          `業務領域「${query}」が見つかりませんでした。検索対象: name, area。projectId: ${projectId}`,
           { results: [], count: 0 }
         );
       }
 
       return toolSuccess(
-        `${bds.length}件の業務領域が見つかりました: ${bds.map(bd => `${bd.id}: ${bd.name}`).join(', ')}`,
+        `${bds.length}件の業務領域が見つかりました: ${bds.map(bd => `${bd.area}: ${bd.name}`).join(', ')}`,
         { results: bds, count: bds.length }
       );
     } catch (error: any) {

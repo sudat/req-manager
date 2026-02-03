@@ -1,6 +1,14 @@
 import type { Ticket } from '@/lib/domain';
 
-export const tickets: Ticket[] = [
+const LEGACY_BUSINESS_ID_TO_AREA: Record<string, string> = {
+  "BIZ-001": "AR",
+  "BIZ-002": "AP",
+  "BIZ-003": "GL",
+};
+
+type LegacyTicket = Omit<Ticket, "businessIds"> & { businessIds: string[] };
+
+const legacyTickets: LegacyTicket[] = [
   // AR関連（10件）
   {
     id: "CR-001",
@@ -893,6 +901,11 @@ export const tickets: Ticket[] = [
     ]
   },
 ];
+
+export const tickets: Ticket[] = legacyTickets.map((ticket) => ({
+  ...ticket,
+  businessIds: ticket.businessIds.map((id) => LEGACY_BUSINESS_ID_TO_AREA[id] ?? id),
+}));
 
 export const getTicketById = (id: string): Ticket | undefined => {
   return tickets.find(t => t.id === id);

@@ -1,4 +1,5 @@
 import { Check, X, Clock, BookOpen, AlertCircle } from 'lucide-react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { ConceptCandidate, ConceptAction } from './types';
@@ -28,12 +29,19 @@ export function ConceptSuggestionCard({
           <span className="text-[14px] font-medium text-slate-900">
             {candidate.term}
           </span>
-          {candidate.isExisting ? (
+          {candidate.matchType === 'exact' ? (
             <Badge
               variant="outline"
               className="border-green-200 bg-green-50 text-green-700 text-[11px] px-2 py-0.5"
             >
               既存概念
+            </Badge>
+          ) : candidate.matchType === 'similar' ? (
+            <Badge
+              variant="outline"
+              className="border-purple-200 bg-purple-50 text-purple-700 text-[11px] px-2 py-0.5"
+            >
+              似た概念 ({candidate.similarConcept?.similarityScore}%)
             </Badge>
           ) : (
             <Badge
@@ -83,6 +91,37 @@ export function ConceptSuggestionCard({
               </div>
               <div className="text-[13px] text-blue-700">
                 {candidate.suggestion}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 類似概念情報エリア */}
+      {candidate.matchType === 'similar' && candidate.similarConcept && (
+        <div className="mb-3 p-3 rounded bg-purple-50 border border-purple-100">
+          <div className="flex items-start gap-2">
+            <BookOpen className="h-4 w-4 text-purple-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <div className="text-[11px] font-medium text-purple-800 mb-1">
+                似た概念が見つかりました
+              </div>
+              <div className="text-[13px] font-medium text-purple-900 mb-1">
+                {candidate.similarConcept.name}
+              </div>
+              <div className="text-[12px] text-purple-700 mb-2">
+                {candidate.similarConcept.definition}
+              </div>
+              <div className="flex items-center gap-2">
+                <Link
+                  href={`/ideas/${candidate.similarConcept.id}`}
+                  className="text-[12px] text-purple-600 hover:text-purple-800 underline"
+                >
+                  詳細を確認
+                </Link>
+                <span className="text-[11px] text-purple-500">
+                  類似度: {candidate.similarConcept.similarityScore}%
+                </span>
               </div>
             </div>
           </div>

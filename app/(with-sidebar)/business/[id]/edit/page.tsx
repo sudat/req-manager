@@ -78,12 +78,12 @@ export default function BusinessEditPage({ params }: { params: Promise<{ id: str
       setSaving(false);
       return;
     }
-    if (!business?.id) {
+    if (!business?.area) {
       setError("業務が見つかりません");
       setSaving(false);
       return;
     }
-    const { error: saveError } = await updateBusiness(business.id, {
+    const { error: saveError } = await updateBusiness(businessKey, {
       name: name.trim(),
       area: area.trim(),
       summary: summary.trim(),

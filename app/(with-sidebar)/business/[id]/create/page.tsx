@@ -31,7 +31,6 @@ function BusinessTaskCreatePageContent({ businessKey }: BusinessTaskCreatePageCo
     optionsError,
     taskId,
     sortOrder,
-    businessId,
     businessArea,
     businessName,
     concepts,
@@ -60,14 +59,14 @@ function BusinessTaskCreatePageContent({ businessKey }: BusinessTaskCreatePageCo
 
   const canSubmit = useMemo(
     () =>
-      !!businessId &&
+      !!businessArea &&
       !!businessName &&
       taskName.trim().length > 0 &&
       taskSummary.trim().length > 0 &&
       businessContext.trim().length > 0 &&
       !loading,
     [
-      businessId,
+      businessArea,
       businessName,
       taskName,
       taskSummary,
@@ -109,7 +108,7 @@ function BusinessTaskCreatePageContent({ businessKey }: BusinessTaskCreatePageCo
 
   async function handleSubmit(event: FormEvent): Promise<void> {
     event.preventDefault();
-    if (!businessId || !canSubmit) return;
+    if (!businessArea || !canSubmit) return;
     const projectId = requireProjectId({
       currentProjectId,
       projectLoading,
@@ -122,7 +121,7 @@ function BusinessTaskCreatePageContent({ businessKey }: BusinessTaskCreatePageCo
 
     const { error: saveError } = await createTask({
       id: taskId,
-      businessId,
+      businessArea,
       name: taskName.trim(),
       summary: taskSummary.trim(),
       businessContext: businessContext.trim(),

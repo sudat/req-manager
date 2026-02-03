@@ -252,7 +252,7 @@ export function ResourceListPage<T extends { id: string }>({
 	const renderActions = useCallback(
 		(item: T) => {
 			const actions = config.actions?.(item) ?? [];
-			const deleteAction = deleteItem
+			const deleteAction = (deleteItem || onDelete)
 				? [
 						{
 							icon: require("lucide-react").Trash2,
@@ -293,7 +293,7 @@ export function ResourceListPage<T extends { id: string }>({
 				return content;
 			});
 		},
-		[config, deleteItem, handleDelete],
+		[config, deleteItem, onDelete, handleDelete],
 	);
 
 	return (
@@ -483,7 +483,7 @@ export function ResourceListPage<T extends { id: string }>({
 														{col.header}
 													</TableHead>
 												))}
-												{(config.actions || deleteItem) && (
+												{(config.actions || deleteItem || onDelete) && (
 													<TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">
 														操作
 													</TableHead>
@@ -517,7 +517,7 @@ export function ResourceListPage<T extends { id: string }>({
 												{col.header}
 											</TableHead>
 										))}
-										{(config.actions || deleteItem) && (
+										{(config.actions || deleteItem || onDelete) && (
 											<TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">
 												操作
 											</TableHead>
@@ -526,7 +526,7 @@ export function ResourceListPage<T extends { id: string }>({
 								</TableHeader>
 								<TableBody>
 									{loading ? (
-										<TableSkeleton cols={config.columns.length + (config.actions || deleteItem ? 1 : 0)} rows={5} />
+										<TableSkeleton cols={config.columns.length + (config.actions || deleteItem || onDelete ? 1 : 0)} rows={5} />
 									) : error ? (
 										<TableRow>
 											<TableCell colSpan={config.errorColSpan} className="px-4 py-10 text-center text-[14px] text-rose-600">
@@ -551,7 +551,7 @@ export function ResourceListPage<T extends { id: string }>({
 														{col.cell(item)}
 													</TableCell>
 												))}
-												{(config.actions || deleteItem) && (
+												{(config.actions || deleteItem || onDelete) && (
 													<TableCell className="px-4 py-3">
 														<div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
 															{renderActions(item)}

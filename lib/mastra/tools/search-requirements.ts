@@ -32,14 +32,20 @@ export const searchRequirementsTool = createTool({
       if (searchTypes.includes('bt')) {
         const { data } = await supabase
           .from('business_tasks')
-          .select('id, code, name, description, business_domain_id')
-          .eq('business_domain_id', projectId) // TODO: project_idで絞る
-          .or(`name.ilike.%${escapedQuery}%,description.ilike.%${escapedQuery}%`)
+          .select('id, name, summary, business_area, project_id')
+          .eq('project_id', projectId)
+          .or(`name.ilike.%${escapedQuery}%,summary.ilike.%${escapedQuery}%`)
           .limit(10);
 
         if (data) {
           results.push(
-            ...data.map((item) => ({ resultType: 'bt', ...item }))
+            ...data.map((item) => ({
+              resultType: 'bt',
+              id: item.id,
+              name: item.name,
+              description: (item as any).summary ?? "",
+              business_area: (item as any).business_area,
+            }))
           );
         }
       }

@@ -141,7 +141,7 @@ export const businessListConfig: ResourceListConfig<Business> = {
 		},
 	],
 	getRowHref: (biz) => `/business/${biz.area}`,
-	getSearchText: (biz) => [biz.area, biz.id, biz.name, biz.summary].join(" "),
+	getSearchText: (biz) => [biz.area, biz.name, biz.summary].join(" "),
 	enableReorder: true,
 	onReorderSave: async (updates) => {
 		const { updateBusinessesSortOrder } = await import("@/lib/data/businesses");

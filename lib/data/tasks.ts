@@ -1,12 +1,12 @@
 import { supabase } from "@/lib/supabase/client";
 import type { Task } from "@/lib/domain";
-import { createCrudOperations, failIfMissingConfig } from "./crud-factory";
+import { createCrudOperations, createSortOrderUpdater, failIfMissingConfig } from "./crud-factory";
 import { parseDocument } from "yaml";
 import { YAML_PARSE_OPTIONS, toYamlText } from "@/lib/utils/yaml";
 
 export type TaskInput = {
   id: string;
-  businessId: string;
+  businessArea: string;
   name: string;
   summary: string;
   businessContext: string;
@@ -25,7 +25,7 @@ export type TaskCreateInput = TaskInput & {
 
 type TaskRow = {
   id: string;
-  business_id: string;
+  business_area: string;
   name: string;
   summary: string;
   business_context: string | null;
@@ -56,7 +56,7 @@ const parseYamlToJson = (value?: string | null) => {
 
 const toTask = (row: TaskRow): Task => ({
   id: row.id,
-  businessId: row.business_id,
+  businessArea: row.business_area,
   name: row.name,
   summary: row.summary,
   businessContext: row.business_context ?? "",
@@ -76,7 +76,7 @@ const toTask = (row: TaskRow): Task => ({
 const toTaskRow = (input: Partial<TaskInput>) => {
   const row: Partial<TaskRow> = {};
   if (input.id !== undefined) row.id = input.id;
-  if (input.businessId !== undefined) row.business_id = input.businessId;
+  if (input.businessArea !== undefined) row.business_area = input.businessArea;
   if (input.name !== undefined) row.name = input.name;
   if (input.summary !== undefined) row.summary = input.summary;
   if (input.businessContext !== undefined) row.business_context = input.businessContext;
@@ -105,14 +105,14 @@ export const updateTask = crud.update;
 export const deleteTask = crud.delete;
 
 // 特殊メソッド（個別実装）
-export const listTasksByBusinessId = async (businessId: string, projectId?: string) => {
+export const listTasksByBusinessArea = async (businessArea: string, projectId?: string) => {
   const configError = failIfMissingConfig();
   if (configError) return configError;
 
   let query = supabase
     .from("business_tasks")
     .select("*")
-    .eq("business_id", businessId)
+    .eq("business_area", businessArea)
     .order("sort_order")
     .order("id");
 
@@ -145,38 +145,4 @@ export const listTasksByIds = async (ids: string[], projectId?: string) => {
   return { data: (data as TaskRow[]).map(toTask), error: null };
 };
 
-export type TaskSortOrderUpdate = {
-  id: string;
-  sortOrder: number;
-};
-
-export const updateTasksSortOrder = async (
-  updates: TaskSortOrderUpdate[],
-  projectId?: string
-): Promise<{ data: boolean | null; error: string | null }> => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
-
-  // RPC関数を使わず、個別にUPDATEを実行
-  const updatePromises = updates.map((update) => {
-    let query = supabase
-      .from("business_tasks")
-      .update({ sort_order: update.sortOrder, updated_at: new Date().toISOString() })
-      .eq("id", update.id);
-
-    // projectIdがある場合のみフィルタを適用
-    if (projectId) {
-      query = query.eq("project_id", projectId);
-    }
-
-    return query;
-  });
-
-  const results = await Promise.all(updatePromises);
-
-  // いずれかのUPDATEでエラーがあれば最初のエラーを返す
-  const firstError = results.find((r) => r.error)?.error;
-  if (firstError) return { data: null, error: firstError.message };
-
-  return { data: true, error: null };
-};
+export const updateTasksSortOrder = createSortOrderUpdater("business_tasks");

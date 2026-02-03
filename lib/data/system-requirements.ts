@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase/client";
-import { failIfMissingConfig } from "./crud-factory";
+import { failIfMissingConfig, executeListQuery } from "./crud-factory";
 import type { SystemRequirementCategory } from "@/lib/domain";
 import type { AcceptanceCriterion } from "@/lib/domain";
 import {
@@ -197,61 +197,39 @@ const mergeBusinessRequirementIdsFromLinks = async (
 };
 
 export const listSystemRequirementsByTaskId = async (taskId: string, projectId?: string) => {
-	const configError = failIfMissingConfig();
-	if (configError) return configError;
-
-	let query = supabase
-		.from("system_requirements")
-		.select("*")
-		.eq("task_id", taskId)
-		.order("sort_order")
-		.order("id");
-
-	if (projectId) {
-		query = query.eq("project_id", projectId);
-	}
-
-	const { data, error } = await query;
-	if (error) return { data: null, error: error.message };
-	const mapped = (data as SystemRequirementRow[]).map(toSystemRequirement);
-	const withAcceptance = await mergeAcceptanceCriteriaFromCanonical(mapped, projectId);
+	const result = await executeListQuery(
+		() => supabase.from("system_requirements").select("*").eq("task_id", taskId).order("sort_order").order("id"),
+		projectId,
+		toSystemRequirement
+	);
+	if (result.error || !result.data) return result;
+	const withAcceptance = await mergeAcceptanceCriteriaFromCanonical(result.data, projectId);
 	if (withAcceptance.error || !withAcceptance.data) return withAcceptance;
 	return mergeBusinessRequirementIdsFromLinks(withAcceptance.data, projectId);
 };
 
 export const listSystemRequirementsByIds = async (ids: string[], projectId?: string) => {
-	const configError = failIfMissingConfig();
-	if (configError) return configError;
 	if (ids.length === 0) return { data: [], error: null };
 
-	let query = supabase.from("system_requirements").select("*").in("id", ids).order("id");
-
-	if (projectId) {
-		query = query.eq("project_id", projectId);
-	}
-
-	const { data, error } = await query;
-	if (error) return { data: null, error: error.message };
-	const mapped = (data as SystemRequirementRow[]).map(toSystemRequirement);
-	const withAcceptance = await mergeAcceptanceCriteriaFromCanonical(mapped, projectId);
+	const result = await executeListQuery(
+		() => supabase.from("system_requirements").select("*").in("id", ids).order("id"),
+		projectId,
+		toSystemRequirement
+	);
+	if (result.error || !result.data) return result;
+	const withAcceptance = await mergeAcceptanceCriteriaFromCanonical(result.data, projectId);
 	if (withAcceptance.error || !withAcceptance.data) return withAcceptance;
 	return mergeBusinessRequirementIdsFromLinks(withAcceptance.data, projectId);
 };
 
 export const listSystemRequirements = async (projectId?: string) => {
-	const configError = failIfMissingConfig();
-	if (configError) return configError;
-
-	let query = supabase.from("system_requirements").select("*").order("task_id").order("sort_order").order("id");
-
-	if (projectId) {
-		query = query.eq("project_id", projectId);
-	}
-
-	const { data, error } = await query;
-	if (error) return { data: null, error: error.message };
-	const mapped = (data as SystemRequirementRow[]).map(toSystemRequirement);
-	const withAcceptance = await mergeAcceptanceCriteriaFromCanonical(mapped, projectId);
+	const result = await executeListQuery(
+		() => supabase.from("system_requirements").select("*").order("task_id").order("sort_order").order("id"),
+		projectId,
+		toSystemRequirement
+	);
+	if (result.error || !result.data) return result;
+	const withAcceptance = await mergeAcceptanceCriteriaFromCanonical(result.data, projectId);
 	if (withAcceptance.error || !withAcceptance.data) return withAcceptance;
 	return mergeBusinessRequirementIdsFromLinks(withAcceptance.data, projectId);
 };
@@ -283,24 +261,13 @@ export const createSystemRequirements = async (inputs: SystemRequirementCreateIn
 };
 
 export const listSystemRequirementsBySrfId = async (srfId: string, projectId?: string) => {
-	const configError = failIfMissingConfig();
-	if (configError) return configError;
-
-	let query = supabase
-		.from("system_requirements")
-		.select("*")
-		.overlaps("srf_ids", [srfId])
-		.order("sort_order")
-		.order("id");
-
-	if (projectId) {
-		query = query.eq("project_id", projectId);
-	}
-
-	const { data, error } = await query;
-	if (error) return { data: null, error: error.message };
-	const mapped = (data as SystemRequirementRow[]).map(toSystemRequirement);
-	const withAcceptance = await mergeAcceptanceCriteriaFromCanonical(mapped, projectId);
+	const result = await executeListQuery(
+		() => supabase.from("system_requirements").select("*").overlaps("srf_ids", [srfId]).order("sort_order").order("id"),
+		projectId,
+		toSystemRequirement
+	);
+	if (result.error || !result.data) return result;
+	const withAcceptance = await mergeAcceptanceCriteriaFromCanonical(result.data, projectId);
 	if (withAcceptance.error || !withAcceptance.data) return withAcceptance;
 	return mergeBusinessRequirementIdsFromLinks(withAcceptance.data, projectId);
 };

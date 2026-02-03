@@ -1,1 +1,1 @@
-export { tasks, getTaskById, getTasksByBusinessId, getTasksByArea } from './tasks';
+export { tasks, getTaskById, getTasksByBusinessArea, getTasksByArea } from './tasks';

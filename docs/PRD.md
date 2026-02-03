@@ -358,7 +358,7 @@ outputs:
 
 | 項目 | 必須 | 形式 | 説明 |
 |------|:----:|:----:|------|
-| br_id | ○ | - | 一意識別子（例：BR-BIL-001） |
+| br_id | ○ | - | 一意識別子（例：BR-BIL-0001-0001） |
 | task_id | ○ | - | 親となる業務タスクのID |
 | goal | ○ | Markdown | 達成したい業務成果と、その測り方 |
 | constraints | ○ | YAML | 守るべき業務ルール、制度、例外の扱い（配列） |
@@ -4469,16 +4469,18 @@ Phase 3とPhase 4は並行して進められる。Phase 5は両方の完了後�
 
 Mastra Agentを統合し、チャットUIと草案生成機能を実装する。
 
-- [ ] 4-1. Mastra セットアップ・Agent定義
-- [ ] 4-2. コンテキスト注入機能（PR、現在位置、既存要件）
-- [ ] 4-3. bt_draft / br_draft Tool 実装
-- [ ] 4-4. system_draft Tool 実装（SF/SR/AC一括生成）
-- [ ] 4-5. impl_unit_draft Tool 実装
-- [ ] 4-6. critic_check Tool 実装
-- [ ] 4-7. AIチャットUI（/chat）実装
-- [ ] 4-8. 草案プレビュー・確定フロー実装
-- [ ] 4-9. 「AIで追加」ボタン連携（BD詳細→チャットUI起動）
-- [ ] 4-10. 概念候補抽出・提案UI実装
+詳細なチェックリストと最新ステータスは `docs/checklists/active/2026-01-28-phase4-ai-features.md` を正本とする（本PRDは概要）。
+
+- [x] 4-1. Mastra セットアップ・Agent定義
+- [x] 4-2. コンテキスト注入機能（PR、現在位置、既存要件）
+- [x] 4-3. bt_draft / br_draft Tool 実装
+- [x] 4-4. system_draft Tool 実装（SF/SR/AC一括生成）
+- [x] 4-5. impl_unit_draft Tool 実装
+- [x] 4-6. critic_check Tool 実装
+- [x] 4-7. AIチャットUI（/chat）実装（ストリーミング、クイックアクション、リトライ、履歴オーバーレイ含む）
+- [x] 4-8. 草案プレビュー・確定フロー実装（save_to_draft / commit_draft を含む）
+- [x] 4-9. 「AIで追加」ボタン連携（BD詳細→チャットUI起動）
+- [x] 4-10. 概念候補抽出・提案UI実装（BT草案の概念候補表示を含む）
 
 ### Phase 5: 変更管理と連携
 
@@ -4594,8 +4596,13 @@ M6完了時の確認項目：
 | 項目 | 注意点 |
 |------|--------|
 | 草案の状態管理 | 未確定の草案はセッション内で保持し、画面遷移で消えないようにする |
-| ストリーミング | AI生成はストリーミング表示で体感速度を改善する |
+| ストリーミング | agent.stream() + textStream で体感速度を改善する |
 | エラーハンドリング | AI呼び出し失敗時のリトライ・フォールバックを用意する |
+| モデル指定 | `anthropic/claude-sonnet-4-20250514` の形式 |
+| Tool定義 | createTool() + execute: async (...) の形式 |
+| Tools渡し | agent定義で `tools: { toolName }` オブジェクト形式 |
+| メモリ管理 | Memory + LibSQLStore + threadId/resourceId で管理 |
+| コンテキストアクセス | Tool内で context.mastra, context.agent 経由 |
 
 ### Phase 5での注意
 

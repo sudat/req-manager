@@ -14,22 +14,9 @@ import { listConcepts, createConcept } from "@/lib/data/concepts";
 import { nextSequentialIdFrom } from "@/lib/data/id";
 import type { BusinessArea } from "@/lib/domain";
 import { requireProjectId } from "@/lib/utils/project";
+import { splitCsv, splitLines } from "@/lib/utils/string";
 
 const areaOptions: BusinessArea[] = ["AR", "AP", "GL"];
-
-function splitCsv(value: string): string[] {
-  return value
-    .split(",")
-    .map((v) => v.trim())
-    .filter(Boolean);
-}
-
-function splitLines(value: string): string[] {
-  return value
-    .split("\n")
-    .map((v) => v.trim())
-    .filter(Boolean);
-}
 
 export default function IdeaCreatePage() {
   const router = useRouter();

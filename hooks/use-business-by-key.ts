@@ -7,13 +7,12 @@ import type { Business } from "@/lib/domain";
 
 type UseBusinessByKeyResult = {
   business: Business | null;
-  businessId: string | null;
   businessArea: string | null;
   loading: boolean;
   error: string | null;
 };
 
-export function useBusinessByKey(businessKey: string | null): UseBusinessByKeyResult {
+export function useBusinessByKey(businessKey: string | null | undefined): UseBusinessByKeyResult {
   const { currentProjectId, loading: projectLoading } = useProject();
   const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
@@ -28,7 +27,15 @@ export function useBusinessByKey(businessKey: string | null): UseBusinessByKeyRe
       return;
     }
 
-    if (!businessKey) {
+    // null/undefined は「まだ取得中」として扱う（loading状態を維持）
+    if (businessKey === null || businessKey === undefined) {
+      setLoading(true);
+      setError(null);
+      setBusiness(null);
+      return;
+    }
+    // 空文字列が渡された場合はエラーにする（本来のバリデーション）
+    if (businessKey === "") {
       setError("業務領域が指定されていません");
       setBusiness(null);
       setLoading(false);
@@ -67,7 +74,6 @@ export function useBusinessByKey(businessKey: string | null): UseBusinessByKeyRe
 
   return {
     business,
-    businessId: business?.id ?? null,
     businessArea: business?.area ?? null,
     loading,
     error,

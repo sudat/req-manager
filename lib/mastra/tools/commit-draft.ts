@@ -9,7 +9,7 @@ import { toolSuccess, toolError } from '@/lib/mastra/utils/tool-helpers';
 
 // Business Task (BT) コンテンツスキーマ
 const btContentSchema = z.object({
-  business_domain_id: z.string(),
+  business_area: z.string(),
   project_id: z.string(),
   code: z.string(),
   name: z.string(),
@@ -152,154 +152,143 @@ export const commitDraftTool = createTool({
         }
       };
 
-      // タイプに応じてバリデーションを実行
-      let validatedContent: any;
-
-      switch (type) {
-        case 'bt':
-          validatedContent = btContentSchema.parse(content);
-          break;
-        case 'br':
-          validatedContent = brContentSchema.parse(content);
-          break;
-        case 'sf':
-          validatedContent = sfContentSchema.parse(content);
-          break;
-        case 'sr':
-          validatedContent = srContentSchema.parse(content);
-          break;
-        case 'ac':
-          validatedContent = acContentSchema.parse(content);
-          break;
-        case 'impl_unit':
-          validatedContent = implUnitContentSchema.parse(content);
-          break;
-        default:
-          throw new Error(`Unknown draft type: ${type}`);
-      }
-
-      let insertedId: string | undefined;
-
-      switch (type) {
-        case 'bt': {
+      // タイプ別ハンドラー（バリデーション＋行生成＋DB挿入）
+      const draftHandlers: Record<string, () => Promise<string | undefined>> = {
+        bt: async () => {
+          const v = btContentSchema.parse(content);
           const row = {
-            business_id: validatedContent.business_domain_id,
-            project_id: validatedContent.project_id,
-            id: validatedContent.code,
-            name: validatedContent.name,
-            summary: validatedContent.summary ?? null,
-            business_context: validatedContent.businessContext ?? null,
-            process_steps: validatedContent.processSteps ?? null,
-            input: validatedContent.input ?? null,
-            output: validatedContent.output ?? null,
-            concepts: toTextArrayOrEmpty(validatedContent.concepts),
-            concept_ids_yaml: validatedContent.conceptIdsYaml ?? null,
-            person: validatedContent.person ?? null,
-            sort_order: validatedContent.sort_order ?? 0,
+            business_area: v.business_area,
+            project_id: v.project_id,
+            id: v.code,
+            name: v.name,
+            summary: v.summary ?? null,
+            business_context: v.businessContext ?? null,
+            process_steps: v.processSteps ?? null,
+            input: v.input ?? null,
+            output: v.output ?? null,
+            concepts: toTextArrayOrEmpty(v.concepts),
+            concept_ids_yaml: v.conceptIdsYaml ?? null,
+            person: v.person ?? null,
+            sort_order: v.sort_order ?? 0,
             created_at: now,
             updated_at: now,
           };
           const inserted = await insertRow('business_tasks', row);
-          insertedId = inserted?.id ?? validatedContent.code;
-          break;
-        }
-        case 'br': {
-          const projectId =
-            validatedContent.project_id ??
-            (await resolveProjectId('business_tasks', validatedContent.business_task_id));
+          return inserted?.id ?? v.code;
+        },
+        br: async () => {
+          const v = brContentSchema.parse(content);
+          const projectId = v.project_id ?? (await resolveProjectId('business_tasks', v.business_task_id));
           const row = {
-            business_task_id: validatedContent.business_task_id,
-            code: validatedContent.code,
-            requirement: validatedContent.requirement,
-            rationale: validatedContent.rationale,
-            concept_ids: toTextArrayOrEmpty(validatedContent.concept_ids),
+            business_task_id: v.business_task_id,
+            code: v.code,
+            requirement: v.requirement,
+            rationale: v.rationale,
+            concept_ids: toTextArrayOrEmpty(v.concept_ids),
             ...(projectId ? { project_id: projectId } : {}),
             created_at: now,
             updated_at: now,
           };
           const inserted = await insertRow('business_requirements', row);
-          insertedId = inserted?.id;
-          break;
-        }
-        case 'sf': {
-          const projectId =
-            validatedContent.project_id ??
-            (await resolveProjectId('system_domains', validatedContent.system_domain_id));
+          return inserted?.id;
+        },
+        sf: async () => {
+          const v = sfContentSchema.parse(content);
+          const projectId = v.project_id ?? (await resolveProjectId('system_domains', v.system_domain_id));
           const row = {
-            system_domain_id: validatedContent.system_domain_id,
-            code: validatedContent.code,
-            name: validatedContent.name,
-            description: validatedContent.description,
-            concept_ids: toTextArrayOrEmpty(validatedContent.concept_ids),
+            system_domain_id: v.system_domain_id,
+            code: v.code,
+            name: v.name,
+            description: v.description,
+            concept_ids: toTextArrayOrEmpty(v.concept_ids),
             ...(projectId ? { project_id: projectId } : {}),
             created_at: now,
             updated_at: now,
           };
           const inserted = await insertRow('system_functions', row);
-          insertedId = inserted?.id;
-          break;
-        }
-        case 'sr': {
-          const projectId =
-            validatedContent.project_id ??
-            (await resolveProjectId('system_functions', validatedContent.system_function_id));
+          return inserted?.id;
+        },
+        sr: async () => {
+          const v = srContentSchema.parse(content);
+          const projectId = v.project_id ?? (await resolveProjectId('system_functions', v.system_function_id));
           const row = {
-            system_function_id: validatedContent.system_function_id,
-            code: validatedContent.code,
-            type: validatedContent.type,
-            requirement: validatedContent.requirement,
-            rationale: validatedContent.rationale,
-            concept_ids: toTextArrayOrEmpty(validatedContent.concept_ids),
+            system_function_id: v.system_function_id,
+            code: v.code,
+            type: v.type,
+            requirement: v.requirement,
+            rationale: v.rationale,
+            concept_ids: toTextArrayOrEmpty(v.concept_ids),
             ...(projectId ? { project_id: projectId } : {}),
             created_at: now,
             updated_at: now,
           };
           const inserted = await insertRow('system_requirements', row);
-          insertedId = inserted?.id;
-          break;
-        }
-        case 'ac': {
-          const projectId =
-            validatedContent.project_id ??
-            (await resolveProjectId('system_requirements', validatedContent.system_requirement_id));
+          return inserted?.id;
+        },
+        ac: async () => {
+          const v = acContentSchema.parse(content);
+          const projectId = v.project_id ?? (await resolveProjectId('system_requirements', v.system_requirement_id));
           const row = {
-            system_requirement_id: validatedContent.system_requirement_id,
-            code: validatedContent.code,
-            given_text: validatedContent.given,
-            when_text: validatedContent.when,
-            then_text: validatedContent.then,
+            system_requirement_id: v.system_requirement_id,
+            code: v.code,
+            given_text: v.given,
+            when_text: v.when,
+            then_text: v.then,
             ...(projectId ? { project_id: projectId } : {}),
             created_at: now,
             updated_at: now,
           };
           const inserted = await insertRow('acceptance_criteria', row);
-          insertedId = inserted?.id;
-          break;
-        }
-        case 'impl_unit': {
-          const projectId =
-            validatedContent.project_id ??
-            (await resolveProjectId('system_functions', validatedContent.system_function_id));
+          return inserted?.id;
+        },
+        impl_unit: async () => {
+          const v = implUnitContentSchema.parse(content);
+          const projectId = v.project_id ?? (await resolveProjectId('system_functions', v.system_function_id));
           const row = {
-            system_function_id: validatedContent.system_function_id,
-            code: validatedContent.code,
-            name: validatedContent.name,
-            entry_point: validatedContent.entry_point,
-            design_notes: validatedContent.design_notes ?? null,
+            system_function_id: v.system_function_id,
+            code: v.code,
+            name: v.name,
+            entry_point: v.entry_point,
+            design_notes: v.design_notes ?? null,
             ...(projectId ? { project_id: projectId } : {}),
             created_at: now,
             updated_at: now,
           };
           const inserted = await insertRow('impl_unit_sds', row);
-          insertedId = inserted?.id;
-          break;
-        }
-        default:
-          throw new Error(`Unknown draft type: ${type}`);
-      }
+          return inserted?.id;
+        },
+      };
+
+      const handler = draftHandlers[type];
+      if (!handler) throw new Error(`Unknown draft type: ${type}`);
+
+      const insertedId = await handler();
 
       console.log('[commit_draft] Insert succeeded', { type, id: insertedId });
-      return toolSuccess(`草案を正本に登録しました（${type} ID: ${insertedId ?? draftId}）`, {
+
+      // タイプ別のメッセージ生成（AIエージェントがIDを認識しやすくする）
+      const getSuccessMessage = (t: string, id: string | undefined): string => {
+        const displayId = id ?? draftId;
+        switch (t) {
+          case 'bt':
+            return `✅ 業務タスクを登録しました\n\n**ID: ${displayId}**\n名前: ${content.name ?? '未設定'}`;
+          case 'br':
+            return `✅ 業務要件を登録しました\n\n**ID: ${displayId}**`;
+          case 'sf':
+            return `✅ システム機能を登録しました\n\n**ID: ${displayId}**\n名前: ${content.name ?? '未設定'}`;
+          case 'sr':
+            return `✅ システム要件を登録しました\n\n**ID: ${displayId}**`;
+          case 'ac':
+            return `✅ 受入条件を登録しました\n\n**ID: ${displayId}**`;
+          case 'impl_unit':
+            return `✅ 実装単位を登録しました\n\n**ID: ${displayId}**\n名前: ${content.name ?? '未設定'}`;
+          default:
+            return `草案を正本に登録しました（${t} ID: ${displayId}）`;
+        }
+      };
+
+      const message = getSuccessMessage(type, insertedId);
+      return toolSuccess(message, {
         id: insertedId ?? draftId,
         type,
       });

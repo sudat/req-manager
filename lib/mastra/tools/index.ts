@@ -6,6 +6,7 @@
 export { commitDraftTool } from './commit-draft';
 export { searchRequirementsTool } from './search-requirements';
 export { searchBusinessDomainsTool } from './search-business-domains';
+export { listBusinessDomainsTool } from './list-business-domains';
 export { getLinksTool } from './get-links';
 export { getContextTool } from './get-context';
 

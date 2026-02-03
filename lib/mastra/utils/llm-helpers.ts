@@ -36,6 +36,14 @@ export interface LLMRequestOptions {
   jsonMode?: boolean;
   /** 温度パラメータ（0.0-2.0、デフォルト: 未指定=API任せ） */
   temperature?: number;
+  /** タイムアウト（ミリ秒） */
+  timeoutMs?: number;
+  /** OpenAI互換APIのベースURL */
+  baseUrl?: string;
+  /** 生成トークン上限（chat.completions: max_tokens） */
+  maxTokens?: number;
+  /** GPT-5 verbosity: "low"(terse) | "medium"(balanced) | "high"(detailed) */
+  verbosity?: 'low' | 'medium' | 'high';
 }
 
 /**
@@ -93,6 +101,10 @@ export async function callOpenAI<T = string>(
     model = 'gpt-5-mini',
     jsonMode = false,
     temperature,
+    timeoutMs = 180000,
+    baseUrl,
+    maxTokens,
+    verbosity,
   } = options;
 
   const openaiApiKey = getOpenAIApiKey();
@@ -112,15 +124,48 @@ export async function callOpenAI<T = string>(
   if (temperature !== undefined) {
     requestBody.temperature = temperature;
   }
+  if (maxTokens !== undefined) {
+    const normalizedModel = model.includes('/') ? model.split('/').pop() ?? model : model;
+    const useMaxCompletionTokens = normalizedModel.startsWith('gpt-5');
+    if (useMaxCompletionTokens) {
+      requestBody.max_completion_tokens = maxTokens;
+    } else {
+      requestBody.max_tokens = maxTokens;
+    }
+  }
+  if (verbosity !== undefined) {
+    requestBody.verbosity = verbosity;
+  }
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${openaiApiKey}`,
-    },
-    body: JSON.stringify(requestBody),
-  });
+  const controller = new AbortController();
+  const timeoutId = timeoutMs
+    ? setTimeout(() => controller.abort(), timeoutMs)
+    : null;
+
+  const apiBaseUrl = (baseUrl && baseUrl.trim().length > 0 ? baseUrl : 'https://api.openai.com/v1')
+    .replace(/\/$/, '');
+  const apiUrl = `${apiBaseUrl}/chat/completions`;
+
+  let response: Response;
+  try {
+    response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${openaiApiKey}`,
+      },
+      body: JSON.stringify(requestBody),
+      signal: controller.signal,
+    });
+  } catch (error: any) {
+    if (timeoutId) clearTimeout(timeoutId);
+    if (error?.name === 'AbortError') {
+      const timeoutLabel = timeoutMs ? `${timeoutMs}ms` : 'timeout';
+      throw new Error(`OpenAI API timeout: ${timeoutLabel}`);
+    }
+    throw error;
+  }
+  if (timeoutId) clearTimeout(timeoutId);
 
   if (!response.ok) {
     const errorBody = await response.text();

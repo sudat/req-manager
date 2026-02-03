@@ -28,7 +28,7 @@ const supabase = createClient(url, anonKey)
 ### 1. 共通パターン
 
 #### 自動採番ルール
-- IDはアプリ側で生成（例: `BIZ-${Date.now()}`, `TASK-${Date.now()}`）
+- 業務領域は `area`（AR/AP/GL）をキーとして扱い、その他IDはアプリ側で生成（例: `TASK-${Date.now()}`）
 - 連番採番は避け、タイムスタンプベースのユニークIDを使用
 
 #### エラーハンドリング
@@ -55,7 +55,7 @@ if (error) {
 const { data, error } = await supabase
   .from('business_domains')
   .select('*')
-  .eq('id', 'BIZ-001')
+  .eq('area', 'AR')
   .single()
 ```
 
@@ -64,7 +64,7 @@ const { data, error } = await supabase
 const { data, error } = await supabase
   .from('business_tasks')
   .select('*')
-  .eq('business_id', 'BIZ-001')
+  .eq('business_area', 'AR')
   .order('sort_order', { ascending: true })
   .range(0, 49) // 0-49件目
 ```
@@ -104,7 +104,6 @@ const { data, error } = await supabase
 const { data, error } = await supabase
   .from('business_domains')
   .insert({
-    id: 'BIZ-001',
     name: '請求業務',
     area: 'AR',
     summary: '売上請求から入金管理まで'
@@ -128,7 +127,7 @@ const { data, error } = await supabase
 // トランザクション相当（SupabaseではRPC関数を使用）
 const { data, error } = await supabase
   .rpc('create_business_task_with_requirements', {
-    task_data: { id: 'TASK-001', business_id: 'BIZ-001', ... },
+    task_data: { id: 'TASK-001', business_area: 'AR', ... },
     requirements_data: [
       { id: 'BR-001', task_id: 'TASK-001', ... }
     ]
@@ -202,7 +201,7 @@ const { error } = await supabase
 const { error } = await supabase
   .from('business_tasks')
   .delete()
-  .eq('business_id', 'BIZ-001')
+  .eq('business_area', 'AR')
   .lt('created_at', '2024-01-01')
 ```
 

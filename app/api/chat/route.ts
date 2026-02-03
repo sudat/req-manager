@@ -3,6 +3,8 @@ import { requirementsAgent } from '@/lib/mastra/agents/requirements-agent';
 import { ContextProvider } from '@/lib/mastra/context/provider';
 import type { UILocation } from '@/lib/mastra/context/types';
 import { isReasoningEffort } from '@/lib/mastra/reasoning-effort';
+import { createSSEStream } from './lib/sse-stream-builder';
+import { RequestContext } from '@mastra/core/request-context';
 
 /**
  * チャットAPI（POST）
@@ -51,6 +53,23 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    const extractBusinessDomainCandidates = (text: string): string[] => {
+      const candidates = new Set<string>();
+      const parenMatches = text.matchAll(/（([^）]+)）/g);
+      for (const match of parenMatches) {
+        const value = match[1]?.trim();
+        if (value) candidates.add(value);
+      }
+      const explicitAfterLabel = text.match(/(?:業務)?領域\s*[:：]?\s*([^\s、。]+)/);
+      if (explicitAfterLabel?.[1]) candidates.add(explicitAfterLabel[1].trim());
+      const beforeLabel = text.match(/([^\s、。]+?)領域/);
+      if (beforeLabel?.[1]) candidates.add(beforeLabel[1].trim());
+      return Array.from(candidates);
+    };
+
+    const businessDomainCandidates = extractBusinessDomainCandidates(message);
+    const isBusinessTaskIntent = /(業務タスク|タスク).*(追加|作成|登録|作りたい|入れたい)/.test(message);
 
     // コンテキスト構築（location指定時）
     let contextMessage = '';
@@ -106,6 +125,14 @@ export async function POST(request: NextRequest) {
       ? `${contextMessage}\n\n---\n\nユーザーからの質問: ${message}`
       : message;
 
+    // 明示された業務領域があればSystem Hintとして付与
+    if (businessDomainCandidates.length > 0) {
+      fullMessage = `[System Hint]\nUser mentioned business domain candidates: ${businessDomainCandidates.join(', ')}\n\n---\n\n${fullMessage}`;
+    }
+    if (isBusinessTaskIntent) {
+      fullMessage = `[System Hint]\nUser requested business task registration. Call listBusinessDomainsTool first.\n\n---\n\n${fullMessage}`;
+    }
+
     // projectId をシステムコンテキストとして追加
     if (projectId) {
       fullMessage = `[System Context]\nProjectID: ${projectId}\n\n---\n\n${fullMessage}`;
@@ -117,6 +144,9 @@ export async function POST(request: NextRequest) {
 
     const providerOptions = validatedReasoningEffort
       ? { openai: { reasoningEffort: validatedReasoningEffort } }
+      : undefined;
+    const requestContext = projectId
+      ? new RequestContext([['projectId', projectId]])
       : undefined;
 
     // ストリーミングレスポンス
@@ -131,393 +161,16 @@ export async function POST(request: NextRequest) {
           resource: resourceId,
         },
         maxSteps,
+        requestContext,
         ...(providerOptions ? { providerOptions } : {}),
       });
       console.log('[Chat API] Stream created successfully');
+      console.log('[Chat API] ThreadId:', threadId, 'ResourceId:', resourceId);
 
-      // ストリーミング用のReadableStreamを作成
-      const encoder = new TextEncoder();
-      const readableStream = new ReadableStream({
-        async start(controller) {
-          const abortSignal = request.signal;
-          let aborted = abortSignal?.aborted ?? false;
-          const handleAbort = () => {
-            aborted = true;
-          };
-          abortSignal?.addEventListener('abort', handleAbort);
-
-          const safeEnqueue = (payload: string) => {
-            if (aborted) return false;
-            try {
-              controller.enqueue(encoder.encode(payload));
-              return true;
-            } catch (error) {
-              console.warn('[Chat API] Stream closed while enqueueing:', error);
-              aborted = true;
-              return false;
-            }
-          };
-
-          const safeClose = () => {
-            try {
-              controller.close();
-            } catch (error) {
-              console.warn('[Chat API] Stream already closed:', error);
-            }
-          };
-
-          const sendData = (data: unknown) =>
-            safeEnqueue(`data: ${JSON.stringify(data)}\n\n`);
-
-          const sendProgress = (step: {
-            id: string;
-            index: number;
-            title: string;
-            status: 'running' | 'done' | 'error';
-            detail?: string;
-          }) =>
-            // KISS: dataだけでSSEを流してクライアント側の互換性を保つ
-            sendData({ event: 'progress', step });
-
-          try {
-            console.log('[Chat API] Starting text stream...');
-            console.log('[Chat API] ThreadId:', threadId, 'ResourceId:', resourceId);
-
-            const trimText = (text: string, max = 240) =>
-              text.length > max ? `${text.slice(0, max)}…` : text;
-
-            const stringifyValue = (value: unknown) => {
-              if (value === null || value === undefined) return '';
-              if (typeof value === 'string') return value;
-              if (typeof value === 'number' || typeof value === 'boolean') {
-                return String(value);
-              }
-              try {
-                return JSON.stringify(value);
-              } catch {
-                return String(value);
-              }
-            };
-
-            const pickMessage = (value: unknown) => {
-              if (!value || typeof value !== 'object') return undefined;
-              const record = value as Record<string, unknown>;
-              if (typeof record.message === 'string') return record.message;
-              if (typeof record.summary === 'string') return record.summary;
-              if (typeof record.error === 'string') return record.error;
-              return undefined;
-            };
-
-            const formatToolInput = (input: unknown) => {
-              const text = stringifyValue(input).trim();
-              return text ? `入力: ${trimText(text)}` : undefined;
-            };
-
-            const formatToolResult = (output: unknown) => {
-              const message = pickMessage(output);
-              const text = (message ?? stringifyValue(output)).trim();
-              return text ? `結果: ${trimText(text)}` : undefined;
-            };
-
-            const formatToolError = (error: unknown) => {
-              const text =
-                typeof error === 'string'
-                  ? error
-                  : error instanceof Error
-                  ? error.message
-                  : stringifyValue(error);
-              return text ? `エラー: ${trimText(text)}` : 'エラーが発生しました';
-            };
-
-            const textPromise = stream.text;
-            const finishReasonPromise = stream.finishReason;
-            const toolResultsPromise = stream.toolResults;
-            let hasStreamedContent = false;
-            let stepCounter = 0;
-            let finalStepIndex: number | null = null;
-            let finalStepSent = false;
-            const stepIndexByToolCallId = new Map<string, number>();
-            const toolCallInputById = new Map<string, string>();
-
-            const normalizeChunk = (rawChunk: unknown) => {
-              if (
-                rawChunk &&
-                typeof rawChunk === 'object' &&
-                'payload' in rawChunk
-              ) {
-                const payload = (rawChunk as { payload?: unknown }).payload;
-                if (
-                  payload &&
-                  typeof payload === 'object' &&
-                  'type' in payload &&
-                  'payload' in payload
-                ) {
-                  return payload as {
-                    type: string;
-                    payload: Record<string, unknown>;
-                  };
-                }
-              }
-              return rawChunk as { type?: string; payload?: Record<string, unknown> };
-            };
-
-            const resolvePayload = (rawChunk: unknown) => {
-              if (rawChunk && typeof rawChunk === 'object' && 'payload' in rawChunk) {
-                return (rawChunk as { payload?: Record<string, unknown> }).payload ?? {};
-              }
-              return rawChunk as Record<string, unknown>;
-            };
-
-            const resolveToolMeta = (
-              rawChunk: Record<string, unknown>,
-              payload: Record<string, unknown>
-            ) => {
-              const toolCallId =
-                (payload.toolCallId as string | undefined) ??
-                (payload.callId as string | undefined) ??
-                (rawChunk.toolCallId as string | undefined) ??
-                (rawChunk.id as string | undefined);
-              const toolName =
-                (payload.toolName as string | undefined) ??
-                (payload.name as string | undefined) ??
-                (rawChunk.toolName as string | undefined) ??
-                (rawChunk.name as string | undefined);
-              const input =
-                payload.input ??
-                payload.args ??
-                payload.arguments ??
-                rawChunk.input ??
-                rawChunk.args ??
-                rawChunk.arguments;
-              const output =
-                payload.result ??
-                payload.output ??
-                rawChunk.result ??
-                rawChunk.output ??
-                payload;
-              return { toolCallId, toolName, input, output };
-            };
-
-            const ensureFinalStepRunning = () => {
-              if (finalStepSent) return;
-              stepCounter += 1;
-              finalStepIndex = stepCounter;
-              sendProgress({
-                id: 'final',
-                index: finalStepIndex,
-                title: 'FinalAnswer',
-                status: 'running',
-                detail: '回答を生成中です。',
-              });
-              finalStepSent = true;
-            };
-
-            for await (const rawChunk of stream.fullStream) {
-              if (aborted) break;
-
-              const chunk = normalizeChunk(rawChunk);
-              const payload = resolvePayload(chunk);
-              const chunkType = (chunk as { type?: string }).type;
-              
-              // デバッグ: すべてのチャンクタイプをログ出力
-              if (chunkType && chunkType !== 'text-delta') {
-                console.log('[Chat API] Chunk type:', chunkType, 'Payload keys:', Object.keys(payload));
-              }
-
-              if (chunkType === 'text-delta') {
-                const delta =
-                  (payload.text as string | undefined) ??
-                  (payload.delta as string | undefined) ??
-                  (chunk as { text?: string; delta?: string }).text ??
-                  (chunk as { text?: string; delta?: string }).delta ??
-                  '';
-                if (delta) {
-                  ensureFinalStepRunning();
-                  sendData({ content: delta });
-                  hasStreamedContent = true;
-                }
-                continue;
-              }
-
-              if (chunkType === 'tool-call' || chunkType === 'tool-call-input-streaming-start') {
-                const meta = resolveToolMeta(chunk as Record<string, unknown>, payload);
-                const stepId = meta.toolCallId ?? `tool-${stepCounter + 1}`;
-                let index = stepIndexByToolCallId.get(stepId);
-                if (!index) {
-                  stepCounter += 1;
-                  index = stepCounter;
-                  stepIndexByToolCallId.set(stepId, index);
-                }
-                sendProgress({
-                  id: stepId,
-                  index,
-                  title: `ツール: ${meta.toolName ?? '不明'}`,
-                  status: 'running',
-                  detail: formatToolInput(meta.input),
-                });
-                continue;
-              }
-
-              if (chunkType === 'tool-call-delta') {
-                const meta = resolveToolMeta(chunk as Record<string, unknown>, payload);
-                if (meta.toolCallId) {
-                  const next = (payload.delta as string | undefined) ?? '';
-                  if (next) {
-                    const current = toolCallInputById.get(meta.toolCallId) ?? '';
-                    toolCallInputById.set(meta.toolCallId, current + next);
-                  }
-                }
-                continue;
-              }
-
-              if (chunkType === 'tool-result') {
-                const meta = resolveToolMeta(chunk as Record<string, unknown>, payload);
-                console.log('[Chat API] tool-result received:', { toolName: meta.toolName, toolCallId: meta.toolCallId });
-                const stepId = meta.toolCallId ?? `tool-${stepCounter + 1}`;
-                let index = stepIndexByToolCallId.get(stepId);
-                if (!index) {
-                  stepCounter += 1;
-                  index = stepCounter;
-                  stepIndexByToolCallId.set(stepId, index);
-                }
-                const streamedInput = meta.toolCallId
-                  ? toolCallInputById.get(meta.toolCallId)
-                  : undefined;
-                const detailFromStream = streamedInput
-                  ? formatToolInput(streamedInput)
-                  : undefined;
-                sendProgress({
-                  id: stepId,
-                  index,
-                  title: `ツール: ${meta.toolName ?? '不明'}`,
-                  status: 'done',
-                  detail: detailFromStream ?? formatToolResult(meta.output),
-                });
-
-                // bt_draftツールの結果を検出してdraftイベントを送信
-                console.log('[Chat API] Checking tool name:', meta.toolName, '=== btDraftTool:', meta.toolName === 'btDraftTool');
-                if (meta.toolName === 'btDraftTool') {
-                  const output = meta.output as { btDraft?: any };
-                  console.log('[Chat API] bt_draft tool completed, output:', JSON.stringify(output, null, 2));
-                  if (output?.btDraft) {
-                    console.log('[Chat API] Sending draft event with btDraft:', output.btDraft.code);
-                    sendData({ event: 'draft', draft: output.btDraft });
-                  } else {
-                    console.log('[Chat API] btDraft not found in output');
-                  }
-                }
-
-                continue;
-              }
-
-              if (chunkType === 'tool-error') {
-                const meta = resolveToolMeta(chunk as Record<string, unknown>, payload);
-                const stepId = meta.toolCallId ?? `tool-${stepCounter + 1}`;
-                let index = stepIndexByToolCallId.get(stepId);
-                if (!index) {
-                  stepCounter += 1;
-                  index = stepCounter;
-                  stepIndexByToolCallId.set(stepId, index);
-                }
-                sendProgress({
-                  id: stepId,
-                  index,
-                  title: `ツール: ${meta.toolName ?? '不明'}`,
-                  status: 'error',
-                  detail: formatToolError(payload.error ?? (chunk as { error?: unknown }).error),
-                });
-                continue;
-              }
-
-              if (chunkType === 'error') {
-                const errorPayload = payload.error ?? (chunk as { error?: unknown }).error;
-                throw errorPayload ?? new Error('ストリーミングエラーが発生しました');
-              }
-            }
-
-            const [finalText, finishReason, toolResults] = await Promise.all([
-              textPromise,
-              finishReasonPromise,
-              toolResultsPromise,
-            ]);
-            console.log('[Chat API] Stream text completed');
-
-            // finishReasonをチェックして異常終了を検出
-            console.log('[Chat API] Stream finishReason:', finishReason);
-            const normalizedFinishReason =
-              typeof finishReason === 'string'
-                ? finishReason
-                : typeof finishReason === 'object' && finishReason
-                ? ((finishReason as { unified?: string }).unified ??
-                    (finishReason as { raw?: string }).raw)
-                : undefined;
-
-            if (
-              normalizedFinishReason === 'error' ||
-              normalizedFinishReason === 'length' ||
-              normalizedFinishReason === 'content-filter'
-            ) {
-              throw new Error(`Stream ended abnormally: ${normalizedFinishReason}`);
-            }
-
-            if (!hasStreamedContent) {
-              const trimmed = finalText?.trim() ?? '';
-              if (trimmed) {
-                ensureFinalStepRunning();
-                sendData({ content: trimmed });
-                hasStreamedContent = true;
-              } else if (
-                normalizedFinishReason === 'tool-calls' &&
-                toolResults?.length
-              ) {
-                const fallbackMessage = toolResults
-                  .map((result) => {
-                    const value = (result as { result?: { message?: string } }).result;
-                    return value?.message ?? '';
-                  })
-                  .filter(Boolean)
-                  .join('\n');
-
-                if (fallbackMessage) {
-                  ensureFinalStepRunning();
-                  sendData({ content: fallbackMessage });
-                  hasStreamedContent = true;
-                }
-              }
-            }
-
-            if (finalStepSent && finalStepIndex !== null) {
-              sendProgress({
-                id: 'final',
-                index: finalStepIndex,
-                title: 'FinalAnswer',
-                status: 'done',
-              });
-            }
-
-            // 正常終了を通知
-            safeEnqueue('data: [DONE]\n\n');
-            safeClose();
-
-          } catch (error: any) {
-            console.error('[Chat API] Stream error:', error);
-            // エラー情報をSSE形式で送信
-            const errorMessage =
-              error instanceof Error
-                ? error.message
-                : typeof error === 'string'
-                ? error
-                : 'ストリーミングエラーが発生しました';
-            const errorData = {
-              error: true,
-              message: errorMessage,
-            };
-            safeEnqueue(`data: ${JSON.stringify(errorData)}\n\n`);
-            safeClose();
-          } finally {
-            abortSignal?.removeEventListener('abort', handleAbort);
-          }
-        },
+      // SSEストリームを構築
+      const readableStream = createSSEStream({
+        stream,
+        abortSignal: request.signal,
       });
 
       return new Response(readableStream, {
@@ -538,6 +191,7 @@ export async function POST(request: NextRequest) {
         resource: resourceId,
       },
       maxSteps: maxStepsNonStream,
+      requestContext,
       ...(providerOptions ? { providerOptions } : {}),
     });
 

@@ -22,6 +22,12 @@ import { Button } from "@/components/ui/button"
 import { useSidebar } from "./sidebar-context"
 import { ProjectSwitcher } from "@/components/project/project-switcher"
 import { cn } from "@/lib/utils"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 type MenuItem = {
   type: "item"
@@ -127,14 +133,24 @@ export function Sidebar() {
           isCollapsed ? "w-[64px]" : "w-[280px]"
         )}
       >
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggleCollapsed}
-          className="absolute right-3 top-5 z-10"
-        >
-          {isCollapsed ? <Menu className="h-5 w-5" /> : <PanelLeft className="h-5 w-5" />}
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleCollapsed}
+                className="absolute right-3 top-5 z-10"
+                aria-label={isCollapsed ? "サイドバーを開く" : "サイドバーを閉じる"}
+              >
+                {isCollapsed ? <Menu className="h-5 w-5" /> : <PanelLeft className="h-5 w-5" />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              {isCollapsed ? "開く" : "閉じる"}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
         {!isCollapsed && (
           <div className="border-b border-slate-200 px-5 py-6">
@@ -142,22 +158,22 @@ export function Sidebar() {
           </div>
         )}
         <nav className={cn("flex-1 overflow-y-auto py-2 pb-6", isCollapsed && "pt-[90px]")}>
-          <ul className={cn("flex flex-col space-y-0", isCollapsed && "space-y-1.5")}>
-            {menuConfig.map((item, index) => {
-              if (item.type === "divider") {
-                return (
-                  <div
-                    key={`divider-${index}`}
-                    className={cn("mx-5 my-2 h-px bg-slate-200", isCollapsed && "mx-3 my-1")}
-                    aria-hidden="true"
-                  />
-                )
-              }
-              // MenuItem
-              const active = isActive(item.href)
-              const Icon = item.icon
-              return (
-                <li key={item.key}>
+          <TooltipProvider>
+            <ul className={cn("flex flex-col space-y-0", isCollapsed && "space-y-1.5")}>
+              {menuConfig.map((item, index) => {
+                if (item.type === "divider") {
+                  return (
+                    <div
+                      key={`divider-${index}`}
+                      className={cn("mx-5 my-2 h-px bg-slate-200", isCollapsed && "mx-3 my-1")}
+                      aria-hidden="true"
+                    />
+                  )
+                }
+                // MenuItem
+                const active = isActive(item.href)
+                const Icon = item.icon
+                const linkContent = (
                   <Link
                     href={item.href}
                     className={cn(
@@ -171,10 +187,25 @@ export function Sidebar() {
                       {item.label}
                     </span>
                   </Link>
-                </li>
-              )
-            })}
-          </ul>
+                )
+
+                return (
+                  <li key={item.key}>
+                    {isCollapsed ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          {linkContent}
+                        </TooltipTrigger>
+                        <TooltipContent side="right">{item.label}</TooltipContent>
+                      </Tooltip>
+                    ) : (
+                      linkContent
+                    )}
+                  </li>
+                )
+              })}
+            </ul>
+          </TooltipProvider>
         </nav>
         <div className={cn("border-t border-slate-200", isCollapsed ? "p-2" : "p-3")}>
           <ProjectSwitcher />

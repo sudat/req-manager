@@ -76,6 +76,26 @@ export function hasRequirementChanged<T extends {
 }
 
 /**
+ * 同期対象の要件を削除・作成・更新に分類する
+ */
+function computeSyncOps(
+	editedRequirements: Requirement[],
+	existingReqs: Requirement[]
+): { toDelete: string[]; toCreate: Requirement[]; toUpdate: { req: Requirement; existing: Requirement }[] } {
+	const existingIds = new Set(existingReqs.map((r) => r.id));
+	const editedIds = new Set(editedRequirements.map((r) => r.id));
+
+	const toDelete = [...existingIds].filter((id) => !editedIds.has(id));
+	const toCreate = editedRequirements.filter((r) => !existingIds.has(r.id));
+	const toUpdate = editedRequirements
+		.filter((r) => existingIds.has(r.id))
+		.map((req) => ({ req, existing: existingReqs.find((r) => r.id === req.id)! }))
+		.filter(({ req, existing }) => hasRequirementChanged(req as unknown as Requirement, existing as unknown as Requirement));
+
+	return { toDelete, toCreate, toUpdate };
+}
+
+/**
  * 業務要件をDBに同期する
  * @param taskId タスクID
  * @param editedRequirements 編集後の要件一覧
@@ -87,32 +107,17 @@ export async function syncBusinessRequirements(
 	projectId: string,
 ): Promise<string | Map<string, string[]>> {
 	try {
-		// 現在のDB状態を取得
 		const { data: existingReqs, error: fetchError } = await listBusinessRequirementsByTaskId(taskId, projectId);
 		if (fetchError) return fetchError;
 
-		const existingIds = new Set(existingReqs?.map((r) => r.id) ?? []);
-		const editedIds = new Set(editedRequirements.map((r) => r.id));
-
-		// 削除対象: DBにあるが編集状態にはない
-		const toDelete = [...existingIds].filter((id) => !editedIds.has(id));
-
-		// 作成対象: 編集状態にあるがDBにはない
-		const toCreate = editedRequirements.filter((r) => !existingIds.has(r.id));
-
-		// 更新対象: 両方にあるが内容が異なる可能性がある
-		const toUpdate = editedRequirements.filter((r) => existingIds.has(r.id));
-
-		// 変更された要件のIDとフィールドを収集
+		const { toDelete, toCreate, toUpdate } = computeSyncOps(editedRequirements, existingReqs ?? []);
 		const changedRequirements = new Map<string, string[]>();
 
-		// 1. 削除
 		for (const id of toDelete) {
 			const { error } = await deleteBusinessRequirement(id, projectId);
 			if (error) return `削除エラー (${id}): ${error}`;
 		}
 
-		// 2. 作成
 		if (toCreate.length > 0) {
 			const createInputs = toCreate.map((req, index) =>
 				({ ...toBusinessRequirementInput(req, taskId, index), projectId })
@@ -121,20 +126,8 @@ export async function syncBusinessRequirements(
 			if (error) return `作成エラー: ${error}`;
 		}
 
-		// 3. 更新
-		for (const req of toUpdate) {
-			const existing = existingReqs?.find((r) => r.id === req.id);
-			if (!existing) continue;
-
-			// 変更がなければスキップ（型キャストを使用）
-			if (!hasRequirementChanged(req as unknown as Requirement, existing as unknown as Requirement)) {
-				continue;
-			}
-
-			// 変更フィールドを検出
+		for (const { req, existing } of toUpdate) {
 			const changedFields = detectChangedFields(req, existing);
-
-			// 疑義対象フィールドが変更されている場合はIDとフィールドを記録
 			if (changedFields.length > 0) {
 				changedRequirements.set(req.id, changedFields);
 			}
@@ -162,32 +155,17 @@ export async function syncSystemRequirements(
 	projectId: string,
 ): Promise<string | Map<string, string[]>> {
 	try {
-		// 現在のDB状態を取得
 		const { data: existingReqs, error: fetchError } = await listSystemRequirementsByTaskId(taskId, projectId);
 		if (fetchError) return fetchError;
 
-		const existingIds = new Set(existingReqs?.map((r) => r.id) ?? []);
-		const editedIds = new Set(editedRequirements.map((r) => r.id));
-
-		// 削除対象: DBにあるが編集状態にはない
-		const toDelete = [...existingIds].filter((id) => !editedIds.has(id));
-
-		// 作成対象: 編集状態にあるがDBにはない
-		const toCreate = editedRequirements.filter((r) => !existingIds.has(r.id));
-
-		// 更新対象: 両方にあるが内容が異なる可能性がある
-		const toUpdate = editedRequirements.filter((r) => existingIds.has(r.id));
-
-		// 変更された要件のIDとフィールドを収集
+		const { toDelete, toCreate, toUpdate } = computeSyncOps(editedRequirements, existingReqs ?? []);
 		const changedRequirements = new Map<string, string[]>();
 
-		// 1. 削除
 		for (const id of toDelete) {
 			const { error } = await deleteSystemRequirement(id, projectId);
 			if (error) return `削除エラー (${id}): ${error}`;
 		}
 
-		// 2. 作成
 		if (toCreate.length > 0) {
 			const createInputs = toCreate.map((req, index) =>
 				({ ...toSystemRequirementInput(req, taskId, index), projectId })
@@ -196,30 +174,14 @@ export async function syncSystemRequirements(
 			if (error) return `作成エラー: ${error}`;
 
 			const acceptanceInputs = toCreate.flatMap((req) =>
-				acceptanceCriteriaJsonToInputs(
-					req.acceptanceCriteriaJson ?? [],
-					req.id,
-					projectId
-				)
+				acceptanceCriteriaJsonToInputs(req.acceptanceCriteriaJson ?? [], req.id, projectId)
 			);
 			const { error: acError } = await createAcceptanceCriteria(acceptanceInputs);
 			if (acError) return `受入基準作成エラー: ${acError}`;
 		}
 
-		// 3. 更新
-		for (const req of toUpdate) {
-			const existing = existingReqs?.find((r) => r.id === req.id);
-			if (!existing) continue;
-
-			// 変更がなければスキップ（型キャストを使用）
-			if (!hasRequirementChanged(req as unknown as Requirement, existing as unknown as Requirement)) {
-				continue;
-			}
-
-			// 変更フィールドを検出
+		for (const { req, existing } of toUpdate) {
 			const changedFields = detectChangedFields(req, existing);
-
-			// 疑義対象フィールドが変更されている場合はIDとフィールドを記録
 			if (changedFields.length > 0) {
 				changedRequirements.set(req.id, changedFields);
 			}
@@ -228,16 +190,11 @@ export async function syncSystemRequirements(
 			const { error } = await updateSystemRequirement(req.id, input, projectId);
 			if (error) return `更新エラー (${req.id}): ${error}`;
 
-			const { error: acDeleteError } = await deleteAcceptanceCriteriaBySystemRequirementId(
-				req.id,
-				projectId
-			);
+			const { error: acDeleteError } = await deleteAcceptanceCriteriaBySystemRequirementId(req.id, projectId);
 			if (acDeleteError) return `受入基準削除エラー (${req.id}): ${acDeleteError}`;
 
 			const acceptanceInputs = acceptanceCriteriaJsonToInputs(
-				req.acceptanceCriteriaJson ?? [],
-				req.id,
-				projectId
+				req.acceptanceCriteriaJson ?? [], req.id, projectId
 			);
 			const { error: acError } = await createAcceptanceCriteria(acceptanceInputs);
 			if (acError) return `受入基準作成エラー (${req.id}): ${acError}`;
@@ -277,13 +234,13 @@ export async function syncTaskBasicInfo(
 	try {
 		const { updateTask, getTaskById } = await import("@/lib/data/tasks");
 
-		// 既存タスクを取得して businessId と sortOrder を維持
+		// 既存タスクを取得して businessArea と sortOrder を維持
 		const { data: existingTask, error: fetchError } = await getTaskById(taskId, projectId);
 		if (fetchError) return `タスク取得エラー: ${fetchError}`;
 		if (!existingTask) return `タスクが見つかりません: ${taskId}`;
 
 		const { error } = await updateTask(taskId, {
-			businessId: existingTask.businessId, // 既存値を維持
+			businessArea: existingTask.businessArea, // 既存値を維持
 			name: taskName,
 			summary: taskSummary,
 			businessContext,

@@ -1,1 +1,1 @@
-export { businesses, getBusinessById, getBusinessesByArea } from './businesses';
+export { businesses, getBusinessByArea, getBusinessesByArea } from './businesses';

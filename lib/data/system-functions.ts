@@ -8,7 +8,7 @@ import {
 	normalizeCodeRefs,
 } from "@/lib/data/structured";
 import { migrateToDeliverables } from "./deliverable-migration";
-import { createCrudOperations } from "./crud-factory";
+import { createCrudOperations, createSortOrderUpdater } from "./crud-factory";
 
 export type SystemFunctionInput = {
   id: string;
@@ -252,43 +252,7 @@ export const updateSystemFunction = async (
 
 export const deleteSystemFunction = systemFunctionCrud.delete;
 
-// 並び替え用型
-export type SystemFunctionSortOrderUpdate = {
-	id: string;
-	sortOrder: number;
-};
-
-// 並び替え一括更新
-export const updateSystemFunctionsSortOrder = async (
-	updates: SystemFunctionSortOrderUpdate[],
-	projectId?: string
-): Promise<{ data: boolean | null; error: string | null }> => {
-	const configError = getSupabaseConfigError();
-	if (configError) return { data: null, error: configError };
-
-	// 個別にUPDATEを実行
-	const updatePromises = updates.map((update) => {
-		let query = supabase
-			.from("system_functions")
-			.update({ sort_order: update.sortOrder, updated_at: new Date().toISOString() })
-			.eq("id", update.id);
-
-		// projectIdがある場合のみフィルタを適用
-		if (projectId) {
-			query = query.eq("project_id", projectId);
-		}
-
-		return query;
-	});
-
-	const results = await Promise.all(updatePromises);
-
-	// いずれかのUPDATEでエラーがあれば最初のエラーを返す
-	const firstError = results.find((r) => r.error)?.error;
-	if (firstError) return { data: null, error: firstError.message };
-
-	return { data: true, error: null };
-};
+export const updateSystemFunctionsSortOrder = createSortOrderUpdater("system_functions");
 
 export const getDesignCategoryLabel = (category: DesignItemCategory): string => {
   const labels: Record<DesignItemCategory, string> = {

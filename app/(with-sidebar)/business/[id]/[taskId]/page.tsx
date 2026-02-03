@@ -30,7 +30,7 @@ type PageProps = {
 export default function TaskDetailPage({ params }: PageProps) {
 	const { id: businessKey, taskId } = use(params);
 	const router = useRouter();
-	const { businessId, businessArea } = useBusinessByKey(businessKey);
+	const { businessArea } = useBusinessByKey(businessKey);
 	const routeArea = businessArea ?? businessKey;
 	const {
 		task,
@@ -54,7 +54,7 @@ export default function TaskDetailPage({ params }: PageProps) {
 		systemFunctionsFull,
 	} = useTaskDetail({ bizId: businessKey, taskId });
 
-	const displayBizId = routeArea ?? task?.businessId ?? knowledge.bizId;
+	const displayBizId = routeArea ?? task?.businessArea ?? knowledge.bizId;
 	const displayTaskName = task?.name ?? knowledge.taskName;
 	const displayTaskSummary = task?.summary ?? knowledge.taskSummary;
 	const displayBusinessContext = task?.businessContext ?? knowledge.businessContext;
@@ -155,7 +155,7 @@ export default function TaskDetailPage({ params }: PageProps) {
 							業務タスク詳細
 						</h1>
 						<div className="flex gap-2">
-							<Link href={businessId ? `/chat?screen=BT&bdId=${businessId}&btId=${taskId}` : "/chat"}>
+							<Link href={routeArea ? `/chat?screen=BT&bdId=${routeArea}&btId=${taskId}` : "/chat"}>
 								<Button className="h-8 gap-2 text-[14px] bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white">
 									<Sparkles className="h-4 w-4" />
 									AIで追加

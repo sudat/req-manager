@@ -12,23 +12,9 @@ import { ArrowLeft } from "lucide-react";
 import { getConceptById, updateConcept } from "@/lib/data/concepts";
 import { useProject } from "@/components/project/project-context";
 import type { BusinessArea, Concept } from "@/lib/domain";
+import { splitCsv, splitLines, joinCsv, joinLines } from "@/lib/utils/string";
 
 const areaOptions: BusinessArea[] = ["AR", "AP", "GL"];
-
-const splitCsv = (value: string) =>
-  value
-    .split(",")
-    .map((v) => v.trim())
-    .filter(Boolean);
-
-const splitLines = (value: string) =>
-  value
-    .split("\n")
-    .map((v) => v.trim())
-    .filter(Boolean);
-
-const joinCsv = (values: string[]) => values.join(", ");
-const joinLines = (values: string[]) => values.join("\n");
 
 export default function IdeaEditPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);

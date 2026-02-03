@@ -9,6 +9,7 @@ export * from "./system-functions";
 export * from "./impl-unit-sds";
 export * from "./requirement-links";
 export * from "./project-settings";
+export * from "./llm-settings";
 export * from "./structured";
 export * from "./tasks";
 export * from "./id";

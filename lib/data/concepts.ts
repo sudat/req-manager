@@ -1,6 +1,6 @@
 import type { Concept, BusinessArea } from "@/lib/domain";
-import { createCrudOperations, failIfMissingConfig } from "./crud-factory";
-import { supabase } from "@/lib/supabase/client";
+import type { OpenAIModel } from "@/lib/mastra/utils/llm-helpers";
+import { createCrudOperations, createSortOrderUpdater } from "./crud-factory";
 
 export type ConceptInput = {
   id: string;
@@ -71,40 +71,137 @@ export const createConcept = crud.create;
 export const updateConcept = crud.update;
 export const deleteConcept = crud.delete;
 
-// 並び替え用型
-export type ConceptSortOrderUpdate = {
-	id: string;
-	sortOrder: number;
+export const updateConceptsSortOrder = createSortOrderUpdater("concepts");
+
+/**
+ * 既存概念の検索用マップを取得
+ * 用語名と同義語の小文字をキーとしたMapを返す
+ *
+ * @param projectId - プロジェクトID
+ * @returns 用語名・同義語（小文字）をキーとした概念情報のMap
+ */
+export async function getConceptsLookupMap(
+  projectId: string
+): Promise<Map<string, { id: string; name: string; definition: string }>> {
+  const supabase = (await import('@/lib/supabase/client')).supabase;
+  const { data: concepts } = await supabase
+    .from('concepts')
+    .select('id, name, definition, synonyms')
+    .eq('project_id', projectId);
+
+  const conceptMap = new Map<string, { id: string; name: string; definition: string }>();
+
+  // 用語名を小文字でマップに追加
+  concepts?.forEach((c) => {
+    if (c.name) {
+      conceptMap.set(c.name.toLowerCase(), {
+        id: c.id,
+        name: c.name,
+        definition: c.definition || '',
+      });
+    }
+
+    // 同義語もマップに追加
+    c.synonyms?.forEach((synonym: string) => {
+      if (synonym) {
+        conceptMap.set(synonym.toLowerCase(), {
+          id: c.id,
+          name: c.name,
+          definition: c.definition || '',
+        });
+      }
+    });
+  });
+
+  return conceptMap;
+}
+
+/**
+ * LLMを使って類似概念を検索
+ *
+ * 文字列の完全一致がない場合、意味的な類似度をLLMで判定して類似概念を提案する。
+ * 90%以上の類似度の概念は候補から除外し（別概念の可能性が低いため）、
+ * 70%-89%の類似度の概念のみを返す。
+ *
+ * @param term - 検索対象の用語
+ * @param existingConcepts - 既存概念のリスト
+ * @param minThreshold - 提示する類似度の下限（デフォルト70%）
+ * @param maxThreshold - 除外する類似度の上限（デフォルト90%）
+ * @returns 類似した概念の配列（類似度降順）
+ */
+type ConceptSimilarityOptions = {
+  model?: OpenAIModel;
+  temperature?: number;
+  baseUrl?: string;
+  verbosity?: 'low' | 'medium' | 'high';
 };
 
-// 並び替え一括更新
-export const updateConceptsSortOrder = async (
-	updates: ConceptSortOrderUpdate[],
-	projectId?: string
-): Promise<{ data: boolean | null; error: string | null }> => {
-	const configError = failIfMissingConfig();
-	if (configError) return configError;
+export async function findSimilarConcepts(
+  term: string,
+  existingConcepts: Array<{ id: string; name: string; definition: string }>,
+  minThreshold = 0.7,
+  maxThreshold = 0.9,
+  options: ConceptSimilarityOptions = {}
+): Promise<Array<{ id: string; name: string; definition: string; similarityScore: number }>> {
+  if (existingConcepts.length === 0) {
+    return [];
+  }
 
-	// 個別にUPDATEを実行
-	const updatePromises = updates.map((update) => {
-		let query = supabase
-			.from("concepts")
-			.update({ sort_order: update.sortOrder, updated_at: new Date().toISOString() })
-			.eq("id", update.id);
+  const { callOpenAI } = await import('@/lib/mastra/utils/llm-helpers');
 
-		// projectIdがある場合のみフィルタを適用
-		if (projectId) {
-			query = query.eq("project_id", projectId);
-		}
+  const conceptsList = existingConcepts
+    .map(c => `- ${c.name}: ${c.definition}`)
+    .join('\n');
 
-		return query;
-	});
+  const llmPrompt = `
+以下の用語に類似した既存概念を選び、類似度スコア（0-100）をつけてください。
 
-	const results = await Promise.all(updatePromises);
+【対象用語】${term}
 
-	// いずれかのUPDATEでエラーがあれば最初のエラーを返す
-	const firstError = results.find((r) => r.error)?.error;
-	if (firstError) return { data: null, error: firstError.message };
+【既存概念】
+${conceptsList}
 
-	return { data: true, error: null };
-};
+【出力形式（JSON）】
+[
+  {
+    "id": "概念ID",
+    "name": "概念名",
+    "similarityScore": 85
+  }
+]
+
+【判定基準】
+- 類似度スコア: 0-100で、意味的にどれくらい似ているか
+- ${maxThreshold * 100}点以上の概念は出力しないでください（除外対象）
+- ${minThreshold * 100}点未満の概念は出力しないでください（類似度不足）
+- 用語が完全に異なる場合は空配列を返してください
+`;
+
+  const llmResponse = await callOpenAI<{
+    similarConcepts?: Array<{ id: string; name: string; similarityScore: number }>;
+  }>({
+    systemPrompt: 'あなたは概念の意味的類似度を判定する専門家です。',
+    userPrompt: llmPrompt,
+    jsonMode: true,
+    model: options.model,
+    temperature: options.temperature,
+    baseUrl: options.baseUrl,
+    verbosity: options.verbosity,
+    maxTokens: 400,
+  });
+
+  const results = (llmResponse.content.similarConcepts || [])
+    .filter(c => c.similarityScore >= minThreshold * 100 && c.similarityScore < maxThreshold * 100)
+    .sort((a, b) => b.similarityScore - a.similarityScore)
+    .map(c => {
+      const originalConcept = existingConcepts.find(ec => ec.id === c.id);
+      return {
+        id: c.id,
+        name: c.name,
+        definition: originalConcept?.definition || '',
+        similarityScore: c.similarityScore,
+      };
+    });
+
+  return results;
+}

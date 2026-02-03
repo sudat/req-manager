@@ -38,12 +38,12 @@ export function TicketScopeForm({
           <div className="flex flex-wrap gap-2">
             {businesses.map((business) => (
               <Button
-                key={business.id}
+                key={business.area}
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => toggleBusiness(business.id)}
-                className={selectedBusinessIds.includes(business.id) ? "border-slate-400 bg-slate-100" : ""}
+                onClick={() => toggleBusiness(business.area)}
+                className={selectedBusinessIds.includes(business.area) ? "border-slate-400 bg-slate-100" : ""}
               >
                 {business.name}
               </Button>

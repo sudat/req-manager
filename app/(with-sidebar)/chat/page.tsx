@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { ChatContainer } from '@/components/ai-chat';
 import type { ChatConfig, ChatLocation } from '@/components/ai-chat';
-import { useProject } from '@/components/project/project-context';
+import { DEFAULT_PROJECT_ID, useProject } from '@/components/project/project-context';
 import { ContextProvider } from '@/lib/mastra/context/provider';
 
 /**
@@ -17,6 +17,7 @@ function ChatPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { currentProjectId } = useProject();
+  const effectiveProjectId = currentProjectId || DEFAULT_PROJECT_ID;
 
   // URLパラメータから位置情報を取得
   const screen = searchParams.get('screen') as ChatLocation['screen'] | null;
@@ -29,13 +30,13 @@ function ChatPageContent() {
 
   // チャット設定を構築
   const config: ChatConfig = {
-    resourceId: ContextProvider.generateResourceId(currentProjectId || 'default', 'user'),
+    resourceId: ContextProvider.generateResourceId(effectiveProjectId, 'user'),
   };
 
   // 位置情報がある場合は設定
-  if (currentProjectId && screen) {
+  if (screen) {
     config.location = {
-      projectId: currentProjectId,
+      projectId: effectiveProjectId,
       screen,
       bdId,
       btId,

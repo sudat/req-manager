@@ -81,10 +81,10 @@ export function useRequirementTitles(
 					listBusinesses(projectId),
 				]);
 				if (!taskResult.error && taskResult.data) {
-					taskBusinessMap = new Map(taskResult.data.map((task) => [task.id, task.businessId]));
+					taskBusinessMap = new Map(taskResult.data.map((task) => [task.id, task.businessArea]));
 				}
 				if (!businessResult.error && businessResult.data) {
-					businessAreaMap = new Map(businessResult.data.map((biz) => [biz.id, biz.area]));
+					businessAreaMap = new Map(businessResult.data.map((biz) => [biz.area, biz.area]));
 				}
 			}
 

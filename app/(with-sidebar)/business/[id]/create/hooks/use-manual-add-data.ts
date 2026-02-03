@@ -7,7 +7,7 @@ import { listConcepts } from "@/lib/data/concepts";
 import { listSystemFunctions } from "@/lib/data/system-functions";
 import { listSystemDomains, type SystemDomain } from "@/lib/data/system-domains";
 import { listSystemRequirements } from "@/lib/data/system-requirements";
-import { listTasks, listTasksByBusinessId } from "@/lib/data/tasks";
+import { listTasks, listTasksByBusinessArea } from "@/lib/data/tasks";
 import type { SelectableItem } from "@/lib/domain/forms";
 import { getNextBtId } from "@/lib/utils/id-rules";
 
@@ -17,7 +17,6 @@ type UseManualAddDataResult = {
   optionsError: string | null;
   taskId: string;
   sortOrder: number;
-  businessId: string | null;
   businessArea: string | null;
   businessName: string | null;
   concepts: SelectableItem[];
@@ -32,7 +31,6 @@ export function useManualAddData(businessKey: string | null): UseManualAddDataRe
   const [optionsError, setOptionsError] = useState<string | null>(null);
   const [taskId, setTaskId] = useState("BT-BD-0001");
   const [sortOrder, setSortOrder] = useState(1);
-  const [businessId, setBusinessId] = useState<string | null>(null);
   const [businessArea, setBusinessArea] = useState<string | null>(null);
   const [businessName, setBusinessName] = useState<string | null>(null);
   const [concepts, setConcepts] = useState<SelectableItem[]>([]);
@@ -55,7 +53,6 @@ export function useManualAddData(businessKey: string | null): UseManualAddDataRe
         if (!active) return;
         setLoading(false);
         setBusinessName(null);
-        setBusinessId(null);
         setBusinessArea(null);
         setError(null);
         setTaskId("BT-BD-0001");
@@ -85,14 +82,13 @@ export function useManualAddData(businessKey: string | null): UseManualAddDataRe
       if (!business) {
         setError("指定された業務が見つかりません。");
         setBusinessName(null);
-        setBusinessId(null);
         setBusinessArea(null);
         setLoading(false);
         return;
       }
 
-      const { data: bizTasks, error: bizError } = await listTasksByBusinessId(
-        business.id,
+      const { data: bizTasks, error: bizError } = await listTasksByBusinessArea(
+        business.area,
         currentProjectId ?? undefined
       );
 
@@ -112,7 +108,6 @@ export function useManualAddData(businessKey: string | null): UseManualAddDataRe
 
       setTaskId(nextId);
       setSortOrder(maxOrder + 1);
-      setBusinessId(business.id);
       setBusinessArea(business.area ?? null);
       setBusinessName(business.name);
       setError(null);
@@ -192,7 +187,6 @@ export function useManualAddData(businessKey: string | null): UseManualAddDataRe
     optionsError,
     taskId,
     sortOrder,
-    businessId,
     businessArea,
     businessName,
     concepts,

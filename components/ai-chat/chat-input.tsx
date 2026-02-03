@@ -51,7 +51,7 @@ export function ChatInput({
   };
 
   return (
-    <div className="px-6 py-4 border-t border-slate-200 bg-white">
+    <div className="px-6 py-4 bg-white">
       <div className="max-w-3xl mx-auto">
         {/* ChatGPT風の統合入力エリア */}
         <div className="relative flex flex-col border border-slate-300 rounded-2xl bg-white shadow-sm">
@@ -67,7 +67,7 @@ export function ChatInput({
           />
 
           {/* ボトムバー：プルダウンと送信ボタン */}
-          <div className="flex items-center justify-end p-3 gap-2">
+          <div className="flex items-center justify-end py-2 px-3 gap-2">
             {/* リーズニングエフォートプルダウン（送信ボタンのすぐ左） */}
             <Select
               value={reasoningEffort}
@@ -75,7 +75,7 @@ export function ChatInput({
               disabled={disabled}
             >
               <SelectTrigger
-                className="h-8 w-[100px] border-0 bg-transparent text-[12px] text-slate-600 hover:bg-slate-100 rounded-lg focus:ring-0 focus:ring-offset-0"
+                className="h-8 w-[100px] border-0 bg-slate-100 text-[12px] text-slate-600 hover:bg-slate-200 rounded-lg focus:ring-0 focus:ring-offset-0"
                 aria-label="Reasoning effort"
               >
                 <SelectValue placeholder="Effort" />
@@ -101,12 +101,6 @@ export function ChatInput({
           </div>
         </div>
 
-        {/* ヒントテキスト */}
-        <div className="text-center mt-2">
-          <span className="text-[11px] text-slate-400">
-            Shift + Enter で改行、Enter で送信
-          </span>
-        </div>
       </div>
     </div>
   );

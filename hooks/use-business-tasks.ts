@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Task } from "@/lib/domain";
-import { listTasksByBusinessId, deleteTask } from "@/lib/data/tasks";
+import { listTasksByBusinessArea, deleteTask } from "@/lib/data/tasks";
 import { useProject } from "@/components/project/project-context";
 
 export interface UseBusinessTasksReturn {
@@ -11,7 +11,7 @@ export interface UseBusinessTasksReturn {
 	clearError: () => void;
 }
 
-export const useBusinessTasks = (businessId: string): UseBusinessTasksReturn => {
+export const useBusinessTasks = (businessArea: string | null | undefined): UseBusinessTasksReturn => {
 	const [tasks, setTasks] = useState<Task[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -25,7 +25,15 @@ export const useBusinessTasks = (businessId: string): UseBusinessTasksReturn => 
 			setLoading(false);
 			return;
 		}
-		if (!businessId) {
+		// null/undefined は「まだ取得中」として扱う（loading状態を維持）
+		if (businessArea === null || businessArea === undefined) {
+			setLoading(true);
+			setError(null);
+			setTasks([]);
+			return;
+		}
+		// 空文字列が渡された場合はエラーにする（本来のバリデーション）
+		if (businessArea === "") {
 			setError("業務領域が指定されていません");
 			setTasks([]);
 			setLoading(false);
@@ -34,7 +42,7 @@ export const useBusinessTasks = (businessId: string): UseBusinessTasksReturn => 
 		let active = true;
 		const fetchData = async () => {
 			setLoading(true);
-			const { data: taskRows, error: taskError } = await listTasksByBusinessId(businessId, currentProjectId);
+			const { data: taskRows, error: taskError } = await listTasksByBusinessArea(businessArea, currentProjectId);
 			if (!active) return;
 			if (taskError) {
 				setError(taskError);
@@ -49,7 +57,7 @@ export const useBusinessTasks = (businessId: string): UseBusinessTasksReturn => 
 		return () => {
 			active = false;
 		};
-	}, [businessId, currentProjectId, projectLoading]);
+	}, [businessArea, currentProjectId, projectLoading]);
 
 	const handleDeleteTask = async (task: Task) => {
 		if (projectLoading || !currentProjectId) {

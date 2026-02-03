@@ -8,7 +8,7 @@ import type { Deliverable } from './schemas/deliverable';
  * Business（業務）
  */
 export interface Business {
-  id: string;              // BIZ-001
+  id: string;              // AR
   name: string;            // 債権管理
   area: BusinessArea;      // AR
   summary: string;         // 業務の概要説明
@@ -24,7 +24,7 @@ export interface Business {
  */
 export interface Task {
   id: string;              // BT-AR-0001
-  businessId: string;      // BIZ-001 (外部キー)
+  businessArea: string;    // AR (外部キー)
   name: string;            // 請求書発行
   summary: string;         // 業務概要（description）
   businessContext: string; // 業務コンテキスト（Markdown）
@@ -49,7 +49,7 @@ export interface Ticket {
   id: string;              // CR-001
   title: string;           // インボイス制度対応
   description: string;     // 詳細説明
-  businessIds: string[];   // [BIZ-001, BIZ-003] (外部キー配列)
+  businessIds: string[];   // [AR, GL] (外部キー配列)
   areas: BusinessArea[];   // [AR, GL]
   status: TicketStatus;    // approved
   targetVersions: string[];  // [v2.0, v2.1]
@@ -124,6 +124,7 @@ export interface Project {
   reviewLinkThreshold: 'low' | 'medium' | 'high';  // 要確認リンク判定基準
   autoSave: boolean;       // 自動保存有効フラグ
   investigationSettings?: ProjectInvestigationSettings; // /settings 用の詳細設定
+  llmSettings?: ProjectLlmSettings; // /settings 用のLLM設定
   createdAt: string;       // ISO日付
   updatedAt: string;       // ISO日付
 }
@@ -161,6 +162,18 @@ export type ProjectInvestigationSettings = {
     require_human_confirmation: boolean;
   };
   shared_module_patterns: string[];
+};
+
+/**
+ * ProjectLlmSettings（LLM設定）
+ */
+export type ProjectLlmSettings = {
+  provider: "openai" | "anthropic" | "google" | "azure";
+  model: string;
+  temperature: number;
+  base_url: string;
+  /** GPT-5 verbosity: "low"(terse) | "medium"(balanced) | "high"(detailed) */
+  verbosity?: "low" | "medium" | "high";
 };
 
 /**

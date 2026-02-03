@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { Workbook } from "exceljs";
 import { listBusinesses } from "@/lib/data/businesses";
-import { listTasksByBusinessId } from "@/lib/data/tasks";
+import { listTasksByBusinessArea } from "@/lib/data/tasks";
 import { listBusinessRequirementsByTaskIds } from "@/lib/data/business-requirements";
 
 /**
@@ -19,12 +19,12 @@ export async function GET() {
     }
 
     // 2. BDに紐づくBTを取得
-    const businessIds = businesses.map((b) => b.id);
-    const tasksMap = new Map<string, Awaited<ReturnType<typeof listTasksByBusinessId>>["data"]>();
+    const businessAreas = businesses.map((b) => b.area);
+    const tasksMap = new Map<string, Awaited<ReturnType<typeof listTasksByBusinessArea>>["data"]>();
 
-    for (const businessId of businessIds) {
-      const { data: tasks } = await listTasksByBusinessId(businessId);
-      tasksMap.set(businessId, tasks);
+    for (const businessArea of businessAreas) {
+      const { data: tasks } = await listTasksByBusinessArea(businessArea);
+      tasksMap.set(businessArea, tasks);
     }
 
     // 3. BTに紐づくBRを取得
@@ -47,9 +47,8 @@ export async function GET() {
 
     // 4. フラットな構造に変換
     const rows: Array<{
-      businessId: string;
-      businessName: string;
       businessArea: string;
+      businessName: string;
       taskId: string;
       taskName: string;
       taskSummary: string;
@@ -61,13 +60,12 @@ export async function GET() {
     }> = [];
 
     for (const business of businesses) {
-      const tasks = tasksMap.get(business.id);
+      const tasks = tasksMap.get(business.area);
       if (!tasks || tasks.length === 0) {
         // BTがない場合はBDのみの行を追加
         rows.push({
-          businessId: business.id,
-          businessName: business.name,
           businessArea: business.area,
+          businessName: business.name,
           taskId: "",
           taskName: "",
           taskSummary: "",
@@ -85,9 +83,8 @@ export async function GET() {
         if (!taskReqs || taskReqs.length === 0) {
           // BRがない場合はBD+BTのみの行を追加
           rows.push({
-            businessId: business.id,
-            businessName: business.name,
             businessArea: business.area,
+            businessName: business.name,
             taskId: task.id,
             taskName: task.name,
             taskSummary: task.summary,
@@ -102,9 +99,8 @@ export async function GET() {
 
         for (const req of taskReqs) {
           rows.push({
-            businessId: business.id,
-            businessName: business.name,
             businessArea: business.area,
+            businessName: business.name,
             taskId: task.id,
             taskName: task.name,
             taskSummary: task.summary,
@@ -124,9 +120,8 @@ export async function GET() {
 
     // ヘッダー設定
     worksheet.columns = [
-      { header: "業務分類ID", key: "businessId", width: 15 },
+      { header: "業務領域コード", key: "businessArea", width: 15 },
       { header: "業務分類名", key: "businessName", width: 30 },
-      { header: "業務分類エリア", key: "businessArea", width: 15 },
       { header: "業務タスクID", key: "taskId", width: 15 },
       { header: "業務タスク名", key: "taskName", width: 30 },
       { header: "業務タスク概要", key: "taskSummary", width: 40 },

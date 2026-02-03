@@ -7,7 +7,7 @@ Supabase（PostgreSQL）をバックエンドとして使用し、フロント�
 
 ## 基本方針
 
-- ID採番はアプリ側で行う（例: `BIZ-001`, `TASK-001`, `BR-TASK-001-001`）
+- 業務領域は `area`（AR/AP/GL）をキーとして扱う。その他ID採番はアプリ側で行う（例: `TASK-001`, `BR-TASK-001-001`）
 - 段階導入のため、既存のlegacy列（`acceptance_criteria: text[]`）は残しつつ、新列を追加して移行する
 - 構造化データはJSONBを使用（`acceptance_criteria_json`など）
 - 全テーブルでRLSを有効化（開発時は匿名アクセス許可、本番では認証必須）
@@ -21,9 +21,8 @@ Supabase（PostgreSQL）をバックエンドとして使用し、フロント�
 
 | カラム | 型 | 制約 | 説明 |
 |--------|-----|-------|------|
-| id | text | PK | 一意識別子（BIZ-XXX形式） |
+| area | text | PK | 業務領域コード（AR/AP/GL） |
 | name | text | NOT NULL | 業務名 |
-| area | text | NOT NULL | システム領域（AR/AP/GL） |
 | summary | text | NOT NULL | 業務概要 |
 | business_req_count | integer | NOT NULL DEFAULT 0 | 業務要件数 |
 | system_req_count | integer | NOT NULL DEFAULT 0 | システム要件数 |
@@ -37,7 +36,7 @@ Supabase（PostgreSQL）をバックエンドとして使用し、フロント�
 | カラム | 型 | 制約 | 説明 |
 |--------|-----|-------|------|
 | id | text | PK | 一意識別子（TASK-XXX形式） |
-| business_id | text | FK → business_domains(id), CASCADE | 所属業務 |
+| business_area | text | FK → business_domains(area), CASCADE | 所属業務領域 |
 | name | text | NOT NULL | タスク名（20字以内） |
 | summary | text | NOT NULL | 業務概要＋業務フロー（Markdown） |
 | person | text | - | 主担当者（ロール名） |
@@ -188,13 +187,13 @@ Supabase（PostgreSQL）をバックエンドとして使用し、フロント�
 - business_domains: (area), (name)
 - system_functions: (category), (status), (system_domain_id)
 - system_requirements: (task_id), (srf_id), (category)
-- business_tasks: (business_id), (sort_order)
+- business_tasks: (business_area), (sort_order)
 - business_requirements: (task_id), (srf_id)
 - system_domains: (sort_order)
 - concepts: (areas), (name)
 
 ### 外部キーインデックス
-- business_tasks.business_id → business_domains.id
+- business_tasks.business_area → business_domains.area
 - business_requirements.task_id → business_tasks.id
 - system_functions.system_domain_id → system_domains.id
 - system_requirements.task_id → business_tasks.id

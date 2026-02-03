@@ -9,7 +9,11 @@ export default function BusinessPage() {
 	const { currentProjectId, loading: projectLoading } = useProject();
 
 	const fetchData = async () => {
-		if (projectLoading || !currentProjectId) {
+		if (projectLoading) {
+			// プロジェクト読み込み中はデータ取得を待つ
+			return { data: null, error: null };
+		}
+		if (!currentProjectId) {
 			return { data: null, error: "プロジェクトが選択されていません" };
 		}
 		return listBusinessesWithRequirementCounts(currentProjectId);
@@ -19,6 +23,7 @@ export default function BusinessPage() {
 		<ResourceListPage
 			config={businessListConfig}
 			fetchData={fetchData}
+			loading={projectLoading}
 			deleteItem={(id: string) => {
 				if (projectLoading || !currentProjectId) {
 					return Promise.resolve({ data: null, error: "プロジェクトが選択されていません" });

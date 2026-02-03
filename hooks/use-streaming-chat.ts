@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import type { ChatMessage, ChatProgressStep, ChatLocation } from '@/components/ai-chat/types';
 import type { ReasoningEffort } from '@/lib/mastra/reasoning-effort';
+import type { ConceptCandidate } from '@/components/ai-chat/concept-suggestion';
 
 type UseStreamingChatOptions = {
   threadId: string;
@@ -8,6 +9,7 @@ type UseStreamingChatOptions = {
   location?: ChatLocation;
   projectId?: string;
   reasoningEffort: ReasoningEffort;
+  onConceptCandidates?: (candidates: ConceptCandidate[]) => void;
 };
 
 type UseStreamingChatReturn = {
@@ -44,7 +46,7 @@ const upsertProgressStep = (
  * チャットメッセージの送信とストリーミングレスポンスの処理を担当する。
  */
 export function useStreamingChat(options: UseStreamingChatOptions): UseStreamingChatReturn {
-  const { threadId, resourceId, location, projectId, reasoningEffort } = options;
+  const { threadId, resourceId, location, projectId, reasoningEffort, onConceptCandidates } = options;
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -56,6 +58,8 @@ export function useStreamingChat(options: UseStreamingChatOptions): UseStreaming
       // AbortControllerを作成（クリーンアップ用）
       const abortController = new AbortController();
       let aborted = false;
+
+      onConceptCandidates?.([]);
 
       // ユーザーメッセージを追加
       const userMessage: ChatMessage = {
@@ -169,6 +173,10 @@ export function useStreamingChat(options: UseStreamingChatOptions): UseStreaming
                     throw new Error(data.message || 'ストリーミングエラーが発生しました');
                   }
 
+                  if (data.event === 'heartbeat') {
+                    continue;
+                  }
+
                   if (data.event === 'progress' && data.step) {
                     const step = data.step as ChatProgressStep;
                     assistantMessage.progressSteps = upsertProgressStep(
@@ -186,16 +194,54 @@ export function useStreamingChat(options: UseStreamingChatOptions): UseStreaming
                   }
 
                   if (data.event === 'draft' && data.draft) {
-                    console.log('[Chat] Received draft event:', data.draft.code);
-                    assistantMessage.btDraft = data.draft;
-                    setMessages((prev) =>
-                      prev.map((msg) =>
-                        msg.id === assistantMessage.id
-                          ? { ...msg, btDraft: assistantMessage.btDraft }
-                          : msg
-                      )
-                    );
-                    console.log('[Chat] Updated message with btDraft:', assistantMessage.id);
+                    console.log('[Chat] Received draft event:', data.draft.code, 'draftType:', data.draftType);
+                    if (data.draftType === 'br') {
+                      assistantMessage.brDraft = data.draft;
+                      setMessages((prev) =>
+                        prev.map((msg) =>
+                          msg.id === assistantMessage.id
+                            ? { ...msg, brDraft: assistantMessage.brDraft }
+                            : msg
+                        )
+                      );
+                    } else if (data.draftType === 'sf') {
+                      assistantMessage.sfDraft = data.draft;
+                      setMessages((prev) =>
+                        prev.map((msg) =>
+                          msg.id === assistantMessage.id
+                            ? { ...msg, sfDraft: assistantMessage.sfDraft }
+                            : msg
+                        )
+                      );
+                    } else if (data.draftType === 'sr') {
+                      assistantMessage.srDraft = data.draft;
+                      setMessages((prev) =>
+                        prev.map((msg) =>
+                          msg.id === assistantMessage.id
+                            ? { ...msg, srDraft: assistantMessage.srDraft }
+                            : msg
+                        )
+                      );
+                    } else {
+                      // draftType が 'bt' か未定義の場合は BT として扱う（後方互換）
+                      assistantMessage.btDraft = data.draft;
+                      setMessages((prev) =>
+                        prev.map((msg) =>
+                          msg.id === assistantMessage.id
+                            ? { ...msg, btDraft: assistantMessage.btDraft }
+                            : msg
+                        )
+                      );
+                    }
+                    console.log('[Chat] Updated message with draft:', assistantMessage.id);
+                    continue;
+                  }
+
+                  if (data.event === 'concept_candidates' && data.candidates) {
+                    const candidates = Array.isArray(data.candidates)
+                      ? (data.candidates as ConceptCandidate[])
+                      : [];
+                    onConceptCandidates?.(candidates);
                     continue;
                   }
 
@@ -281,7 +327,7 @@ export function useStreamingChat(options: UseStreamingChatOptions): UseStreaming
         abortController.abort();
       };
     },
-    [threadId, resourceId, location, projectId, reasoningEffort]
+    [threadId, resourceId, location, projectId, reasoningEffort, onConceptCandidates]
   );
 
   return {

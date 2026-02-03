@@ -17,7 +17,7 @@ interface ProjectContextValue {
 const ProjectContext = createContext<ProjectContextValue | undefined>(undefined)
 
 const STORAGE_KEY = "current-project-id"
-const DEFAULT_PROJECT_ID = "00000000-0000-0000-0000-000000000001"
+export const DEFAULT_PROJECT_ID = "00000000-0000-0000-0000-000000000001"
 const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365
 
 export function ProjectProvider({ children }: { children: ReactNode }) {

@@ -13,8 +13,51 @@ export type BtDraft = {
   processSteps: { when: string; who: string; action: string }[];
   input: { name: string; source: string }[];
   output: { name: string; source: string }[];
-  business_domain_id: string;
+  business_area: string;
   concept_ids?: string[];
+};
+
+/**
+ * BR草案の型定義
+ */
+export type BrDraft = {
+  code: string;
+  requirement: string;
+  rationale: string;
+  business_task_id: string;
+  concept_ids?: string[];
+};
+
+/**
+ * 受入基準（AC）草案の型定義
+ */
+export type AcDraft = {
+  code: string;
+  given: string;
+  when: string;
+  then: string;
+};
+
+/**
+ * システム要件（SR）草案の型定義
+ */
+export type SrDraft = {
+  code: string;
+  type: string;
+  requirement: string;
+  rationale: string;
+  acs: AcDraft[];
+};
+
+/**
+ * システム機能（SF）草案の型定義
+ */
+export type SfDraft = {
+  code: string;
+  name: string;
+  description: string;
+  system_domain_id: string;
+  srs: SrDraft[];
 };
 
 /**
@@ -28,6 +71,9 @@ export type ChatMessage = {
   isStreaming?: boolean;
   progressSteps?: ChatProgressStep[];
   btDraft?: BtDraft;
+  brDraft?: BrDraft;
+  sfDraft?: SfDraft;
+  srDraft?: SrDraft;
 };
 
 /**

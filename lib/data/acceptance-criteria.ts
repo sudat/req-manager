@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase/client";
-import { failIfMissingConfig } from "./crud-factory";
+import { failIfMissingConfig, executeListQuery } from "./crud-factory";
 import type { AcceptanceCriterion, AcceptanceCriterionStatus } from "@/lib/domain";
 import type { AcceptanceCriterionJson } from "@/lib/data/structured";
 
@@ -149,64 +149,32 @@ export const listAcceptanceCriteriaBySystemRequirementId = async (
   systemRequirementId: string,
   projectId?: string
 ) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
-
-  let query = supabase
-    .from("acceptance_criteria")
-    .select("*")
-    .eq("system_requirement_id", systemRequirementId)
-    .order("sort_order")
-    .order("id");
-
-  if (projectId) {
-    query = query.eq("project_id", projectId);
-  }
-
-  const { data, error } = await query;
-  if (error) return { data: null, error: error.message };
-  return { data: (data as AcceptanceCriterionRow[]).map(toAcceptanceCriterion), error: null };
+  return executeListQuery(
+    () => supabase.from("acceptance_criteria").select("*").eq("system_requirement_id", systemRequirementId).order("sort_order").order("id"),
+    projectId,
+    toAcceptanceCriterion
+  );
 };
 
 export const listAcceptanceCriteriaBySystemRequirementIds = async (
   systemRequirementIds: string[],
   projectId?: string
 ) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
   if (systemRequirementIds.length === 0) return { data: [], error: null };
 
-  let query = supabase
-    .from("acceptance_criteria")
-    .select("*")
-    .in("system_requirement_id", systemRequirementIds)
-    .order("system_requirement_id")
-    .order("sort_order")
-    .order("id");
-
-  if (projectId) {
-    query = query.eq("project_id", projectId);
-  }
-
-  const { data, error } = await query;
-  if (error) return { data: null, error: error.message };
-  return { data: (data as AcceptanceCriterionRow[]).map(toAcceptanceCriterion), error: null };
+  return executeListQuery(
+    () => supabase.from("acceptance_criteria").select("*").in("system_requirement_id", systemRequirementIds).order("system_requirement_id").order("sort_order").order("id"),
+    projectId,
+    toAcceptanceCriterion
+  );
 };
 
 export const listAcceptanceCriteriaByProjectId = async (projectId: string) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
-
-  const { data, error } = await supabase
-    .from("acceptance_criteria")
-    .select("*")
-    .eq("project_id", projectId)
-    .order("system_requirement_id")
-    .order("sort_order")
-    .order("id");
-
-  if (error) return { data: null, error: error.message };
-  return { data: (data as AcceptanceCriterionRow[]).map(toAcceptanceCriterion), error: null };
+  return executeListQuery(
+    () => supabase.from("acceptance_criteria").select("*").order("system_requirement_id").order("sort_order").order("id"),
+    projectId,
+    toAcceptanceCriterion
+  );
 };
 
 export const getAcceptanceCriterionById = async (id: string, projectId?: string) => {

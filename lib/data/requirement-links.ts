@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase/client";
-import { failIfMissingConfig } from "./crud-factory";
+import { failIfMissingConfig, executeListQuery } from "./crud-factory";
 import type { RequirementLink, RequirementLinkNodeType } from "@/lib/domain";
 
 export type RequirementLinkType = "derived_from";
@@ -103,23 +103,16 @@ export const listRequirementLinksBySource = async (
   sourceId: string,
   projectId?: string
 ) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
-
-  let query = supabase
-    .from("requirement_links")
-    .select("*")
-    .eq("source_type", sourceType)
-    .eq("source_id", sourceId)
-    .order("created_at", { ascending: true });
-
-  if (projectId) {
-    query = query.eq("project_id", projectId);
-  }
-
-  const { data, error } = await query;
-  if (error) return { data: null, error: error.message };
-  return { data: (data as RequirementLinkRow[]).map(toRequirementLink), error: null };
+  return executeListQuery<RequirementLinkRow, ReturnType<typeof toRequirementLink>>(
+    () => supabase
+      .from("requirement_links")
+      .select("*")
+      .eq("source_type", sourceType)
+      .eq("source_id", sourceId)
+      .order("created_at", { ascending: true }),
+    projectId,
+    toRequirementLink
+  );
 };
 
 export const listRequirementLinksBySourceIds = async (
@@ -127,24 +120,18 @@ export const listRequirementLinksBySourceIds = async (
   sourceIds: string[],
   projectId?: string
 ) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
   if (sourceIds.length === 0) return { data: [], error: null };
 
-  let query = supabase
-    .from("requirement_links")
-    .select("*")
-    .eq("source_type", sourceType)
-    .in("source_id", sourceIds)
-    .order("created_at", { ascending: true });
-
-  if (projectId) {
-    query = query.eq("project_id", projectId);
-  }
-
-  const { data, error } = await query;
-  if (error) return { data: null, error: error.message };
-  return { data: (data as RequirementLinkRow[]).map(toRequirementLink), error: null };
+  return executeListQuery<RequirementLinkRow, ReturnType<typeof toRequirementLink>>(
+    () => supabase
+      .from("requirement_links")
+      .select("*")
+      .eq("source_type", sourceType)
+      .in("source_id", sourceIds)
+      .order("created_at", { ascending: true }),
+    projectId,
+    toRequirementLink
+  );
 };
 
 export const listRequirementLinksByTarget = async (
@@ -152,23 +139,16 @@ export const listRequirementLinksByTarget = async (
   targetId: string,
   projectId?: string
 ) => {
-  const configError = failIfMissingConfig();
-  if (configError) return configError;
-
-  let query = supabase
-    .from("requirement_links")
-    .select("*")
-    .eq("target_type", targetType)
-    .eq("target_id", targetId)
-    .order("created_at", { ascending: true });
-
-  if (projectId) {
-    query = query.eq("project_id", projectId);
-  }
-
-  const { data, error } = await query;
-  if (error) return { data: null, error: error.message };
-  return { data: (data as RequirementLinkRow[]).map(toRequirementLink), error: null };
+  return executeListQuery<RequirementLinkRow, ReturnType<typeof toRequirementLink>>(
+    () => supabase
+      .from("requirement_links")
+      .select("*")
+      .eq("target_type", targetType)
+      .eq("target_id", targetId)
+      .order("created_at", { ascending: true }),
+    projectId,
+    toRequirementLink
+  );
 };
 
 export const createRequirementLink = async (input: RequirementLinkCreateInput) => {

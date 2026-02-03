@@ -15,14 +15,14 @@ export interface RelatedRequirementInfo {
   systemReqAcceptanceCriteriaJson?: AcceptanceCriterionJson[];  // 受入条件（構造化）
   businessReqId: string;     // BR-AR-0003-0001
   businessReqTitle: string;
-  businessId: string;        // BIZ-001
+  businessId: string;        // AR
   businessArea?: string | null;  // AR/AP/GL
   taskId: string;            // BT-AR-0003
   relatedBusinessReqs?: Array<{    // 関連する業務要件のリスト（複数の場合）
     id: string;
     title: string;
     taskId: string;
-    businessId: string;
+    businessId: string; // AR
     businessArea?: string | null;
     suspect?: boolean;              // 疑義フラグ（Phase 4.6で追加）
     suspectReason?: string | null;  // 疑義理由（Phase 4.6で追加）

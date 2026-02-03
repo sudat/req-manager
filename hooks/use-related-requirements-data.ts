@@ -118,7 +118,7 @@ export function useRelatedRequirementsData(
 				})();
 
 			const businessReqMap = new Map(businessReqs.map((req) => [req.id, req]));
-			const taskBusinessMap = new Map(taskData.map((task) => [task.id, task.businessId]));
+			const taskBusinessMap = new Map(taskData.map((task) => [task.id, task.businessArea]));
 			const conceptMap = new Map(conceptData.map((concept) => [concept.id, concept.name]));
 
 			// 5. 関連要件情報を構築（疑義情報付きバージョンを使用）
@@ -140,7 +140,7 @@ export function useRelatedRequirementsData(
 					);
 
 			const businessAreaMap = new Map(
-				businessData.map((biz) => [biz.id, biz.area])
+				businessData.map((biz) => [biz.area, biz.area])
 			);
 
 			const resultWithArea = result.map((req) => ({

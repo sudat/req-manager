@@ -92,7 +92,7 @@ export class ContextProvider {
         const { data: bts } = await supabase
           .from('business_tasks')
           .select('*')
-          .eq('business_domain_id', location.id)
+          .eq('business_area', location.id)
           .order('code');
         related.business_tasks = bts || [];
         break;
@@ -156,7 +156,7 @@ export class ContextProvider {
       case 'bd':
         return `業務領域「${location.name}」に業務タスクを追加します。どのような業務を登録しますか？`;
       case 'bt':
-        return `業務タスク「${location.name}」に業務要件を追加します。この業務で達成したいことは何ですか？`;
+        return `業務タスク「${location.name}」（ID: ${location.id}）に業務要件を追加します。この業務で達成したいことは何ですか？`;
       case 'sf':
         return `システム機能「${location.name}」にシステム要件を追加します。どのような要件を追加しますか？`;
       case 'sd':
