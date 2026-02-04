@@ -71,7 +71,7 @@ export const implUnitDraftTool = createTool({
       const resolvedProjectId = sfData.system_domain?.project_id ?? projectId;
       const llmSettings = await resolveProjectLlmRuntimeSettings(resolvedProjectId);
       const llmOptions = {
-        provider: llmSettings.provider === 'zai' ? 'zai' : 'openai',
+        provider: (llmSettings.provider === 'zai' ? 'zai' : 'openai') as 'openai' | 'zai',
         model: llmSettings.model,
         temperature: llmSettings.temperature,
         baseUrl: llmSettings.baseUrl,

@@ -129,3 +129,11 @@ export type ChatConfig = {
   location?: ChatLocation;
   initialPrompt?: string;
 };
+
+/** スレッド履歴サマリ */
+export type ThreadSummary = {
+  threadId: string;
+  title: string;
+  updatedAt: string; // ISO 8601
+  contextKey: string;
+};

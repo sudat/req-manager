@@ -81,7 +81,7 @@ export const brDraftTool = createTool({
       console.log('[br_draft] BT resolved:', { id: btRecord.id, name: btRecord.name, projectId: btRecord.project_id });
       const llmSettings = await resolveProjectLlmRuntimeSettings(btRecord.project_id);
       const llmOptions = {
-        provider: llmSettings.provider === 'zai' ? 'zai' : 'openai',
+        provider: (llmSettings.provider === 'zai' ? 'zai' : 'openai') as 'openai' | 'zai',
         model: llmSettings.model,
         temperature: llmSettings.temperature,
         baseUrl: llmSettings.baseUrl,

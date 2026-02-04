@@ -115,7 +115,7 @@ export const systemDraftTool = createTool({
       }
       const llmSettings = await resolveProjectLlmRuntimeSettings(resolvedProjectId);
       const llmOptions = {
-        provider: llmSettings.provider === 'zai' ? 'zai' : 'openai',
+        provider: (llmSettings.provider === 'zai' ? 'zai' : 'openai') as 'openai' | 'zai',
         model: llmSettings.model,
         temperature: llmSettings.temperature,
         baseUrl: llmSettings.baseUrl,

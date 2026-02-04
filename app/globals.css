@@ -4,421 +4,439 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  /* カスタムフォントサイズ */
-  --font-size-2xs: 11px;
-  --font-size-xs: 12px;
-  --font-size-sm: 13px;
-  --font-size-base: 14px;
+	/* カスタムフォントサイズ */
+	--font-size-2xs: 11px;
+	--font-size-xs: 12px;
+	--font-size-sm: 13px;
+	--font-size-base: 14px;
 
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --color-brand-50: var(--brand-50);
-  --color-brand-100: var(--brand-100);
-  --color-brand-200: var(--brand-200);
-  --color-brand-300: var(--brand-300);
-  --color-brand-400: var(--brand-400);
-  --color-brand-500: var(--brand-500);
-  --color-brand-600: var(--brand-600);
-  --color-brand-700: var(--brand-700);
-  --color-brand-800: var(--brand-800);
-  --color-brand-900: var(--brand-900);
-  --color-brand-1000: #f0fdfa;
-  --color-brand: var(--brand);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+	--font-sans: var(--font-geist-sans);
+	--font-mono: var(--font-geist-mono);
+	--color-sidebar-ring: var(--sidebar-ring);
+	--color-sidebar-border: var(--sidebar-border);
+	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+	--color-sidebar-accent: var(--sidebar-accent);
+	--color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+	--color-sidebar-primary: var(--sidebar-primary);
+	--color-sidebar-foreground: var(--sidebar-foreground);
+	--color-sidebar: var(--sidebar);
+	--color-chart-5: var(--chart-5);
+	--color-chart-4: var(--chart-4);
+	--color-chart-3: var(--chart-3);
+	--color-chart-2: var(--chart-2);
+	--color-chart-1: var(--chart-1);
+	--color-ring: var(--ring);
+	--color-input: var(--input);
+	--color-border: var(--border);
+	--color-destructive: var(--destructive);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-accent: var(--accent);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-muted: var(--muted);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-secondary: var(--secondary);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-primary: var(--primary);
+	--color-popover-foreground: var(--popover-foreground);
+	--color-popover: var(--popover);
+	--color-card-foreground: var(--card-foreground);
+	--color-card: var(--card);
+	--color-brand-50: var(--brand-50);
+	--color-brand-100: var(--brand-100);
+	--color-brand-200: var(--brand-200);
+	--color-brand-300: var(--brand-300);
+	--color-brand-400: var(--brand-400);
+	--color-brand-500: var(--brand-500);
+	--color-brand-600: var(--brand-600);
+	--color-brand-700: var(--brand-700);
+	--color-brand-800: var(--brand-800);
+	--color-brand-900: var(--brand-900);
+	--color-brand-1000: #f0fdfa;
+	--color-brand: var(--brand);
+	--radius-sm: calc(var(--radius) - 4px);
+	--radius-md: calc(var(--radius) - 2px);
+	--radius-lg: var(--radius);
+	--radius-xl: calc(var(--radius) + 4px);
+	--radius-2xl: calc(var(--radius) + 8px);
+	--radius-3xl: calc(var(--radius) + 12px);
+	--radius-4xl: calc(var(--radius) + 16px);
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.49 0.14 181.1);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.49 0.14 181.1);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-  --brand: oklch(0.49 0.14 181.1);
-  --brand-50: oklch(0.95 0.02 181.1);
-  --brand-100: oklch(0.91 0.04 181.1);
-  --brand-200: oklch(0.80 0.07 181.1);
-  --brand-300: oklch(0.68 0.10 181.1);
-  --brand-400: oklch(0.58 0.12 181.1);
-  --brand-500: oklch(0.49 0.14 181.1);
-  --brand-600: oklch(0.44 0.13 181.1);
-  --brand-700: oklch(0.39 0.11 181.1);
-  --brand-800: oklch(0.33 0.09 181.1);
-  --brand-900: oklch(0.27 0.07 181.1);
+	--radius: 0.625rem;
+	--background: oklch(1 0 0);
+	--foreground: oklch(0.145 0 0);
+	--card: oklch(1 0 0);
+	--card-foreground: oklch(0.145 0 0);
+	--popover: oklch(1 0 0);
+	--popover-foreground: oklch(0.145 0 0);
+	--primary: oklch(0.49 0.14 181.1);
+	--primary-foreground: oklch(0.985 0 0);
+	--secondary: oklch(0.97 0 0);
+	--secondary-foreground: oklch(0.205 0 0);
+	--muted: oklch(0.97 0 0);
+	--muted-foreground: oklch(0.556 0 0);
+	--accent: oklch(0.97 0 0);
+	--accent-foreground: oklch(0.205 0 0);
+	--destructive: oklch(0.577 0.245 27.325);
+	--border: oklch(0.922 0 0);
+	--input: oklch(0.922 0 0);
+	--ring: oklch(0.708 0 0);
+	--chart-1: oklch(0.646 0.222 41.116);
+	--chart-2: oklch(0.6 0.118 184.704);
+	--chart-3: oklch(0.398 0.07 227.392);
+	--chart-4: oklch(0.828 0.189 84.429);
+	--chart-5: oklch(0.769 0.188 70.08);
+	--sidebar: oklch(0.985 0 0);
+	--sidebar-foreground: oklch(0.145 0 0);
+	--sidebar-primary: oklch(0.49 0.14 181.1);
+	--sidebar-primary-foreground: oklch(0.985 0 0);
+	--sidebar-accent: oklch(0.97 0 0);
+	--sidebar-accent-foreground: oklch(0.205 0 0);
+	--sidebar-border: oklch(0.922 0 0);
+	--sidebar-ring: oklch(0.708 0 0);
+	--brand: oklch(0.49 0.14 181.1);
+	--brand-50: oklch(0.95 0.02 181.1);
+	--brand-100: oklch(0.91 0.04 181.1);
+	--brand-200: oklch(0.8 0.07 181.1);
+	--brand-300: oklch(0.68 0.1 181.1);
+	--brand-400: oklch(0.58 0.12 181.1);
+	--brand-500: oklch(0.49 0.14 181.1);
+	--brand-600: oklch(0.44 0.13 181.1);
+	--brand-700: oklch(0.39 0.11 181.1);
+	--brand-800: oklch(0.33 0.09 181.1);
+	--brand-900: oklch(0.27 0.07 181.1);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+	--background: oklch(0.145 0 0);
+	--foreground: oklch(0.985 0 0);
+	--card: oklch(0.205 0 0);
+	--card-foreground: oklch(0.985 0 0);
+	--popover: oklch(0.205 0 0);
+	--popover-foreground: oklch(0.985 0 0);
+	--primary: oklch(0.922 0 0);
+	--primary-foreground: oklch(0.205 0 0);
+	--secondary: oklch(0.269 0 0);
+	--secondary-foreground: oklch(0.985 0 0);
+	--muted: oklch(0.269 0 0);
+	--muted-foreground: oklch(0.708 0 0);
+	--accent: oklch(0.269 0 0);
+	--accent-foreground: oklch(0.985 0 0);
+	--destructive: oklch(0.704 0.191 22.216);
+	--border: oklch(1 0 0 / 10%);
+	--input: oklch(1 0 0 / 15%);
+	--ring: oklch(0.556 0 0);
+	--chart-1: oklch(0.488 0.243 264.376);
+	--chart-2: oklch(0.696 0.17 162.48);
+	--chart-3: oklch(0.769 0.188 70.08);
+	--chart-4: oklch(0.627 0.265 303.9);
+	--chart-5: oklch(0.645 0.246 16.439);
+	--sidebar: oklch(0.205 0 0);
+	--sidebar-foreground: oklch(0.985 0 0);
+	--sidebar-primary: oklch(0.488 0.243 264.376);
+	--sidebar-primary-foreground: oklch(0.985 0 0);
+	--sidebar-accent: oklch(0.269 0 0);
+	--sidebar-accent-foreground: oklch(0.985 0 0);
+	--sidebar-border: oklch(1 0 0 / 10%);
+	--sidebar-ring: oklch(0.556 0 0);
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
+	* {
+		@apply border-border outline-ring/50;
+	}
+	body {
+		@apply bg-background text-foreground;
+	}
 }
 
 @layer utilities {
-  /* ヘルススコア用プログレスバー */
-  .progress-bar-track {
-    @apply w-full h-1.5 bg-slate-100 rounded-full overflow-hidden;
-  }
+	/* スクロールバー非表示 */
+	.hide-scrollbar::-webkit-scrollbar {
+		display: none;
+	}
+	.hide-scrollbar {
+		-ms-overflow-style: none;
+		scrollbar-width: none;
+	}
 
-  .progress-bar-fill {
-    @apply h-full rounded-full transition-all duration-300;
-  }
+	/* ヘルススコア用プログレスバー */
+	.progress-bar-track {
+		@apply w-full h-1.5 bg-slate-100 rounded-full overflow-hidden;
+	}
 
-  /* ID表示用ラベル */
-  .id-label {
-    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono bg-slate-100 text-slate-600;
-  }
+	.progress-bar-fill {
+		@apply h-full rounded-full transition-all duration-300;
+	}
 
-  .id-label--brand {
-    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono bg-brand-50 text-brand-700 border border-brand-200;
-  }
+	/* ID表示用ラベル */
+	.id-label {
+		@apply inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono bg-slate-100 text-slate-600;
+	}
 
-  /* セクション見出し（左ボーダー付き） */
-  .section-heading {
-    @apply border-l-4 border-brand-500 pl-3 text-[16px] font-semibold text-slate-900;
-  }
+	.id-label--brand {
+		@apply inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono bg-brand-50 text-brand-700 border border-brand-200;
+	}
 
-  /* ランディングページ */
-  .landing-page {
-    @apply fixed inset-0 flex items-center justify-center relative overflow-hidden;
-    background-color: #0a0a0a;
-    z-index: 999999;
-  }
+	/* セクション見出し（左ボーダー付き） */
+	.section-heading {
+		@apply border-l-4 border-brand-500 pl-3 text-[16px] font-semibold text-slate-900;
+	}
 
-  .landing-background {
-    @apply absolute inset-0;
-    opacity: 0.03;
-    background-image: linear-gradient(to right, #ffffff 1px, transparent 1px),
-      linear-gradient(to bottom, #ffffff 1px, transparent 1px);
-    background-size: 40px 40px;
-  }
+	/* ランディングページ */
+	.landing-page {
+		@apply fixed inset-0 flex items-center justify-center relative overflow-hidden;
+		background-color: #0a0a0a;
+		z-index: 999999;
+	}
 
-  .landing-content {
-    @apply relative z-10 text-center px-6 max-w-2xl;
-  }
+	.landing-background {
+		@apply absolute inset-0;
+		opacity: 0.03;
+		background-image:
+			linear-gradient(to right, #ffffff 1px, transparent 1px),
+			linear-gradient(to bottom, #ffffff 1px, transparent 1px);
+		background-size: 40px 40px;
+	}
 
-  .landing-title {
-    @apply text-4xl md:text-5xl font-light text-white mb-12;
-    animation: fade-in 0.8s ease-out forwards;
-  }
+	.landing-content {
+		@apply relative z-10 text-center px-6 max-w-2xl;
+	}
 
-  .landing-tagline {
-    @apply text-lg md:text-xl text-white/80 font-light leading-relaxed mb-16;
-    animation: fade-in 0.8s ease-out 0.2s forwards;
-    opacity: 0;
-  }
+	.landing-title {
+		@apply text-4xl md:text-5xl font-light text-white mb-12;
+		animation: fade-in 0.8s ease-out forwards;
+	}
 
-  .landing-button {
-    @apply inline-flex items-center justify-center px-8 py-3 text-white font-light;
-    background-color: #0066cc;
-    transition: background-color 0.2s;
-    animation: fade-in 0.8s ease-out 0.4s forwards;
-    opacity: 0;
-  }
+	.landing-tagline {
+		@apply text-lg md:text-xl text-white/80 font-light leading-relaxed mb-16;
+		animation: fade-in 0.8s ease-out 0.2s forwards;
+		opacity: 0;
+	}
 
-  .landing-button:hover {
-    background-color: #0052a3;
-  }
+	.landing-button {
+		@apply inline-flex items-center justify-center px-8 py-3 text-white font-light;
+		background-color: #0066cc;
+		transition: background-color 0.2s;
+		animation: fade-in 0.8s ease-out 0.4s forwards;
+		opacity: 0;
+	}
 
-  @keyframes fade-in {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
+	.landing-button:hover {
+		background-color: #0052a3;
+	}
 
-  /* ========================================
+	@keyframes fade-in {
+		from {
+			opacity: 0;
+			transform: translateY(20px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	/* ========================================
      ランディングページ改善用スタイル
      ======================================== */
 
-  /* メッシュグラデーション背景（オーロラ風） */
-  .mesh-gradient {
-    background:
-      radial-gradient(at 40% 20%, hsla(263, 90%, 65%, 0.6) 0px, transparent 50%),
-      radial-gradient(at 80% 0%, hsla(189, 100%, 56%, 0.4) 0px, transparent 50%),
-      radial-gradient(at 0% 50%, hsla(355, 85%, 63%, 0.3) 0px, transparent 50%),
-      radial-gradient(at 80% 50%, hsla(240, 100%, 70%, 0.4) 0px, transparent 50%),
-      radial-gradient(at 0% 100%, hsla(22, 100%, 60%, 0.3) 0px, transparent 50%);
-    background-color: #0f0f1e;
-  }
+	/* メッシュグラデーション背景（オーロラ風） */
+	.mesh-gradient {
+		background:
+			radial-gradient(at 40% 20%, hsla(263, 90%, 65%, 0.6) 0px, transparent 50%),
+			radial-gradient(at 80% 0%, hsla(189, 100%, 56%, 0.4) 0px, transparent 50%),
+			radial-gradient(at 0% 50%, hsla(355, 85%, 63%, 0.3) 0px, transparent 50%),
+			radial-gradient(
+				at 80% 50%,
+				hsla(240, 100%, 70%, 0.4) 0px,
+				transparent 50%
+			),
+			radial-gradient(at 0% 100%, hsla(22, 100%, 60%, 0.3) 0px, transparent 50%);
+		background-color: #0f0f1e;
+	}
 
-  /* テキストグラデーション */
-  .text-gradient {
-    background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #EC4899 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
+	/* テキストグラデーション */
+	.text-gradient {
+		background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-clip: text;
+	}
 
-  /* グラスモーフィズムカード */
-  .glass-card {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    transition: all 0.3s ease;
-  }
+	/* グラスモーフィズムカード */
+	.glass-card {
+		background: rgba(255, 255, 255, 0.05);
+		backdrop-filter: blur(10px);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		transition: all 0.3s ease;
+	}
 
-  .glass-card:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.2);
-    transform: translateY(-4px);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-  }
+	.glass-card:hover {
+		background: rgba(255, 255, 255, 0.08);
+		border-color: rgba(255, 255, 255, 0.2);
+		transform: translateY(-4px);
+		box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+	}
 
-  /* CTAボタン強化 */
-  .cta-button {
-    background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
-    transition: all 0.3s ease;
-  }
+	/* CTAボタン強化 */
+	.cta-button {
+		background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+		transition: all 0.3s ease;
+	}
 
-  .cta-button:hover {
-    background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
-    transform: scale(1.05);
-    box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
-  }
+	.cta-button:hover {
+		background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+		transform: scale(1.05);
+		box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
+	}
 
-  /* Large Type タイトル */
-  .hero-title {
-    font-size: clamp(48px, 8vw, 72px);
-    font-weight: 700;
-    line-height: 1.1;
-    letter-spacing: -0.03em;
-  }
+	/* Large Type タイトル */
+	.hero-title {
+		font-size: clamp(48px, 8vw, 72px);
+		font-weight: 700;
+		line-height: 1.1;
+		letter-spacing: -0.03em;
+	}
 
-  /* 統計数字用スタイル */
-  .stat-number {
-    font-size: clamp(36px, 5vw, 48px);
-    font-weight: 700;
-    letter-spacing: -0.02em;
-  }
+	/* 統計数字用スタイル */
+	.stat-number {
+		font-size: clamp(36px, 5vw, 48px);
+		font-weight: 700;
+		letter-spacing: -0.02em;
+	}
 
-  /* ========================================
+	/* ========================================
      パーティクル背景アニメーション
      ======================================== */
-  @keyframes float {
-    0%, 100% {
-      transform: translateY(0) translateX(0);
-      opacity: 0;
-    }
-    10% {
-      opacity: 1;
-    }
-    90% {
-      opacity: 1;
-    }
-    100% {
-      transform: translateY(-100vh) translateX(20px);
-      opacity: 0;
-    }
-  }
+	@keyframes float {
+		0%,
+		100% {
+			transform: translateY(0) translateX(0);
+			opacity: 0;
+		}
+		10% {
+			opacity: 1;
+		}
+		90% {
+			opacity: 1;
+		}
+		100% {
+			transform: translateY(-100vh) translateX(20px);
+			opacity: 0;
+		}
+	}
 
-  .particle {
-    position: absolute;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.1);
-    pointer-events: none;
-    animation: float linear infinite;
-  }
+	.particle {
+		position: absolute;
+		border-radius: 50%;
+		background: rgba(255, 255, 255, 0.1);
+		pointer-events: none;
+		animation: float linear infinite;
+	}
 
-  .particle--small {
-    width: 2px;
-    height: 2px;
-  }
+	.particle--small {
+		width: 2px;
+		height: 2px;
+	}
 
-  .particle--medium {
-    width: 4px;
-    height: 4px;
-  }
+	.particle--medium {
+		width: 4px;
+		height: 4px;
+	}
 
-  .particle--large {
-    width: 6px;
-    height: 6px;
-  }
+	.particle--large {
+		width: 6px;
+		height: 6px;
+	}
 
-  /* ========================================
+	/* ========================================
      カスタムカーソル
      ======================================== */
-  .custom-cursor {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 20px;
-    height: 20px;
-    border: 2px solid rgba(99, 102, 241, 0.5);
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 9999;
-    transform: translate(-50%, -50%);
-    transition: width 0.2s, height 0.2s, border-color 0.2s;
-  }
+	.custom-cursor {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 20px;
+		height: 20px;
+		border: 2px solid rgba(99, 102, 241, 0.5);
+		border-radius: 50%;
+		pointer-events: none;
+		z-index: 9999;
+		transform: translate(-50%, -50%);
+		transition:
+			width 0.2s,
+			height 0.2s,
+			border-color 0.2s;
+	}
 
-  .custom-cursor--hover {
-    width: 40px;
-    height: 40px;
-    border-color: rgba(139, 92, 246, 0.8);
-    background: rgba(139, 92, 246, 0.1);
-  }
+	.custom-cursor--hover {
+		width: 40px;
+		height: 40px;
+		border-color: rgba(139, 92, 246, 0.8);
+		background: rgba(139, 92, 246, 0.1);
+	}
 
-  .custom-cursor-dot {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 6px;
-    height: 6px;
-    background: rgba(99, 102, 241, 0.8);
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 9999;
-    transform: translate(-50%, -50%);
-  }
+	.custom-cursor-dot {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 6px;
+		height: 6px;
+		background: rgba(99, 102, 241, 0.8);
+		border-radius: 50%;
+		pointer-events: none;
+		z-index: 9999;
+		transform: translate(-50%, -50%);
+	}
 
-  /* モバイルではカスタムカーソルを非表示 */
-  @media (hover: none) and (pointer: coarse) {
-    .custom-cursor,
-    .custom-cursor-dot {
-      display: none;
-    }
-  }
+	/* モバイルではカスタムカーソルを非表示 */
+	@media (hover: none) and (pointer: coarse) {
+		.custom-cursor,
+		.custom-cursor-dot {
+			display: none;
+		}
+	}
 
-  /* ========================================
+	/* ========================================
      スクロールプログレスバー
      ======================================== */
-  .scroll-progress-bar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #6366F1, #8B5CF6, #EC4899);
-    transform-origin: left;
-    z-index: 10000;
-    transition: transform 0.1s ease-out;
-  }
+	.scroll-progress-bar {
+		position: fixed;
+		top: 0;
+		left: 0;
+		height: 3px;
+		background: linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899);
+		transform-origin: left;
+		z-index: 10000;
+		transition: transform 0.1s ease-out;
+	}
 
-  /* ========================================
+	/* ========================================
      スムーズスクロール
      ======================================== */
-  html {
-    scroll-behavior: smooth;
-  }
+	html {
+		scroll-behavior: smooth;
+	}
 
-  /* ========================================
+	/* ========================================
      セクションリンク用
      ======================================== */
-  .section-link {
-    scroll-margin-top: 2rem;
-  }
+	.section-link {
+		scroll-margin-top: 2rem;
+	}
 
-  /* ========================================
+	/* ========================================
      フッタースタイル
      ======================================== */
-  .footer-link {
-    @apply text-white/60 hover:text-white transition-colors duration-200;
-  }
+	.footer-link {
+		@apply text-white/60 hover:text-white transition-colors duration-200;
+	}
 
-  .footer-link:hover {
-    @apply text-white;
-  }
+	.footer-link:hover {
+		@apply text-white;
+	}
 }

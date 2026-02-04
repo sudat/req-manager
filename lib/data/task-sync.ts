@@ -78,10 +78,13 @@ export function hasRequirementChanged<T extends {
 /**
  * 同期対象の要件を削除・作成・更新に分類する
  */
-function computeSyncOps(
-	editedRequirements: Requirement[],
-	existingReqs: Requirement[]
-): { toDelete: string[]; toCreate: Requirement[]; toUpdate: { req: Requirement; existing: Requirement }[] } {
+function computeSyncOps<
+	E extends { id: string },
+	X extends { id: string; sortOrder: number },
+>(
+	editedRequirements: E[],
+	existingReqs: X[],
+): { toDelete: string[]; toCreate: E[]; toUpdate: { req: E; existing: X }[] } {
 	const existingIds = new Set(existingReqs.map((r) => r.id));
 	const editedIds = new Set(editedRequirements.map((r) => r.id));
 

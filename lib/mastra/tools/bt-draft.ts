@@ -100,7 +100,7 @@ export const btDraftTool = createTool({
       const existingConceptsArray = Array.from(conceptMap.values());
       const llmSettings = await resolveProjectLlmRuntimeSettings(projectId);
       const llmOptions = {
-        provider: llmSettings.provider === 'zai' ? 'zai' : 'openai',
+        provider: (llmSettings.provider === 'zai' ? 'zai' : 'openai') as 'openai' | 'zai',
         model: llmSettings.model,
         temperature: llmSettings.temperature,
         baseUrl: llmSettings.baseUrl,

@@ -147,7 +147,8 @@ export async function POST(request: NextRequest) {
     const providerOptions = validatedReasoningEffort
       ? { openai: { reasoningEffort: validatedReasoningEffort } }
       : undefined;
-    const requestContext = projectId
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const requestContext: any = projectId
       ? new RequestContext([['projectId', projectId]])
       : undefined;
 

@@ -87,8 +87,8 @@ export function MessageBubble({ message, onCommitDraft, getCommitState }: Messag
                             onCommitDraft({
                               messageId: message.id,
                               type: 'bt',
-                              code: message.btDraft.code,
-                              content: message.btDraft,
+                              code: message.btDraft!.code,
+                              content: message.btDraft!,
                             })
                         : undefined
                     }
@@ -104,8 +104,8 @@ export function MessageBubble({ message, onCommitDraft, getCommitState }: Messag
                             onCommitDraft({
                               messageId: message.id,
                               type: 'br',
-                              code: message.brDraft.code,
-                              content: message.brDraft,
+                              code: message.brDraft!.code,
+                              content: message.brDraft!,
                             })
                         : undefined
                     }

@@ -37,6 +37,7 @@ const btContentSchema = z.object({
 // Business Requirement (BR) コンテンツスキーマ
 const brContentSchema = z.object({
   business_task_id: z.string(),
+  project_id: z.string().optional(),
   code: z.string(),
   requirement: z.string(),
   rationale: z.string(),
@@ -46,6 +47,7 @@ const brContentSchema = z.object({
 // System Function (SF) コンテンツスキーマ
 const sfContentSchema = z.object({
   system_domain_id: z.string(),
+  project_id: z.string().optional(),
   code: z.string(),
   name: z.string(),
   description: z.string(),
@@ -55,6 +57,7 @@ const sfContentSchema = z.object({
 // System Requirement (SR) コンテンツスキーマ
 const srContentSchema = z.object({
   system_function_id: z.string(),
+  project_id: z.string().optional(),
   code: z.string(),
   type: z.string(),
   requirement: z.string(),
@@ -65,6 +68,7 @@ const srContentSchema = z.object({
 // Acceptance Criteria (AC) コンテンツスキーマ
 const acContentSchema = z.object({
   system_requirement_id: z.string(),
+  project_id: z.string().optional(),
   code: z.string(),
   given: z.string(),
   when: z.string(),
@@ -74,6 +78,7 @@ const acContentSchema = z.object({
 // Implementation Unit (IU) コンテンツスキーマ
 const implUnitContentSchema = z.object({
   system_function_id: z.string(),
+  project_id: z.string().optional(),
   code: z.string(),
   name: z.string(),
   entry_point: z.string(),

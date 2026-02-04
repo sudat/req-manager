@@ -34,11 +34,14 @@ export async function POST(request: NextRequest) {
         ? draftId
         : `draft-${type}-${Date.now()}`;
 
-    const result = await commitDraftTool.execute({
-      draftId: resolvedDraftId,
-      type,
-      content,
-    });
+    const result = await commitDraftTool.execute!(
+      {
+        draftId: resolvedDraftId,
+        type: type as 'bt' | 'br' | 'sf' | 'sr' | 'ac' | 'impl_unit',
+        content,
+      },
+      {} as any,
+    );
 
     return NextResponse.json(result);
   } catch (error: any) {
