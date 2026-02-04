@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { AcceptanceConfirmation, AcceptanceConfirmationStatus } from "@/lib/domain/value-objects";
+import { useSetSelection } from "./use-set-selection";
 
 export interface UseAcceptanceSelectionReturn {
   selectedIds: Set<string>;
@@ -24,33 +25,9 @@ export function useAcceptanceSelection({
   items,
   onUpdate,
 }: UseAcceptanceSelectionProps): UseAcceptanceSelectionReturn {
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const { selectedIds, toggleSelect, toggleSelectAll, clearSelection } = useSetSelection(items, (item) => item.id);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const toggleSelect = (id: string) => {
-    setSelectedIds((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-      }
-      return newSet;
-    });
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedIds.size === items.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(items.map((c) => c.id)));
-    }
-  };
-
-  const clearSelection = () => {
-    setSelectedIds(new Set());
-  };
 
   const bulkUpdate = async (status: AcceptanceConfirmationStatus) => {
     if (selectedIds.size === 0) return;

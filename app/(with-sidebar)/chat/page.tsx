@@ -71,7 +71,7 @@ export default function ChatPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex items-center justify-center h-screen bg-white">
+        <div className="flex items-center justify-center h-full bg-white">
           <div className="text-[14px] text-slate-500">読み込み中...</div>
         </div>
       }

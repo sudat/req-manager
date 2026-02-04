@@ -1,12 +1,11 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { QuickActions } from './quick-actions';
 import { ChatMessages } from './chat-messages';
 import { ChatInput } from './chat-input';
 // Note: DraftPreviewCard removed - drafts are now displayed as markdown in chat
 import { ConceptSuggestionCard, ConceptApprovalForm } from './concept-suggestion';
-import type { ChatConfig, QuickAction } from './types';
+import type { ChatConfig, DraftCommitState, BtDraft, BrDraft } from './types';
 import type { ConceptCandidate, ConceptAction, ConceptApproval } from './concept-suggestion';
 import { ContextProvider } from '@/lib/mastra/context/provider';
 import { DEFAULT_PROJECT_ID, useProject } from '@/components/project/project-context';
@@ -75,6 +74,9 @@ const deserializeMessages = (raw: unknown): ChatMessage[] => {
       isStreaming: false,
       progressSteps: m.progressSteps,
       btDraft: m.btDraft,
+      brDraft: m.brDraft,
+      sfDraft: m.sfDraft,
+      srDraft: m.srDraft,
     }));
 };
 
@@ -124,6 +126,7 @@ export function ChatContainer({ config, onClose }: ChatContainerProps) {
   // Note: drafts state removed - drafts are now displayed as markdown in chat
   const [conceptCandidates, setConceptCandidates] = useState<ConceptCandidate[]>([]);
   const [showConceptForm, setShowConceptForm] = useState<string | null>(null);
+  const [draftCommitStates, setDraftCommitStates] = useState<Record<string, DraftCommitState>>({});
   const [reasoningEffort, setReasoningEffort] = useState<ReasoningEffort>(
     DEFAULT_REASONING_EFFORT
   );
@@ -286,17 +289,70 @@ export function ChatContainer({ config, onClose }: ChatContainerProps) {
     [config.resourceId, contextKey, resolvedProjectId, setMessages]
   );
 
-  /**
-   * クイックアクションを実行する
-   */
-  const handleQuickAction = useCallback(
-    (action: QuickAction) => {
-      sendMessage(action.prompt);
+  const buildDraftKey = useCallback((messageId: string, type: 'bt' | 'br', code: string) => {
+    return `${messageId}:${type}:${code}`;
+  }, []);
+
+  const getCommitState = useCallback(
+    (messageId: string, type: 'bt' | 'br', code: string) => {
+      return draftCommitStates[buildDraftKey(messageId, type, code)];
     },
-    [sendMessage]
+    [draftCommitStates, buildDraftKey]
   );
 
-  // Note: handleDraftAction removed - drafts are now committed via chat using commitDraftTool
+  const handleCommitDraft = useCallback(
+    async (payload: { messageId: string; type: 'bt' | 'br'; code: string; content: BtDraft | BrDraft }) => {
+      const key = buildDraftKey(payload.messageId, payload.type, payload.code);
+      setDraftCommitStates((prev) => ({
+        ...prev,
+        [key]: { status: 'loading' },
+      }));
+
+      try {
+        const response = await fetch('/api/drafts/commit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            draftId: `draft-${payload.type}-${Date.now()}`,
+            type: payload.type,
+            content: payload.content,
+          }),
+        });
+
+        const result = await response.json();
+        if (response.ok && result?.success) {
+          setDraftCommitStates((prev) => ({
+            ...prev,
+            [key]: { status: 'success', message: result.message },
+          }));
+
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `system-${Date.now()}`,
+              role: 'system',
+              content: result.message ?? '登録しました。',
+              timestamp: new Date(),
+            },
+          ]);
+          return;
+        }
+
+        const errorMessage =
+          result?.message || result?.error || '草案の登録に失敗しました';
+        setDraftCommitStates((prev) => ({
+          ...prev,
+          [key]: { status: 'error', message: errorMessage },
+        }));
+      } catch (error: any) {
+        setDraftCommitStates((prev) => ({
+          ...prev,
+          [key]: { status: 'error', message: error?.message ?? '草案の登録に失敗しました' },
+        }));
+      }
+    },
+    [buildDraftKey, setMessages]
+  );
 
   /**
    * 概念候補アクションを処理する
@@ -402,11 +458,9 @@ export function ChatContainer({ config, onClose }: ChatContainerProps) {
   }, [config.resourceId, contextKey, resolvedProjectId, setMessages]);
 
   return (
-    <div className="flex flex-col h-[calc(100dvh)] bg-white">
-      <QuickActions onActionClick={handleQuickAction} disabled={isLoading} />
-
+    <div className="relative h-full flex flex-col min-h-0 overflow-hidden bg-white">
       {/* メインコンテンツエリア */}
-      <div className="relative flex-1 overflow-y-auto">
+      <div className="relative flex flex-col flex-1 min-h-0 overflow-x-hidden overflow-y-auto">
         {/* 履歴オーバーレイ - アニメーション付き */}
         <div
           className={[
@@ -470,6 +524,8 @@ export function ChatContainer({ config, onClose }: ChatContainerProps) {
           isLoading={isLoading}
           onToggleHistory={openHistory}
           onNewChat={handleNewChat}
+          onCommitDraft={handleCommitDraft}
+          getCommitState={getCommitState}
         />
 
         {/* Note: Draft preview removed - drafts are now displayed as markdown in chat */}
@@ -499,10 +555,13 @@ export function ChatContainer({ config, onClose }: ChatContainerProps) {
             ))}
           </div>
         )}
+
+        {/* 浮かぶ入力エリア分のスペーサー */}
+        <div className="h-40 shrink-0" />
       </div>
 
-      {/* チャット入力欄 - 画面下部に固定 */}
-      <div className="bg-white">
+      {/* チャット入力欄 - メッセージエリアの上に浮かぶ (z-10) */}
+      <div className="absolute bottom-0 left-0 right-0 z-10 pt-6 bg-gradient-to-b from-white/0 to-white">
         <ChatInput
           onSendMessage={sendMessage}
           reasoningEffort={reasoningEffort}

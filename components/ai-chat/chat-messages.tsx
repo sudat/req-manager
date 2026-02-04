@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef } from 'react';
 import { Bot, FilePlus, MessagesSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { MessageBubble } from './message-bubble';
-import type { ChatMessage } from './types';
+import type { ChatMessage, DraftCommitState, BtDraft, BrDraft } from './types';
 import {
   Tooltip,
   TooltipContent,
@@ -16,6 +16,13 @@ type ChatMessagesProps = {
   isLoading?: boolean;
   onToggleHistory?: () => void;
   onNewChat?: () => void;
+  onCommitDraft?: (payload: {
+    messageId: string;
+    type: 'bt' | 'br';
+    code: string;
+    content: BtDraft | BrDraft;
+  }) => void;
+  getCommitState?: (messageId: string, type: 'bt' | 'br', code: string) => DraftCommitState | undefined;
 };
 
 /**
@@ -23,34 +30,15 @@ type ChatMessagesProps = {
  *
  * ユーザーとアシスタントのメッセージを時系列で表示する。
  */
-export function ChatMessages({ messages, isLoading, onToggleHistory, onNewChat }: ChatMessagesProps) {
-  const bottomRef = useRef<HTMLDivElement>(null);
+export function ChatMessages({
+  messages,
+  isLoading,
+  onToggleHistory,
+  onNewChat,
+  onCommitDraft,
+  getCommitState,
+}: ChatMessagesProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [isNearBottom, setIsNearBottom] = useState(true);
-
-  // スクロール位置を監視して、下部にいるかを判定
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const handleScroll = () => {
-      const { scrollTop, scrollHeight, clientHeight } = container;
-      const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
-      setIsNearBottom(distanceFromBottom < 100);
-    };
-
-    container.addEventListener('scroll', handleScroll);
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  // 新しいメッセージが追加されたら、下部にいる場合のみ自動スクロール
-  useEffect(() => {
-    // ストリーミング中は自動スクロールしない
-    const isCurrentlyStreaming = messages.some((m) => m.isStreaming);
-    if (isNearBottom && !isCurrentlyStreaming) {
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages, isNearBottom]);
 
   // アクションボタンを共通化
   const actionButtons = (
@@ -96,7 +84,7 @@ export function ChatMessages({ messages, isLoading, onToggleHistory, onNewChat }
 
   if (messages.length === 0 && !isLoading) {
     return (
-      <div className="relative flex-1 flex items-center justify-center px-6 py-12">
+      <div className="relative flex-1 min-h-0 overflow-hidden flex items-center justify-center px-6 py-12">
         {/* アクションボタン - 左上に配置（空状態でも表示） */}
         {(onToggleHistory || onNewChat) && actionButtons}
         <div className="text-center max-w-md">
@@ -120,7 +108,7 @@ export function ChatMessages({ messages, isLoading, onToggleHistory, onNewChat }
   );
 
   return (
-    <div ref={containerRef} className="relative flex-1 overflow-y-auto px-6 py-4">
+    <div ref={containerRef} className="relative flex-1 min-h-0 px-6 py-4">
       {/* アクションボタン - 左上に配置 */}
       {(onToggleHistory || onNewChat) && actionButtons}
       <div className="max-w-3xl mx-auto pt-8">
@@ -135,7 +123,11 @@ export function ChatMessages({ messages, isLoading, onToggleHistory, onNewChat }
                 isRoleChanged ? 'mt-8' : 'mt-4'
               )}
             >
-              <MessageBubble message={message} />
+              <MessageBubble
+                message={message}
+                onCommitDraft={onCommitDraft}
+                getCommitState={getCommitState}
+              />
             </div>
           );
         })}
@@ -157,9 +149,7 @@ export function ChatMessages({ messages, isLoading, onToggleHistory, onNewChat }
             </div>
           </div>
         )}
-        <div ref={bottomRef} />
       </div>
     </div>
   );
 }
-

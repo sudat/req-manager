@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { updateRequirementLink } from "@/lib/data/requirement-links";
 import type { RequirementLink } from "@/lib/domain";
+import { useSetSelection } from "./use-set-selection";
 
 export function useLinkBatchOperations(
 	links: RequirementLink[],
@@ -9,8 +10,11 @@ export function useLinkBatchOperations(
 ) {
 	const [confirmingId, setConfirmingId] = useState<string | null>(null);
 	const [actionError, setActionError] = useState<string | null>(null);
-	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 	const [isBatchConfirming, setIsBatchConfirming] = useState(false);
+
+	// 疑義リンクのみを対象とする
+	const suspectLinks = useMemo(() => links.filter((link) => link.suspect), [links]);
+	const { selectedIds, toggleSelect: handleToggleSelect, toggleSelectAll: handleToggleSelectAll, clearSelection } = useSetSelection(suspectLinks, (link) => link.id);
 
 	// 疑義リンクを確認するハンドラー
 	const handleConfirmLink = async (linkId: string) => {
@@ -31,31 +35,6 @@ export function useLinkBatchOperations(
 		}
 
 		setConfirmingId(null);
-	};
-
-	// 選択状態をトグルするハンドラー
-	const handleToggleSelect = (linkId: string) => {
-		setSelectedIds((prev) => {
-			const newSet = new Set(prev);
-			if (newSet.has(linkId)) {
-				newSet.delete(linkId);
-			} else {
-				newSet.add(linkId);
-			}
-			return newSet;
-		});
-	};
-
-	// 全選択/全解除ハンドラー
-	const handleToggleSelectAll = () => {
-		const suspectLinks = links.filter((link) => link.suspect);
-		if (selectedIds.size === suspectLinks.length) {
-			// 全選択されている場合は全解除
-			setSelectedIds(new Set());
-		} else {
-			// 全選択
-			setSelectedIds(new Set(suspectLinks.map((link) => link.id)));
-		}
 	};
 
 	// 一括確認ハンドラー
@@ -93,7 +72,7 @@ export function useLinkBatchOperations(
 			setActionError(`一括確認で一部エラーが発生しました: ${firstError}（成功: ${successCount}/${idsToUpdate.length}）`);
 		}
 
-		setSelectedIds(new Set());
+		clearSelection();
 		setIsBatchConfirming(false);
 	};
 

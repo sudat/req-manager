@@ -38,32 +38,3 @@ export const calculateImplUnitSdWithEntryPointsIssue = (
 	);
 };
 
-/**
- * 概念辞書の用語にリンクされている
- */
-export const calculateConceptTermsWithLinksIssue = (
-	businessRequirements: BusinessRequirementHealthInput[],
-	systemRequirements: SystemRequirementHealthInput[],
-	conceptCheckTarget: 'business' | 'system' | 'all' = 'business'
-): HealthScoreIssue => {
-	const target = conceptCheckTarget;
-	const requirementsWithConcepts =
-		target === 'system' ?
-			systemRequirements.filter((req) => req.conceptIds.length > 0) :
-		target === 'all' ?
-			[...businessRequirements, ...systemRequirements].filter((req) => req.conceptIds.length > 0) :
-			businessRequirements.filter((req) => req.conceptIds.length > 0);
-
-	const totalRequirements =
-		target === 'system' ? systemRequirements.length :
-		target === 'all' ? businessRequirements.length + systemRequirements.length :
-		businessRequirements.length;
-
-	return createIssue(
-		"concept_terms_with_links",
-		"概念辞書の用語にリンクされている",
-		"medium",
-		requirementsWithConcepts.length,
-		totalRequirements
-	);
-};

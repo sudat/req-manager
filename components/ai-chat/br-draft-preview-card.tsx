@@ -1,10 +1,14 @@
 "use client";
 
 import { FileText } from 'lucide-react';
-import type { BrDraft } from './types';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import type { BrDraft, DraftCommitState } from './types';
 
 type BrDraftPreviewCardProps = {
   draft: BrDraft;
+  commitState?: DraftCommitState;
+  onCommit?: () => void;
 };
 
 /**
@@ -12,7 +16,24 @@ type BrDraftPreviewCardProps = {
  *
  * AIが生成したBR草案を表形式で表示する。
  */
-export function BrDraftPreviewCard({ draft }: BrDraftPreviewCardProps) {
+export function BrDraftPreviewCard({ draft, commitState, onCommit }: BrDraftPreviewCardProps) {
+  const status = commitState?.status ?? 'idle';
+  const statusLabel =
+    status === 'success'
+      ? '登録済'
+      : status === 'loading'
+        ? '登録中'
+        : status === 'error'
+          ? '登録失敗'
+          : '未確定';
+  const statusClass =
+    status === 'success'
+      ? 'bg-emerald-100 text-emerald-700'
+      : status === 'loading'
+        ? 'bg-sky-100 text-sky-700'
+        : status === 'error'
+          ? 'bg-rose-100 text-rose-700'
+          : 'bg-amber-100 text-amber-700';
   return (
     <div className="mt-3 rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
       {/* ヘッダー */}
@@ -23,8 +44,8 @@ export function BrDraftPreviewCard({ draft }: BrDraftPreviewCardProps) {
             業務要件草案
           </h3>
         </div>
-        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-700">
-          未確定
+        <span className={cn('inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium', statusClass)}>
+          {statusLabel}
         </span>
       </div>
 
@@ -35,6 +56,22 @@ export function BrDraftPreviewCard({ draft }: BrDraftPreviewCardProps) {
         <InfoRow label="根拠" value={draft.rationale} />
         <InfoRow label="業務タスクID" value={draft.business_task_id} />
       </div>
+
+      {onCommit && status !== 'success' && (
+        <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-slate-200 bg-slate-50/50">
+          <div className="text-[11px] text-rose-600 min-h-[16px]">
+            {status === 'error' ? commitState?.message : ''}
+          </div>
+          <Button
+            size="sm"
+            onClick={onCommit}
+            disabled={status === 'loading'}
+            className="h-8 px-4 text-[12px] bg-slate-900 hover:bg-slate-800"
+          >
+            {status === 'loading' ? '登録中...' : '登録する'}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

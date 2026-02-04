@@ -71,6 +71,7 @@ export const implUnitDraftTool = createTool({
       const resolvedProjectId = sfData.system_domain?.project_id ?? projectId;
       const llmSettings = await resolveProjectLlmRuntimeSettings(resolvedProjectId);
       const llmOptions = {
+        provider: llmSettings.provider === 'zai' ? 'zai' : 'openai',
         model: llmSettings.model,
         temperature: llmSettings.temperature,
         baseUrl: llmSettings.baseUrl,
@@ -180,11 +181,12 @@ ${entryPoint}
           systemPrompt: 'あなたはフロントエンド設計の専門家です。実装可能な詳細設計書を生成します。',
           userPrompt: llmPrompt,
           jsonMode: false, // テキスト形式で出力
+          provider: llmOptions.provider,
           model: llmOptions.model,
           temperature: llmOptions.temperature,
           baseUrl: llmOptions.baseUrl,
           verbosity: llmOptions.verbosity,
-          maxTokens: 1500,
+          maxTokens: 2500,
           timeoutMs: 180000,
         });
 

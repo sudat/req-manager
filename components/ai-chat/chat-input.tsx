@@ -51,7 +51,7 @@ export function ChatInput({
   };
 
   return (
-    <div className="px-6 py-4 bg-white">
+    <div className="px-6 py-4">
       <div className="max-w-3xl mx-auto">
         {/* ChatGPT風の統合入力エリア */}
         <div className="relative flex flex-col border border-slate-300 rounded-2xl bg-white shadow-sm">

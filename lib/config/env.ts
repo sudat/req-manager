@@ -78,6 +78,22 @@ export function getOpenAIApiKey(): string {
 }
 
 /**
+ * Z.AI APIキーを安全に取得する
+ *
+ * 未設定の場合は例外をスローする。
+ *
+ * @returns Z.AI APIキー
+ * @throws {Error} ZAI_API_KEYが未設定の場合
+ */
+export function getZaiApiKey(): string {
+  const key = process.env.ZAI_API_KEY;
+  if (!key) {
+    throw new Error('ZAI_API_KEY is not set');
+  }
+  return key;
+}
+
+/**
  * Supabase URLを取得する
  *
  * @returns Supabase URL

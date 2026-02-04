@@ -14,6 +14,7 @@ export type BtDraft = {
   input: { name: string; source: string }[];
   output: { name: string; source: string }[];
   business_area: string;
+  project_id?: string;
   concept_ids?: string[];
 };
 
@@ -26,6 +27,13 @@ export type BrDraft = {
   rationale: string;
   business_task_id: string;
   concept_ids?: string[];
+};
+
+export type DraftCommitStatus = 'idle' | 'loading' | 'success' | 'error';
+
+export type DraftCommitState = {
+  status: DraftCommitStatus;
+  message?: string;
 };
 
 /**

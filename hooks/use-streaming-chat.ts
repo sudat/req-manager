@@ -286,7 +286,7 @@ export function useStreamingChat(options: UseStreamingChatOptions): UseStreaming
             const errorMessage: ChatMessage = {
               id: `timeout-${Date.now()}`,
               role: 'system',
-              content: 'リクエストがタイムアウトしました。ネットワーク接続を確認してください。',
+              content: 'リクエストがタイムアウトしました（180秒）。ネットワーク接続を確認してください。',
               timestamp: new Date(),
             };
             setMessages((prev) => [...prev, errorMessage]);

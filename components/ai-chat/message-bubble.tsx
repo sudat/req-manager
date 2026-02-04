@@ -5,13 +5,20 @@ import { BrDraftPreviewCard } from './br-draft-preview-card';
 import { SfDraftCard } from './sf-draft-card';
 import { SrDraftCard } from './sr-draft-card';
 import { ProgressSteps } from './progress-steps';
-import type { ChatMessage } from './types';
+import type { ChatMessage, DraftCommitState, BtDraft, BrDraft } from './types';
 
 type MessageBubbleProps = {
   message: ChatMessage;
+  onCommitDraft?: (payload: {
+    messageId: string;
+    type: 'bt' | 'br';
+    code: string;
+    content: BtDraft | BrDraft;
+  }) => void;
+  getCommitState?: (messageId: string, type: 'bt' | 'br', code: string) => DraftCommitState | undefined;
 };
 
-export function MessageBubble({ message }: MessageBubbleProps) {
+export function MessageBubble({ message, onCommitDraft, getCommitState }: MessageBubbleProps) {
   const isUser = message.role === 'user';
   const isSystem = message.role === 'system';
   const progressSteps = message.progressSteps ?? [];
@@ -71,10 +78,38 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                   <span className="inline-block w-1 h-4 ml-1 bg-current animate-pulse" />
                 )}
                 {message.btDraft && (
-                  <DraftPreviewCard draft={message.btDraft} />
+                  <DraftPreviewCard
+                    draft={message.btDraft}
+                    commitState={getCommitState?.(message.id, 'bt', message.btDraft.code)}
+                    onCommit={
+                      onCommitDraft
+                        ? () =>
+                            onCommitDraft({
+                              messageId: message.id,
+                              type: 'bt',
+                              code: message.btDraft.code,
+                              content: message.btDraft,
+                            })
+                        : undefined
+                    }
+                  />
                 )}
                 {message.brDraft && (
-                  <BrDraftPreviewCard draft={message.brDraft} />
+                  <BrDraftPreviewCard
+                    draft={message.brDraft}
+                    commitState={getCommitState?.(message.id, 'br', message.brDraft.code)}
+                    onCommit={
+                      onCommitDraft
+                        ? () =>
+                            onCommitDraft({
+                              messageId: message.id,
+                              type: 'br',
+                              code: message.brDraft.code,
+                              content: message.brDraft,
+                            })
+                        : undefined
+                    }
+                  />
                 )}
                 {message.sfDraft && (
                   <SfDraftCard draft={message.sfDraft} />

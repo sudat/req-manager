@@ -130,6 +130,7 @@ export async function getConceptsLookupMap(
  * @returns 類似した概念の配列（類似度降順）
  */
 type ConceptSimilarityOptions = {
+  provider?: 'openai' | 'zai';
   model?: OpenAIModel;
   temperature?: number;
   baseUrl?: string;
@@ -183,11 +184,12 @@ ${conceptsList}
     systemPrompt: 'あなたは概念の意味的類似度を判定する専門家です。',
     userPrompt: llmPrompt,
     jsonMode: true,
+    provider: options.provider,
     model: options.model,
     temperature: options.temperature,
     baseUrl: options.baseUrl,
     verbosity: options.verbosity,
-    maxTokens: 400,
+    maxTokens: 600,
   });
 
   const results = (llmResponse.content.similarConcepts || [])

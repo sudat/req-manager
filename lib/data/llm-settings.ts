@@ -13,11 +13,39 @@ export const defaultProjectLlmSettings: ProjectLlmSettings = {
   verbosity: "low",
 };
 
+const providerDefaults: Record<ProjectLlmSettings["provider"], ProjectLlmSettings> = {
+  openai: { ...defaultProjectLlmSettings },
+  zai: {
+    provider: "zai",
+    model: "glm-4.7",
+    temperature: 1,
+    base_url: "https://api.z.ai/api/coding/paas/v4",
+    verbosity: "low",
+  },
+  anthropic: { ...defaultProjectLlmSettings, provider: "anthropic" },
+  google: { ...defaultProjectLlmSettings, provider: "google" },
+  azure: { ...defaultProjectLlmSettings, provider: "azure" },
+};
+
+export const getProviderLlmDefaults = (
+  provider: ProjectLlmSettings["provider"]
+): ProjectLlmSettings => ({
+  ...providerDefaults[provider],
+});
+
+const OPENAI_CHAT_MODELS = new Set([
+  "gpt-5.2",
+  "gpt-5.2-chat-latest",
+  "gpt-5",
+  "gpt-5-mini",
+  "gpt-5-nano",
+]);
+
 const normalizeProvider = (
   value: unknown,
   fallback: ProjectLlmSettings["provider"]
 ): ProjectLlmSettings["provider"] => {
-  if (value === "openai" || value === "anthropic" || value === "google" || value === "azure") {
+  if (value === "openai" || value === "anthropic" || value === "google" || value === "azure" || value === "zai") {
     return value;
   }
   return fallback;
@@ -42,15 +70,26 @@ const normalizeNumber = (value: unknown, fallback: number) =>
 export const normalizeProjectLlmSettings = (raw: unknown): ProjectLlmSettings => {
   if (!isRecord(raw)) return { ...defaultProjectLlmSettings };
 
-  const rawBaseUrl = normalizeString(raw.base_url, defaultProjectLlmSettings.base_url).replace(/\/$/, "");
-  const normalizedBaseUrl = rawBaseUrl.endsWith("/v1") ? rawBaseUrl : `${rawBaseUrl}/v1`;
+  const provider = normalizeProvider(raw.provider, defaultProjectLlmSettings.provider);
+  const defaults = providerDefaults[provider] ?? defaultProjectLlmSettings;
+  const rawBaseUrl = normalizeString(raw.base_url, defaults.base_url).replace(/\/$/, "");
+  const normalizedBaseUrl =
+    provider === "openai" && !rawBaseUrl.endsWith("/v1")
+      ? `${rawBaseUrl}/v1`
+      : rawBaseUrl;
+  const modelCandidate = normalizeString(raw.model, defaults.model);
+  const isOpenAiDefault = normalizedBaseUrl.includes("api.openai.com");
+  const normalizedModel =
+    provider === "openai" && isOpenAiDefault && !OPENAI_CHAT_MODELS.has(modelCandidate)
+      ? defaults.model
+      : modelCandidate;
 
   return {
-    provider: normalizeProvider(raw.provider, defaultProjectLlmSettings.provider),
-    model: normalizeString(raw.model, defaultProjectLlmSettings.model),
-    temperature: normalizeNumber(raw.temperature, defaultProjectLlmSettings.temperature),
+    provider,
+    model: normalizedModel,
+    temperature: normalizeNumber(raw.temperature, defaults.temperature),
     base_url: normalizedBaseUrl,
-    verbosity: normalizeVerbosity(raw.verbosity, defaultProjectLlmSettings.verbosity),
+    verbosity: normalizeVerbosity(raw.verbosity, defaults.verbosity ?? defaultProjectLlmSettings.verbosity),
   };
 };
 

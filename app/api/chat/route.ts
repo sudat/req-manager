@@ -69,7 +69,9 @@ export async function POST(request: NextRequest) {
     };
 
     const businessDomainCandidates = extractBusinessDomainCandidates(message);
-    const isBusinessTaskIntent = /(業務タスク|タスク).*(追加|作成|登録|作りたい|入れたい)/.test(message);
+    const hasBusinessTaskKeywords = /(業務タスク|タスク|業務).*(追加|作成|登録|作りたい|入れたい)/.test(message);
+    const hasRequirementKeywords = /(業務要件|要件|BR|SR|SF|システム要件|システム機能)/.test(message);
+    const isBusinessTaskIntent = hasBusinessTaskKeywords && !hasRequirementKeywords;
 
     // コンテキスト構築（location指定時）
     let contextMessage = '';

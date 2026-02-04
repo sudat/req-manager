@@ -1,25 +1,29 @@
-import { getOpenAIApiKey } from '@/lib/config/env';
+import { getOpenAIApiKey, getZaiApiKey } from '@/lib/config/env';
 
 /**
  * OpenAI GPT-5 シリーズのモデル
  *
  * 利用可能なモデル:
- * - gpt-5-nano: 最速・最安、要約・分類タスクに最適
- * - gpt-5-mini: 軽量・高速（デフォルト）
+ * - gpt-5.2: 最新の汎用モデル
+ * - gpt-5.2-chat-latest: ChatGPT相当の最新モデル
+ * - gpt-5.2-pro: より深く思考する上位モデル（Responses API専用）
+ * - gpt-5.2-codex: コーディング最適化モデル（Responses API専用）
  * - gpt-5: 標準モデル
- * - gpt-5.1: 最新、より賢く自然なトーン、適応的推論を使用
- * - gpt-5.2: フラグシップモデル、コーディング・エージェントタスクに最適
+ * - gpt-5-mini: 軽量・高速（デフォルト）
+ * - gpt-5-nano: 最速・最安、要約・分類タスクに最適
  *
  * ※ 上記以外にも任意のOpenAIモデルを指定可能
  *
  * @see https://platform.openai.com/docs/models/
  */
 export type OpenAIModel =
+  | 'gpt-5.2'
+  | 'gpt-5.2-chat-latest'
+  | 'gpt-5.2-pro'
+  | 'gpt-5.2-codex'
   | 'gpt-5-nano'
   | 'gpt-5-mini'
   | 'gpt-5'
-  | 'gpt-5.1'
-  | 'gpt-5.2'
   | (string & {});
 
 /**
@@ -30,6 +34,8 @@ export interface LLMRequestOptions {
   systemPrompt: string;
   /** ユーザープロンプト（実際の指示） */
   userPrompt: string;
+  /** 使用するAPIプロバイダー */
+  provider?: 'openai' | 'zai';
   /** 使用するモデル（デフォルト: gpt-5-mini） */
   model?: OpenAIModel;
   /** JSON形式で出力するか（デフォルト: false） */
@@ -40,7 +46,7 @@ export interface LLMRequestOptions {
   timeoutMs?: number;
   /** OpenAI互換APIのベースURL */
   baseUrl?: string;
-  /** 生成トークン上限（chat.completions: max_tokens） */
+  /** 生成トークン上限（GPT-5はmax_completion_tokens、それ以外はmax_tokens） */
   maxTokens?: number;
   /** GPT-5 verbosity: "low"(terse) | "medium"(balanced) | "high"(detailed) */
   verbosity?: 'low' | 'medium' | 'high';
@@ -98,6 +104,7 @@ export async function callOpenAI<T = string>(
   const {
     systemPrompt,
     userPrompt,
+    provider,
     model = 'gpt-5-mini',
     jsonMode = false,
     temperature,
@@ -107,7 +114,9 @@ export async function callOpenAI<T = string>(
     verbosity,
   } = options;
 
-  const openaiApiKey = getOpenAIApiKey();
+  const normalizedProvider =
+    provider ?? (baseUrl && /z\.ai/i.test(baseUrl) ? 'zai' : 'openai');
+  const apiKey = normalizedProvider === 'zai' ? getZaiApiKey() : getOpenAIApiKey();
 
   const requestBody: Record<string, unknown> = {
     model,
@@ -152,7 +161,7 @@ export async function callOpenAI<T = string>(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${openaiApiKey}`,
+        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify(requestBody),
       signal: controller.signal,
@@ -178,14 +187,55 @@ export async function callOpenAI<T = string>(
   }
 
   const result = await response.json();
+  const choice = result?.choices?.[0];
+  const finishReason = choice?.finish_reason;
+  const message = choice?.message ?? {};
+  const normalizeContent = (value: unknown): string | undefined => {
+    if (typeof value === 'string') return value;
+    if (Array.isArray(value)) {
+      const merged = value
+        .map((part) => {
+          if (typeof part === 'string') return part;
+          if (part && typeof part === 'object' && 'text' in part) {
+            return String((part as { text?: unknown }).text ?? '');
+          }
+          return '';
+        })
+        .join('');
+      return merged;
+    }
+    return undefined;
+  };
+  const rawContent = normalizeContent((message as { content?: unknown }).content);
 
-  if (!result.choices?.[0]?.message?.content) {
-    console.error('[callOpenAI] Invalid response:', result);
-    throw new Error('Invalid LLM response: no content in choices');
+  if (!rawContent || rawContent.trim().length === 0) {
+    const refusal = (message as { refusal?: string }).refusal;
+    console.error('[callOpenAI] Invalid response:', {
+      finishReason,
+      refusal,
+      raw: result,
+    });
+    throw new Error(
+      refusal
+        ? `OpenAI refusal: ${refusal}`
+        : `Invalid LLM response: no content in choices (finish_reason=${finishReason ?? 'unknown'})`
+    );
   }
 
-  const rawContent = result.choices[0].message.content;
-  const content = jsonMode ? JSON.parse(rawContent) : rawContent;
+  let content: unknown = rawContent;
+  if (jsonMode) {
+    try {
+      content = JSON.parse(rawContent);
+    } catch (error) {
+      console.error('[callOpenAI] JSON parse failed:', {
+        finishReason,
+        error: error instanceof Error ? error.message : String(error),
+        snippet: rawContent.slice(0, 200),
+      });
+      const suffix = finishReason === 'length' ? ' (finish_reason=length)' : '';
+      throw new Error(`Invalid LLM JSON response${suffix}`);
+    }
+  }
 
   return {
     content: content as T,
@@ -203,8 +253,8 @@ export async function callOpenAI<T = string>(
  * 推奨モデルの選び方:
  * - 要約・分類タスク → gpt-5-nano（最速・最安）
  * - 一般的なタスク → gpt-5-mini（バランス型、デフォルト）
- * - 高度な推論 → gpt-5.1（最新、自然なトーン）
- * - コーディング・エージェント → gpt-5.2（フラグシップ）
+ * - 高度な推論 → gpt-5.2-pro（深い推論）
+ * - コーディングタスク → gpt-5.2-codex
  *
  * @returns デフォルトで使用するモデル名
  */

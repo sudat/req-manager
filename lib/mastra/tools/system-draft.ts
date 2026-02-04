@@ -115,6 +115,7 @@ export const systemDraftTool = createTool({
       }
       const llmSettings = await resolveProjectLlmRuntimeSettings(resolvedProjectId);
       const llmOptions = {
+        provider: llmSettings.provider === 'zai' ? 'zai' : 'openai',
         model: llmSettings.model,
         temperature: llmSettings.temperature,
         baseUrl: llmSettings.baseUrl,
@@ -201,11 +202,12 @@ ${pr?.tech_stack_profile || 'Next.js + TypeScript'}
           systemPrompt: 'あなたはシステム設計の専門家です。業務要件からシステム要件と受入基準を生成します。',
           userPrompt: llmPrompt,
           jsonMode: true,
+          provider: llmOptions.provider,
           model: llmOptions.model,
           temperature: llmOptions.temperature,
           baseUrl: llmOptions.baseUrl,
           verbosity: llmOptions.verbosity,
-          maxTokens: 900,
+          maxTokens: 2000,
           timeoutMs: 180000,
         });
 

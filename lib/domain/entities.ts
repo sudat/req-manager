@@ -168,7 +168,7 @@ export type ProjectInvestigationSettings = {
  * ProjectLlmSettings（LLM設定）
  */
 export type ProjectLlmSettings = {
-  provider: "openai" | "anthropic" | "google" | "azure";
+  provider: "openai" | "anthropic" | "google" | "azure" | "zai";
   model: string;
   temperature: number;
   base_url: string;

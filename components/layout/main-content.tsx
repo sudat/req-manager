@@ -9,7 +9,7 @@ export function MainContent({ children }: { children: React.ReactNode }) {
   return (
     <main
       className={cn(
-        "flex-1 min-h-screen bg-white transition-all duration-300",
+        "flex-1 h-full min-h-0 overflow-y-auto bg-white transition-all duration-300",
         isCollapsed ? "md:ml-[64px]" : "md:ml-[280px]"
       )}
     >

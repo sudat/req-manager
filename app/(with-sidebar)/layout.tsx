@@ -11,7 +11,7 @@ export default function WithSidebarLayout({
 	return (
 		<SidebarProvider>
 			<ProjectProvider>
-				<div className="flex min-h-screen">
+				<div className="flex h-[100dvh]">
 					<Sidebar />
 					<MainContent>{children}</MainContent>
 				</div>

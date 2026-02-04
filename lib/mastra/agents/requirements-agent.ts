@@ -21,7 +21,8 @@ import {
   criticCheckTool,
   conceptExtractTool,
 } from '../tools';
-import { resolveProjectAgentModel } from '../utils/llm-settings';
+import { resolveProjectAgentModel, resolveProjectLlmRuntimeSettings } from '../utils/llm-settings';
+import { getZaiApiKey } from '@/lib/config/env';
 
 /**
  * Requirements Agent
@@ -244,6 +245,14 @@ AI: [brDraftToolをbtId: "BT-GL-0010"で呼び出す]
   `,
   model: async ({ requestContext }) => {
     const projectId = requestContext?.get('projectId') as string | undefined;
+    const settings = await resolveProjectLlmRuntimeSettings(projectId);
+    if (settings.provider === 'zai') {
+      return {
+        id: `openai/${settings.model}`,
+        url: settings.baseUrl,
+        apiKey: getZaiApiKey(),
+      };
+    }
     return resolveProjectAgentModel(projectId);
   },
   tools: {

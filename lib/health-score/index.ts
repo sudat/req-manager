@@ -12,7 +12,6 @@ import {
 } from "./system-requirement-issues";
 import {
 	calculateImplUnitSdWithEntryPointsIssue,
-	calculateConceptTermsWithLinksIssue,
 } from "./linkage-issues";
 
 export type HealthScoreSeverity = "high" | "medium";
@@ -118,11 +117,6 @@ export const healthIssueFilters: Record<string, HealthIssueFilter> = {
 		filterParam: 'missing_entrypoint',
 		targetPath: 'system',
 		label: 'エントリポイント未設定',
-	},
-	concept_terms_with_links: {
-		filterParam: 'missing_concept',
-		targetPath: 'business',
-		label: '概念未紐付け',
 	},
 	business_requirements_with_concepts: {
 		filterParam: 'missing_concept_br',
@@ -230,15 +224,6 @@ export const buildHealthScoreSummary = ({
 	if (pageType !== 'business') {
 		issues.push(calculateImplUnitSdWithEntryPointsIssue(implUnitSds));
 	}
-
-	// 概念辞書の用語にリンクされている
-	issues.push(
-		calculateConceptTermsWithLinksIssue(
-			businessRequirements,
-			systemRequirements,
-			conceptCheckTarget
-		)
-	);
 
 	// 業務要件に概念が紐づいている（業務要件ページのみ表示）
 	if (pageType !== 'system') {

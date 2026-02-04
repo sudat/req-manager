@@ -10,6 +10,8 @@ import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import { Eye, EyeOff } from "lucide-react";
 import { useLlmSettings } from "@/hooks/use-llm-settings";
+import { getProviderLlmDefaults } from "@/lib/data/llm-settings";
+import type { ProjectLlmSettings } from "@/lib/domain";
 
 function SectionHeader({ title, description }: { title: string; description?: string }) {
 	return (
@@ -37,8 +39,8 @@ export function LLMSettingsContent() {
 
 	const handleSave = async () => {
 		if (!settings) return;
-		if (settings.provider !== "openai") {
-			setError("現在はOpenAIのみ対応しています");
+		if (settings.provider !== "openai" && settings.provider !== "zai") {
+			setError("現在はOpenAIとZ.AIのみ対応しています");
 			return;
 		}
 		await saveSettings();
@@ -52,6 +54,18 @@ export function LLMSettingsContent() {
 		if (!currentProject) return null;
 		return `${currentProject.name} (${currentProject.id})`;
 	}, [currentProject]);
+
+	const handleProviderChange = (value: ProjectLlmSettings["provider"]) => {
+		updateSettings((prev) => {
+			if (!prev) return prev;
+			const defaults = getProviderLlmDefaults(value);
+			return {
+				...prev,
+				...defaults,
+				provider: value,
+			};
+		});
+	};
 
 	return (
 		<div className="rounded-md border border-slate-200 bg-white p-6">
@@ -83,12 +97,7 @@ export function LLMSettingsContent() {
 							<Label htmlFor="provider" className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">LLMプロバイダー</Label>
 							<Select
 								value={settings.provider}
-								onValueChange={(value) =>
-									updateSettings((prev) => ({
-										...prev,
-										provider: value as "openai" | "anthropic" | "google" | "azure",
-									}))
-								}
+								onValueChange={(value) => handleProviderChange(value as ProjectLlmSettings["provider"])}
 							>
 								<SelectTrigger id="provider">
 									<SelectValue />
@@ -98,11 +107,12 @@ export function LLMSettingsContent() {
 									<SelectItem value="anthropic">Anthropic</SelectItem>
 									<SelectItem value="google">Google</SelectItem>
 									<SelectItem value="azure">Azure OpenAI</SelectItem>
+									<SelectItem value="zai">Z.AI</SelectItem>
 								</SelectContent>
 							</Select>
 						</div>
 
-						{settings.provider === "openai" && (
+						{(settings.provider === "openai" || settings.provider === "zai") && (
 							<div className="space-y-2">
 								<Label htmlFor="baseUrl" className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Base URL</Label>
 								<Input
@@ -115,9 +125,11 @@ export function LLMSettingsContent() {
 											base_url: e.target.value,
 										}))
 									}
-									placeholder="https://api.openai.com/v1"
+									placeholder={settings.provider === "zai" ? "https://api.z.ai/api/coding/paas/v4" : "https://api.openai.com/v1"}
 								/>
-								<p className="text-[13px] text-slate-500 leading-relaxed">OpenAI互換APIを使用する場合に設定してください</p>
+								<p className="text-[13px] text-slate-500 leading-relaxed">
+									{settings.provider === "zai" ? "Z.AI APIエンドポイント" : "OpenAI互換APIを使用する場合に設定してください"}
+								</p>
 							</div>
 						)}
 
@@ -159,18 +171,58 @@ export function LLMSettingsContent() {
 									<SelectValue />
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value="gpt-5">GPT-5</SelectItem>
-									<SelectItem value="gpt-5-mini">GPT-5 Mini</SelectItem>
-									<SelectItem value="gpt-5-nano">GPT-5 Nano</SelectItem>
-									<SelectItem value="gpt-5.1-instant">GPT-5.1 Instant</SelectItem>
-									<SelectItem value="gpt-5.1-thinking">GPT-5.1 Thinking</SelectItem>
-									<SelectItem value="gpt-5.1-auto">GPT-5.1 Auto</SelectItem>
-									<SelectItem value="gpt-5.2-instant">GPT-5.2 Instant</SelectItem>
-									<SelectItem value="gpt-5.2-thinking">GPT-5.2 Thinking</SelectItem>
-									<SelectItem value="gpt-5.2-pro">GPT-5.2 Pro</SelectItem>
+									{settings.provider === "zai" ? (
+										<SelectItem value="glm-4.7">GLM-4.7</SelectItem>
+									) : (
+										<>
+											<SelectItem value="gpt-5.2">GPT-5.2</SelectItem>
+											<SelectItem value="gpt-5.2-chat-latest">GPT-5.2 Chat Latest</SelectItem>
+											<SelectItem value="gpt-5">GPT-5</SelectItem>
+											<SelectItem value="gpt-5-mini">GPT-5 Mini</SelectItem>
+											<SelectItem value="gpt-5-nano">GPT-5 Nano</SelectItem>
+											<Separator />
+											<SelectItem value="gpt-5.2-pro" disabled>
+												GPT-5.2 Pro（Responses APIのみ）
+											</SelectItem>
+											<SelectItem value="gpt-5.2-codex" disabled>
+												GPT-5.2 Codex（Responses APIのみ）
+											</SelectItem>
+										</>
+									)}
 								</SelectContent>
 							</Select>
+							{settings.provider !== "zai" && (
+								<p className="text-[12px] text-slate-500">
+									※ gpt-5.2-pro / gpt-5.2-codex は Responses API 専用のため現在は未対応です。
+								</p>
+							)}
 						</div>
+
+						{/* Verbosity設定（OpenAI GPT-5のみ） */}
+						{settings.provider === "openai" && (
+							<div className="space-y-2">
+								<Label htmlFor="verbosity" className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Verbosity（GPT-5）</Label>
+								<Select
+									value={settings.verbosity ?? "low"}
+									onValueChange={(value) =>
+										updateSettings((prev) => ({
+											...prev,
+											verbosity: value as "low" | "medium" | "high",
+										}))
+									}
+								>
+									<SelectTrigger id="verbosity">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="low">Low（簡潔）</SelectItem>
+										<SelectItem value="medium">Medium（バランス）</SelectItem>
+										<SelectItem value="high">High（詳細）</SelectItem>
+									</SelectContent>
+								</Select>
+								<p className="text-[13px] text-slate-500 leading-relaxed">GPT-5シリーズの応答の長さと詳細度を制御します</p>
+							</div>
+						)}
 
 						{settings.provider !== "openai" && (
 							<div className="space-y-3">

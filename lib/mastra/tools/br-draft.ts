@@ -81,6 +81,7 @@ export const brDraftTool = createTool({
       console.log('[br_draft] BT resolved:', { id: btRecord.id, name: btRecord.name, projectId: btRecord.project_id });
       const llmSettings = await resolveProjectLlmRuntimeSettings(btRecord.project_id);
       const llmOptions = {
+        provider: llmSettings.provider === 'zai' ? 'zai' : 'openai',
         model: llmSettings.model,
         temperature: llmSettings.temperature,
         baseUrl: llmSettings.baseUrl,
@@ -134,11 +135,11 @@ ${naturalLanguageInput}
         systemPrompt: 'あなたは要件定義の専門家です。',
         userPrompt: llmPrompt,
         jsonMode: true,
+        provider: llmOptions.provider,
         model: llmOptions.model,
         temperature: llmOptions.temperature,
         baseUrl: llmOptions.baseUrl,
-        verbosity: llmOptions.verbosity,
-        maxTokens: 600,
+        maxTokens: 1200,
         timeoutMs: 180000,
       });
 

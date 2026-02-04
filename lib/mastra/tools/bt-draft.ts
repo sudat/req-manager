@@ -100,6 +100,7 @@ export const btDraftTool = createTool({
       const existingConceptsArray = Array.from(conceptMap.values());
       const llmSettings = await resolveProjectLlmRuntimeSettings(projectId);
       const llmOptions = {
+        provider: llmSettings.provider === 'zai' ? 'zai' : 'openai',
         model: llmSettings.model,
         temperature: llmSettings.temperature,
         baseUrl: llmSettings.baseUrl,
@@ -176,10 +177,11 @@ ${bd.area} - ${bd.name}
         systemPrompt: 'あなたは業務分析の専門家です。業務説明から構造化されたデータを抽出します。',
         userPrompt: llmPrompt,
         jsonMode: true,
+        provider: llmOptions.provider,
         model: llmOptions.model,
         temperature: llmOptions.temperature,
         baseUrl: llmOptions.baseUrl,
-        maxTokens: 1200,
+        maxTokens: 2000,
         timeoutMs: 180000,
       });
 
@@ -187,6 +189,17 @@ ${bd.area} - ${bd.name}
 
       const llmContent = llmResponse.content;
       console.log('[bt_draft] LLM Content:', { name: llmContent.name, hasProcessSteps: !!llmContent.processSteps });
+      const hasMeaningfulContent = Boolean(
+        (typeof llmContent.name === 'string' && llmContent.name.trim().length > 0) ||
+        (typeof llmContent.summary === 'string' && llmContent.summary.trim().length > 0) ||
+        (typeof llmContent.businessContext === 'string' && llmContent.businessContext.trim().length > 0) ||
+        (Array.isArray(llmContent.processSteps) && llmContent.processSteps.length > 0) ||
+        (Array.isArray(llmContent.input) && llmContent.input.length > 0) ||
+        (Array.isArray(llmContent.output) && llmContent.output.length > 0)
+      );
+      if (!hasMeaningfulContent) {
+        throw new Error('LLM response was empty or invalid');
+      }
 
       // 5. BT草案を生成
       const btDraft = {
