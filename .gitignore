@@ -43,3 +43,6 @@ next-env.d.ts
 
 /data/vector.db
 /data/memory.db
+# local vector store
+/data/vector.db
+/data/*.db
