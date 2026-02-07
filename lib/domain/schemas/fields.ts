@@ -17,21 +17,12 @@ export const constraintsSchema = z
     format: z
       .enum([
         "email",
-        "uuid",
-        "url",
-        "uri",
         "date",
-        "datetime",
-        "time",
-        "ipv4",
-        "ipv6",
-        "hostname",
+        "uuid",
       ])
       .optional(),
     enum: z.array(z.string()).optional(),
     default: z.unknown().optional(),
-    unique: z.boolean().optional(),
-    errorMessage: z.string().optional(),
   })
   .optional();
 

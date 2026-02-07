@@ -1,15 +1,18 @@
 "use client";
 
 import { useState } from 'react';
-import { Layers, ChevronDown, ChevronRight } from 'lucide-react';
+import { Layers, ChevronDown, ChevronRight, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { useDraftEdit } from '@/hooks/use-draft-edit';
+import { DraftInfoRow } from './draft-info-row';
 import type { SfDraft, SrDraft, DraftCommitState } from './types';
 
 type SfDraftCardProps = {
   draft: SfDraft;
   commitState?: DraftCommitState;
   onCommit?: () => void;
+  onUpdateDraft?: (updated: SfDraft) => void;
 };
 
 /**
@@ -17,10 +20,13 @@ type SfDraftCardProps = {
  *
  * AIが生成したシステム機能（SF）草案を表形式で表示する。
  */
-export function SfDraftCard({ draft, commitState, onCommit }: SfDraftCardProps) {
+export function SfDraftCard({ draft, commitState, onCommit, onUpdateDraft }: SfDraftCardProps) {
   const [isExpanded, setIsExpanded] = useState(true);
+  const { isEditing, currentDraft, startEdit, cancelEdit, saveEdit, updateField, canEdit } = useDraftEdit(draft, onUpdateDraft);
+
   const baseStatus = commitState?.status ?? 'idle';
-  const status = draft.isCommitted && baseStatus === 'idle' ? 'success' : baseStatus;
+  const status = currentDraft.isCommitted && baseStatus === 'idle' ? 'success' : baseStatus;
+  const isLocked = currentDraft.isCommitted === true || status === 'success' || status === 'loading';
   const statusLabel =
     status === 'success'
       ? '登録済'
@@ -38,8 +44,6 @@ export function SfDraftCard({ draft, commitState, onCommit }: SfDraftCardProps) 
           ? 'bg-rose-100 text-rose-700'
           : 'bg-amber-100 text-amber-700';
 
-  const isLocked = draft.isCommitted === true;
-
   return (
     <div className="mt-3 rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
       {/* ヘッダー */}
@@ -50,27 +54,35 @@ export function SfDraftCard({ draft, commitState, onCommit }: SfDraftCardProps) 
             システム機能草案
           </h3>
         </div>
-        <span className={cn('inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium', statusClass)}>
-          {statusLabel}
-        </span>
+        <div className="flex items-center gap-2">
+          {canEdit && !isLocked && !isEditing && (
+            <Button variant="ghost" size="sm" className="h-7 gap-1 text-[11px] text-slate-500" onClick={startEdit}>
+              <Pencil className="h-3 w-3" />
+              編集
+            </Button>
+          )}
+          <span className={cn('inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium', statusClass)}>
+            {statusLabel}
+          </span>
+        </div>
       </div>
 
       {/* 基本情報テーブル */}
       <div className="divide-y divide-slate-200">
-        <InfoRow label="コード" value={draft.code} />
-        <InfoRow label="機能名" value={draft.name} />
-        <InfoRow label="説明" value={draft.description} />
+        <DraftInfoRow label="コード" value={currentDraft.code} isEditing={isEditing} readOnly />
+        <DraftInfoRow label="機能名" value={currentDraft.name} isEditing={isEditing} onChange={(v) => updateField('name', v)} />
+        <DraftInfoRow label="説明" value={currentDraft.description} isEditing={isEditing} multiline onChange={(v) => updateField('description', v)} />
       </div>
 
-      {/* システム要件一覧 */}
-      {draft.srs.length > 0 && (
+      {/* システム要件一覧（読取専用） */}
+      {currentDraft.srs.length > 0 && (
         <div className="border-t border-slate-200">
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             className="w-full flex items-center justify-between px-4 py-2 bg-slate-50 hover:bg-slate-100 transition-colors"
           >
             <h4 className="text-[12px] font-semibold text-slate-700">
-              システム要件 ({draft.srs.length}件)
+              システム要件 ({currentDraft.srs.length}件)
             </h4>
             {isExpanded ? (
               <ChevronDown className="h-4 w-4 text-slate-500" />
@@ -81,7 +93,7 @@ export function SfDraftCard({ draft, commitState, onCommit }: SfDraftCardProps) 
 
           {isExpanded && (
             <div className="divide-y divide-slate-100">
-              {draft.srs.map((sr) => (
+              {currentDraft.srs.map((sr) => (
                 <SrListItem key={sr.code} sr={sr} />
               ))}
             </div>
@@ -89,7 +101,17 @@ export function SfDraftCard({ draft, commitState, onCommit }: SfDraftCardProps) 
         </div>
       )}
 
-      {onCommit && status !== 'success' && !isLocked && (
+      {/* 編集アクション or 登録ボタン */}
+      {isEditing ? (
+        <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-slate-200 bg-slate-50/50">
+          <Button variant="ghost" size="sm" className="h-8 px-4 text-[12px]" onClick={cancelEdit}>
+            キャンセル
+          </Button>
+          <Button size="sm" className="h-8 px-4 text-[12px] bg-slate-900 hover:bg-slate-800" onClick={saveEdit}>
+            保存
+          </Button>
+        </div>
+      ) : onCommit && !isLocked ? (
         <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-slate-200 bg-slate-50/50">
           <div className="text-[11px] text-rose-600 min-h-[16px]">
             {status === 'error' ? commitState?.message : ''}
@@ -97,13 +119,12 @@ export function SfDraftCard({ draft, commitState, onCommit }: SfDraftCardProps) 
           <Button
             size="sm"
             onClick={onCommit}
-            disabled={status === 'loading'}
             className="h-8 px-4 text-[12px] bg-slate-900 hover:bg-slate-800"
           >
-            {status === 'loading' ? '登録中...' : '登録する'}
+            登録する
           </Button>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -164,27 +185,6 @@ function SrListItem({ sr }: { sr: SrDraft }) {
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-type InfoRowProps = {
-  label: string;
-  value: string;
-};
-
-/**
- * 情報行コンポーネント
- */
-function InfoRow({ label, value }: InfoRowProps) {
-  return (
-    <div className="flex">
-      <div className="w-40 flex-shrink-0 px-4 py-2 bg-slate-50 text-[12px] font-medium text-slate-600">
-        {label}
-      </div>
-      <div className="flex-1 px-4 py-2 text-[12px] text-slate-700 whitespace-pre-wrap">
-        {value}
-      </div>
     </div>
   );
 }

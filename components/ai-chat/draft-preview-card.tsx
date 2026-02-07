@@ -1,14 +1,18 @@
 "use client";
 
-import { FileText } from 'lucide-react';
+import { FileText, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { useDraftEdit } from '@/hooks/use-draft-edit';
+import { DraftInfoRow } from './draft-info-row';
+import { ProcessStepsEditor, KeySourceEditor } from './draft-edit-fields';
 import type { BtDraft, DraftCommitState } from './types';
 
 type DraftPreviewCardProps = {
   draft: BtDraft;
   commitState?: DraftCommitState;
   onCommit?: () => void;
+  onUpdateDraft?: (updated: BtDraft) => void;
 };
 
 /**
@@ -16,9 +20,12 @@ type DraftPreviewCardProps = {
  *
  * AIが生成したBT草案を表形式で表示する。
  */
-export function DraftPreviewCard({ draft, commitState, onCommit }: DraftPreviewCardProps) {
-  const isCommitted = Boolean(draft.isCommitted);
+export function DraftPreviewCard({ draft, commitState, onCommit, onUpdateDraft }: DraftPreviewCardProps) {
+  const { isEditing, currentDraft, startEdit, cancelEdit, saveEdit, updateField, canEdit } = useDraftEdit(draft, onUpdateDraft);
+
+  const isCommitted = Boolean(currentDraft.isCommitted);
   const status = isCommitted ? 'success' : commitState?.status ?? 'idle';
+  const isLocked = status === 'success' || status === 'loading';
   const statusLabel =
     status === 'success'
       ? '登録済'
@@ -45,21 +52,31 @@ export function DraftPreviewCard({ draft, commitState, onCommit }: DraftPreviewC
             業務タスク草案
           </h3>
         </div>
-        <span className={cn('inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium', statusClass)}>
-          {statusLabel}
-        </span>
+        <div className="flex items-center gap-2">
+          {canEdit && !isLocked && !isEditing && (
+            <Button variant="ghost" size="sm" className="h-7 gap-1 text-[11px] text-slate-500" onClick={startEdit}>
+              <Pencil className="h-3 w-3" />
+              編集
+            </Button>
+          )}
+          <span className={cn('inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium', statusClass)}>
+            {statusLabel}
+          </span>
+        </div>
       </div>
 
       {/* 基本情報テーブル */}
       <div className="divide-y divide-slate-200">
-        <InfoRow label="コード" value={draft.code} />
-        <InfoRow label="業務名" value={draft.name} />
-        <InfoRow label="概要" value={draft.summary} />
-        <InfoRow label="業務コンテキスト" value={draft.businessContext} />
+        <DraftInfoRow label="コード" value={currentDraft.code} isEditing={isEditing} readOnly />
+        <DraftInfoRow label="業務名" value={currentDraft.name} isEditing={isEditing} onChange={(v) => updateField('name', v)} />
+        <DraftInfoRow label="概要" value={currentDraft.summary} isEditing={isEditing} multiline onChange={(v) => updateField('summary', v)} />
+        <DraftInfoRow label="業務コンテキスト" value={currentDraft.businessContext} isEditing={isEditing} multiline onChange={(v) => updateField('businessContext', v)} />
       </div>
 
-      {/* 業務プロセステーブル */}
-      {draft.processSteps.length > 0 && (
+      {/* 業務プロセス */}
+      {isEditing ? (
+        <ProcessStepsEditor steps={currentDraft.processSteps} onChange={(v) => updateField('processSteps', v)} />
+      ) : currentDraft.processSteps.length > 0 ? (
         <div className="border-t border-slate-200">
           <div className="px-4 py-2 bg-slate-50">
             <h4 className="text-[12px] font-semibold text-slate-700">業務プロセス</h4>
@@ -73,7 +90,7 @@ export function DraftPreviewCard({ draft, commitState, onCommit }: DraftPreviewC
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {draft.processSteps.map((step, idx) => (
+              {currentDraft.processSteps.map((step, idx) => (
                 <tr key={idx} className="hover:bg-slate-50">
                   <td className="px-4 py-2 text-slate-700">{step.when}</td>
                   <td className="px-4 py-2 text-slate-700">{step.who}</td>
@@ -83,10 +100,12 @@ export function DraftPreviewCard({ draft, commitState, onCommit }: DraftPreviewC
             </tbody>
           </table>
         </div>
-      )}
+      ) : null}
 
-      {/* インプットテーブル */}
-      {draft.input.length > 0 && (
+      {/* インプット */}
+      {isEditing ? (
+        <KeySourceEditor label="インプット" sourceLabel="取得元" items={currentDraft.input} onChange={(v) => updateField('input', v)} />
+      ) : currentDraft.input.length > 0 ? (
         <div className="border-t border-slate-200">
           <div className="px-4 py-2 bg-slate-50">
             <h4 className="text-[12px] font-semibold text-slate-700">インプット</h4>
@@ -99,7 +118,7 @@ export function DraftPreviewCard({ draft, commitState, onCommit }: DraftPreviewC
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {draft.input.map((item, idx) => (
+              {currentDraft.input.map((item, idx) => (
                 <tr key={idx} className="hover:bg-slate-50">
                   <td className="px-4 py-2 text-slate-700">{item.name}</td>
                   <td className="px-4 py-2 text-slate-700">{item.source}</td>
@@ -108,10 +127,12 @@ export function DraftPreviewCard({ draft, commitState, onCommit }: DraftPreviewC
             </tbody>
           </table>
         </div>
-      )}
+      ) : null}
 
-      {/* アウトプットテーブル */}
-      {draft.output.length > 0 && (
+      {/* アウトプット */}
+      {isEditing ? (
+        <KeySourceEditor label="アウトプット" sourceLabel="出力先" items={currentDraft.output} onChange={(v) => updateField('output', v)} />
+      ) : currentDraft.output.length > 0 ? (
         <div className="border-t border-slate-200">
           <div className="px-4 py-2 bg-slate-50">
             <h4 className="text-[12px] font-semibold text-slate-700">アウトプット</h4>
@@ -124,7 +145,7 @@ export function DraftPreviewCard({ draft, commitState, onCommit }: DraftPreviewC
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {draft.output.map((item, idx) => (
+              {currentDraft.output.map((item, idx) => (
                 <tr key={idx} className="hover:bg-slate-50">
                   <td className="px-4 py-2 text-slate-700">{item.name}</td>
                   <td className="px-4 py-2 text-slate-700">{item.source}</td>
@@ -133,9 +154,19 @@ export function DraftPreviewCard({ draft, commitState, onCommit }: DraftPreviewC
             </tbody>
           </table>
         </div>
-      )}
+      ) : null}
 
-      {onCommit && status !== 'success' && (
+      {/* 編集アクション or 登録ボタン */}
+      {isEditing ? (
+        <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-slate-200 bg-slate-50/50">
+          <Button variant="ghost" size="sm" className="h-8 px-4 text-[12px]" onClick={cancelEdit}>
+            キャンセル
+          </Button>
+          <Button size="sm" className="h-8 px-4 text-[12px] bg-slate-900 hover:bg-slate-800" onClick={saveEdit}>
+            保存
+          </Button>
+        </div>
+      ) : onCommit && status !== 'success' ? (
         <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-slate-200 bg-slate-50/50">
           <div className="text-[11px] text-rose-600 min-h-[16px]">
             {status === 'error' ? commitState?.message : ''}
@@ -149,28 +180,7 @@ export function DraftPreviewCard({ draft, commitState, onCommit }: DraftPreviewC
             {status === 'loading' ? '登録中...' : '登録する'}
           </Button>
         </div>
-      )}
-    </div>
-  );
-}
-
-type InfoRowProps = {
-  label: string;
-  value: string;
-};
-
-/**
- * 情報行コンポーネント
- */
-function InfoRow({ label, value }: InfoRowProps) {
-  return (
-    <div className="flex">
-      <div className="w-40 flex-shrink-0 px-4 py-2 bg-slate-50 text-[12px] font-medium text-slate-600">
-        {label}
-      </div>
-      <div className="flex-1 px-4 py-2 text-[12px] text-slate-700 whitespace-pre-wrap">
-        {value}
-      </div>
+      ) : null}
     </div>
   );
 }

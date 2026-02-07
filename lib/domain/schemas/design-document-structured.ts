@@ -36,40 +36,6 @@ export type StructuredDesignDocumentIoType = z.infer<
   typeof structuredDesignDocumentIoTypeSchema
 >;
 
-export const invariantSchema = z.object({
-  name: z.string().min(1, "不変条件名は必須です"),
-  description: z.string().min(1, "不変条件の説明は必須です"),
-  expression: z.string().optional(),
-});
-export type StructuredInvariant = z.infer<typeof invariantSchema>;
-
-const transactionBoundarySchema = z.object({
-  begin: z.string().optional(),
-  commit: z.string().optional(),
-  rollback: z.string().optional(),
-});
-
-const authorizationBoundarySchema = z.object({
-  checkPoint: z.string().optional(),
-  requiredRoles: z.array(z.string()).optional(),
-  onFailure: z.string().optional(),
-});
-
-const idempotencyBoundarySchema = z.object({
-  keySource: z.string().optional(),
-  deduplicationRule: z.string().optional(),
-  onDuplicate: z.string().optional(),
-});
-
-export const ddBoundariesSchema = z.object({
-  transaction: transactionBoundarySchema.optional(),
-  authorization: authorizationBoundarySchema.optional(),
-  idempotency: idempotencyBoundarySchema.optional(),
-  allowPaths: z.array(z.string().min(1)).default([]),
-  denyPaths: z.array(z.string().min(1)).default([]),
-});
-export type DdBoundaries = z.infer<typeof ddBoundariesSchema>;
-
 const typeDetailSchema = z.discriminatedUnion("ioType", [
   z.object({
     ioType: z.literal("api"),
@@ -97,13 +63,11 @@ const typeDetailSchema = z.discriminatedUnion("ioType", [
   }),
   z.object({
     ioType: z.literal("model"),
-    entity: z.string().optional(),
-    table: z.string().optional(),
+    // entity, table は削除（entryPointsで代替）
   }),
   z.object({
     ioType: z.literal("report"),
-    format: z.enum(["pdf", "csv", "xlsx", "json"]).optional(),
-    outputPath: z.string().optional(),
+    // format, outputPath は削除（outputSchemaで代替）
   }),
 ]);
 export type StructuredTypeDetail = z.infer<typeof typeDetailSchema>;
@@ -124,13 +88,8 @@ export const structuredDesignDocumentSpecSchema = z
     sideEffects: sideEffectSchema.default({
       description: "副作用なし",
     }),
-    invariants: z.array(invariantSchema).default([]),
     exceptions: z.array(structuredExceptionSchema).default([]),
     nonFunctional: structuredNonFunctionalSchema.default({}),
-    boundaries: ddBoundariesSchema.default({
-      allowPaths: [],
-      denyPaths: [],
-    }),
   })
   .superRefine((value, ctx) => {
     if (value.typeDetail && value.typeDetail.ioType !== value.ioType) {
@@ -218,10 +177,8 @@ export function createEmptyStructuredDesignDocumentSpec(
     inputFields: [],
     outputFields: [],
     sideEffects: { description: "副作用なし" },
-    invariants: [],
     exceptions: [],
     nonFunctional: {},
-    boundaries: { allowPaths: [], denyPaths: [] },
   };
 
   if (ioType === "api" || ioType === "screen" || ioType === "batch" || ioType === "job") {

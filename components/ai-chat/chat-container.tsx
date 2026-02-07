@@ -20,7 +20,7 @@ import {
 	ConceptSuggestionCard,
 } from "./concept-suggestion";
 import { ThreadHistoryPanel } from "./thread-history-panel";
-import type { ChatConfig } from "./types";
+import type { ChatConfig, DraftUpdatePayload, BtDraft, BrDraft, SfDraft, SrDraft, DdDraft, ChatMessage } from "./types";
 
 type ChatContainerProps = {
 	config: ChatConfig;
@@ -98,6 +98,61 @@ export function ChatContainer({ config }: ChatContainerProps) {
 		setIsHistoryOpen(false);
 	}, [persistence.startNewChat]);
 
+	/** 草案インライン編集 → メッセージ内のdraftを更新 */
+	const handleUpdateDraft = useCallback(
+		(payload: DraftUpdatePayload) => {
+			setMessages((prev: ChatMessage[]) =>
+				prev.map((msg) => {
+					if (msg.id !== payload.messageId) return msg;
+					const updated = { ...msg };
+					switch (payload.type) {
+						case "bt":
+							updated.btDraft = payload.content as BtDraft;
+							break;
+						case "br": {
+							const brContent = payload.content as BrDraft;
+							if (updated.brDrafts?.length) {
+								updated.brDrafts = updated.brDrafts.map((d) =>
+									d.code === payload.code ? brContent : d,
+								);
+							} else {
+								updated.brDraft = brContent;
+							}
+							break;
+						}
+						case "sf":
+							updated.sfDraft = payload.content as SfDraft;
+							break;
+						case "sr": {
+							const srContent = payload.content as SrDraft;
+							if (updated.srDrafts?.length) {
+								updated.srDrafts = updated.srDrafts.map((d) =>
+									d.code === payload.code ? srContent : d,
+								);
+							} else {
+								updated.srDraft = srContent;
+							}
+							break;
+						}
+						case "dd": {
+							const ddContent = payload.content as DdDraft;
+							if (updated.ddDrafts?.length) {
+								updated.ddDrafts = updated.ddDrafts.map((d) =>
+									d.id === payload.code ? ddContent : d,
+								);
+							} else {
+								updated.ddDraft = ddContent;
+							}
+							break;
+						}
+					}
+					return updated;
+				}),
+			);
+		},
+		[setMessages],
+	);
+
 	// ---------------------------------------------------------------------------
 	// JSX
 	// ---------------------------------------------------------------------------
@@ -122,6 +177,7 @@ export function ChatContainer({ config }: ChatContainerProps) {
 					onNewChat={handleNewChat}
 					onCommitDraft={draft.commitDraft}
 					getCommitState={draft.getCommitState}
+					onUpdateDraft={handleUpdateDraft}
 				/>
 
 				{/* 概念候補提案（折り畳み） */}

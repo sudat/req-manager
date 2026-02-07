@@ -47,7 +47,7 @@
  └─ システム機能（SF）
       ├─ システム要件（SR）
       │    └─ 受入基準（AC）
-      └─ 実装単位SD
+      └─ DD（Design Document）
             └─ 実装（Code）← entry_pointで参照
 ```
 
@@ -60,10 +60,10 @@
 | BT | BT-BIL-001 | 業務担当 | 「いつ誰が何をするか」の業務プロセス |
 | BR | BR-BIL-0001-0001 | BA/業務 | ケイパビリティ（～できる/できないこと）とその制約 |
 | SD | SD-BIL | SE/AI | システム機能の集計単位（ドメイン境界） |
-| SF | SF-BIL-010 | SE/AI | 機能の箱。SRと実装単位SDを紐付ける |
+| SF | SF-BIL-010 | SE/AI | 機能の箱。SRとDDを紐付ける |
 | SR | SR-BIL-001 | SE/AI | システムとして何を保証すべきか |
 | AC | AC-BIL-001-01 | QA/AI | GWT形式の受入基準 |
-| 実装単位SD | IU-BIL-010-01 | AI/SE | 画面/API/バッチごとの設計・entry_point |
+| DD | DD-BIL-010-01 | AI/SE | 画面/API/バッチ/ジョブ/外部I/F/モデル/レポートごとの設計・entry_point |
 
 ### 2.3 ID体系
 
@@ -77,7 +77,7 @@
 | SF-{DOMAIN}-xxx | システム機能 | SF-BIL-010 |
 | SR-{DOMAIN}-xxx | システム要件 | SR-BIL-001 |
 | AC-{DOMAIN}-xxx-yy | 受入基準 | AC-BIL-001-01 |
-| IU-{DOMAIN}-xxx-yy | 実装単位SD | IU-BIL-010-01 |
+| DD-{DOMAIN}-xxx-yy | DD（Design Document） | DD-BIL-010-01 |
 | CR-yyyy-xxx | 変更要求 | CR-2025-001 |
 
 ---
@@ -119,7 +119,7 @@ draft → investigating → reviewed → approved → completed
 |--------------|------|------|-----|
 | realizes | 業務要件をシステム機能が実現 | BR → SF | BR-BIL-001 → SF-BIL-010 |
 | depends_on | 前提として依存 | 任意 → 任意 | SR-BIL-002 → SR-FI-001 |
-| derives_from | 派生・詳細化 | 詳細 → 元 | 実装単位SD → SF |
+| derives_from | 派生・詳細化 | 詳細 → 元 | DD → SF |
 | conflicts_with | 矛盾する可能性 | 双方向 | 排他的仕様の明示 |
 
 ### 3.4 疑義リンク（suspect）
@@ -143,16 +143,33 @@ draft → investigating → reviewed → approved → completed
 
 ### 4.2 主要Tool一覧
 
+#### 登録支援Tool
+
 | Tool名 | 用途 |
 |--------|------|
 | bt_draft | BT草案生成 |
 | br_draft | BR草案生成 |
 | system_draft | SF/SR/AC一括生成 |
-| impl_unit_draft | 実装単位SD草案生成 |
-| impact_analysis | 影響調査（トップダウン）|
-| impact_review | 影響範囲レビュー（絞り込み）|
+| dd_draft | DD（Design Document）草案生成 |
+
+#### 分析・検証Tool
+
+| Tool名 | 用途 |
+|--------|------|
+| impact_analysis | 影響調査（トップダウン: CR → BR → SF → SR → AC）|
 | critic_check | 品質チェック（曖昧さ・矛盾検出）|
 | concept_extract | 概念辞書候補抽出 |
+
+#### ユーティリティTool
+
+| Tool名 | 用途 |
+|--------|------|
+| commit_draft | 草案の正本登録（確定操作）|
+| search_requirements | 既存要件の全文検索 |
+| list_business_domains | 業務領域一覧取得 |
+| get_links | 要件間リンク取得 |
+| get_context | プロジェクトコンテキスト取得 |
+| get_product_requirement | PR（技術スタック・コーディング規約）取得 |
 
 ### 4.3 コンテキスト注入
 
@@ -183,7 +200,7 @@ draft → investigating → reviewed → approved → completed
   investigation_id: string;  // 調査ID
   cr_id: string;             // 変更要求ID
   entry_points: [{           // 探索起点
-    impl_unit_id: string;
+    dd_id: string;           // DD（Design Document）ID
     entry_point: string;     // ファイルパス
   }];
   exploration: {
@@ -250,8 +267,8 @@ draft → investigating → reviewed → approved → completed
     deny_paths?: string[];   // 明示的禁止パス
   };
   product_requirement: PR;   // tech_stack_profile含む
-  implementation_units: [{   // 対象実装単位SD
-    impl_unit_id: string;
+  design_documents: [{       // 対象DD（Design Document）
+    dd_id: string;
     entry_point: string;
     design_details: {...};
   }];
@@ -271,14 +288,15 @@ draft → investigating → reviewed → approved → completed
 | コンポーネント | 技術 |
 |--------------|------|
 | フロントエンド | Next.js 16 (App Router) |
-| UIライブラリ | shadcn/ui + Tailwind |
-| バックエンド | Hono (Supabase Edge Functions) |
+| UIライブラリ | shadcn/ui + Tailwind CSS 4 |
+| バックエンド | Next.js API Routes (Route Handler) |
 | データベース | Supabase (PostgreSQL) |
 | ベクトル検索 | pgvector |
-| アプリ内AI | Mastra |
-| LLM | Claude (Anthropic API) |
-| コーディングエージェント | Claude Agent SDK |
-| 認証 | BetterAuth |
+| アプリ内AI | Mastra 1.x |
+| LLM（Agent本体） | Claude (Anthropic API) — 会話制御 |
+| LLM（ツール内生成） | OpenAI / Z.AI — プロジェクト別設定で切替可能 |
+| コーディングエージェント | Claude Agent SDK（Phase 5以降） |
+| 認証 | Supabase Auth（Phase 6で実装予定） |
 
 ### 6.2 データベース主要テーブル
 
@@ -293,12 +311,12 @@ draft → investigating → reviewed → approved → completed
 | system_functions | システム機能（SF）|
 | system_requirements | システム要件（SR）|
 | acceptance_criteria | 受入基準（AC）|
-| impl_unit_sds | 実装単位SD |
+| design_documents | DD（Design Document） |
 | concepts | 概念辞書 |
 | requirement_links | 要件間リンク（疑義管理含む）|
 | change_requests | 変更要求（CR）|
 | investigation_results | 影響調査結果 |
-| design_decisions | 設計決定ログ |
+| impact_scopes | 変更影響範囲 |
 
 ### 6.3 権限モデル（MVP）
 
@@ -315,7 +333,7 @@ draft → investigating → reviewed → approved → completed
 ### 7.1 実装時の確認順序
 
 1. **PR確認**: `product_requirement.yml` → `tech_stack_profile`, `coding_conventions`
-2. **エントリポイント確認**: 対象の実装単位SD → `entry_point`
+2. **エントリポイント確認**: 対象のDD（Design Document） → `entry_point`
 3. **受入基準確認**: 関連AC → GWT形式の検証条件
 4. **影響範囲確認**: `graph/requirements-links.json` → 波及リンク
 
@@ -343,11 +361,11 @@ tech_stack_profile:
     ui_library: shadcn/ui
   backend:
     runtime: Node.js
-    framework: Hono
+    framework: Next.js API Routes
   database:
     provider: Supabase
   auth:
-    provider: BetterAuth
+    provider: Supabase Auth
   constraints:
     must_use:
       - Supabase Row Level Security
@@ -404,7 +422,7 @@ then:
 | SF | システム機能 - ユーザーから見える機能の単位 |
 | SR | システム要件 - システムが保証すべき仕様 |
 | AC | 受入基準 - GWT形式の検証可能な条件 |
-| 実装単位SD | 画面/API/バッチごとの設計・entry_point |
+| DD | Design Document - 画面/API/バッチ/ジョブ/外部I/F/モデル/レポートごとの設計・entry_point |
 | CR | 変更要求 - 正本に対する変更の起点 |
 | realizes | BR → SF の「実現する」リンク |
 | suspect | リンクの疑義フラグ（レビュー待ち）|
@@ -419,6 +437,7 @@ then:
 ## 9. 参考リンク
 
 - 詳細PRD: `docs/PRD.md`
+- 構造化設計仕様: `docs/control_plane.md`（SR/AC/DD品質担保ガイド）
 - 技術選定: PRD 8章
 - AIエージェント設計: PRD 5章
 - コーディングエージェント連携: PRD 6章

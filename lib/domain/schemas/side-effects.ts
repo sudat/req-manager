@@ -30,14 +30,6 @@ export const eventPublishSchema = z.object({
 export const fileOutputSchema = z.object({
   path: z.string(),
   format: z.enum(["csv", "json", "xml", "pdf", "txt"]),
-  encoding: z.enum(["utf-8", "shift-jis", "euc-jp"]).default("utf-8"),
-  append: z.boolean().default(false),
-});
-
-export const logOutputSchema = z.object({
-  level: z.enum(["debug", "info", "warn", "error", "fatal"]),
-  message: z.string(),
-  structuredData: fieldArraySchema.optional(),
 });
 
 export const sideEffectSchema = z.object({
@@ -46,12 +38,10 @@ export const sideEffectSchema = z.object({
   externalApiCalls: z.array(externalApiCallSchema).optional(),
   events: z.array(eventPublishSchema).optional(),
   fileOutputs: z.array(fileOutputSchema).optional(),
-  logs: z.array(logOutputSchema).optional(),
 });
 export type SideEffect = z.infer<typeof sideEffectSchema>;
 
 export const batchSideEffectsSchema = z.object({
   fileOutputs: z.array(fileOutputSchema).min(1),
   dbOperations: z.array(dbOperationSchema).optional(),
-  logs: z.array(logOutputSchema).optional(),
 });

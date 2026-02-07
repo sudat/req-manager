@@ -6,7 +6,7 @@ import { SfDraftCard } from './sf-draft-card';
 import { SrDraftCard } from './sr-draft-card';
 import { DdDraftCard } from './dd-draft-card';
 import { ProgressSteps } from './progress-steps';
-import type { ChatMessage, DraftCommitState, BtDraft, BrDraft, SfDraft, SrDraft, DdDraft } from './types';
+import type { ChatMessage, DraftCommitState, DraftUpdatePayload, BtDraft, BrDraft, SfDraft, SrDraft, DdDraft } from './types';
 
 type MessageBubbleProps = {
   message: ChatMessage;
@@ -17,9 +17,10 @@ type MessageBubbleProps = {
     content: BtDraft | BrDraft | SfDraft | SrDraft | DdDraft;
   }) => void;
   getCommitState?: (messageId: string, type: 'bt' | 'br' | 'sf' | 'sr' | 'dd', code: string) => DraftCommitState | undefined;
+  onUpdateDraft?: (payload: DraftUpdatePayload) => void;
 };
 
-export function MessageBubble({ message, onCommitDraft, getCommitState }: MessageBubbleProps) {
+export function MessageBubble({ message, onCommitDraft, getCommitState, onUpdateDraft }: MessageBubbleProps) {
   const isUser = message.role === 'user';
   const isSystem = message.role === 'system';
   const progressSteps = message.progressSteps ?? [];
@@ -40,6 +41,9 @@ export function MessageBubble({ message, onCommitDraft, getCommitState }: Messag
     : message.ddDraft
       ? [message.ddDraft]
       : [];
+
+  // ストリーミング中は編集を抑制
+  const editCallback = message.isStreaming ? undefined : onUpdateDraft;
 
   if (isSystem) {
     return (
@@ -108,6 +112,11 @@ export function MessageBubble({ message, onCommitDraft, getCommitState }: Messag
                             })
                         : undefined
                     }
+                    onUpdateDraft={
+                      editCallback
+                        ? (updated) => editCallback({ messageId: message.id, type: 'bt', code: updated.code, content: updated })
+                        : undefined
+                    }
                   />
                 )}
                 {brDrafts.map((brDraft) => {
@@ -138,6 +147,11 @@ export function MessageBubble({ message, onCommitDraft, getCommitState }: Messag
                               })
                           : undefined
                       }
+                      onUpdateDraft={
+                        editCallback
+                          ? (updated) => editCallback({ messageId: message.id, type: 'br', code: brDraft.code, content: updated })
+                          : undefined
+                      }
                     />
                   );
                 })}
@@ -154,6 +168,11 @@ export function MessageBubble({ message, onCommitDraft, getCommitState }: Messag
                               code: message.sfDraft!.code,
                               content: message.sfDraft!,
                             })
+                        : undefined
+                    }
+                    onUpdateDraft={
+                      editCallback
+                        ? (updated) => editCallback({ messageId: message.id, type: 'sf', code: updated.code, content: updated })
                         : undefined
                     }
                   />
@@ -196,6 +215,11 @@ export function MessageBubble({ message, onCommitDraft, getCommitState }: Messag
                               })
                           : undefined
                       }
+                      onUpdateDraft={
+                        editCallback
+                          ? (updated) => editCallback({ messageId: message.id, type: 'sr', code: srDraft.code, content: updated })
+                          : undefined
+                      }
                     />
                   );
                 })}
@@ -213,6 +237,11 @@ export function MessageBubble({ message, onCommitDraft, getCommitState }: Messag
                               code: ddDraft.id,
                               content: ddDraft,
                             })
+                        : undefined
+                    }
+                    onUpdateDraft={
+                      editCallback
+                        ? (updated) => editCallback({ messageId: message.id, type: 'dd', code: ddDraft.id, content: updated })
                         : undefined
                     }
                   />

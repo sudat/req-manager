@@ -1,8 +1,10 @@
 "use client";
 
-import { FileText } from 'lucide-react';
+import { FileText, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { useDraftEdit } from '@/hooks/use-draft-edit';
+import { DraftInfoRow } from './draft-info-row';
 import type { BrDraft, DraftCommitState } from './types';
 
 type BrDraftPreviewCardProps = {
@@ -11,6 +13,7 @@ type BrDraftPreviewCardProps = {
   commitDisabled?: boolean;
   commitDisabledMessage?: string;
   onCommit?: () => void;
+  onUpdateDraft?: (updated: BrDraft) => void;
 };
 
 /**
@@ -19,8 +22,11 @@ type BrDraftPreviewCardProps = {
  * AIが生成したBR草案を表形式で表示する。
  * BT未確定の場合は登録ボタンを無効化する。
  */
-export function BrDraftPreviewCard({ draft, commitState, commitDisabled, commitDisabledMessage, onCommit }: BrDraftPreviewCardProps) {
+export function BrDraftPreviewCard({ draft, commitState, commitDisabled, commitDisabledMessage, onCommit, onUpdateDraft }: BrDraftPreviewCardProps) {
+  const { isEditing, currentDraft, startEdit, cancelEdit, saveEdit, updateField, canEdit } = useDraftEdit(draft, onUpdateDraft);
+
   const status = commitState?.status ?? 'idle';
+  const isLocked = status === 'success' || status === 'loading';
   const statusLabel =
     status === 'success'
       ? '登録済'
@@ -47,20 +53,38 @@ export function BrDraftPreviewCard({ draft, commitState, commitDisabled, commitD
             業務要件草案
           </h3>
         </div>
-        <span className={cn('inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium', statusClass)}>
-          {statusLabel}
-        </span>
+        <div className="flex items-center gap-2">
+          {canEdit && !isLocked && !isEditing && (
+            <Button variant="ghost" size="sm" className="h-7 gap-1 text-[11px] text-slate-500" onClick={startEdit}>
+              <Pencil className="h-3 w-3" />
+              編集
+            </Button>
+          )}
+          <span className={cn('inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium', statusClass)}>
+            {statusLabel}
+          </span>
+        </div>
       </div>
 
       {/* 基本情報テーブル */}
       <div className="divide-y divide-slate-200">
-        <InfoRow label="コード" value={draft.code} />
-        <InfoRow label="要件" value={draft.requirement} />
-        <InfoRow label="根拠" value={draft.rationale} />
-        <InfoRow label="業務タスクID" value={draft.business_task_id ?? '未確定'} />
+        <DraftInfoRow label="コード" value={currentDraft.code} isEditing={isEditing} readOnly />
+        <DraftInfoRow label="要件" value={currentDraft.requirement} isEditing={isEditing} multiline onChange={(v) => updateField('requirement', v)} />
+        <DraftInfoRow label="根拠" value={currentDraft.rationale} isEditing={isEditing} multiline onChange={(v) => updateField('rationale', v)} />
+        <DraftInfoRow label="業務タスクID" value={currentDraft.business_task_id ?? '未確定'} isEditing={isEditing} readOnly />
       </div>
 
-      {onCommit && status !== 'success' && (
+      {/* 編集アクション or 登録ボタン */}
+      {isEditing ? (
+        <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-slate-200 bg-slate-50/50">
+          <Button variant="ghost" size="sm" className="h-8 px-4 text-[12px]" onClick={cancelEdit}>
+            キャンセル
+          </Button>
+          <Button size="sm" className="h-8 px-4 text-[12px] bg-slate-900 hover:bg-slate-800" onClick={saveEdit}>
+            保存
+          </Button>
+        </div>
+      ) : onCommit && status !== 'success' ? (
         <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-slate-200 bg-slate-50/50">
           <div className="text-[11px] text-rose-600 min-h-[16px]">
             {commitDisabled ? commitDisabledMessage : (status === 'error' ? commitState?.message : '')}
@@ -74,25 +98,7 @@ export function BrDraftPreviewCard({ draft, commitState, commitDisabled, commitD
             {status === 'loading' ? '登録中...' : '登録する'}
           </Button>
         </div>
-      )}
-    </div>
-  );
-}
-
-type InfoRowProps = {
-  label: string;
-  value: string;
-};
-
-function InfoRow({ label, value }: InfoRowProps) {
-  return (
-    <div className="flex">
-      <div className="w-40 flex-shrink-0 px-4 py-2 bg-slate-50 text-[12px] font-medium text-slate-600">
-        {label}
-      </div>
-      <div className="flex-1 px-4 py-2 text-[12px] text-slate-700 whitespace-pre-wrap">
-        {value}
-      </div>
+      ) : null}
     </div>
   );
 }

@@ -15,8 +15,8 @@ describe("structuredDesignDocumentSpecSchema", () => {
 
     expect(parsed.version).toBe("1");
     expect(parsed.sideEffects.description).toBe("副作用なし");
-    expect(parsed.boundaries.allowPaths).toEqual([]);
-    expect(parsed.boundaries.denyPaths).toEqual([]);
+    expect(parsed.exceptions).toEqual([]);
+    expect(parsed.nonFunctional).toEqual({});
   });
 
   it("rejects mismatched ioType and typeDetail.ioType", () => {

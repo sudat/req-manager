@@ -64,8 +64,6 @@ const RECOVERY_TYPES = [
   "circuit_breaker",
 ] as const;
 
-const LOG_LEVELS = ["debug", "info", "warn", "error", "fatal"] as const;
-
 const EVENT_DESTINATIONS = ["queue", "topic", "webhook"] as const;
 
 const DB_OPERATIONS = ["insert", "update", "delete", "upsert"] as const;
@@ -73,14 +71,6 @@ const DB_OPERATIONS = ["insert", "update", "delete", "upsert"] as const;
 const HTTP_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH"] as const;
 
 const SCREEN_TRIGGERS = ["click", "input", "load", "select"] as const;
-
-const toLines = (values: string[] | undefined): string => (values ?? []).join("\n");
-
-const fromLines = (value: string): string[] =>
-  value
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
 
 export function DesignDocumentCard({
   item,
@@ -221,7 +211,7 @@ export function DesignDocumentCard({
               <div>
                 <div className="text-[13px] font-semibold text-slate-800">構造化設計（Control Plane）</div>
                 <div className="text-[12px] text-slate-500">
-                  入出力・副作用・例外・非機能・境界を構造化して定義します
+                  入出力・副作用・例外・非機能を構造化して定義します
                 </div>
               </div>
               {item.structuredSpec ? (
@@ -324,29 +314,6 @@ function StructuredSpecEditor({
           { eventType: "", destination: "topic", payload: [] },
         ],
       },
-    }));
-  };
-
-  const addLog = () => {
-    updateStructuredSpec((current) => ({
-      ...current,
-      sideEffects: {
-        ...current.sideEffects,
-        logs: [
-          ...(current.sideEffects.logs ?? []),
-          { level: "info", message: "", structuredData: [] },
-        ],
-      },
-    }));
-  };
-
-  const addInvariant = () => {
-    updateStructuredSpec((current) => ({
-      ...current,
-      invariants: [
-        ...current.invariants,
-        { name: "", description: "", expression: "" },
-      ],
     }));
   };
 
@@ -536,74 +503,7 @@ function StructuredSpecEditor({
         </div>
       )}
 
-      {spec.ioType === "model" && (
-        <div className="grid gap-3 md:grid-cols-2">
-          <div className="space-y-1">
-            <Label className="text-xs">エンティティ</Label>
-            <Input
-              value={spec.typeDetail?.ioType === "model" ? spec.typeDetail.entity ?? "" : ""}
-              onChange={(e) =>
-                updateStructuredSpec((current) => ({
-                  ...current,
-                  typeDetail: { ioType: "model", entity: e.target.value },
-                }))
-              }
-            />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">テーブル</Label>
-            <Input
-              value={spec.typeDetail?.ioType === "model" ? spec.typeDetail.table ?? "" : ""}
-              onChange={(e) =>
-                updateStructuredSpec((current) => ({
-                  ...current,
-                  typeDetail: { ioType: "model", table: e.target.value },
-                }))
-              }
-            />
-          </div>
-        </div>
-      )}
-
-      {spec.ioType === "report" && (
-        <div className="grid gap-3 md:grid-cols-2">
-          <div className="space-y-1">
-            <Label className="text-xs">出力フォーマット</Label>
-            <Select
-              value={spec.typeDetail?.ioType === "report" ? spec.typeDetail.format ?? "pdf" : "pdf"}
-              onValueChange={(value) =>
-                updateStructuredSpec((current) => ({
-                  ...current,
-                  typeDetail: { ioType: "report", format: value as "pdf" | "csv" | "xlsx" | "json" },
-                }))
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {["pdf", "csv", "xlsx", "json"].map((fmt) => (
-                  <SelectItem key={fmt} value={fmt}>
-                    {fmt}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">出力先</Label>
-            <Input
-              value={spec.typeDetail?.ioType === "report" ? spec.typeDetail.outputPath ?? "" : ""}
-              onChange={(e) =>
-                updateStructuredSpec((current) => ({
-                  ...current,
-                  typeDetail: { ioType: "report", outputPath: e.target.value },
-                }))
-              }
-            />
-          </div>
-        </div>
-      )}
+      {/* model型とreport型はtypeDetailから詳細項目を削除（entryPointsとoutputSchemaで代替） */}
 
       <FieldEditor
         label="入力フィールド"
@@ -895,120 +795,6 @@ function StructuredSpecEditor({
 
       <div className="space-y-2 rounded-md border border-slate-200 p-3">
         <div className="flex items-center justify-between">
-          <Label>副作用: ログ</Label>
-          <Button variant="default" size="sm" className="h-7 gap-2 text-[12px]" onClick={addLog}>
-            <Plus className="h-4 w-4" />
-            追加
-          </Button>
-        </div>
-        {(spec.sideEffects.logs ?? []).map((log, index) => (
-          <div key={index} className="grid gap-2 md:grid-cols-[1fr_4fr_auto] items-center">
-            <Select
-              value={log.level}
-              onValueChange={(value) =>
-                updateStructuredSpec((current) => {
-                  const next = [...(current.sideEffects.logs ?? [])];
-                  next[index] = { ...next[index], level: value as (typeof LOG_LEVELS)[number] };
-                  return {
-                    ...current,
-                    sideEffects: { ...current.sideEffects, logs: next },
-                  };
-                })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {LOG_LEVELS.map((level) => (
-                  <SelectItem key={level} value={level}>
-                    {level}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Input
-              placeholder="message"
-              value={log.message}
-              onChange={(e) =>
-                updateStructuredSpec((current) => {
-                  const next = [...(current.sideEffects.logs ?? [])];
-                  next[index] = { ...next[index], message: e.target.value };
-                  return {
-                    ...current,
-                    sideEffects: { ...current.sideEffects, logs: next },
-                  };
-                })
-              }
-            />
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() =>
-                updateStructuredSpec((current) => ({
-                  ...current,
-                  sideEffects: {
-                    ...current.sideEffects,
-                    logs: (current.sideEffects.logs ?? []).filter((_, i) => i !== index),
-                  },
-                }))
-              }
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        ))}
-      </div>
-
-      <div className="space-y-2 rounded-md border border-slate-200 p-3">
-        <div className="flex items-center justify-between">
-          <Label>不変条件</Label>
-          <Button variant="default" size="sm" className="h-7 gap-2 text-[12px]" onClick={addInvariant}>
-            <Plus className="h-4 w-4" />
-            追加
-          </Button>
-        </div>
-        {spec.invariants.map((invariant, index) => (
-          <div key={index} className="grid gap-2 md:grid-cols-3">
-            <Input
-              placeholder="name"
-              value={invariant.name}
-              onChange={(e) =>
-                updateStructuredSpec((current) => {
-                  const next = [...current.invariants];
-                  next[index] = { ...next[index], name: e.target.value };
-                  return { ...current, invariants: next };
-                })
-              }
-            />
-            <Input
-              placeholder="description"
-              value={invariant.description}
-              onChange={(e) =>
-                updateStructuredSpec((current) => {
-                  const next = [...current.invariants];
-                  next[index] = { ...next[index], description: e.target.value };
-                  return { ...current, invariants: next };
-                })
-              }
-            />
-            <Input
-              placeholder="expression"
-              value={invariant.expression ?? ""}
-              onChange={(e) =>
-                updateStructuredSpec((current) => {
-                  const next = [...current.invariants];
-                  next[index] = { ...next[index], expression: e.target.value };
-                  return { ...current, invariants: next };
-                })
-              }
-            />
-          </div>
-        ))}
-      </div>
-
-      <div className="space-y-2 rounded-md border border-slate-200 p-3">
-        <div className="flex items-center justify-between">
           <Label>例外</Label>
           <Button variant="default" size="sm" className="h-7 gap-2 text-[12px]" onClick={addException}>
             <Plus className="h-4 w-4" />
@@ -1116,208 +902,68 @@ function StructuredSpecEditor({
       </div>
 
       <div className="rounded-md border border-slate-200 p-3 space-y-3">
-        <Label>非機能要件（主要項目）</Label>
+        <Label>非機能要件</Label>
         <div className="grid gap-2 md:grid-cols-1">
-          <Input
-            placeholder="応答時間95パーセンタイル（例: 200ms）"
-            value={spec.nonFunctional.performance?.responseTime?.p95 ?? ""}
-            onChange={(e) =>
-              updateStructuredSpec((current) => ({
-                ...current,
-                nonFunctional: {
-                  ...current.nonFunctional,
-                  performance: {
-                    ...current.nonFunctional.performance,
-                    responseTime: {
-                      ...current.nonFunctional.performance?.responseTime,
-                      p95: e.target.value,
-                    },
+          <div className="space-y-1">
+            <Label className="text-xs text-slate-500">応答時間P95（例: 200ms）</Label>
+            <Input
+              placeholder="例: 200ms"
+              value={spec.nonFunctional.responseTimeP95 ?? ""}
+              onChange={(e) =>
+                updateStructuredSpec((current) => ({
+                  ...current,
+                  nonFunctional: {
+                    ...current.nonFunctional,
+                    responseTimeP95: e.target.value,
                   },
-                },
-              }))
-            }
-          />
-          <Input
-            placeholder="稼働率（例: 99.9%）"
-            value={spec.nonFunctional.availability?.uptime ?? ""}
-            onChange={(e) =>
-              updateStructuredSpec((current) => ({
-                ...current,
-                nonFunctional: {
-                  ...current.nonFunctional,
-                  availability: {
-                    ...current.nonFunctional.availability,
+                }))
+              }
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-slate-500">稼働率（例: 99.9%）</Label>
+            <Input
+              placeholder="例: 99.9%"
+              value={spec.nonFunctional.uptime ?? ""}
+              onChange={(e) =>
+                updateStructuredSpec((current) => ({
+                  ...current,
+                  nonFunctional: {
+                    ...current.nonFunctional,
                     uptime: e.target.value,
-                    monthlyDowntime:
-                      current.nonFunctional.availability?.monthlyDowntime ?? "",
                   },
-                },
-              }))
-            }
-          />
-          <Input
-            placeholder="月間ダウンタイム（例: 43分）"
-            value={spec.nonFunctional.availability?.monthlyDowntime ?? ""}
-            onChange={(e) =>
-              updateStructuredSpec((current) => ({
-                ...current,
-                nonFunctional: {
-                  ...current.nonFunctional,
-                  availability: {
-                    ...current.nonFunctional.availability,
-                    uptime: current.nonFunctional.availability?.uptime ?? "",
-                    monthlyDowntime: e.target.value,
+                }))
+              }
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-slate-500">認証方式（任意）</Label>
+            <Select
+              value={spec.nonFunctional.authMethod}
+              onValueChange={(value) =>
+                updateStructuredSpec((current) => ({
+                  ...current,
+                  nonFunctional: {
+                    ...current.nonFunctional,
+                    authMethod: value as "oauth2" | "oidc" | "api_key" | "mfa",
                   },
-                },
-              }))
-            }
-          />
-          <Input
-            placeholder="ログ保持期間（例: 30日）"
-            value={spec.nonFunctional.observability?.logging?.retention ?? ""}
-            onChange={(e) =>
-              updateStructuredSpec((current) => ({
-                ...current,
-                nonFunctional: {
-                  ...current.nonFunctional,
-                  observability: {
-                    ...current.nonFunctional.observability,
-                    logging: {
-                      ...current.nonFunctional.observability?.logging,
-                      retention: e.target.value,
-                      includeFields:
-                        current.nonFunctional.observability?.logging?.includeFields ?? [],
-                      format:
-                        current.nonFunctional.observability?.logging?.format ?? "json",
-                    },
-                  },
-                },
-              }))
-            }
-          />
+                }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="選択してください" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="oauth2">OAuth 2.0</SelectItem>
+                <SelectItem value="oidc">OpenID Connect</SelectItem>
+                <SelectItem value="api_key">APIキー</SelectItem>
+                <SelectItem value="mfa">多要素認証</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
-      <div className="rounded-md border border-slate-200 p-3 space-y-3">
-        <Label>変更境界（Control Plane）</Label>
-        <div className="grid gap-2 md:grid-cols-1">
-          <Input
-            placeholder="transaction.begin"
-            value={spec.boundaries.transaction?.begin ?? ""}
-            onChange={(e) =>
-              updateStructuredSpec((current) => ({
-                ...current,
-                boundaries: {
-                  ...current.boundaries,
-                  transaction: { ...current.boundaries.transaction, begin: e.target.value },
-                },
-              }))
-            }
-          />
-          <Input
-            placeholder="transaction.commit"
-            value={spec.boundaries.transaction?.commit ?? ""}
-            onChange={(e) =>
-              updateStructuredSpec((current) => ({
-                ...current,
-                boundaries: {
-                  ...current.boundaries,
-                  transaction: { ...current.boundaries.transaction, commit: e.target.value },
-                },
-              }))
-            }
-          />
-          <Input
-            placeholder="transaction.rollback"
-            value={spec.boundaries.transaction?.rollback ?? ""}
-            onChange={(e) =>
-              updateStructuredSpec((current) => ({
-                ...current,
-                boundaries: {
-                  ...current.boundaries,
-                  transaction: { ...current.boundaries.transaction, rollback: e.target.value },
-                },
-              }))
-            }
-          />
-          <Input
-            placeholder="authorization.checkPoint"
-            value={spec.boundaries.authorization?.checkPoint ?? ""}
-            onChange={(e) =>
-              updateStructuredSpec((current) => ({
-                ...current,
-                boundaries: {
-                  ...current.boundaries,
-                  authorization: {
-                    ...current.boundaries.authorization,
-                    checkPoint: e.target.value,
-                  },
-                },
-              }))
-            }
-          />
-          <Input
-            placeholder="idempotency.keySource"
-            value={spec.boundaries.idempotency?.keySource ?? ""}
-            onChange={(e) =>
-              updateStructuredSpec((current) => ({
-                ...current,
-                boundaries: {
-                  ...current.boundaries,
-                  idempotency: {
-                    ...current.boundaries.idempotency,
-                    keySource: e.target.value,
-                  },
-                },
-              }))
-            }
-          />
-          <Input
-            placeholder="idempotency.onDuplicate"
-            value={spec.boundaries.idempotency?.onDuplicate ?? ""}
-            onChange={(e) =>
-              updateStructuredSpec((current) => ({
-                ...current,
-                boundaries: {
-                  ...current.boundaries,
-                  idempotency: {
-                    ...current.boundaries.idempotency,
-                    onDuplicate: e.target.value,
-                  },
-                },
-              }))
-            }
-          />
-        </div>
-        <Textarea
-          placeholder={"allowPaths（1行1パス）\n例: src/domain/billing/**"}
-          rows={3}
-          value={toLines(spec.boundaries.allowPaths)}
-          onChange={(e) =>
-            updateStructuredSpec((current) => ({
-              ...current,
-              boundaries: {
-                ...current.boundaries,
-                allowPaths: fromLines(e.target.value),
-              },
-            }))
-          }
-        />
-        <Textarea
-          placeholder={"denyPaths（1行1パス）\n例: src/shared/utils/**"}
-          rows={3}
-          value={toLines(spec.boundaries.denyPaths)}
-          onChange={(e) =>
-            updateStructuredSpec((current) => ({
-              ...current,
-              boundaries: {
-                ...current.boundaries,
-                denyPaths: fromLines(e.target.value),
-              },
-            }))
-          }
-        />
-      </div>
     </div>
   );
 }

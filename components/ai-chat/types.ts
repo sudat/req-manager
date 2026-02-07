@@ -166,6 +166,16 @@ export type ChatConfig = {
   initialPrompt?: string;
 };
 
+/**
+ * 草案インライン編集時の更新ペイロード
+ */
+export type DraftUpdatePayload = {
+  messageId: string;
+  type: 'bt' | 'br' | 'sf' | 'sr' | 'dd';
+  code: string;
+  content: BtDraft | BrDraft | SfDraft | SrDraft | DdDraft;
+};
+
 /** スレッド履歴サマリ */
 export type ThreadSummary = {
   threadId: string;

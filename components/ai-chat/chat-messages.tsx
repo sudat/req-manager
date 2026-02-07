@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { MessageBubble } from "./message-bubble";
-import type { BrDraft, BtDraft, ChatMessage, DraftCommitState, SfDraft, SrDraft, DdDraft } from "./types";
+import type { BrDraft, BtDraft, ChatMessage, DraftCommitState, DraftUpdatePayload, SfDraft, SrDraft, DdDraft } from "./types";
 
 type ChatMessagesProps = {
 	messages: ChatMessage[];
@@ -27,6 +27,7 @@ type ChatMessagesProps = {
 		type: "bt" | "br" | "sf" | "sr" | "dd",
 		code: string,
 	) => DraftCommitState | undefined;
+	onUpdateDraft?: (payload: DraftUpdatePayload) => void;
 };
 
 /**
@@ -41,6 +42,7 @@ export function ChatMessages({
 	onNewChat,
 	onCommitDraft,
 	getCommitState,
+	onUpdateDraft,
 }: ChatMessagesProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
 
@@ -132,6 +134,7 @@ export function ChatMessages({
 								message={message}
 								onCommitDraft={onCommitDraft}
 								getCommitState={getCommitState}
+								onUpdateDraft={onUpdateDraft}
 							/>
 						</div>
 					);

@@ -73,11 +73,11 @@
  └ システム機能（SF）
       ├─ システム要件（SR）
       │    └─ 受入基準（AC）
-      └─ 実装単位SD（N）  ※画面／API／バッチ／外部I/F 等
+      └─ DD（Design Document）（N）  ※画面／API／バッチ／ジョブ／外部I/F／モデル／レポート
             └─ 実装（Code）  ※GitHub上の実体への参照
 ```
 
-業務側（BD→BT→BR）とシステム側（SD→SF→SR/実装単位SD）は独立した階層構造を持ち、BRとSFは「realizes」リンクで参照関係を持つ。1つのBRが複数のSFを参照することも、1つのSFが複数のBRから参照されることもある。
+業務側（BD→BT→BR）とシステム側（SD→SF→SR/DD）は独立した階層構造を持ち、BRとSFは「realizes」リンクで参照関係を持つ。1つのBRが複数のSFを参照することも、1つのSFが複数のBRから参照されることもある。
 
 ### 2.2 各層の定義
 
@@ -88,17 +88,17 @@
 | 業務タスク     | いつ誰が何をして業務を進めるか  | 業務担当者 | 業務プロセス上の具体的タスク、前後関係、入出力                           |
 | 業務要件       | なぜ必要か、何を達成したいか    | 業務担当者/BA | ビジネス上の目的・課題・制約、関係者の合意範囲                         |
 | システム領域   | どの機能群をまとめるか          | SE/AI     | 関連するシステム機能を括る集計単位。ドメイン境界に対応                   |
-| システム機能   | どの機能単位で仕様を束ねるか    | SE/AI     | 画面・API・バッチ等の機能の箱。SR（機能/非機能/データ/例外）と実装単位SDをひも付ける単位 |
+| システム機能   | どの機能単位で仕様を束ねるか    | SE/AI     | 画面・API・バッチ等の機能の箱。SR（機能/非機能/データ/例外）とDDをひも付ける単位 |
 | システム要件   | システムとして何を保証すべきか  | SE/AI     | 機能仕様、非機能、例外、データ要件（ユーザー視点の外形）                 |
 | 受入基準       | 何をもってOKとするか            | QA/AI     | GWT形式、検証可能な条件（ブラックボックスで書く）                        |
-| 実装単位SD     | どう実現するか                  | AI/SE     | 画面/API/バッチ/外部I/Fごとの設計。DB/API/画面/処理構造、設計決定        |
+| DD             | どう実現するか                  | AI/SE     | 画面/API/バッチ/ジョブ/外部I/F/モデル/レポートごとの設計。構造化I/O・副作用・例外・非機能要件を含む |
 | 実装           | 実際のコード                    | AI        | GitHub上のファイル（.ts, .tsx等）。要件管理DBでは参照のみ                |
 
 ---
 
 ## 3. 要件記述仕様
 
-本章では、要件管理DBに登録する各層の記述ルールを定義する。2章で示した階層構造（PR / BD→BT→BR / SD→SF→SR→AC→実装単位SD）に沿って、それぞれ「何を書くか」「なぜその粒度か」を説明する。
+本章では、要件管理DBに登録する各層の記述ルールを定義する。2章で示した階層構造（PR / BD→BT→BR / SD→SF→SR→AC→DD）に沿って、それぞれ「何を書くか」「なぜその粒度か」を説明する。
 
 ### 記述形式について
 
@@ -117,7 +117,7 @@
 
 プロダクト要件は、プロジェクト全体の前提を定義する正本である。「誰のために、どんな体験を、どんな技術で実現するか」をここに集約する。
 
-下位の要件（BD/BT/BR/SD/SF/SR/AC/実装単位SD）をAIが生成するとき、また改修指示パッケージを作成するとき、このPRを常に参照する。PRに記載された品質目標やUXガイドライン、技術スタックが、すべての下位要件と実装の前提条件となる。
+下位の要件（BD/BT/BR/SD/SF/SR/AC/DD）をAIが生成するとき、また改修指示パッケージを作成するとき、このPRを常に参照する。PRに記載された品質目標やUXガイドライン、技術スタックが、すべての下位要件と実装の前提条件となる。
 
 ### なぜこの層を置くか
 
@@ -275,7 +275,7 @@ coding_conventions:
 
 ### PRの運用
 
-PRはプロジェクト作成時に初期設定し、以降は大きな方針変更がない限り変更しない。変更する場合は、影響を受ける下位要件（特に実装単位SD）を確認し、必要に応じて改修要求（CR）として扱う。
+PRはプロジェクト作成時に初期設定し、以降は大きな方針変更がない限り変更しない。変更する場合は、影響を受ける下位要件（特にDD）を確認し、必要に応じて改修要求（CR）として扱う。
 
 ---
 
@@ -451,7 +451,7 @@ constraints:
 
 システム機能は、ユーザーから見える機能の単位である。「請求書発行機能」「売上計上機能」のように、業務タスクとの対応関係が読み取れる粒度で切る。
 
-1つのシステム機能の内部には、画面・API・バッチ・外部I/Fといった複数の実装形態が含まれることがある。たとえば「請求書発行機能」は、発行画面＋発行API＋帳票生成バッチ＋外部送信I/Fで構成されるかもしれない。これらの実装形態ごとの設計は、後述する実装単位SD（3.9）で記述する。
+1つのシステム機能の内部には、画面・API・バッチ・外部I/Fといった複数の実装形態が含まれることがある。たとえば「請求書発行機能」は、発行画面＋発行API＋帳票生成バッチ＋外部送信I/Fで構成されるかもしれない。これらの実装形態ごとの設計は、後述するDD（3.9）で記述する。
 
 ### なぜこの層を置くか
 
@@ -465,7 +465,7 @@ constraints:
 | sd_id | ○ | - | 親となるシステム領域のID |
 | name | ○ | - | 機能名（例：請求書発行機能） |
 | description | ○ | Markdown | 誰に対して何を提供するか、構成要素、入出力、責務範囲 |
-| design_policy | - | Markdown | 複数の実装単位SDにまたがる横断的な設計方針 |
+| design_policy | - | Markdown | 複数のDDにまたがる横断的な設計方針 |
 
 ### 業務要件（BR）との関係
 
@@ -501,7 +501,7 @@ constraints:
 
 ### 非機能要件の書き方（Markdown）
 
-非機能要件は、ユーザー視点で測定可能な形で書く。内部処理の性能予算配分は実装単位SDの責務である。
+非機能要件は、ユーザー視点で測定可能な形で書く。内部処理の性能予算配分はDDの責務である。
 
 ```markdown
 <!-- 悪い例（測定できない） -->
@@ -665,19 +665,33 @@ then:
 
 ---
 
-### 3.9 実装単位SD
+### 3.9 DD（Design Document）
 
-実装単位SDは、システム機能（SF）を構成する個々の実装形態（画面/API/バッチ/外部I/F）に対する設計を記述する。SFが「何を提供するか」を定義するのに対し、実装単位SDは「どう実現するか」を定義する。
+DD（Design Document）は、システム機能（SF）を構成する個々の実装形態に対する設計を記述する。SFが「何を提供するか」を定義するのに対し、DDは「どう実現するか」を定義する。
+
+> **用語の経緯**: 当初「実装単位SD」と呼んでいたが、実装では「Design Document（DD）」に統一した。設計成果物としての位置づけをより明確にするための改名である。
+
+### DDのtype（実装形態）
+
+| type | 日本語 | 説明 |
+|------|--------|------|
+| screen | 画面 | ユーザーが操作する画面 |
+| api | API | REST/GraphQL等のAPIエンドポイント |
+| batch | バッチ | 定時実行・一括処理 |
+| job | ジョブ | イベント駆動の非同期処理 |
+| external_if | 外部I/F | 外部システムとのインターフェース |
+| model | モデル | データモデル・ドメインモデル |
+| report | レポート | 帳票・レポート出力 |
 
 ### 記述項目（必須）
 
 | 項目 | 必須 | 形式 | 説明 |
 |------|:----:|:----:|------|
-| impl_unit_id | ○ | - | 一意識別子（例：IU-BIL-010-01） |
+| dd_id | ○ | - | 一意識別子（例：DD-BIL-010-01） |
 | sf_id | ○ | - | 親となるシステム機能のID |
-| type | ○ | - | 実装形態（screen / api / batch / external_if） |
-| name | ○ | - | 実装単位名（例：請求書PDF生成バッチ） |
-| description | ○ | Markdown | この実装単位が担う責務、入出力の概要 |
+| type | ○ | - | 実装形態（上記typeテーブル参照） |
+| name | ○ | - | DD名（例：請求書PDF生成バッチ） |
+| description | ○ | Markdown | このDDが担う責務、入出力の概要 |
 | entry_point | ○ | - | エントリポイントファイルパス |
 
 ### entry_pointの重要性
@@ -788,11 +802,54 @@ core_logic:
 
 設計で確定した判断は、可能な限り「設計決定ログ」に残す。後続の影響調査で「なぜそうなっているか」を再現するためである。
 
+### DDの構造化入出力スキーマ
+
+> 詳細仕様: `docs/control_plane.md`
+
+DDの入出力定義は、テキスト自由記述に加えて**構造化スキーマ**での記述をサポートする。構造化スキーマを使用することで、型・制約・必須/任意などの具体性が保証され、コーディングエージェントへの指示精度が向上する。
+
+#### 構造化の対象
+
+| 観点 | 構造化スキーマ | 定義ファイル |
+|------|-------------|------------|
+| 入出力フィールド | `fieldSchema`（name, type, required, constraints） | `lib/domain/schemas/fields.ts` |
+| タイプ別入出力 | API/画面/バッチ/ジョブ別のI/Oスキーマ | `lib/domain/schemas/io-schemas.ts` |
+| 副作用（状態変化） | DB操作/外部API/イベント/ファイル/ログ | `lib/domain/schemas/side-effects.ts` |
+| 例外 | 例外タイプ/復旧戦略/エラーコード | `lib/domain/schemas/exceptions.ts` |
+| 非機能要件 | 性能/可用性/セキュリティ/可観測性 | `lib/domain/schemas/non-functional.ts` |
+| DD統合スキーマ | 上記を統合した構造化DD仕様 | `lib/domain/schemas/design-document-structured.ts` |
+
+#### フィールド制約（constraints）
+
+`control_plane.md` の「許容範囲」要求に対応する制約定義。
+
+| 制約 | プロパティ | 例 |
+|------|----------|---|
+| 文字数制限 | `min`, `max` | 文字列長1〜100 |
+| 数値範囲 | `min`, `max` | 0 ≤ amount ≤ 999,999 |
+| 正規表現 | `pattern` | `^C[0-9]{6}$` |
+| 列挙値 | `enum` | `["admin", "editor", "viewer"]` |
+| 標準フォーマット | `format` | `"email"`, `"date"`, `"uuid"` |
+| ユニーク制約 | `unique` | `true` |
+
+#### タイプ別I/Oスキーマの概要
+
+| DDのtype | 入力の主要項目 | 出力の主要項目 |
+|---------|-------------|-------------|
+| api | method, path, query[], body[] | success{status, fields[]}, error[] |
+| screen | trigger, elements[] | transition, messages[] |
+| batch | schedule, source, parameters[] | summary{processedCount, successCount, errorCount} |
+| job | event, payload[] | result, nextEvent |
+
+#### 旧テキスト定義との互換性
+
+構造化スキーマへの移行は段階的に行う。旧テキスト形式の `input`/`output`/`sideEffects` は `@deprecated` として残し、構造化フィールド（`structuredInput`/`structuredOutput`/`structuredSideEffects`）が優先される。
+
 ---
 
 ### 3.10 実装（Code）
 
-実装は、GitHub上に保存される実際のコードファイル（.ts、.tsx、.sql等）を指す。要件管理DBでは管理対象とせず、実装単位SDのentry_pointを通じて参照する。
+実装は、GitHub上に保存される実際のコードファイル（.ts、.tsx、.sql等）を指す。要件管理DBでは管理対象とせず、DDのentry_pointを通じて参照する。
 
 コードの変更履歴・差分管理はGitHub（PR、コミット）に委ねる。要件管理DBは、改修指示パッケージを通じてコーディングエージェントに指示を出し、結果としてGitHub上に生成されるPRをトレーサビリティの終点とする。
 
@@ -1005,7 +1062,7 @@ draft → investigating → reviewed → approved → completed
 
 ### 4.3 要件間リンク
 
-要件間リンクは、要件同士の関係を明示的に管理する仕組みである。2章で示した階層構造（BD→BT→BR→SF→SR→AC→実装単位SD）は親子関係だが、それとは別に、要件間には「実現する」「依存する」「矛盾する」といった関係がある。
+要件間リンクは、要件同士の関係を明示的に管理する仕組みである。2章で示した階層構造（BD→BT→BR→SF→SR→AC→DD）は親子関係だが、それとは別に、要件間には「実現する」「依存する」「矛盾する」といった関係がある。
 
 #### なぜリンクを管理するか
 
@@ -1025,7 +1082,7 @@ draft → investigating → reviewed → approved → completed
 |---------------|------|------|-----|
 | realizes | 業務要件をシステム機能が実現する | BR → SF | BR-BIL-001（請求書出力）→ SF-BIL-010（請求書発行機能） |
 | depends_on | 前提として依存する | 任意 → 任意 | SR-BIL-002 → SR-FI-001（与信チェック結果に依存） |
-| derives_from | 派生・詳細化する | 詳細 → 元 | 実装単位SD → SF |
+| derives_from | 派生・詳細化する | 詳細 → 元 | DD → SF |
 | conflicts_with | 矛盾する可能性がある | 双方向 | SR-A ↔ SR-B（排他的な仕様） |
 
 realizesリンクは、3章で説明したBRとSFの関係を明示するもの。depends_onは、ある要件が別の要件を前提とする場合に使う。conflicts_withは稀だが、排他的な仕様（Aを採用するとBは採用できない）を明示するために使う。
@@ -1062,7 +1119,7 @@ suspect_severityの判定基準：
 | 重大度 | 条件 | 例 |
 |--------|------|-----|
 | high | 誤りがあると要件の誤実装や設計判断ミスに直結 | SRの変更によりACの前提が崩れる |
-| medium | 誤りがあると手戻りが増える | 実装単位SDの変更で関連SRの整合確認が必要 |
+| medium | 誤りがあると手戻りが増える | DDの変更で関連SRの整合確認が必要 |
 | low | 改善余地・情報不足のレベル | 概念辞書の同義語追加 |
 
 疑義リンクは、影響調査の結果として自動検出されることもあれば、人間が手動でフラグを立てることもある。いずれの場合も、「確認して維持」または「修正」によって解消する。
@@ -1113,7 +1170,7 @@ suspect=trueのリンクを一覧表示し、処理するためのUIを提供す
   ↓ depends_onリンク
 受入基準（AC）
   ↓ 親子関係
-実装単位SD
+DD
   ↓ entry_point
 影響候補ファイル群
 ```
@@ -1129,7 +1186,7 @@ entry_point（トップダウンで特定）
   ↓ コード依存関係を解析
 影響ファイル群
   ↓ entry_pointと突合
-実装単位SD（正本に登録済みなら）
+DD（正本に登録済みなら）
   ↓ 正本を逆引き
 システム要件
   ↓ 正本を逆引き
@@ -1149,7 +1206,7 @@ entry_point（トップダウンで特定）
 3. ボトムアップで /app/mm/tax-journal/ → SR-MM-008（仕入消費税仕訳）→ BR-MM-001（仕入計上）を逆引き
 4. AIが提案：「消費税仕訳の共通処理を変更すると、仕入伝票計上にも影響します。BR-MM-001も影響範囲に含めますか？」
 
-この逆流が機能するには、エントリポイント → 実装単位SD → システム機能 → システム要件 → 業務要件 の逆引きが可能である必要がある。本ツールは新規スクラッチ開発を前提としているため、開発開始時点からentry_pointを登録していけば、この条件は自然に満たされる。
+この逆流が機能するには、エントリポイント → DD → システム機能 → システム要件 → 業務要件 の逆引きが可能である必要がある。本ツールは新規スクラッチ開発を前提としているため、開発開始時点からentry_pointを登録していけば、この条件は自然に満たされる。
 
 #### 影響範囲の確定
 
@@ -1221,7 +1278,7 @@ entry_point（トップダウンで特定）
 | 項目 | 内容 |
 |------|------|
 | allow_paths | 変更を許可するファイルパス |
-| 参照要件ID群 | BT/BR/SF/SR/AC/実装単位SD |
+| 参照要件ID群 | BT/BR/SF/SR/AC/DD |
 | investigation_id | 影響調査の根拠 |
 | residual_risks | 残存リスク（PRレビュー時の参考） |
 
@@ -1500,7 +1557,7 @@ AIエージェント基盤としてMastraを採用する。Mastraは以下の機
 │         │         │  │ ・bt_draft（BT草案生成）     │  │        │
 │         │         │  │ ・br_draft（BR草案生成）     │  │        │
 │         │         │  │ ・system_draft（SF/SR/AC）  │  │        │
-│         │         │  │ ・impl_unit_draft（実装単位SD）│ │        │
+│         │         │  │ ・dd_draft（DD）│ │        │
 │         │         │  │ ・impact_analysis（影響調査）│  │        │
 │         │         │  │ ・impact_review（範囲レビュー）│ │        │
 │         │         │  │ ・critic_check（品質チェック）│ │        │
@@ -1536,7 +1593,7 @@ export const requirementsAgent = new Agent({
   name: 'requirements-agent',
   instructions: `
     あなたは要件管理DBの登録支援AIです。
-    ユーザーの自然言語入力を、構造化された要件（BT/BR/SF/SR/AC/実装単位SD）に整形します。
+    ユーザーの自然言語入力を、構造化された要件（BT/BR/SF/SR/AC/DD）に整形します。
     
     ## 行動原則
     - 草案を生成するが、勝手にDBに保存しない（ユーザーの確定操作を待つ）
@@ -1555,20 +1612,21 @@ export const requirementsAgent = new Agent({
     provider: 'anthropic',
     name: 'claude-sonnet-4-20250514',
   },
-  tools: [
+  tools: {
     btDraftTool,
     brDraftTool,
     systemDraftTool,
-    implUnitDraftTool,
+    ddDraftTool,
     impactAnalysisTool,
-    impactReviewTool,
     criticCheckTool,
     conceptExtractTool,
-    dbDesignTool,
-    testGenerateTool,
-    saveToDraftTool,
     commitDraftTool,
-  ],
+    searchRequirementsTool,
+    listBusinessDomainsTool,
+    getLinksTool,
+    getContextTool,
+    getProductRequirementTool,
+  },
 });
 ```
 
@@ -1578,48 +1636,45 @@ export const requirementsAgent = new Agent({
 
 統合Agentが使用するToolを定義する。各Toolは特定の機能を担い、旧設計のエージェント（要件整形AI、影響調査AI等）を包含する。
 
-### 登録支援Tool群
-
-| Tool名 | 旧設計での対応 | 入力 | 出力 | 責務 |
-|--------|--------------|------|------|------|
-| bt_draft | 要件整形AI | 自然文、BD ID | BT草案 | 業務タスクの草案生成 |
-| br_draft | 要件整形AI | 自然文、BT ID | BR草案 | 業務要件の草案生成 |
-| system_draft | 要件整形AI | BR ID群、自然文 | SF/SR/AC草案 | システム側要件の一括草案生成 |
-| impl_unit_draft | 要件整形AI | SF ID、自然文 | 実装単位SD草案 | 実装設計の草案生成 |
-| concept_extract | 要件整形AI（部分） | テキスト | 概念候補リスト | テキストから概念を抽出 |
-
-### 分析・検証Tool群
-
-| Tool名 | 旧設計での対応 | 入力 | 出力 | 責務 |
-|--------|--------------|------|------|------|
-| impact_analysis | 影響調査AI | CR ID、変更内容 | 影響範囲候補、InvestigationRequest | 変更影響の分析、コーディングエージェントへのジョブ生成 |
-| impact_review | 影響範囲レビューAI | allow_paths候補 | 絞り込み提案、残存リスク | N:N爆発時の影響範囲レビュー |
-| critic_check | Critic AI | BT/BR/SF/SR/AC | 指摘リスト、修正案 | 曖昧さ・矛盾・漏れの検出 |
-| db_design | DB設計AI | SR/AC、既存データモデル | 論理データモデル案、制約案 | データ設計の補完・検証 |
-| test_generate | テスト生成AI | AC、テスト方針 | テストケース、テストデータ案 | ACからテストを自動生成 |
-
-### 共通Tool群
+### 登録支援Tool群（実装済み）
 
 | Tool名 | 入力 | 出力 | 責務 |
 |--------|------|------|------|
-| get_context | なし | PR、現在位置、既存要件 | コンテキスト情報の取得 |
-| save_to_draft | 草案データ | draft ID | 草案の一時保存（未確定状態） |
-| commit_draft | draft ID | 正本ID | 草案の正本登録（確定） |
-| search_requirements | 検索クエリ | 要件リスト | 既存要件の検索 |
+| bt_draft | 自然文、BD ID、projectId | BT草案、概念候補 | 業務タスクの草案生成 |
+| br_draft | 自然文、BT ID、projectId | BR草案 | 業務要件の草案生成 |
+| system_draft | BR ID群、additionalContext、projectId | SF/SR/AC草案 | システム側要件の一括草案生成 |
+| dd_draft | SF ID、自然文、projectId | DD草案（構造化I/O含む） | DD（Design Document）の草案生成 |
+| concept_extract | targetId、projectId | 概念候補リスト | テキストから概念を抽出 |
+
+### 分析・検証Tool群（実装済み / Phase 5以降）
+
+| Tool名 | 入力 | 出力 | 責務 | 実装状況 |
+|--------|------|------|------|---------|
+| impact_analysis | CR ID、projectId | 影響BR/SF/SR/AC、疑義リンク | トップダウン影響分析（CR → BR → SF → SR → AC） | ✅ 実装済み |
+| critic_check | targetIds、checkLevel | 指摘リスト、修正案 | 曖昧さ・矛盾・漏れの検出 | ✅ 実装済み |
+| impact_review | allow_paths候補 | 絞り込み提案、残存リスク | N:N爆発時の影響範囲レビュー | Phase 5 |
+| db_design | SR/AC、既存データモデル | 論理データモデル案、制約案 | データ設計の補完・検証 | Phase 5以降 |
+| test_generate | AC、テスト方針 | テストケース、テストデータ案 | ACからテストを自動生成 | Phase 5以降 |
+
+### ユーティリティTool群（実装済み）
+
+| Tool名 | 入力 | 出力 | 責務 |
+|--------|------|------|------|
+| commit_draft | draftId、type、content | 正本ID | 草案の正本登録（確定） |
+| search_requirements | 検索クエリ、projectId | 要件リスト | 既存要件の全文検索 |
+| list_business_domains | projectId | BD一覧 | 業務領域一覧取得 |
 | get_links | 要件ID | リンクリスト | 要件間リンクの取得 |
+| get_context | なし | PR、現在位置、既存要件 | コンテキスト情報の取得 |
+| get_product_requirement | projectId | PR全体 | 技術スタック・コーディング規約の取得 |
 
-### 同期・フィードバックTool群
+### 同期・フィードバックTool群（Phase 5以降）
 
-コーディングエージェントとの双方向フィードバックを実現するためのTool群。
+コーディングエージェントとの双方向フィードバックを実現するためのTool群。Phase 5以降で実装予定。
 
 | Tool名 | 入力 | 出力 | 責務 |
 |--------|------|------|------|
 | receive_suggestion | SuggestionFromAgent | 受付確認、通知 | コーディングエージェントからの改善提案を受け取る |
-| sync_check | 対象実装単位SD ID（任意）、チェック観点（任意） | 同期チェック結果、不一致箇所、推奨アクション | コードと正本（システム要件・設計）の同期性をオンデマンドでチェック |
-
-receive_suggestionは、コーディングエージェントが実装中に発見した改善提案（設計改善、実装上の気づき、不整合の検出）を受け取る窓口となる。受け取った提案はチャットUIに通知され、ユーザーはMastra Agentに相談しながら採否を判断できる。
-
-sync_checkは、ユーザーがチャットで「コードとの同期性をチェックして」と依頼した際に呼び出される。対象の実装単位SDを特定し、コーディングエージェントにチェックリクエストを送信し、結果をユーザーに分かりやすく提示する。
+| sync_check | 対象DD ID（任意）、チェック観点（任意） | 同期チェック結果、不一致箇所、推奨アクション | コードと正本（システム要件・設計）の同期性をオンデマンドでチェック |
 
 ---
 
@@ -1711,7 +1766,7 @@ const systemDraftTool = createTool({
       }
     }
     
-    // 4. 実装単位SDのentry_pointはcoding_conventionsに従う
+    // 4. DDのentry_pointはcoding_conventionsに従う
     for (const sf of systemDrafts.sfs) {
       sf.implUnits = await generateImplUnitPaths(sf, pr.coding_conventions);
     }
@@ -2006,7 +2061,7 @@ Agent: [system_draft Tool呼び出し]
        │   ├─ SR-BIL-020: 請求書をメールで送付できる
        │   │   ├─ AC-BIL-020-01: 正常系
        │   │   └─ AC-BIL-020-02: 異常系
-       │   └─ 実装単位SD:
+       │   └─ DD:
        │       ├─ IU-BIL-020-01: 送付画面
        │       └─ IU-BIL-020-02: 送付API
        └─ realizesリンク: BR-BIL-002 → SF-BIL-020
@@ -2201,7 +2256,7 @@ Agent: どの要件のテストを生成しますか？
 
 ## 6. コーディングエージェント連携設計
 
-本章では、要件管理DBアプリが保持するコンテキスト（PR→BT→BR→SF→SR→AC→実装単位SD）を活用し、コーディングエージェントによる自動改修を安全かつ再現可能に実行するための連携設計を定義する。
+本章では、要件管理DBアプリが保持するコンテキスト（PR→BT→BR→SF→SR→AC→DD）を活用し、コーディングエージェントによる自動改修を安全かつ再現可能に実行するための連携設計を定義する。
 
 ### 6.1 目的とスコープ
 
@@ -2277,7 +2332,7 @@ interface InvestigationRequest {
 
   // 探索起点（トップダウンで特定したentry_point群）
   entry_points: {
-    impl_unit_id: string;
+    dd_id: string;
     sf_id: string;
     entry_point: string;           // ファイルパス
     investigation_hint?: string;   // 「この機能のどこを見るべきか」のヒント
@@ -2394,7 +2449,7 @@ interface AffectedFile {
 interface RequirementMapping {
   file_path: string;
   mapped_to: {
-    impl_unit_id?: string;         // 既存の実装単位SDにマッピングできた場合
+    dd_id?: string;         // 既存のDDにマッピングできた場合
     sf_id?: string;
     sr_ids?: string[];
   };
@@ -2651,9 +2706,9 @@ interface ModificationPackage {
     impact_review_result_summary?: string;
   };
 
-  // 実装単位SD（対象となる設計情報）
+  // DD（対象となる設計情報）
   implementation_units: {
-    impl_unit_id: string;
+    dd_id: string;
     type: 'screen' | 'api' | 'batch' | 'external_if';
     name: string;
     entry_point: string;
@@ -2664,7 +2719,7 @@ interface ModificationPackage {
   modification_summary: string;
   modification_details: string;
   targets: {
-    impl_unit_id: string;           // 対象の実装単位SD
+    dd_id: string;           // 対象のDD
     entry_point: string;            // エントリポイントファイルパス
     description: string;
     related_requirements: string[]; // SR/AC ID
@@ -2696,7 +2751,7 @@ interface ModificationPackage {
 運用上の原則：
 
 - system\_prompt（または同等の指示）は「意図の伝達」に限定し、「スコープ制限の強制」は allow\_paths/deny\_paths 等の決定論的制約で担保する
-- 変更対象（targets）は実装単位SD（impl\_unit\_id）とリンクし、Change PlanやImpact Reportの自動生成に流用する
+- 変更対象（targets）はDD（impl\_unit\_id）とリンクし、Change PlanやImpact Reportの自動生成に流用する
 - investigation\_refs を通じて「どの時点の調査結果に基づいてスコープを決めたか」を再現可能にする
 - product\_requirement を含めることで、エージェントがPRのtech_stack_profileやcoding_conventionsを参照できる
 
@@ -2727,7 +2782,7 @@ interface ModificationPackage {
 
 | 成果物                         | 目的                                   |
 | ------------------------------ | -------------------------------------- |
-| Change Plan（変更計画）        | 何をどう変えたかを実装単位SD IDと紐付けて列挙 |
+| Change Plan（変更計画）        | 何をどう変えたかをDD IDと紐付けて列挙 |
 | Impact Report（影響調査）      | 依存・影響範囲・リスクを列挙（自動生成） |
 | Verification Summary（検証要約） | テスト/静的解析/ビルドの結果を集約     |
 | Residual Risks（残存リスク）   | 影響範囲レビューで検出されたリスク     |
@@ -2852,7 +2907,7 @@ interface ProjectInvestigationSettings {
 | type | ○ | 提案の分類（design_improvement / implementation_observation / inconsistency_detected） |
 | title | ○ | 提案のタイトル |
 | description | ○ | 提案の詳細 |
-| affected_items | - | 影響を受ける実装単位SD ID、SR ID等 |
+| affected_items | - | 影響を受けるDD ID、SR ID等 |
 | rationale | ○ | 根拠（why、evidence） |
 | recommended_action | ○ | 推奨アクション（update_spec / refactor_code / create_ticket / information_only） |
 | priority | ○ | 優先度（critical / high / medium / low） |
@@ -2867,7 +2922,7 @@ SyncCheckRequest:
 | フィールド | 必須 | 説明 |
 |-----------|------|------|
 | check_id | ○ | チェックの一意識別子 |
-| targets | ○ | チェック対象の実装単位SD（impl_unit_id、entry_point、spec） |
+| targets | ○ | チェック対象のDD（dd_id、entry_point、spec） |
 | focus_areas | - | チェック観点（structural / implementation / semantic） |
 
 SyncCheckResult:
@@ -2912,7 +2967,7 @@ docs/requirements/
   system/                            # システム側の正本
     {システム領域ID}/
       _index.md                      # システム領域の概要
-      {システム機能ID}.md            # システム機能＋システム要件＋実装単位SD
+      {システム機能ID}.md            # システム機能＋システム要件＋DD
 
   graph/
     requirements-links.json          # 業務要件↔システム要件のリンク（根拠データ含む）
@@ -2926,7 +2981,7 @@ docs/requirements/
 |-------------|------|------------------------|
 | `product-requirement.yml` | プロダクト要件（PR） | tech_stack_profile、coding_conventionsを参照して実装方針を決める |
 | `business/` | 業務タスク・業務要件 | 「なぜこの変更が必要か」の業務文脈を理解する |
-| `system/` | システム機能・システム要件・実装単位SD | 「どのファイルを修正すべきか」を特定する |
+| `system/` | システム機能・システム要件・DD | 「どのファイルを修正すべきか」を特定する |
 | `graph/` | 要件間のリンクと根拠 | 影響範囲の波及を辿る |
 
 ### 7.2 プロダクト要件ファイルフォーマット
@@ -3043,9 +3098,9 @@ system_domain_name: SD請求
 
 請求書PDFを生成するバッチ処理。月次締め後に実行される。
 
-## 実装単位SD
+## DD
 
-### IU-BIL-010-01: 請求書PDF生成ジョブ
+### DD-BIL-010-01: 請求書PDF生成ジョブ
 
 - type: batch
 - entry_point: /jobs/invoice-pdf-batch.ts
@@ -3172,7 +3227,7 @@ Claude Codeが最初に読むべきファイル。全体構成と参照方法を
 
 - `product-requirement.yml` - プロダクト要件（技術スタック、コーディング規約）
 - `business/` - 業務タスク・業務要件（なぜこの機能が必要か）
-- `system/` - システム機能・システム要件・実装単位SD（どう実装されているか）
+- `system/` - システム機能・システム要件・DD（どう実装されているか）
 - `graph/requirements-links.json` - 要件間のリンクと根拠
 - `concept-dictionary.yml` - 用語辞書（同義語・影響範囲）
 
@@ -3181,7 +3236,7 @@ Claude Codeが最初に読むべきファイル。全体構成と参照方法を
 1. まず `product-requirement.yml` を読み、技術スタックとコーディング規約を確認
 2. 変更要求の内容から、関連する概念を`concept-dictionary.yml`で検索
 3. 概念の`must_read`に記載されたシステム機能ファイルを読む
-4. システム機能ファイルの実装単位SDから`entry_point`を特定
+4. システム機能ファイルのDDから`entry_point`を特定
 5. 必要に応じて`graph/requirements-links.json`で波及影響を確認
 
 ## 業務分類一覧
@@ -3212,7 +3267,7 @@ Claude Codeの`.claude/skills/`にSKILL.mdを配置し、「まずproduct-requir
 2. `docs/requirements/INDEX.md` を読む
 3. 変更内容に関連する概念を `concept-dictionary.yml` で検索
 4. 概念の `must_read` に記載されたファイルを読む
-5. システム機能ファイルの実装単位SDから `entry_point` を確認
+5. システム機能ファイルのDDから `entry_point` を確認
 6. 受入基準を確認し、何を満たせばOKか理解する
 
 ## 注意
@@ -3283,22 +3338,28 @@ Claude Codeの`.claude/skills/`にSKILL.mdを配置し、「まずproduct-requir
 | コンポーネント | 技術 | 選定理由 |
 |---------------|------|---------|
 | フロントエンド | Next.js 16 (App Router) | PRで指定された技術スタック |
-| UIライブラリ | shadcn/ui + Tailwind | PRで指定、コンポーネント豊富 |
-| バックエンド | Hono (on Supabase Edge Functions) | 軽量、TypeScript、Edge対応 |
+| UIライブラリ | shadcn/ui + Tailwind CSS 4 | PRで指定、コンポーネント豊富 |
+| バックエンド | Next.js API Routes (Route Handler) | App Router標準、別途バックエンド不要 |
 | データベース | Supabase (PostgreSQL) | RLS、リアルタイム、Auth統合 |
 | ベクトル検索 | pgvector | 概念辞書の類似検索、Supabase統合 |
-| アプリ内AI | Mastra | Agent/Tool/Workflow統合、5章で設計 |
-| LLM | Claude (Anthropic API) | 高精度、構造化出力、日本語対応 |
-| コーディングエージェント | Claude Agent SDK | 6章で設計、MCP対応 |
-| Agent Runner | Cloud Run | ジョブ実行基盤、スケーラブル |
-| 認証 | BetterAuth | Supabase Auth代替、柔軟なプロバイダ対応 |
+| アプリ内AI | Mastra 1.x | Agent/Tool/Memory統合、5章で設計 |
+| LLM（Agent本体） | Claude (Anthropic API) | 高精度の会話制御・ツール判断 |
+| LLM（ツール内生成） | OpenAI / Z.AI（プロジェクト別設定） | コスト効率の高い大量テキスト生成 |
+| コーディングエージェント | Claude Agent SDK | 6章で設計、MCP対応（Phase 5以降） |
+| 認証 | Supabase Auth | Supabase RLS統合、Phase 6で実装予定 |
 | ホスティング | Vercel | Next.js最適化、Edge Functions |
 
 ### 選定の背景
 
 フロントエンドとバックエンドはPR（3.1参照）のtech_stack_profileで定義されたスタックに従う。本ツール自体が「PRに従って開発する」実践例となる。
 
+バックエンドは当初Hono (Supabase Edge Functions)を検討したが、Next.js App RouterのRoute Handlerが十分に成熟しており、別途バックエンドフレームワークを立てる必要がないため、Next.js API Routesに一本化した。
+
 アプリ内AIにMastraを採用する理由は5章で説明した通り、「単一Agent + 複数Tool」の構成を自然に実装でき、コンテキスト管理とワークフロー定義が容易なため。
+
+LLMはAgent本体とツール内生成の二層構造を採用する。Agent本体（会話制御・ツール判断）にはClaudeを使用し、ツール内の大量テキスト生成にはOpenAI/Z.AIを使用する。プロジェクト単位でLLMプロバイダー・モデル・temperature等を設定可能（`resolveProjectLlmRuntimeSettings`）。
+
+認証は当初BetterAuthを検討したが、Supabase AuthがRLSと統合されており、要件管理ツールの用途に十分なため、Supabase Authに変更した。
 
 コーディングエージェントにClaude Agent SDKを採用する理由は6章で説明した通り、MCP対応によりアプリの正本に直接アクセスでき、サブエージェント機能で複雑なタスクを分解できるため。
 
@@ -3312,9 +3373,13 @@ Claude Codeの`.claude/skills/`にSKILL.mdを配置し、「まずproduct-requir
 /app
   /product-requirement    # PR編集
   /business               # 業務領域・BT・BR管理
-  /system                 # システム領域・SF・SR・実装単位SD管理
-  /concepts               # 概念辞書管理
-  /change-requests        # CR・影響調査・疑義リンク管理
+  /system                 # システム領域・SF・SR・DD管理
+  /ideas                  # 概念辞書管理
+  /tickets                # CR・影響調査・疑義リンク管理
+  /dashboard              # ヘルススコア・疑義リンクダッシュボード
+  /links                  # 要件間リンク可視化
+  /export                 # データエクスポート
+  /baseline               # ベースラインデータ
   /chat                   # AIチャットUI（Mastra Agent）
   /settings               # プロジェクト設定
   /projects               # プロジェクト一覧
@@ -3331,16 +3396,18 @@ UIはshadcn/uiをベースに、以下のパターンで構成する。
 
 ### バックエンド構成
 
-APIはHono on Supabase Edge Functionsで提供する。
+APIはNext.js App RouterのRoute Handler（`app/api/`配下の`route.ts`）で提供する。
 
 | エンドポイント群 | 責務 |
 |-----------------|------|
-| /api/requirements/* | 要件CRUD（BD/BT/BR/SD/SF/SR/AC/実装単位SD） |
-| /api/concepts/* | 概念辞書CRUD |
-| /api/links/* | 要件間リンクCRUD、疑義管理 |
-| /api/change-requests/* | CR管理、影響調査結果 |
-| /api/export/* | エクスポート（7章形式） |
-| /api/agent/* | Mastra Agentへの橋渡し |
+| /api/chat | Mastra Agentとのチャット（SSEストリーミング） |
+| /api/drafts/commit | 草案の正本登録 |
+| /api/concepts | 概念辞書CRUD |
+| /api/export/business | 業務系データエクスポート |
+| /api/export/requirements | 要件エクスポート（ZIP） |
+| /api/export/system | システム系データエクスポート |
+| /api/tickets/[id]/investigate | 影響調査実行 |
+| /api/business/tasks/reorder | 業務タスク並び替え |
 
 ### データベース設計
 
@@ -3357,12 +3424,12 @@ APIはHono on Supabase Edge Functionsで提供する。
 | system_functions | システム機能（SF） |
 | system_requirements | システム要件（SR） |
 | acceptance_criteria | 受入基準（AC） |
-| impl_unit_sds | 実装単位SD |
+| design_documents | DD（Design Document） |
 | concepts | 概念辞書 |
 | requirement_links | 要件間リンク（疑義管理含む） |
 | change_requests | 変更要求（CR） |
 | investigation_results | 影響調査結果 |
-| design_decisions | 設計決定ログ |
+| impact_scopes | 変更影響範囲 |
 
 Row Level Security（RLS）でプロジェクト単位のアクセス制御を行う。
 
@@ -3410,20 +3477,31 @@ Row Level Security（RLS）でプロジェクト単位のアクセス制御を�
 ### Mastra Agent の初期化
 
 ```typescript
-// /lib/mastra/agent.ts
+// /lib/mastra/agents/requirements-agent.ts
 import { Agent } from '@mastra/core';
-import { tools } from './tools';
+import { tools } from '../tools';
+import { memory } from '../memory';
+import { resolveProjectLlmRuntimeSettings, resolveProjectAgentModel } from '../utils/llm-settings';
 
 export const requirementsAgent = new Agent({
   name: 'requirements-agent',
   instructions: `...`, // 5.2参照
-  model: {
-    provider: 'anthropic',
-    name: 'claude-sonnet-4-20250514',
+  // Agent本体のLLM: Claude（会話制御・ツール判断）
+  model: async ({ requestContext }) => {
+    const projectId = requestContext?.get('projectId');
+    const settings = await resolveProjectLlmRuntimeSettings(projectId);
+    // Z.AIプロバイダーの場合はOpenAI互換API経由
+    if (settings.provider === 'zai') {
+      return { id: `openai/${settings.model}`, url: settings.baseUrl, apiKey: getZaiApiKey() };
+    }
+    return resolveProjectAgentModel(projectId);
   },
   tools,
+  memory, // LibSQLStore + LibSQLVector
 });
 ```
+
+> **補足**: ツール内の草案生成（bt_draft, system_draft等）では `callOpenAI()` ヘルパー関数を使用し、Agent本体とは別のLLMモデルを呼び出す。これによりAgent本体は高品質な会話制御に、ツール内生成はコスト効率の高いモデルに、と使い分けが可能。
 
 ### Tool群の実装パターン
 
@@ -3584,8 +3662,8 @@ pending → running → completed
 
 | 対象 | 方式 | 説明 |
 |------|------|------|
-| ユーザー認証 | BetterAuth | メール/パスワード、OAuth（GitHub等） |
-| API認証（アプリ内） | セッションベース | BetterAuthのセッション |
+| ユーザー認証 | Supabase Auth | メール/パスワード、OAuth（GitHub等）。Phase 6で実装予定 |
+| API認証（アプリ内） | セッションベース | Supabase Authのセッション |
 | API認証（MCP Server） | APIキー | プロジェクトごとに発行 |
 | DB認可 | RLS | プロジェクト単位のアクセス制御 |
 
@@ -3651,11 +3729,11 @@ MVPスコープ：MVPではowner/editorの2ロールで開始し、admin/viewer�
 
 | コンポーネント | 課金単位 | 主なコスト要因 |
 |---------------|---------|---------------|
-| Anthropic API（Mastra経由） | トークン | 草案生成、品質チェック |
-| Anthropic API（Agent SDK経由） | トークン | 影響調査、改修実行 |
+| Anthropic API（Agent本体） | トークン | 会話制御、ツール判断 |
+| OpenAI / Z.AI API（ツール内生成） | トークン | 草案生成、品質チェック |
+| Anthropic API（Agent SDK経由） | トークン | 影響調査、改修実行（Phase 5以降） |
 | Supabase | ストレージ、リクエスト | 正本保存、API呼び出し |
 | Vercel | 関数実行時間 | API処理 |
-| Cloud Run | CPU時間 | Agent Runner |
 
 ### トークン消費の目安
 
@@ -3694,42 +3772,113 @@ MVPスコープ：MVPではowner/editorの2ロールで開始し、admin/viewer�
 
 ### サイドメニュー構成
 
-| メニュー | 説明 | 主な操作 |
-|---------|------|---------|
-| プロダクト要件 | PR（技術スタック、品質目標等）の管理 | 編集 |
-| 業務一覧 | 業務領域（BD）と配下のBT/BRの管理 | 一覧、追加、編集、AI登録 |
-| システム領域一覧 | システム領域（SD）と配下のSF/SR/実装単位SDの管理 | 一覧、追加、編集、AI登録 |
-| 概念一覧 | 概念辞書の管理 | 一覧、追加、編集、未処理確認 |
-| 変更要求一覧 | CR、影響調査、疑義リンクの管理 | 一覧、起票、調査、レビュー |
-| AIアシスタント | チャットUIでの登録支援 | チャット、草案確認 |
-| 設定 | プロジェクト設定、エクスポート | 設定変更、ファイル出力 |
-| プロジェクト一覧 | プロジェクト切り替え | 選択、新規作成 |
+メニューはdividerで4グループに分けられている。
+
+| グループ | メニュー | 説明 | 主な操作 |
+|---------|---------|------|---------|
+| メイン | ダッシュボード | ヘルススコア、疑義リンク、変更要求レビューの俯瞰 | 閲覧 |
+| メイン | プロダクト要件 | PR（技術スタック、品質目標等）の管理 | 編集 |
+| メイン | AIチャット | チャットUIでの登録支援 | チャット、草案確認 |
+| 要件管理 | 業務一覧 | 業務領域（BD）と配下のBT/BRの管理 | 一覧、追加、編集、AI登録 |
+| 要件管理 | システム領域一覧 | システム領域（SD）と配下のSF/SR/DDの管理 | 一覧、追加、編集、AI登録 |
+| 要件管理 | 概念辞書 | 概念辞書の管理 | 一覧、追加、編集、未処理確認 |
+| 分析・運用 | 変更要求一覧 | CR、影響調査、疑義リンクの管理 | 一覧、起票、調査、レビュー |
+| 分析・運用 | 要件リンク | requirement_linksの一覧・疑義リンクの管理 | 一覧、フィルタ |
+| 分析・運用 | ベースライン履歴 | ベースラインスナップショットの管理 | 一覧、閲覧 |
+| 分析・運用 | エクスポート | 要件ドキュメントのファイル出力 | 業務/要件/システム別出力 |
+| 設定 | 設定 | プロジェクト設定、LLM設定、通知設定 | 設定変更 |
+
+※プロジェクト切り替えはサイドバー下部のProjectSwitcherコンポーネントで提供。
 
 ### URL構成
 
+Next.js App Router の `(with-sidebar)` Route Groupで構成。
+
 ```
-/
-├── product-requirement          # PR編集
-├── business/                    # 業務領域
-│   ├── [bd_id]/                 # BD詳細 + BT一覧
-│   │   └── bt/
-│   │       └── [bt_id]/         # BT詳細 + BR一覧
-├── system/                      # システム領域
-│   ├── [sd_id]/                 # SD詳細 + SF一覧
-│   │   └── sf/
-│   │       └── [sf_id]/         # SF詳細 + SR/実装単位SD一覧
-├── concepts/                    # 概念一覧
-│   └── [concept_id]/            # 概念詳細
-├── change-requests/             # CR一覧
-│   └── [cr_id]/                 # CR詳細・影響調査・疑義リンク
-├── chat/                        # AIチャットUI
-├── settings/                    # プロジェクト設定
-└── projects/                    # プロジェクト一覧
+/                                  # → /dashboard にリダイレクト
+├── dashboard/                     # ダッシュボード
+├── product-requirement/           # PR閲覧
+│   └── edit/                      # PR編集
+├── chat/                          # AIチャットUI
+├── business/                      # BD一覧
+│   ├── create/                    # BD新規作成
+│   └── [id]/                      # BD詳細 + BT一覧
+│       ├── edit/                  # BD編集
+│       ├── create/                # BT新規作成
+│       └── [taskId]/              # BT詳細 + BR一覧
+│           └── edit/              # BT編集
+├── system/                        # SD一覧
+│   ├── create/                    # SD新規作成
+│   └── [id]/                      # SD詳細 + SF一覧
+│       ├── edit/                  # SD編集
+│       ├── create/                # SF新規作成
+│       └── [srfId]/               # SF詳細 + SR/DD一覧
+│           └── edit/              # SF編集
+│               ├── basic/         #   基本情報タブ
+│               ├── requirements/  #   システム要件タブ
+│               └── design-documents/  # DDタブ
+├── ideas/                         # 概念辞書一覧
+│   ├── create/                    # 概念新規作成
+│   └── [id]/                      # 概念詳細
+│       └── edit/                  # 概念編集
+├── tickets/                       # 変更要求一覧
+│   ├── create/                    # CR起票
+│   └── [id]/                      # CR詳細
+│       └── edit/                  # CR編集
+├── links/                         # 要件リンク一覧
+├── baseline/                      # ベースライン履歴
+├── export/                        # エクスポート
+├── settings/                      # プロジェクト設定
+│   ├── llm/                       # LLM設定
+│   └── notification/              # 通知設定
+└── projects/                      # プロジェクト一覧
+    └── [id]/edit/                 # プロジェクト編集
 ```
+
+※ PRD初版の `/concepts` は `/ideas` に、`/change-requests` は `/tickets` に変更。
+URL階層はフラットに保ち、中間セグメント（`/bt/`、`/sf/`）を廃止してパスを短縮した。
 
 ---
 
 ### 9.2 主要画面の構成
+
+### ダッシュボード画面（/dashboard）
+
+プロジェクトの健全性を俯瞰するメイン画面。`/` にアクセスすると `/dashboard` にリダイレクトされる。
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│ ダッシュボード                          [ベースライン v1.2]         │
+│ 作成: 2026-01-05                                                    │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ┌─ コンパクトメトリクスバー ───────────────────────────────────┐  │
+│  │ オープン変更要求: 12 │ レビュー待ち: 3 │ 次回リリースまで: 27日 │  │
+│  └─────────────────────────────────────────────────────────────┘  │
+│                                                                     │
+│  ┌─────────────────────────────────────────────────────────────┐   │
+│  │ SuspectLinksCard（疑義リンクサマリ）                         │   │
+│  │ 疑義リンク: 5件  high: 2  medium: 3                          │   │
+│  └─────────────────────────────────────────────────────────────┘   │
+│                                                                     │
+│  ┌──────────────────────┐  ┌──────────────────────┐              │
+│  │ HealthScoreCard      │  │ レビュー待ち変更要求  │              │
+│  │ 正本ヘルススコア     │  │ CR-2026-031: ...     │              │
+│  │ スコア: 85/100       │  │ CR-2026-030: ...     │              │
+│  │ 課題: 4件            │  │ [承認] [否認]        │              │
+│  └──────────────────────┘  └──────────────────────┘              │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+構成コンポーネント：
+
+| コンポーネント | データソース | 備考 |
+|--------------|------------|------|
+| コンパクトメトリクスバー | — | 現時点ではハードコード値 |
+| SuspectLinksCard | requirement_links (suspect=true) | リアルデータ |
+| HealthScoreCard | BR/SR/SF/DD/Concept | リアルデータ、課題クリックでフィルタ付き遷移 |
+| レビュー待ち変更要求 | — | 現時点ではハードコード値 |
 
 ### プロダクト要件画面（/product-requirement）
 
@@ -3775,7 +3924,7 @@ PRを編集する画面。プロジェクト開始時に最初に設定し、以
 | 技術スタック | tech_stack_profile（フォーム形式） |
 | コーディング規約 | coding_conventions（YAMLエディタ） |
 
-### 業務領域詳細画面（/business/[bd_id]）
+### 業務領域詳細画面（/business/[id]）
 
 BD配下のBT一覧を表示し、BTの追加・編集を行う画面。
 
@@ -3813,7 +3962,7 @@ BD配下のBT一覧を表示し、BTの追加・編集を行う画面。
 | AIで追加 | AIチャットUIを開き、自然文からBT/BR/SF/SR/ACを一括生成 |
 | 詳細→ | BT詳細画面に遷移 |
 
-### 業務タスク詳細画面（/business/[bd_id]/bt/[bt_id]）
+### 業務タスク詳細画面（/business/[id]/[taskId]）
 
 BT配下のBR一覧を表示し、BRの追加・編集、SFとのリンク管理を行う画面。
 
@@ -3854,49 +4003,59 @@ BT配下のBR一覧を表示し、BRの追加・編集、SFとのリンク管理
 | リンク追加 | SFを検索・選択してrealizesリンクを作成 |
 | 未リンク警告 | ヘルススコア警告の対象（10.2参照） |
 
-### システム機能詳細画面（/system/[sd_id]/sf/[sf_id]）
+### システム機能詳細画面（/system/[id]/[srfId]）
 
-SF配下のSR、AC、実装単位SDを一覧表示し、編集する画面。
+SF配下のSR、DDを一覧表示する画面。タブUIではなくセクションレイアウトを採用し、1ページで全情報を俯瞰できる。
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│ ← SD-FI    SF-BIL-010: 請求書発行機能                     [編集]   │
+│ システム領域一覧 > システム機能一覧 > システム機能詳細               │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                     │
-│  [基本情報] [システム要件] [実装単位] [リンク]                      │
-│  ─────────────────────────────────────────────────────────────────  │
-│                                                                     │
-│  実現する業務要件:                                                  │
-│    BR-BIL-001: 請求書をPDFで出力できる                              │
-│                                                                     │
-│  ─────────────────────────────────────────────────────────────────  │
-│                                                                     │
-│  システム要件一覧                                         [追加]    │
+│  システム機能詳細                               [AIで追加]          │
 │                                                                     │
 │  ┌─────────────────────────────────────────────────────────────┐   │
-│  │ SR-BIL-001: 請求書PDFに登録番号を出力                       │   │
-│  │ type: data_io  priority: must                               │   │
-│  │                                                             │   │
-│  │ 受入基準:                                                   │   │
-│  │   AC-BIL-001-01: 正常系（GWT形式）                  [展開]  │   │
-│  │   AC-BIL-001-02: 異常系（GWT形式）                  [展開]  │   │
-│  │                                                     [編集]  │   │
+│  │ FunctionSummaryCard                                         │   │
+│  │ SF-BIL-010: 請求書発行機能                          [編集]  │   │
+│  │ 目的: ...  実現するBR: BR-BIL-001                           │   │
 │  └─────────────────────────────────────────────────────────────┘   │
 │                                                                     │
-│  ─────────────────────────────────────────────────────────────────  │
-│                                                                     │
-│  実装単位SD一覧                                           [追加]    │
-│                                                                     │
 │  ┌─────────────────────────────────────────────────────────────┐   │
-│  │ IU-BIL-010-01: 請求書発行画面                               │   │
+│  │ HealthScoreCard（システム機能ヘルススコア）                  │   │
+│  │ スコア: 85/100  未リンクSR: 1件  概念未登録: 2件             │   │
+│  └─────────────────────────────────────────────────────────────┘   │
+│                                                                     │
+│  ── 仕様 ──────────────────────────────────────────────────────── │
+│  システム要件                                                       │
+│  ┌─────────────────────────────────────────────────────────────┐   │
+│  │ SystemRequirementsSection                                   │   │
+│  │ SR-BIL-001: 請求書PDFに登録番号を出力                       │   │
+│  │ type: data_io  priority: must                               │   │
+│  └─────────────────────────────────────────────────────────────┘   │
+│                                                                     │
+│  ── 実装 ──────────────────────────────────────────────────────── │
+│  DD（Design Document）                                              │
+│  ┌─────────────────────────────────────────────────────────────┐   │
+│  │ DesignDocumentSection                                       │   │
+│  │ DD-BIL-010-01: 請求書発行画面                               │   │
 │  │ type: screen  entry_point: /app/billing/invoice/page.tsx    │   │
-│  │                                                     [編集]  │   │
 │  └─────────────────────────────────────────────────────────────┘   │
 │                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-### 変更要求詳細画面（/change-requests/[cr_id]）
+SF詳細画面のコンポーネント構成：
+
+| コンポーネント | 役割 |
+|--------------|------|
+| FunctionSummaryCard | SF基本情報、実現するBRへのリンク |
+| HealthScoreCard | SF単位のヘルススコア（SR/DDの健全性） |
+| SystemRequirementsSection | SR一覧（受入基準を含む） |
+| DesignDocumentSection | DD一覧（タイプ別アイコン表示） |
+
+「AIで追加」ボタンは `/chat?screen=SF&sdId={id}&sfId={srfId}` に遷移し、コンテキスト付きでAIチャットを開く。
+
+### 変更要求詳細画面（/tickets/[id]）
 
 CRの詳細、影響調査結果、疑義リンクを管理する画面。
 
@@ -3915,7 +4074,7 @@ CRの詳細、影響調査結果、疑義リンクを管理する画面。
 │  ┌─────────────────────────────────────────────────────────────┐   │
 │  │ トップダウン分析（正本ベース）                              │   │
 │  │   BR-BIL-001 → SF-BIL-010 → SR-BIL-001                      │   │
-│  │                          → 実装単位SD: IU-BIL-010-01        │   │
+│  │                          → DD: DD-BIL-010-01        │   │
 │  └─────────────────────────────────────────────────────────────┘   │
 │                                                                     │
 │  ┌─────────────────────────────────────────────────────────────┐   │
@@ -4031,9 +4190,9 @@ AI処理中の状態：
 | フロー | 起点 | 想定シーン |
 |--------|------|-----------|
 | 初期設定 | /product-requirement | プロジェクト開始時 |
-| AI登録（初期構築） | /business/[bd_id] → AIで追加 | 新規プロジェクト立ち上げ |
-| 手動登録 | /business/[bd_id] → 手動で追加 | 個別の業務タスク追加 |
-| 変更対応 | /change-requests | 運用中の機能追加・修正 |
+| AI登録（初期構築） | /business/[id] → AIで追加 | 新規プロジェクト立ち上げ |
+| 手動登録 | /business/[id] → 手動で追加 | 個別の業務タスク追加 |
+| 変更対応 | /tickets | 運用中の機能追加・修正 |
 
 ### 初期設定フロー
 
@@ -4064,7 +4223,7 @@ AIを使って業務要件からシステム要件までを一括生成するフ
 
 ```
 1. 業務領域詳細画面で「AIで追加」を選択
-   /business/[bd_id] → [AIで追加]
+   /business/[id] → [AIで追加]
    
 2. AIチャットUIが起動
    - コンテキスト（現在のBD、PR）が自動注入される
@@ -4082,7 +4241,7 @@ AIを使って業務要件からシステム要件までを一括生成するフ
    
    ※PRのtech_stack_profileを参照し、以下に反映：
    - SRの非機能（性能/セキュリティ等）の前提
-   - 実装単位SDのentry_pointの構造
+   - DDのentry_pointの構造
    
 5. 草案をレビュー
    - 各項目を確認・修正
@@ -4098,23 +4257,23 @@ AIを使わず、フォームで直接登録するフロー。
 
 ```
 1. 業務領域詳細画面で「手動で追加」を選択
-   /business/[bd_id] → [手動で追加]
-   
+   /business/[id] → [手動で追加]
+
 2. BTフォームに入力
    - 名前、説明、業務コンテキスト、プロセスステップなど
-   
+
 3. BT詳細画面でBRを追加
-   /business/[bd_id]/bt/[bt_id] → [手動で追加]
-   
+   /business/[id]/[taskId] → [手動で追加]
+
 4. BRフォームに入力
    - 目標、制約、影響など
-   
+
 5. SFとのリンクを設定
    - 「リンク追加」で既存SFを検索・選択
    - または「新規SFを作成」でSFを作成しつつリンク
-   
-6. SF詳細画面でSR/AC/実装単位SDを追加
-   /system/[sd_id]/sf/[sf_id] → 各セクションで追加
+
+6. SF詳細画面でSR/DDを追加
+   /system/[id]/[srfId] → 各セクションで追加
 ```
 
 ### 変更対応フロー
@@ -4123,33 +4282,33 @@ AIを使わず、フォームで直接登録するフロー。
 
 ```
 1. CR起票
-   /change-requests → [起票]
+   /tickets → [起票]
    - タイトル、説明、初期スコープを入力
-   
+
 2. 影響調査開始
-   /change-requests/[cr_id] → [影響調査開始]
+   /tickets/[id] → [影響調査開始]
    - トップダウン分析（正本ベース）が自動実行
    - コーディングエージェントへの調査ジョブが投入される
-   
+
 3. 調査結果の確認
-   /change-requests/[cr_id] → [影響調査]タブ
+   /tickets/[id] → [影響調査]タブ
    - トップダウン結果とボトムアップ結果を確認
    - 逆流提案があれば検討
-   
+
 4. 疑義リンクの解消
-   /change-requests/[cr_id] → [疑義リンク]タブ
+   /tickets/[id] → [疑義リンク]タブ
    - high/mediumを優先して処理
    - 「確認して維持」または「修正」
-   
+
 5. 改修指示パッケージ生成
-   /change-requests/[cr_id] → [改修指示パッケージ生成]
+   /tickets/[id] → [改修指示パッケージ生成]
    - 疑義解消後に有効化される
    - allow_paths、参照要件、残存リスクを含むパッケージを生成
-   
+
 6. 改修実行
    - コーディングエージェントが実装
    - PRが作成される
-   
+
 7. PRレビュー・マージ
    - 人間がPRをレビュー
    - マージ後、CRをcompletedに更新
@@ -4301,8 +4460,8 @@ BT/BR/SRの登録・編集時に、AIが本文から概念候補を抽出し、�
 |-------------|:------:|---------|
 | 業務要件にシステム機能が紐づいていない | high | realizesリンクが0件 |
 | システム機能に業務要件が紐づいていない | high | realizesリンクの逆引きが0件 |
-| システム機能に実装単位SDが未設定 | high | 実装単位SDが0件 |
-| 実装単位SDにエントリポイントがない | high | entry_pointがnullまたは空 |
+| システム機能にDDが未設定 | high | DDが0件 |
+| DDにエントリポイントがない | high | entry_pointがnullまたは空 |
 | 概念辞書の用語が要件文中に出現するのにリンクがない | medium | テキストマッチ |
 | 疑義リンクが一定期間放置されている | medium | suspect=trueかつlast_confirmedが30日以上前 |
 | 変更要求の影響範囲と正本のつながりに矛盾がある | medium | 差分検出 |
@@ -4429,11 +4588,12 @@ BT/BR/SRの登録・編集時に、AIが本文から概念候補を抽出し、�
 | フェーズ | 目的 | 主な成果物 |
 |---------|------|-----------|
 | Phase 1 | 基盤構築（MVP） | プロジェクト設定、DBスキーマ、共通レイアウト |
-| Phase 2 | 正本管理（手動） | BD/BT/BR/SD/SF/SR/AC/実装単位SDのCRUD画面 |
+| Phase 2 | 正本管理（手動） | BD/BT/BR/SD/SF/SR/AC/DDのCRUD画面 |
 | Phase 3 | リンクと概念 | 要件間リンク、概念辞書、ヘルススコア |
 | Phase 4 | AI機能 | Mastra Agent、チャットUI、草案生成 |
 | Phase 5 | 変更管理と連携 | CR、影響調査、エクスポート、MCP Server |
-| Phase 6 | 認証・セキュリティ（MVP後） | BetterAuth、RLS（プロジェクト単位アクセス制御） |
+| Phase 4.5 | 構造化スキーマ | DDの構造化I/Oスキーマ導入（control_plane.md準拠） |
+| Phase 6 | 認証・セキュリティ（MVP後） | Supabase Auth、RLS（プロジェクト単位アクセス制御） |
 
 ### 依存関係
 
@@ -4448,6 +4608,9 @@ Phase 2（正本CRUD）
 Phase 3         Phase 4
 （リンク・概念）  （AI機能）
     │               │
+    │           Phase 4.5
+    │          （構造化スキーマ）
+    │               │
     └───────┬───────┘
             ▼
         Phase 5
@@ -4458,7 +4621,7 @@ Phase 3         Phase 4
    （認証・セキュリティ）
 ```
 
-Phase 3とPhase 4は並行して進められる。Phase 5は両方の完了後に開始する。Phase 6はMVP後の拡張として扱う。
+Phase 3とPhase 4は並行して進められる。Phase 4.5はPhase 4完了後に着手し、DDの構造化I/Oスキーマを導入する。Phase 5はPhase 3・Phase 4.5の両方の完了後に開始する。Phase 6はMVP後の拡張として扱う。
 
 ---
 
@@ -4473,7 +4636,7 @@ Phase 3とPhase 4は並行して進められる。Phase 5は両方の完了後�
 - [x] 1-3. Supabase プロジェクト作成・接続設定
 - [x] 1-5. DBスキーマ作成（projects, product_requirements）
 - [x] 1-6. DBスキーマ作成（業務側: business_domains, business_tasks, business_requirements）
-- [x] 1-7. DBスキーマ作成（システム側: system_domains, system_functions, system_requirements, acceptance_criteria, impl_unit_sds）
+- [x] 1-7. DBスキーマ作成（システム側: system_domains, system_functions, system_requirements, acceptance_criteria, design_documents）
 - [x] 1-8. DBスキーマ作成（concepts, requirement_links）
 - [x] 1-10. 共通レイアウト・サイドメニュー実装
 
@@ -4491,7 +4654,7 @@ Phase 3とPhase 4は並行して進められる。Phase 5は両方の完了後�
 - [x] 2-8. システム機能（SF）詳細・作成・編集画面
 - [x] 2-9. システム要件（SR）作成・編集フォーム（SF詳細画面内）
 - [x] 2-10. 受入基準（AC）作成・編集フォーム（SR内、GWTテンプレート対応）
-- [x] 2-11. 実装単位SD作成・編集フォーム（SF詳細画面内）
+- [x] 2-11. DD作成・編集フォーム（SF詳細画面内）
 - [x] 2-12. 設定画面（プロジェクト設定）
 
 ### Phase 3: リンクと概念
@@ -4517,24 +4680,41 @@ Mastra Agentを統合し、チャットUIと草案生成機能を実装する。
 - [x] 4-2. コンテキスト注入機能（PR、現在位置、既存要件）
 - [x] 4-3. bt_draft / br_draft Tool 実装
 - [x] 4-4. system_draft Tool 実装（SF/SR/AC一括生成）
-- [x] 4-5. impl_unit_draft Tool 実装
+- [x] 4-5. dd_draft Tool 実装
 - [x] 4-6. critic_check Tool 実装
 - [x] 4-7. AIチャットUI（/chat）実装（ストリーミング、クイックアクション、リトライ、履歴オーバーレイ含む）
 - [x] 4-8. 草案プレビュー・確定フロー実装（save_to_draft / commit_draft を含む）
 - [x] 4-9. 「AIで追加」ボタン連携（BD詳細→チャットUI起動）
 - [x] 4-10. 概念候補抽出・提案UI実装（BT草案の概念候補表示を含む）
 
+### Phase 4.5: 構造化スキーマ
+
+DDの入出力定義をテキスト自由記述から構造化Zodスキーマに移行する。`docs/control_plane.md` に準拠。
+
+詳細なチェックリストは `docs/checklists/active/2026-02-05-structured-io-schema.md` を正本とする。
+
+- [x] 4.5-1. フィールド定義スキーマ（`lib/domain/schemas/fields.ts`）
+- [x] 4.5-2. タイプ別I/Oスキーマ（`lib/domain/schemas/io-schemas.ts`）
+- [x] 4.5-3. 副作用スキーマ（`lib/domain/schemas/side-effects.ts`）
+- [x] 4.5-4. 例外スキーマ（`lib/domain/schemas/exceptions.ts`）
+- [x] 4.5-5. 非機能要件スキーマ（`lib/domain/schemas/non-functional.ts`）
+- [x] 4.5-6. DD統合スキーマ（`lib/domain/schemas/design-document-structured.ts`）
+- [x] 4.5-7. スキーマ単体テスト
+- [ ] 4.5-8. UI/フォーム更新（FieldEditor、タイプ別フォーム、統合セクション）
+- [ ] 4.5-9. データ移行・互換性レイヤー
+- [ ] 4.5-10. DBスキーマ変更（structured_input/output JSONBカラム）
+
 ### Phase 5: 変更管理と連携
 
 変更要求、影響調査、コーディングエージェント連携を実装する。
 
-- [ ] 5-1. DBスキーマ追加（change_requests, investigation_results）
-- [ ] 5-2. 変更要求（CR）一覧・起票・編集画面
-- [ ] 5-3. impact_analysis Tool 実装（トップダウン分析）
-- [ ] 5-4. 疑義リンク管理（suspect状態の設定・解消UI）
-- [ ] 5-5. 疑義リンク受信箱UI
-- [ ] 5-6. CR詳細画面（影響調査結果表示、疑義リンク一覧）
-- [ ] 5-7. エクスポート機能（7章形式のファイル出力）
+- [x] 5-1. DBスキーマ追加（change_requests, investigation_results, impact_scopes）
+- [x] 5-2. 変更要求（CR）一覧・起票・編集画面（/tickets）
+- [x] 5-3. impact_analysis Tool 実装（トップダウン分析: CR → BR → SF → SR → AC）
+- [x] 5-4. 疑義リンク管理（suspect状態の設定・解消UI）
+- [x] 5-5. 疑義リンクダッシュボード（SuspectLinksCard）
+- [ ] 5-6. CR詳細画面（影響調査結果表示、疑義リンク一覧）— 部分実装済み
+- [x] 5-7. エクスポート機能（business/requirements/system の3形式、ZIP出力）
 - [ ] 5-8. MCP Server 実装（get_product_requirement, search_requirements等）
 - [ ] 5-9. 改修指示パッケージ生成機能
 - [ ] 5-10. 設計決定ログ記録機能
@@ -4543,7 +4723,7 @@ Mastra Agentを統合し、チャットUIと草案生成機能を実装する。
 
 MVPでは実装せず、MVP通過後の拡張として実施する。
 
-- [ ] 6-1. BetterAuth セットアップ（メール認証）
+- [ ] 6-1. Supabase Auth セットアップ（メール認証）
 - [ ] 6-2. RLS ポリシー設定（プロジェクト単位のアクセス制御）
 
 ---
@@ -4555,11 +4735,12 @@ MVPでは実装せず、MVP通過後の拡張として実施する。
 | マイルストーン | 達成条件 | 想定期間 |
 |--------------|---------|---------|
 | M1: 基盤完成 | DB接続、共通レイアウトが動作 | 1週間 |
-| M2: 手動登録完成 | 全要件タイプのCRUDが動作、手動でBD→BT→BR→SF→SR→AC→実装単位SDを登録できる | 2〜3週間 |
+| M2: 手動登録完成 | 全要件タイプのCRUDが動作、手動でBD→BT→BR→SF→SR→AC→DDを登録できる | 2〜3週間 |
 | M3: リンク・概念完成 | realizesリンク、概念辞書、ヘルススコアが動作 | 1〜2週間 |
 | M4: AI機能完成 | チャットUIで草案生成→確定が動作 | 2〜3週間 |
 | M5: 変更管理完成 | CR起票→影響調査→エクスポートが動作 | 2〜3週間 |
-| M6: 認証・セキュリティ完成 | BetterAuthとRLSが動作 | 1〜2週間 |
+| M4.5: 構造化スキーマ完成 | DDの構造化I/O・副作用・例外・非機能が定義可能、フォーム対応 | 1〜2週間 |
+| M6: 認証・セキュリティ完成 | Supabase AuthとRLSが動作 | 1〜2週間 |
 
 想定合計: 8〜12週間 + Phase6（1〜2週間）
 
@@ -4579,7 +4760,7 @@ M2完了時の確認項目：
 |---|---------|
 | 1 | PRを編集し、保存できる（tech_stack_profile含む） |
 | 2 | BD→BT→BRの階層を手動で作成・編集・削除できる |
-| 3 | SD→SF→SR→AC→実装単位SDの階層を手動で作成・編集・削除できる |
+| 3 | SD→SF→SR→AC→DDの階層を手動で作成・編集・削除できる |
 | 4 | ACのGWT形式（Given-When-Then）で入力できる |
 | 5 | 各画面でパンくずリストが正しく表示される |
 
@@ -4666,7 +4847,7 @@ M6完了時の確認項目：
 |------|------|
 | 正本 | 要件管理DBに登録され、確定した状態のデータ。草案が確定操作を経て正本になる |
 | 草案 | AIが生成した未確定の要件データ。人間のレビュー・編集を経て確定すると正本になる |
-| エントリポイント | コードの起点となるファイルパス。実装単位SDで定義し、影響調査の起点として使用する |
+| エントリポイント | コードの起点となるファイルパス。DDで定義し、影響調査の起点として使用する |
 
 ### 要件階層
 
@@ -4680,7 +4861,7 @@ M6完了時の確認項目：
 | システム機能 | SF | ユーザーから見た機能の単位 |
 | システム要件 | SR | システム機能に対して「何を保証すべきか」を記述したもの |
 | 受入基準 | AC | システム要件の達成を検証するための具体的な条件 |
-| 実装単位SD | - | システム機能を実装するための設計単位。entry_pointを持つ |
+| DD（Design Document） | - | システム機能を実装するための設計単位。画面/API/バッチ/ジョブ/外部I/F/モデル/レポートの7種別。entry_pointを持つ |
 
 ### リンクと管理
 

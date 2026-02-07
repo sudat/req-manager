@@ -149,12 +149,24 @@ export function FieldEditor({ label, fields, onChange }: FieldEditorProps) {
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">フォーマット</Label>
-                <Input
-                  value={field.constraints?.format ?? ""}
-                  onChange={(e) => handleConstraintChange(index, { format: e.target.value as any })}
-                  placeholder="email/uuid/date"
-                />
+                <Label className="text-xs">フォーマット（任意）</Label>
+                <Select
+                  value={field.constraints?.format}
+                  onValueChange={(value) =>
+                    handleConstraintChange(index, {
+                      format: value as "email" | "date" | "uuid",
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="選択してください" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="email">email</SelectItem>
+                    <SelectItem value="date">date</SelectItem>
+                    <SelectItem value="uuid">uuid</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 

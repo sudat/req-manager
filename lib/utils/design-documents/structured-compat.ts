@@ -47,8 +47,7 @@ export function parseStructuredDetails(
     const maybeStructuredHint =
       "ioType" in normalized ||
       "inputFields" in normalized ||
-      "outputFields" in normalized ||
-      "boundaries" in normalized;
+      "outputFields" in normalized;
 
     return {
       structuredSpec: undefined,
