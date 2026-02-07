@@ -2,6 +2,7 @@ import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
 import { supabase } from '@/lib/supabase/client';
 import { toolSuccess, toolError } from '@/lib/mastra/utils/tool-helpers';
+import { createRequirementLinks } from '@/lib/data/requirement-links';
 
 /**
  * ドラフトタイプごとのコンテンツスキーマ定義
@@ -36,33 +37,74 @@ const btContentSchema = z.object({
 
 // Business Requirement (BR) コンテンツスキーマ
 const brContentSchema = z.object({
-  business_task_id: z.string(),
+  business_task_id: z.string().optional(),
+  task_id: z.string().optional(),
   project_id: z.string().optional(),
   code: z.string(),
   requirement: z.string(),
-  rationale: z.string(),
+  rationale: z.string().optional(),
   concept_ids: z.array(z.string()).optional(),
+}).superRefine((value, ctx) => {
+  if (!value.business_task_id && !value.task_id) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'business_task_id または task_id を指定してください',
+      path: ['business_task_id'],
+    });
+  }
 });
 
 // System Function (SF) コンテンツスキーマ
 const sfContentSchema = z.object({
-  system_domain_id: z.string(),
+  system_domain_id: z.string().optional(),
   project_id: z.string().optional(),
   code: z.string(),
   name: z.string(),
   description: z.string(),
-  concept_ids: z.array(z.string()).optional(),
+  category: z.string().optional(),
+  status: z.string().optional(),
+  related_task_ids: z.array(z.string()).optional(),
+  requirement_ids: z.array(z.string()).optional(),
+  system_design: z.array(z.any()).optional(),
+  entry_points: z.array(z.any()).optional(),
+  code_refs: z.array(z.any()).optional(),
+  design_policy: z.string().optional(),
+  sort_order: z.number().optional(),
+  brIds: z.array(z.string()).optional(),
 });
 
 // System Requirement (SR) コンテンツスキーマ
 const srContentSchema = z.object({
-  system_function_id: z.string(),
+  task_id: z.string().optional(),
+  business_task_id: z.string().optional(),
+  system_function_id: z.string().optional(),
   project_id: z.string().optional(),
   code: z.string(),
-  type: z.string(),
+  title: z.string().optional(),
+  summary: z.string().optional(),
+  type: z.string().optional(),
   requirement: z.string(),
-  rationale: z.string(),
+  rationale: z.string().optional(),
   concept_ids: z.array(z.string()).optional(),
+  impacts: z.array(z.string()).optional(),
+  srf_ids: z.array(z.string()).optional(),
+  system_domain_ids: z.array(z.string()).optional(),
+  businessRequirementIds: z.array(z.string()).optional(),
+  acs: z.array(z.object({
+    code: z.string(),
+    title: z.string().optional(),
+    given: z.string(),
+    when: z.string(),
+    then: z.string(),
+  })).optional(),
+}).superRefine((value, ctx) => {
+  if (!value.task_id && !value.business_task_id) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'task_id または business_task_id を指定してください',
+      path: ['task_id'],
+    });
+  }
 });
 
 // Acceptance Criteria (AC) コンテンツスキーマ
@@ -70,19 +112,50 @@ const acContentSchema = z.object({
   system_requirement_id: z.string(),
   project_id: z.string().optional(),
   code: z.string(),
+  title: z.string().optional(),
   given: z.string(),
   when: z.string(),
   then: z.string(),
 });
 
-// Implementation Unit (IU) コンテンツスキーマ
-const implUnitContentSchema = z.object({
-  system_function_id: z.string(),
+// Design Document (DD) コンテンツスキーマ
+const ddContentSchema = z.object({
+  id: z.string().optional(),
+  code: z.string().optional(),
+  srfId: z.string().optional(),
+  srf_id: z.string().optional(),
   project_id: z.string().optional(),
-  code: z.string(),
   name: z.string(),
-  entry_point: z.string(),
-  design_notes: z.string().optional(),
+  type: z.string().optional(),
+  summary: z.string().optional(),
+  entryPoints: z.array(z.object({
+    path: z.string(),
+    type: z.string().optional().nullable(),
+    responsibility: z.string().optional().nullable(),
+  })).optional(),
+  entry_points: z.array(z.object({
+    path: z.string(),
+    type: z.string().optional().nullable(),
+    responsibility: z.string().optional().nullable(),
+  })).optional(),
+  designPolicy: z.string().optional(),
+  design_policy: z.string().optional(),
+  details: z.record(z.string(), z.any()).optional(),
+}).superRefine((value, ctx) => {
+  if (!value.id && !value.code) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'id または code を指定してください',
+      path: ['id'],
+    });
+  }
+  if (!value.srfId && !value.srf_id) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'srfId または srf_id を指定してください',
+      path: ['srfId'],
+    });
+  }
 });
 
 /**
@@ -95,7 +168,7 @@ export const commitDraftTool = createTool({
   description: '草案を正本に登録する（確定操作）',
   inputSchema: z.object({
     draftId: z.string(),
-    type: z.enum(['bt', 'br', 'sf', 'sr', 'ac', 'impl_unit']),
+    type: z.enum(['bt', 'br', 'sf', 'sr', 'ac', 'dd', 'impl_unit']),
     content: z.any(), // 実行時にtypeに応じてバリデーション
   }),
   execute: async (inputData) => {
@@ -117,6 +190,36 @@ export const commitDraftTool = createTool({
       const shouldRetryWithoutProjectId = (error: any) => {
         const message = `${error?.message ?? ''} ${error?.details ?? ''}`.toLowerCase();
         return message.includes('project_id') && message.includes('does not exist');
+      };
+
+      const normalizeSystemRequirementCategory = (value?: string) => {
+        if (
+          value === 'function' ||
+          value === 'data' ||
+          value === 'exception' ||
+          value === 'non_functional'
+        ) {
+          return value;
+        }
+        if (value === 'functional') return 'function';
+        if (value === 'auth') return 'non_functional';
+        return 'function';
+      };
+
+      const buildAcceptanceDescription = (ac: { given: string; when: string; then: string }) =>
+        `Given ${ac.given} When ${ac.when} Then ${ac.then}`;
+
+      const buildAcceptanceTitle = (ac: { title?: string; given: string; when: string; then: string }) => {
+        const candidate = (ac.title || ac.then || ac.when || ac.given || '').trim();
+        return candidate || buildAcceptanceDescription(ac);
+      };
+
+      const buildSystemRequirementTitle = (text: string) => {
+        const trimmed = text.trim();
+        const firstSentence = trimmed.split(/。|\n/)[0]?.trim();
+        const base = firstSentence || trimmed;
+        if (base.length <= 40) return base;
+        return `${base.slice(0, 40)}...`;
       };
 
       const toTextArrayOrEmpty = (value?: string[] | null) => {
@@ -183,14 +286,30 @@ export const commitDraftTool = createTool({
         },
         br: async () => {
           const v = brContentSchema.parse(content);
-          const projectId = v.project_id ?? (await resolveProjectId('business_tasks', v.business_task_id));
+          const taskId = v.task_id ?? v.business_task_id;
+          if (!taskId) {
+            throw new Error('business_task_id または task_id が必要です');
+          }
+          const projectId = v.project_id ?? (await resolveProjectId('business_tasks', taskId));
+          if (!projectId) {
+            throw new Error('project_id が取得できません');
+          }
+          const goal = v.rationale
+            ? `${v.requirement}\n\n理由: ${v.rationale}`
+            : v.requirement;
           const row = {
-            business_task_id: v.business_task_id,
-            code: v.code,
-            requirement: v.requirement,
-            rationale: v.rationale,
+            id: v.code,
+            task_id: taskId,
+            title: v.requirement,
+            goal,
+            constraints: null,
+            owner: null,
             concept_ids: toTextArrayOrEmpty(v.concept_ids),
-            ...(projectId ? { project_id: projectId } : {}),
+            srf_ids: [],
+            system_domain_ids: [],
+            impacts: [],
+            sort_order: 0,
+            project_id: projectId,
             created_at: now,
             updated_at: now,
           };
@@ -199,68 +318,175 @@ export const commitDraftTool = createTool({
         },
         sf: async () => {
           const v = sfContentSchema.parse(content);
-          const projectId = v.project_id ?? (await resolveProjectId('system_domains', v.system_domain_id));
-          const row = {
-            system_domain_id: v.system_domain_id,
-            code: v.code,
-            name: v.name,
-            description: v.description,
-            concept_ids: toTextArrayOrEmpty(v.concept_ids),
-            ...(projectId ? { project_id: projectId } : {}),
-            created_at: now,
+          const projectId = v.project_id ?? (v.system_domain_id ? await resolveProjectId('system_domains', v.system_domain_id) : undefined);
+          if (!projectId) {
+            throw new Error('project_id が取得できません');
+          }
+	          const row = {
+	            id: v.code,
+	            system_domain_id: v.system_domain_id ?? null,
+	            category: v.category ?? 'screen',
+	            title: v.name,
+	            summary: v.description,
+	            status: v.status ?? 'not_implemented',
+	            related_task_ids: toTextArrayOrEmpty(v.related_task_ids),
+	            requirement_ids: toTextArrayOrEmpty(v.requirement_ids),
+	            system_design: v.system_design ?? [],
+	            code_refs: v.code_refs ?? [],
+	            entry_points: v.entry_points ?? [],
+	            design_policy: v.design_policy ?? '',
+	            sort_order: v.sort_order ?? 0,
+	            project_id: projectId,
+	            created_at: now,
             updated_at: now,
           };
           const inserted = await insertRow('system_functions', row);
+
+          // BR→SF realizes リンクを作成
+          if (v.brIds && v.brIds.length > 0 && projectId) {
+            const links = v.brIds.map((brId) => ({
+              sourceType: 'br' as const,
+              sourceId: brId,
+              targetType: 'sf' as const,
+              targetId: v.code,
+              linkType: 'realizes',
+              projectId,
+            }));
+            await createRequirementLinks(links);
+            console.log('[commit_draft] Created realizes links:', links.map(l => `${l.sourceId} → ${l.targetId}`));
+          }
+
           return inserted?.id;
         },
         sr: async () => {
           const v = srContentSchema.parse(content);
-          const projectId = v.project_id ?? (await resolveProjectId('system_functions', v.system_function_id));
+          const taskId = v.task_id ?? v.business_task_id;
+          if (!taskId) {
+            throw new Error('task_id が必要です');
+          }
+          const projectId = v.project_id ?? (await resolveProjectId('business_tasks', taskId));
+          if (!projectId) {
+            throw new Error('project_id が取得できません');
+          }
+          const srfIds =
+            v.srf_ids ??
+            (v.system_function_id ? [v.system_function_id] : []);
+          const title = v.title ?? buildSystemRequirementTitle(v.requirement);
+          const summary = v.summary ?? v.requirement;
           const row = {
-            system_function_id: v.system_function_id,
-            code: v.code,
-            type: v.type,
-            requirement: v.requirement,
-            rationale: v.rationale,
+            id: v.code,
+            task_id: taskId,
+            srf_ids: srfIds,
+            title,
+            summary,
             concept_ids: toTextArrayOrEmpty(v.concept_ids),
-            ...(projectId ? { project_id: projectId } : {}),
+            impacts: toTextArrayOrEmpty(v.impacts),
+            system_domain_ids: v.system_domain_ids ?? [],
+            category: normalizeSystemRequirementCategory(v.type),
+            acceptance_criteria: [],
+            acceptance_criteria_json: [],
+            sort_order: 0,
+            project_id: projectId,
             created_at: now,
             updated_at: now,
           };
           const inserted = await insertRow('system_requirements', row);
-          return inserted?.id;
+          const systemRequirementId = inserted?.id ?? v.code;
+          if (v.acs && v.acs.length > 0) {
+            for (let i = 0; i < v.acs.length; i += 1) {
+              const ac = v.acs[i];
+              const acRow = {
+                id: ac.code,
+                system_requirement_id: systemRequirementId,
+                project_id: projectId,
+                description: buildAcceptanceTitle(ac),
+                given_text: ac.given,
+                when_text: ac.when,
+                then_text: ac.then,
+                sort_order: i,
+                created_at: now,
+                updated_at: now,
+              };
+              await insertRow('acceptance_criteria', acRow);
+            }
+          }
+
+          if (v.businessRequirementIds && v.businessRequirementIds.length > 0) {
+            const linkInputs = [];
+            const linkKeys = new Set<string>();
+            for (const brId of v.businessRequirementIds) {
+              const key = `${systemRequirementId}:${brId}`;
+              if (linkKeys.has(key)) continue;
+              linkKeys.add(key);
+              linkInputs.push({
+                sourceType: 'sr' as const,
+                sourceId: systemRequirementId,
+                targetType: 'br' as const,
+                targetId: brId,
+                linkType: 'derived_from',
+                projectId,
+              });
+            }
+            if (linkInputs.length > 0) {
+              const { error: linkError } = await createRequirementLinks(linkInputs);
+              if (linkError) {
+                throw new Error(`requirement_links作成に失敗しました: ${linkError}`);
+              }
+            }
+          }
+          return systemRequirementId;
         },
         ac: async () => {
           const v = acContentSchema.parse(content);
           const projectId = v.project_id ?? (await resolveProjectId('system_requirements', v.system_requirement_id));
+          if (!projectId) {
+            throw new Error('project_id が取得できません');
+          }
           const row = {
             system_requirement_id: v.system_requirement_id,
+            description: buildAcceptanceTitle(v),
             code: v.code,
             given_text: v.given,
             when_text: v.when,
             then_text: v.then,
-            ...(projectId ? { project_id: projectId } : {}),
+            project_id: projectId,
             created_at: now,
             updated_at: now,
           };
           const inserted = await insertRow('acceptance_criteria', row);
           return inserted?.id;
         },
-        impl_unit: async () => {
-          const v = implUnitContentSchema.parse(content);
-          const projectId = v.project_id ?? (await resolveProjectId('system_functions', v.system_function_id));
+        dd: async () => {
+          const v = ddContentSchema.parse(content);
+          const ddId = v.id ?? v.code;
+          const srfId = v.srfId ?? v.srf_id;
+          if (!ddId || !srfId) {
+            throw new Error('DDのIDまたはSF IDが不足しています');
+          }
+          const projectId = v.project_id ?? (await resolveProjectId('system_functions', srfId));
+          if (!projectId) {
+            throw new Error('project_id が取得できません');
+          }
+          const entryPoints = v.entryPoints ?? v.entry_points ?? [];
           const row = {
-            system_function_id: v.system_function_id,
-            code: v.code,
+            id: ddId,
+            srf_id: srfId,
             name: v.name,
-            entry_point: v.entry_point,
-            design_notes: v.design_notes ?? null,
-            ...(projectId ? { project_id: projectId } : {}),
+            type: v.type ?? "screen",
+            summary: v.summary ?? "",
+            entry_points: entryPoints,
+            design_policy: v.designPolicy ?? v.design_policy ?? "",
+            details: v.details ?? {},
+            project_id: projectId,
             created_at: now,
             updated_at: now,
           };
-          const inserted = await insertRow('impl_unit_sds', row);
-          return inserted?.id;
+          const inserted = await insertRow('design_documents', row);
+          return inserted?.id ?? ddId;
+        },
+        impl_unit: async () => {
+          // backward compatibility: treat impl_unit as dd
+          return draftHandlers.dd();
         },
       };
 
@@ -285,8 +511,9 @@ export const commitDraftTool = createTool({
             return `✅ システム要件を登録しました\n\n**ID: ${displayId}**`;
           case 'ac':
             return `✅ 受入条件を登録しました\n\n**ID: ${displayId}**`;
+          case 'dd':
           case 'impl_unit':
-            return `✅ 実装単位を登録しました\n\n**ID: ${displayId}**\n名前: ${content.name ?? '未設定'}`;
+            return `✅ DDを登録しました\n\n**ID: ${displayId}**\n名前: ${content.name ?? '未設定'}`;
           default:
             return `草案を正本に登録しました（${t} ID: ${displayId}）`;
         }

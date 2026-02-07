@@ -164,7 +164,7 @@ LIMIT 15;
 
 ### 4. フロントエンドで表示確認
 ```
-http://localhost:3002/system-domains/AR/SRF-001
+http://localhost:3002/system/AR/SRF-001
 ```
 → システム要件カードにACが表示されていることを確認
 

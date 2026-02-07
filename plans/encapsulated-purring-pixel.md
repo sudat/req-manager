@@ -157,7 +157,7 @@ return {
    ```
 
 2. **UI表示確認**:
-   - http://localhost:3002/system-domains/AR/SRF-001 にアクセス
+   - http://localhost:3002/system/AR/SRF-001 にアクセス
    - SR-TASK-003-002/009のACがシンプルなテキストで表示されていることを確認
 
 3. **一貫性確認**:

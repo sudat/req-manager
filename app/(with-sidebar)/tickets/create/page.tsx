@@ -2,12 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
-import { ArrowLeft, Info, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useProject } from "@/components/project/project-context";
 import { createChangeRequest } from "@/lib/data/change-requests";
@@ -110,27 +108,35 @@ export default function TicketCreatePage() {
 
   return (
     <>
-      <div className="flex-1 min-h-screen bg-slate-50">
-        <div className="mx-auto max-w-[1400px] p-8">
-          <Link href="/tickets" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900 mb-4">
-            <ArrowLeft className="h-4 w-4" />
-            変更要求一覧に戻る
-          </Link>
+      <div className="bg-slate-50">
+        <div className="mx-auto max-w-[1400px] px-8 py-6">
 
-          <h1 className="text-2xl font-semibold text-slate-900 mb-6">変更要求を起票</h1>
+          {/* ── ページヘッダー ── */}
+          <div className="mb-8">
+            <Link href="/tickets" className="inline-flex items-center gap-1.5 text-[13px] font-medium text-slate-500 hover:text-slate-700 mb-3">
+              <ArrowLeft className="h-3.5 w-3.5" />
+              変更要求一覧に戻る
+            </Link>
+            <h1 className="text-[28px] font-semibold tracking-tight text-slate-900">変更要求を起票</h1>
+            <p className="text-[14px] text-slate-500 mt-1">変更要求の内容と影響範囲を登録する</p>
+          </div>
 
-          <Card className="p-6">
-            <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit}>
+
+            {/* ── 必須グループ ── */}
+            <div className="space-y-4">
               <div className="space-y-2">
-                <Label>
-                  タイトル<span className="text-rose-500">*</span>
+                <Label className="flex items-center gap-2">
+                  タイトル
+                  <span className="id-label">必須</span>
                 </Label>
                 <Input name="title" placeholder="例: インボイス制度対応" required disabled={submitting} />
               </div>
 
               <div className="space-y-2">
-                <Label>
-                  背景・目的<span className="text-rose-500">*</span>
+                <Label className="flex items-center gap-2">
+                  背景・目的
+                  <span className="id-label">必須</span>
                 </Label>
                 <Textarea
                   name="background"
@@ -140,7 +146,17 @@ export default function TicketCreatePage() {
                   disabled={submitting}
                 />
               </div>
+            </div>
 
+            {/* ── セパレータ: オプション ── */}
+            <div className="flex items-center gap-3 my-6">
+              <div className="h-px flex-1 bg-slate-200" />
+              <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">オプション</span>
+              <div className="h-px flex-1 bg-slate-200" />
+            </div>
+
+            {/* ── オプショングループ ── */}
+            <div className="space-y-4">
               <div className="space-y-2">
                 <Label>修正内容</Label>
                 <Textarea
@@ -160,45 +176,55 @@ export default function TicketCreatePage() {
                   disabled={submitting}
                 />
               </div>
+            </div>
 
-              <Card className="border-amber-200 bg-amber-50 p-4">
-                <div className="flex items-start gap-3">
-                  <Info className="h-5 w-5 text-amber-500 mt-0.5" />
-                  <div>
-                    <div className="text-sm font-semibold text-amber-900">影響範囲の選択</div>
-                    <div className="text-xs text-amber-700 mt-1">
-                      変更対象となる業務要件・システム要件を選択してください。選択した要件の受入条件が自動的に登録されます。
-                    </div>
-                  </div>
-                </div>
-              </Card>
+            {/* ── セパレータ: 影響範囲 ── */}
+            <div className="flex items-center gap-3 my-6">
+              <div className="h-px flex-1 bg-slate-200" />
+              <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">影響範囲</span>
+              <div className="h-px flex-1 bg-slate-200" />
+            </div>
 
-              <div className="space-y-2">
-                <Label>影響範囲の選択（オプション）</Label>
-                <ImpactScopeSelector
-                  onSelectionChange={setSelectedRequirements}
-                  readonly={submitting}
-                />
+            {/* ── 影響範囲グループ ── */}
+            <div className="space-y-2">
+              <Label>影響範囲の選択（オプション）</Label>
+              <p className="text-[13px] text-slate-500">変更対象となる業務要件・システム要件を選択してください。選択した要件の受入条件が自動的に登録されます。</p>
+              <ImpactScopeSelector
+                onSelectionChange={setSelectedRequirements}
+                readonly={submitting}
+              />
+            </div>
+
+            {/* ── エラー表示 ── */}
+            {error && (
+              <div className="rounded-md border border-rose-200 bg-rose-50 p-3 mt-6">
+                <p className="text-sm text-rose-600">{error}</p>
               </div>
+            )}
 
-              {error && (
-                <div className="rounded-md border border-rose-200 bg-rose-50 p-3">
-                  <p className="text-sm text-rose-600">{error}</p>
-                </div>
-              )}
-
-              <div className="flex gap-3">
-                <Link href="/tickets">
-                  <Button type="button" variant="outline" disabled={submitting}>
-                    キャンセル
-                  </Button>
-                </Link>
-                <Button type="submit" className="bg-slate-900 hover:bg-slate-800" disabled={submitting}>
-                  {submitting ? "作成中..." : "起票"}
-                </Button>
-              </div>
-            </form>
-          </Card>
+            {/* ── フォータ: アクション ── */}
+            <div className="flex items-center gap-3 mt-8">
+              <button
+                type="submit"
+                disabled={submitting}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-brand text-white text-[13px] font-medium rounded-md hover:bg-brand-600 disabled:opacity-50 transition-colors duration-150"
+              >
+                {submitting ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : null}
+                {submitting ? "作成中..." : "起票"}
+              </button>
+              <Link href="/tickets">
+                <button
+                  type="button"
+                  disabled={submitting}
+                  className="px-4 py-2 border border-slate-200 text-slate-600 text-[13px] font-medium rounded-md hover:bg-slate-50 disabled:opacity-50 transition-colors duration-150"
+                >
+                  キャンセル
+                </button>
+              </Link>
+            </div>
+          </form>
         </div>
       </div>
     </>

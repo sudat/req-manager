@@ -8,6 +8,8 @@ import type { BrDraft, DraftCommitState } from './types';
 type BrDraftPreviewCardProps = {
   draft: BrDraft;
   commitState?: DraftCommitState;
+  commitDisabled?: boolean;
+  commitDisabledMessage?: string;
   onCommit?: () => void;
 };
 
@@ -15,8 +17,9 @@ type BrDraftPreviewCardProps = {
  * BR草案プレビューカード
  *
  * AIが生成したBR草案を表形式で表示する。
+ * BT未確定の場合は登録ボタンを無効化する。
  */
-export function BrDraftPreviewCard({ draft, commitState, onCommit }: BrDraftPreviewCardProps) {
+export function BrDraftPreviewCard({ draft, commitState, commitDisabled, commitDisabledMessage, onCommit }: BrDraftPreviewCardProps) {
   const status = commitState?.status ?? 'idle';
   const statusLabel =
     status === 'success'
@@ -54,19 +57,19 @@ export function BrDraftPreviewCard({ draft, commitState, onCommit }: BrDraftPrev
         <InfoRow label="コード" value={draft.code} />
         <InfoRow label="要件" value={draft.requirement} />
         <InfoRow label="根拠" value={draft.rationale} />
-        <InfoRow label="業務タスクID" value={draft.business_task_id} />
+        <InfoRow label="業務タスクID" value={draft.business_task_id ?? '未確定'} />
       </div>
 
       {onCommit && status !== 'success' && (
         <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-slate-200 bg-slate-50/50">
           <div className="text-[11px] text-rose-600 min-h-[16px]">
-            {status === 'error' ? commitState?.message : ''}
+            {commitDisabled ? commitDisabledMessage : (status === 'error' ? commitState?.message : '')}
           </div>
           <Button
             size="sm"
             onClick={onCommit}
-            disabled={status === 'loading'}
-            className="h-8 px-4 text-[12px] bg-slate-900 hover:bg-slate-800"
+            disabled={commitDisabled || status === 'loading'}
+            className={cn('h-8 px-4 text-[12px]', commitDisabled || status === 'loading' ? 'bg-slate-300 hover:bg-slate-300' : 'bg-slate-900 hover:bg-slate-800')}
           >
             {status === 'loading' ? '登録中...' : '登録する'}
           </Button>

@@ -369,7 +369,7 @@ URL: http://localhost:3002/business/BIZ-003/TASK-015
 
 ### 2. システム詳細画面の確認
 ```
-URL: http://localhost:3002/system-domains/GL/SRF-017
+URL: http://localhost:3002/system/GL/SRF-017
 確認項目:
 - [ ] パディングが適切に設定されている（システム要件カードと同じ）
 - [ ] プログレスバーが右端の点数カードの下に配置されている
@@ -381,7 +381,7 @@ URL: http://localhost:3002/system-domains/GL/SRF-017
 
 ### 3. E2Eテスト（Playwright MCP）
 ```
-URL: http://localhost:3002/system-domains/GL/SRF-017
+URL: http://localhost:3002/system/GL/SRF-017
 確認項目:
 - [ ] パディングが適切に設定されている（システム要件カードと同じ）
 - [ ] プログレスバーが右端の点数カードの下に配置されている

@@ -81,7 +81,7 @@ Phase 1-5で実装した変更要求機能の統合テストを行います。**
 4. 条件を追加して保存
 
 #### 検証2: システム要件編集
-1. `/system-domains` に遷移
+1. `/system` に遷移
 2. 任意のシステム領域 → システム機能 → 編集
 3. 受入条件入力コンポーネントが正しく表示されることを確認
 
@@ -108,7 +108,7 @@ Phase 1-5で実装した変更要求機能の統合テストを行います。**
 - `/app/tickets/[id]/page.tsx` - 詳細ページ
 - `/app/tickets/[id]/edit/page.tsx` - 編集ページ
 - `/app/business/[id]/edit/page.tsx` - 業務要件編集
-- `/app/system-domains/[id]/[srfId]/edit/page.tsx` - システム要件編集
+- `/app/(with-sidebar)/system/[id]/[srfId]/edit/page.tsx` - システム要件編集
 - `/components/tickets/acceptance-confirmation-panel.tsx` - 受入条件確認パネル
 - `/lib/data/acceptance-confirmations.ts` - 北極星KPI判定ロジック
 

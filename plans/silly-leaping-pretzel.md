@@ -72,6 +72,6 @@
 
 ## 検証方法
 
-1. `http://localhost:3000/system-domains/GL/SRF-017` にアクセス
+1. `http://localhost:3000/system/GL/SRF-017` にアクセス
 2. 見出しの直後に機能名が重複して表示されていないことを確認
 3. 他のSRFでも同様に確認

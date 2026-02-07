@@ -43,7 +43,7 @@ function RequirementLinksPageContent(): React.ReactNode {
 
 	if (error) {
 		return (
-			<div className="flex-1 min-h-screen bg-slate-50">
+			<div className="min-h-screen bg-slate-50">
 				<div className="mx-auto max-w-[1400px] px-8 py-6">
 					<div className="text-center py-20">
 						<p className="text-sm text-rose-600">{error}</p>
@@ -56,7 +56,7 @@ function RequirementLinksPageContent(): React.ReactNode {
 	const suspectCount = links.filter((link) => link.suspect).length;
 
 	return (
-		<div className="flex-1 min-h-screen bg-slate-50">
+		<div className="min-h-screen bg-slate-50">
 			<div className="mx-auto max-w-[1400px] px-8 py-6">
 				{/* ページヘッダー */}
 				<div className="mb-6">
@@ -118,7 +118,7 @@ function RequirementLinksPageContent(): React.ReactNode {
 export default function RequirementLinksPage(): React.ReactNode {
 	return (
 		<Suspense fallback={
-			<div className="flex-1 min-h-screen bg-slate-50">
+			<div className="min-h-screen bg-slate-50">
 				<div className="mx-auto max-w-[1400px] px-8 py-6">
 					<div className="animate-pulse">
 						<div className="h-8 bg-slate-200 rounded w-48 mb-6"></div>

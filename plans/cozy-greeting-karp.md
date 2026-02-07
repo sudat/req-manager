@@ -71,7 +71,7 @@ const menuConfig: MenuConfig[] = [
   { key: "dashboard", label: "ダッシュボード", href: "/dashboard", icon: LayoutDashboard },
   { key: "query", label: "照会", href: "/query", icon: Search },
   { key: "business", label: "業務一覧", href: "/business", icon: Briefcase },
-  { key: "system-domains", label: "システム領域一覧", href: "/system-domains", icon: Boxes },
+  { key: "system", label: "システム領域一覧", href: "/system", icon: Boxes },
   { type: "divider" as const },
   { key: "tickets", label: "変更要求一覧", href: "/tickets", icon: ListChecks },
   { key: "baseline", label: "ベースライン履歴", href: "/baseline", icon: History },

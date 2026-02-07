@@ -11,7 +11,7 @@ import {
 	allowedCategories,
 } from "./system-requirement-issues";
 import {
-	calculateImplUnitSdWithEntryPointsIssue,
+	calculateDesignDocumentWithEntryPointsIssue,
 } from "./linkage-issues";
 
 export type HealthScoreSeverity = "high" | "medium";
@@ -36,7 +36,7 @@ export type HealthScoreWarning = {
 export type HealthScoreStats = {
 	businessRequirements: number;
 	systemRequirements: number;
-	implUnitSds: number;
+	designDocuments: number;
 };
 
 export type HealthScoreSummary = {
@@ -74,7 +74,7 @@ export type SystemFunctionHealthInput = {
 	entryPoints?: EntryPoint[];
 };
 
-export type ImplUnitSdHealthInput = {
+export type DesignDocumentHealthInput = {
 	id: string;
 	name: string;
 	entryPoints?: EntryPoint[];
@@ -90,7 +90,7 @@ export type HealthScoreInput = {
 	businessRequirements?: BusinessRequirementHealthInput[];
 	systemRequirements?: SystemRequirementHealthInput[];
 	systemFunctions?: SystemFunctionHealthInput[];
-	implUnitSds?: ImplUnitSdHealthInput[];
+	designDocuments?: DesignDocumentHealthInput[];
 	concepts?: ConceptHealthInput[];
 	conceptCheckTarget?: 'business' | 'system' | 'all';
 	pageType?: 'business' | 'system';
@@ -113,7 +113,7 @@ export const healthIssueFilters: Record<string, HealthIssueFilter> = {
 		targetPath: 'system',
 		label: '業務要件未紐付け',
 	},
-	impl_unit_sds_with_entry_points: {
+	design_documents_with_entry_points: {
 		filterParam: 'missing_entrypoint',
 		targetPath: 'system',
 		label: 'エントリポイント未設定',
@@ -203,7 +203,7 @@ export const buildHealthScoreSummary = ({
 	businessRequirements = [],
 	systemRequirements = [],
 	systemFunctions = [],
-	implUnitSds = [],
+	designDocuments = [],
 	concepts = [],
 	conceptCheckTarget = 'business',
 	pageType,
@@ -222,7 +222,7 @@ export const buildHealthScoreSummary = ({
 
 	// 実装単位SDにエントリポイントが設定されている（システム要件ページのみ表示）
 	if (pageType !== 'business') {
-		issues.push(calculateImplUnitSdWithEntryPointsIssue(implUnitSds));
+	issues.push(calculateDesignDocumentWithEntryPointsIssue(designDocuments));
 	}
 
 	// 業務要件に概念が紐づいている（業務要件ページのみ表示）
@@ -260,12 +260,12 @@ export const buildHealthScoreSummary = ({
 	const level = getScoreLevel(score);
 
 	const warnings: HealthScoreWarning[] = [];
-	const implUnitSdsWithEntryPoints = implUnitSds.filter(
+	const ddWithEntryPoints = designDocuments.filter(
 		(sd) => (sd.entryPoints ?? []).length > 0
 	).length;
 	const entryPointCoverage =
-		implUnitSds.length === 0 ? 1 : implUnitSdsWithEntryPoints / implUnitSds.length;
-	if (implUnitSds.length > 0 && entryPointCoverage < 0.3) {
+		designDocuments.length === 0 ? 1 : ddWithEntryPoints / designDocuments.length;
+	if (designDocuments.length > 0 && entryPointCoverage < 0.3) {
 		warnings.push({
 			id: "entry_point_coverage_low",
 			label: "エントリポイント登録率が30%未満です",
@@ -294,7 +294,7 @@ export const buildHealthScoreSummary = ({
 		stats: {
 			businessRequirements: businessRequirements.length,
 			systemRequirements: systemRequirements.length,
-			implUnitSds: implUnitSds.length,
+			designDocuments: designDocuments.length,
 		},
 	};
 };

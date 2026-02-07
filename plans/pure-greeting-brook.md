@@ -21,9 +21,9 @@
 |---|---------|----------|
 | 1 | `lib/domain/entities.ts` | `SystemFunction`から`designDocNo`プロパティ削除 |
 | 2 | `lib/data/system-functions.ts` | `SystemFunctionInput`、`toSystemFunction`、`toSystemFunctionRowBase`から`designDocNo`削除 |
-| 3 | `app/system-domains/[id]/[srfId]/edit/components/BasicInfoSection.tsx` | 設計書No入力フィールド削除 |
-| 4 | `app/system-domains/[id]/[srfId]/edit/hooks/useSystemFunctionForm.ts` | `designDocNo`状態と`setDesignDocNo`削除 |
-| 5 | `app/system-domains/[id]/[srfId]/edit/page.tsx` | システム要件セクション追加、`designDocNo`関連props削除 |
+| 3 | `app/(with-sidebar)/system/[id]/[srfId]/edit/components/BasicInfoSection.tsx` | 設計書No入力フィールド削除 |
+| 4 | `app/(with-sidebar)/system/[id]/[srfId]/edit/hooks/useSystemFunctionForm.ts` | `designDocNo`状態と`setDesignDocNo`削除 |
+| 5 | `app/(with-sidebar)/system/[id]/[srfId]/edit/page.tsx` | システム要件セクション追加、`designDocNo`関連props削除 |
 | 6 | `supabase/migrations/20260121000000_remove_design_doc_no.sql` | DBカラム削除 |
 
 ---
@@ -50,17 +50,17 @@ SELECT id, design_doc_no FROM system_functions WHERE design_doc_no IS NOT NULL;
 - `toSystemFunction`関数から`designDocNo: row.design_doc_no`削除
 - `toSystemFunctionRowBase`関数から`design_doc_no: input.designDocNo`削除
 
-#### 2.3 `app/system-domains/[id]/[srfId]/edit/components/BasicInfoSection.tsx`
+#### 2.3 `app/(with-sidebar)/system/[id]/[srfId]/edit/components/BasicInfoSection.tsx`
 - Propsから`designDocNo`と`onDesignDocNoChange`削除
 - JSXから設計書No入力フィールド（63-73行目相当）削除
 
-#### 2.4 `app/system-domains/[id]/[srfId]/edit/hooks/useSystemFunctionForm.ts`
+#### 2.4 `app/(with-sidebar)/system/[id]/[srfId]/edit/hooks/useSystemFunctionForm.ts`
 - `SystemFunctionFormState`から`designDocNo`削除
 - `SystemFunctionFormActions`から`setDesignDocNo`削除
 - `useSystemFunctionForm`内の状態と`setDesignDocNo(data.designDocNo)`削除
 - `save`関数から`designDocNo`削除
 
-#### 2.5 `app/system-domains/[id]/[srfId]/edit/page.tsx`
+#### 2.5 `app/(with-sidebar)/system/[id]/[srfId]/edit/page.tsx`
 ```typescript
 // インポート追加
 import { SystemRequirementsSection } from "@/components/system-domains/system-requirements-section";
@@ -100,7 +100,7 @@ bun run build
 ```
 
 ### 2. UI確認
-- `http://localhost:3000/system-domains/AR/SRF-001/edit` にアクセス
+- `http://localhost:3000/system/AR/SRF-001/edit` にアクセス
 - 設計書No入力欄がないことを確認
 - システム要件一覧が表示されることを確認
 - 保存機能が正常動作することを確認

@@ -58,7 +58,7 @@ Phase 2で整備した新カラム（`priority` / `acceptance_criteria_json` / `
 - [x] システム要件カードに `category` / `businessRequirementIds` を表示
   - [x] `businessRequirementIds` から業務要件へのリンク（存在しないIDは警告表示）
 
-## 4. システム機能詳細/編集（`/system-domains/[id]/[srfId]` / `.../edit`）
+## 4. システム機能詳細/編集（`/system/[id]/[srfId]` / `.../edit`）
 - [x] 詳細ページ: `entry_points` の表示（path/type/responsibility）
   - [x] legacy `code_refs` のみのデータにも対応（Phase 2の互換: フォールバック表示）
 - [x] 編集ページ: `entry_points` の編集UIを追加

@@ -140,7 +140,7 @@ export function HealthScoreCard({
 										<span>システム要件: {summary.stats.systemRequirements}</span>
 									)}
 									{(!pageType || pageType === 'business') && (
-										<span>実装単位SD: {summary.stats.implUnitSds}</span>
+										<span>DD: {summary.stats.designDocuments}</span>
 									)}
 								</div>
 							)}

@@ -1,4 +1,17 @@
 import { z } from "zod";
+import {
+  apiInputSchema,
+  apiOutputSchema,
+  batchInputSchema,
+  batchOutputSchema,
+  jobInputSchema,
+  jobOutputSchema,
+  screenInputSchema,
+  screenOutputSchema,
+} from "./io-schemas";
+import { sideEffectSchema } from "./side-effects";
+import { structuredExceptionSchema } from "./exceptions";
+import { structuredNonFunctionalSchema } from "./non-functional";
 import type { SystemDesignItem } from "../enums";
 
 /**
@@ -40,9 +53,17 @@ export type DesignTarget = z.infer<typeof designTargetSchema>;
  * 機能観点のcontent
  */
 export const functionDesignContentSchema = z.object({
-  input: z.string().min(1, "入力は必須です"),
+  structuredInput: z
+    .union([apiInputSchema, screenInputSchema, batchInputSchema, jobInputSchema])
+    .optional(),
+  structuredOutput: z
+    .union([apiOutputSchema, screenOutputSchema, batchOutputSchema, jobOutputSchema])
+    .optional(),
+  ioType: z.enum(["api", "screen", "batch", "job"]).optional(),
+  structuredSideEffects: sideEffectSchema.optional(),
+  input: z.string().min(1, "入力は必須です").optional(),
   process: z.string().min(1, "処理は必須です"),
-  output: z.string().min(1, "出力は必須です"),
+  output: z.string().min(1, "出力は必須です").optional(),
   sideEffects: z.string().optional(),
 });
 export type FunctionDesignContent = z.infer<typeof functionDesignContentSchema>;
@@ -62,7 +83,8 @@ export type DataDesignContent = z.infer<typeof dataDesignContentSchema>;
  * 例外観点のcontent
  */
 export const exceptionDesignContentSchema = z.object({
-  errorCases: z.string().min(1, "エラーケースは必須です"),
+  structuredExceptions: z.array(structuredExceptionSchema).optional(),
+  errorCases: z.string().min(1, "エラーケースは必須です").optional(),
   userNotification: z.string().optional(),
   logging: z.string().optional(),
   recovery: z.string().optional(),
@@ -84,6 +106,7 @@ export type AuthDesignContent = z.infer<typeof authDesignContentSchema>;
  * @deprecated deliverable.ts の NonFunctionalDesignContent を使用してください（security, scalability を含む）
  */
 export const nonFunctionalDesignContentSchema = z.object({
+  structured: structuredNonFunctionalSchema.optional(),
   performance: z.string().optional(),
   availability: z.string().optional(),
   monitoring: z.string().optional(),
@@ -175,4 +198,13 @@ export const AMBIGUOUS_WORDS = [
 export function detectAmbiguousWords(text: string): string[] {
   if (!text || typeof text !== "string") return [];
   return AMBIGUOUS_WORDS.filter((word) => text.includes(word));
+}
+
+export function isStructuredDesign(design: unknown): design is FunctionDesignContent {
+  return (
+    typeof design === "object" &&
+    design !== null &&
+    "ioType" in design &&
+    "structuredInput" in design
+  );
 }

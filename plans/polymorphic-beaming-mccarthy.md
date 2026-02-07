@@ -1,7 +1,7 @@
 # TableSkeleton の行の高さ調整
 
 ## 課題
-`/business` と `/system-domains` ページのテーブルスケルトンで、行の高さが実際のデータ行より低く、違和感がある。
+`/business` と `/system` ページのテーブルスケルトンで、行の高さが実際のデータ行より低く、違和感がある。
 
 ## 原因
 - **データ行**: `TableCell` に `px-4 py-3` を指定
@@ -41,14 +41,14 @@ export function TableSkeleton({ cols, rows = 5 }: TableSkeletonProps) {
 | ページ | ルート |
 |--------|--------|
 | 業務一覧 | `/business` |
-| システム領域一覧 | `/system-domains` |
+| システム領域一覧 | `/system` |
 | 業務タスク | `/business/[id]/tasks` |
-| システム領域詳細 | `/system-domains/[id]` |
+| システム領域詳細 | `/system/[id]` |
 | アイデア一覧 | `/ideas` |
 
 ## 検証方法
 1. http://localhost:3000/business にアクセス
 2. ローディング状態でスケルトンが表示されることを確認（高さを視覚確認）
 3. データ読み込み後の行の高さとスケルトンの行の高さが揃っていることを確認
-4. http://localhost:3000/system-domains でも同様に確認
-5. （必要に応じて）`/ideas`、`/business/[id]/tasks`、`/system-domains/[id]` も確認
+4. http://localhost:3000/system でも同様に確認
+5. （必要に応じて）`/ideas`、`/business/[id]/tasks`、`/system/[id]` も確認

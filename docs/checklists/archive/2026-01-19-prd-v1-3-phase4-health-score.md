@@ -65,7 +65,7 @@ PRD v1.3「正本のヘルススコア（2.8.1）」を実装し、正本のつ�
 ## 5. UI表示
 - [x] ダッシュボード（`app/dashboard/page.tsx`）に全体スコア/警告バッジを表示
 - [x] タスク詳細（`app/business/[id]/tasks/[taskId]/page.tsx`）にスコア/内訳を表示
-- [x] システム機能詳細（`app/system-domains/[id]/[srfId]/page.tsx`）にスコア/警告を表示
+- [x] システム機能詳細（`app/(with-sidebar)/system/[id]/[srfId]/page.tsx`）にスコア/警告を表示
 - [x] 再利用コンポーネントを追加（スコアバッジ/内訳リスト）
 - [x] 警告文言/ラベルをPRDの表現に合わせる
 

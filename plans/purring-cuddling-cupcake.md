@@ -43,7 +43,7 @@
 
 ## 優先度 MEDIUM: 検討推奨
 
-### 3. `app/system-domains/[id]/[srfId]/edit/hooks/useSystemFunctionForm.ts` (334行)
+### 3. `app/(with-sidebar)/system/[id]/[srfId]/edit/hooks/useSystemFunctionForm.ts` (334行)
 
 **現状:**
 - 16個のuseState

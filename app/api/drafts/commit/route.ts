@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { commitDraftTool } from '@/lib/mastra/tools/commit-draft';
 
-const VALID_TYPES = new Set(['bt', 'br', 'sf', 'sr', 'ac', 'impl_unit']);
+const VALID_TYPES = new Set(['bt', 'br', 'sf', 'sr', 'ac', 'dd', 'impl_unit']);
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     const result = await commitDraftTool.execute!(
       {
         draftId: resolvedDraftId,
-        type: type as 'bt' | 'br' | 'sf' | 'sr' | 'ac' | 'impl_unit',
+        type: type as 'bt' | 'br' | 'sf' | 'sr' | 'ac' | 'dd' | 'impl_unit',
         content,
       },
       {} as any,

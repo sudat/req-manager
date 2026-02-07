@@ -21,6 +21,29 @@ export const brDraftTool = createTool({
     allowDraft: z.boolean().optional().default(false),
   }),
   outputSchema: z.object({
+    btDraft: z.object({
+      code: z.string(),
+      name: z.string(),
+      summary: z.string(),
+      businessContext: z.string(),
+      processSteps: z.array(z.object({
+        when: z.string(),
+        who: z.string(),
+        action: z.string(),
+      })),
+      input: z.array(z.object({
+        name: z.string(),
+        source: z.string(),
+      })),
+      output: z.array(z.object({
+        name: z.string(),
+        source: z.string(),
+      })),
+      business_area: z.string(),
+      project_id: z.string().optional(),
+      concept_ids: z.array(z.string()).optional(),
+      isCommitted: z.boolean().optional(),
+    }).optional(),
     brDraft: z.object({
       code: z.string(),
       requirement: z.string(),
@@ -54,12 +77,22 @@ export const brDraftTool = createTool({
 
       const { data: bt } = await supabase
         .from('business_tasks')
-        .select('id, name, project_id')
+        .select('id, name, summary, business_context, process_steps, input, output, business_area, project_id')
         .eq('id', btId)
         .single();
 
       const resolvedBt = bt
-        ? { id: bt.id, name: bt.name, project_id: bt.project_id }
+        ? {
+            id: bt.id,
+            name: bt.name,
+            summary: bt.summary,
+            business_context: bt.business_context,
+            process_steps: bt.process_steps,
+            input: bt.input,
+            output: bt.output,
+            business_area: bt.business_area,
+            project_id: bt.project_id,
+          }
         : null;
 
       if (!resolvedBt) {
@@ -72,9 +105,22 @@ export const brDraftTool = createTool({
         console.log('[br_draft] Using draft BT fallback:', { btId, projectId, btName });
       }
 
+      const deriveBusinessArea = (value?: string) => {
+        if (!value) return '';
+        const parts = value.split('-').filter(Boolean);
+        if (parts.length >= 3 && parts[0] === 'BT') return parts[1];
+        return '';
+      };
+
       const btRecord = resolvedBt ?? {
         id: btId,
         name: btName ?? btId,
+        summary: '',
+        business_context: '',
+        process_steps: [],
+        input: [],
+        output: [],
+        business_area: deriveBusinessArea(btId),
         project_id: projectId!,
       };
 
@@ -95,12 +141,12 @@ export const brDraftTool = createTool({
       // 2. 既存BRを取得（コード採番と重複回避のため）
       const { data: existingBRs } = await supabase
         .from('business_requirements')
-        .select('code, requirement')
-        .eq('business_task_id', btId)
-        .order('code', { ascending: false });
+        .select('id, title, goal')
+        .eq('task_id', btId)
+        .order('id', { ascending: false });
 
       // 3. 新しいコード採番
-      const lastCode = existingBRs?.[0]?.code || `${btRecord.id}-000`;
+      const lastCode = existingBRs?.[0]?.id || `${btRecord.id}-000`;
       const lastNumber = parseInt(lastCode.split('-').pop() || '0', 10);
       const newCode = `${btRecord.id}-${String(lastNumber + 1).padStart(3, '0')}`;
 
@@ -114,16 +160,41 @@ ${btRecord.id} - ${btRecord.name}
 【要件説明】
 ${naturalLanguageInput}
 
+【BR（業務要件）の定義】
+業務要件は「ケイパビリティ（業務として〜できる/〜する）」として記述します。
+1つのBRは1つのケイパビリティに限定します。
+例：
+- 「請求書をPDFで出力できる」
+- 「適格請求書としての法的要件を満たす」
+- 「与信状態を確認して安全な売上債権を確保する」
+
+【制約（constraints）と独立BRの使い分け】
+同一BRのrequirementに含めてよい制約：
+- 技術的・局所的な制約（例: ファイルサイズ上限、連番管理）
+- 同じオーナーが管理する業務ルール
+- 親BRと同じ変更頻度を持つ制約
+
+独立したBRとして切り出すべきケース：
+1. 法的・制度的な要件（例: 税制改正で変わり得る適格請求書要件）
+2. 別システム・別部門との連携（例: 与信管理部門が管理する与信確認）
+3. 変更頻度が著しく異なる制約（例: フォーマット変更（頻繁） vs 法的要件（稀だが大きな変更））
+
+【判断ルール】
+- 入力に複数の独立BRが含まれていても、この出力では最も重要な1件だけを requirement とする
+- コンプライアンス要件が主目的なら、それを requirement として選ぶ
+- requirement に複数の能力を詰め込まない（「〜できる/〜できる」を並べない）
+
 【出力形式（JSON）】
 {
-  "requirement": "〜できる（能動態で記述）",
+  "requirement": "〜できる（ケイパビリティとして記述）",
   "rationale": "なぜこの要件が必要か、ビジネス上の理由",
   "concepts": ["概念1", "概念2", "..."]
 }
 
 【生成ルール】
-- requirementは「〜できる」「〜する」で終わる能動態の文にする
-- rationaleはビジネス価値・背景を記述する（「〜のため」で終わる）
+- requirementは「〜できる」「〜する」で終わる1文のケイパビリティ
+- requirementに含める制約は短く局所的なものに限定する
+- rationaleはビジネス価値・背景・リスクを1-2文で記述（「〜のため」で終わる）
 - conceptsは要件で使われる重要な概念・用語を抽出
 `;
 
@@ -149,11 +220,11 @@ ${naturalLanguageInput}
       const rationale = llmContent.rationale || '業務を効率的に実行するため';
 
       // 5. 重複チェック（既存BRとの類似度確認）
-      const isDuplicate = existingBRs?.some(
-        (br) =>
-          br.requirement.toLowerCase().includes(requirement.toLowerCase()) ||
-          requirement.toLowerCase().includes(br.requirement.toLowerCase())
-      );
+      const isDuplicate = existingBRs?.some((br) => {
+        const title = (br.title ?? br.goal ?? '').toLowerCase();
+        const candidate = requirement.toLowerCase();
+        return title.includes(candidate) || candidate.includes(title);
+      });
 
       if (isDuplicate) {
         throw new Error(
@@ -168,6 +239,23 @@ ${naturalLanguageInput}
         rationale,
         business_task_id: btId,
         concept_ids: [],
+      };
+
+      const normalizeJsonArray = <T>(value: unknown): T[] =>
+        Array.isArray(value) ? (value as T[]) : [];
+
+      const btDraft = {
+        code: btRecord.id,
+        name: btRecord.name ?? btId,
+        summary: btRecord.summary ?? '',
+        businessContext: btRecord.business_context ?? '',
+        processSteps: normalizeJsonArray(btRecord.process_steps),
+        input: normalizeJsonArray(btRecord.input),
+        output: normalizeJsonArray(btRecord.output),
+        business_area: btRecord.business_area || deriveBusinessArea(btRecord.id),
+        project_id: btRecord.project_id,
+        concept_ids: [],
+        isCommitted: Boolean(resolvedBt),
       };
 
       // 7. 概念候補を抽出し、既存概念と照合
@@ -236,6 +324,7 @@ ${naturalLanguageInput}
       }
 
       return {
+        btDraft,
         brDraft,
         conceptCandidates,
         uncertainties,

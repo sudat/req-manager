@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import type { SystemFunction } from "@/lib/domain";
 import { MarkdownRenderer } from "@/components/markdown/markdown-renderer";
-import { Layers2, CircleCheck } from "lucide-react";
+import { Layers2, CircleCheck, Pencil } from "lucide-react";
 
 const statusLabels: Record<string, string> = {
 	not_implemented: "未実装",
@@ -27,10 +29,18 @@ export function FunctionSummaryCard({ srf, domainId }: FunctionSummaryCardProps)
 	return (
 		<Card className="rounded-md border border-slate-200/60 shadow-sm hover:border-slate-300/60 transition-colors">
 			<CardContent className="p-6 space-y-3">
-				<div className="id-label--brand">
-					<span>{domainId}</span>
-					<span className="text-slate-300 mx-1">/</span>
-					<span>{srf.id}</span>
+				<div className="flex items-center justify-between">
+					<div className="id-label--brand">
+						<span>{domainId}</span>
+						<span className="text-slate-300 mx-1">/</span>
+						<span>{srf.id}</span>
+					</div>
+					<Link href={`/system/${domainId}/${srf.id}/edit/basic`}>
+						<Button variant="ghost" size="sm" className="h-7 gap-1.5 text-[12px]">
+							<Pencil className="h-3.5 w-3.5" />
+							編集
+						</Button>
+					</Link>
 				</div>
 
 				<h2 className="text-[20px] font-semibold text-slate-900 leading-tight">

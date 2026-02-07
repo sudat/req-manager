@@ -238,7 +238,7 @@ const rawScore =
 ### E2Eテスト（Playwright MCP）
 
 1. システム機能詳細ページにアクセス:
-   `http://localhost:3000/system-domains/AR/SRF-001`
+   `http://localhost:3000/system/AR/SRF-001`
 
 2. ヘルススコアの検出ルールを確認:
    - **「業務要件にシステム要件が紐づいている」**

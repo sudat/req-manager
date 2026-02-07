@@ -4,18 +4,19 @@ import { DraftPreviewCard } from './draft-preview-card';
 import { BrDraftPreviewCard } from './br-draft-preview-card';
 import { SfDraftCard } from './sf-draft-card';
 import { SrDraftCard } from './sr-draft-card';
+import { DdDraftCard } from './dd-draft-card';
 import { ProgressSteps } from './progress-steps';
-import type { ChatMessage, DraftCommitState, BtDraft, BrDraft } from './types';
+import type { ChatMessage, DraftCommitState, BtDraft, BrDraft, SfDraft, SrDraft, DdDraft } from './types';
 
 type MessageBubbleProps = {
   message: ChatMessage;
   onCommitDraft?: (payload: {
     messageId: string;
-    type: 'bt' | 'br';
+    type: 'bt' | 'br' | 'sf' | 'sr' | 'dd';
     code: string;
-    content: BtDraft | BrDraft;
+    content: BtDraft | BrDraft | SfDraft | SrDraft | DdDraft;
   }) => void;
-  getCommitState?: (messageId: string, type: 'bt' | 'br', code: string) => DraftCommitState | undefined;
+  getCommitState?: (messageId: string, type: 'bt' | 'br' | 'sf' | 'sr' | 'dd', code: string) => DraftCommitState | undefined;
 };
 
 export function MessageBubble({ message, onCommitDraft, getCommitState }: MessageBubbleProps) {
@@ -24,6 +25,21 @@ export function MessageBubble({ message, onCommitDraft, getCommitState }: Messag
   const progressSteps = message.progressSteps ?? [];
   const hasProgress = progressSteps.length > 0;
   const hasContent = message.content.trim().length > 0;
+  const brDrafts = message.brDrafts?.length
+    ? message.brDrafts
+    : message.brDraft
+      ? [message.brDraft]
+      : [];
+  const srDrafts = message.srDrafts?.length
+    ? message.srDrafts
+    : message.srDraft
+      ? [message.srDraft]
+      : [];
+  const ddDrafts = message.ddDrafts?.length
+    ? message.ddDrafts
+    : message.ddDraft
+      ? [message.ddDraft]
+      : [];
 
   if (isSystem) {
     return (
@@ -82,7 +98,7 @@ export function MessageBubble({ message, onCommitDraft, getCommitState }: Messag
                     draft={message.btDraft}
                     commitState={getCommitState?.(message.id, 'bt', message.btDraft.code)}
                     onCommit={
-                      onCommitDraft
+                      onCommitDraft && !message.btDraft.isCommitted
                         ? () =>
                             onCommitDraft({
                               messageId: message.id,
@@ -94,29 +110,113 @@ export function MessageBubble({ message, onCommitDraft, getCommitState }: Messag
                     }
                   />
                 )}
-                {message.brDraft && (
-                  <BrDraftPreviewCard
-                    draft={message.brDraft}
-                    commitState={getCommitState?.(message.id, 'br', message.brDraft.code)}
+                {brDrafts.map((brDraft) => {
+                  const btCommitState = message.btDraft
+                    ? getCommitState?.(message.id, 'bt', message.btDraft.code)
+                    : undefined;
+                  const isBtCommitted =
+                    Boolean(message.btDraft?.isCommitted) ||
+                    btCommitState?.status === 'success';
+                  return (
+                    <BrDraftPreviewCard
+                      key={brDraft.code}
+                      draft={{ ...brDraft, business_task_id: brDraft.business_task_id ?? message.btDraft?.code ?? '未確定' }}
+                      commitState={getCommitState?.(message.id, 'br', brDraft.code)}
+                      commitDisabled={!message.btDraft || !isBtCommitted}
+                      commitDisabledMessage="業務タスク（BT）を先に確定してください"
+                      onCommit={
+                        onCommitDraft
+                          ? () =>
+                              onCommitDraft({
+                                messageId: message.id,
+                                type: 'br',
+                                code: brDraft.code,
+                                content: {
+                                  ...brDraft,
+                                  business_task_id: brDraft.business_task_id ?? message.btDraft?.code ?? '',
+                                },
+                              })
+                          : undefined
+                      }
+                    />
+                  );
+                })}
+                {message.sfDraft && (
+                  <SfDraftCard
+                    draft={message.sfDraft}
+                    commitState={getCommitState?.(message.id, 'sf', message.sfDraft.code)}
                     onCommit={
-                      onCommitDraft
+                      onCommitDraft && !message.sfDraft.isCommitted
                         ? () =>
                             onCommitDraft({
                               messageId: message.id,
-                              type: 'br',
-                              code: message.brDraft!.code,
-                              content: message.brDraft!,
+                              type: 'sf',
+                              code: message.sfDraft!.code,
+                              content: message.sfDraft!,
                             })
                         : undefined
                     }
                   />
                 )}
-                {message.sfDraft && (
-                  <SfDraftCard draft={message.sfDraft} />
-                )}
-                {message.srDraft && (
-                  <SrDraftCard draft={message.srDraft} />
-                )}
+                {srDrafts.map((srDraft) => {
+                  const sfCommitState = message.sfDraft
+                    ? getCommitState?.(message.id, 'sf', message.sfDraft.code)
+                    : undefined;
+                  const isSfCommitted =
+                    Boolean(message.sfDraft?.isCommitted) ||
+                    sfCommitState?.status === 'success';
+                  const commitDisabled =
+                    !message.sfDraft ||
+                    !isSfCommitted ||
+                    !srDraft.task_id;
+                  const commitDisabledMessage = !message.sfDraft || !isSfCommitted
+                    ? 'SFを先に確定してください'
+                    : '関連する業務タスク情報が取得できていません（BR未確定の可能性）';
+
+                  return (
+                    <SrDraftCard
+                      key={srDraft.code}
+                      draft={srDraft}
+                      commitState={getCommitState?.(message.id, 'sr', srDraft.code)}
+                      commitDisabled={commitDisabled}
+                      commitDisabledMessage={commitDisabledMessage}
+                      onCommit={
+                        onCommitDraft
+                          ? () =>
+                              onCommitDraft({
+                                messageId: message.id,
+                                type: 'sr',
+                                code: srDraft.code,
+                                content: {
+                                  ...srDraft,
+                                  srf_ids: message.sfDraft
+                                    ? [message.sfDraft.code]
+                                    : srDraft.srf_ids,
+                                },
+                              })
+                          : undefined
+                      }
+                    />
+                  );
+                })}
+                {ddDrafts.map((ddDraft) => (
+                  <DdDraftCard
+                    key={ddDraft.id}
+                    draft={ddDraft}
+                    commitState={getCommitState?.(message.id, 'dd', ddDraft.id)}
+                    onCommit={
+                      onCommitDraft
+                        ? () =>
+                            onCommitDraft({
+                              messageId: message.id,
+                              type: 'dd',
+                              code: ddDraft.id,
+                              content: ddDraft,
+                            })
+                        : undefined
+                    }
+                  />
+                ))}
                 {hasProgress && (
                   <ProgressSteps steps={progressSteps} isStreaming={message.isStreaming} />
                 )}

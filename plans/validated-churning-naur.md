@@ -85,7 +85,7 @@
 ## 検証手順
 
 ### 手動確認
-1. http://localhost:3001/system-domains/AR/SRF-006 にアクセス
+1. http://localhost:3001/system/AR/SRF-006 にアクセス
 2. 受入基準セクションが Collapse 状態であることを確認
 3. AC ID/Description 部分をクリック
 4. セクションが展開されることを確認

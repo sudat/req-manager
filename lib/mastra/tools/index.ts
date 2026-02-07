@@ -14,8 +14,12 @@ export { getContextTool } from './get-context';
 export { btDraftTool } from './bt-draft';
 export { brDraftTool } from './br-draft';
 export { systemDraftTool } from './system-draft';
-export { implUnitDraftTool } from './impl-unit-draft';
+export { ddDraftTool } from './dd-draft';
 
 // 分析・検証Tool群
 export { criticCheckTool } from './critic-check';
 export { conceptExtractTool } from './concept-extract';
+
+// Phase 5: 影響分析・プロダクト要件Tool群
+export { impactAnalysisTool } from './impact-analysis';
+export { getProductRequirementTool } from './get-product-requirement';

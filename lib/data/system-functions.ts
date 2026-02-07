@@ -1,13 +1,11 @@
 import { supabase, getSupabaseConfigError } from "@/lib/supabase/client";
 import type { EntryPoint, SystemFunction, DesignItemCategory, SrfCategory, SrfStatus } from "@/lib/domain";
-import type { Deliverable } from "@/lib/domain/schemas/deliverable";
 import {
 	codeRefsToEntryPoints,
 	entryPointsToCodeRefs,
 	normalizeEntryPoints,
 	normalizeCodeRefs,
 } from "@/lib/data/structured";
-import { migrateToDeliverables } from "./deliverable-migration";
 import { createCrudOperations, createSortOrderUpdater } from "./crud-factory";
 
 export type SystemFunctionInput = {
@@ -22,7 +20,6 @@ export type SystemFunctionInput = {
   requirementIds: string[];
   systemDesign: SystemFunction["systemDesign"];
 	entryPoints?: EntryPoint[];
-  deliverables: Deliverable[];
   codeRefs: SystemFunction["codeRefs"];
 };
 
@@ -42,7 +39,6 @@ type SystemFunctionRow = {
   requirement_ids: string[] | null;
   system_design: SystemFunction["systemDesign"] | null;
 	entry_points: unknown | null;
-  deliverables: unknown | null;
   code_refs: unknown | null;
   sort_order: number | null;
   created_at: string;
@@ -65,16 +61,6 @@ const toSystemFunction = (row: SystemFunctionRow): SystemFunction => {
 				? (entryPointsToCodeRefs(entryPoints) as SystemFunction["codeRefs"])
 				: [];
 
-	// deliverables の読み込み（既存データがない場合は自動変換）
-	let deliverables: Deliverable[] = [];
-	if (row.deliverables && Array.isArray(row.deliverables)) {
-		deliverables = row.deliverables as Deliverable[];
-	} else {
-		// 既存データから自動変換
-		const systemDesign = row.system_design ?? [];
-		deliverables = migrateToDeliverables(systemDesign, normalizedEntryPoints);
-	}
-
 	return {
 		id: row.id,
 		systemDomainId: row.system_domain_id ?? null,
@@ -87,7 +73,7 @@ const toSystemFunction = (row: SystemFunctionRow): SystemFunction => {
 		requirementIds: row.requirement_ids ?? [],
 		systemDesign: row.system_design ?? [],
 		entryPoints,
-		deliverables,
+		deliverables: [],
 		codeRefs,
 		sortOrder: row.sort_order ?? 0,
 		createdAt: row.created_at,
@@ -110,7 +96,6 @@ const toSystemFunctionRowBase = (input: SystemFunctionInput) => {
 		related_task_ids: input.relatedTaskIds,
 		requirement_ids: input.requirementIds,
 		system_design: input.systemDesign,
-		deliverables: input.deliverables,
 		entry_points: entryPoints,
 		code_refs:
 			input.codeRefs.length > 0

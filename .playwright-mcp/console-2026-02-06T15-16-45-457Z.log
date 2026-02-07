@@ -1,0 +1,725 @@
+[ 1563815ms] [ERROR] ./lib/domain/schemas/exceptions.ts:1:1
+Module not found: Can't resolve 'zod'
+> 1 | import { z } from "zod";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+  2 |
+  3 | export const exceptionTypeSchema = z.enum([
+  4 |   "validation",
+
+Import traces:
+  Client Component Browser:
+    ./lib/domain/schemas/exceptions.ts [Client Component Browser]
+    ./lib/domain/schemas/system-design.ts [Client Component Browser]
+    ./lib/data/deliverable-migration.ts [Client Component Browser]
+    ./lib/data/system-functions.ts [Client Component Browser]
+    ./hooks/use-system-requirement-cascade.ts [Client Component Browser]
+    ./components/tickets/impact-scope-selector.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./lib/domain/schemas/exceptions.ts [Client Component SSR]
+    ./lib/domain/schemas/system-design.ts [Client Component SSR]
+    ./lib/data/deliverable-migration.ts [Client Component SSR]
+    ./lib/data/system-functions.ts [Client Component SSR]
+    ./hooks/use-system-requirement-cascade.ts [Client Component SSR]
+    ./components/tickets/impact-scope-selector.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1563847ms] [ERROR] ./lib/domain/schemas/fields.ts:1:1
+Module not found: Can't resolve 'zod'
+> 1 | import { z } from "zod";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+  2 |
+  3 | export const fieldTypeEnum = z.enum([
+  4 |   "string",
+
+Import traces:
+  Client Component Browser:
+    ./lib/domain/schemas/fields.ts [Client Component Browser]
+    ./lib/domain/schemas/side-effects.ts [Client Component Browser]
+    ./lib/domain/schemas/system-design.ts [Client Component Browser]
+    ./lib/data/deliverable-migration.ts [Client Component Browser]
+    ./lib/data/system-functions.ts [Client Component Browser]
+    ./hooks/use-system-requirement-cascade.ts [Client Component Browser]
+    ./components/tickets/impact-scope-selector.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./lib/domain/schemas/fields.ts [Client Component SSR]
+    ./lib/domain/schemas/side-effects.ts [Client Component SSR]
+    ./lib/domain/schemas/system-design.ts [Client Component SSR]
+    ./lib/data/deliverable-migration.ts [Client Component SSR]
+    ./lib/data/system-functions.ts [Client Component SSR]
+    ./hooks/use-system-requirement-cascade.ts [Client Component SSR]
+    ./components/tickets/impact-scope-selector.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1563849ms] [ERROR] ./lib/domain/schemas/io-schemas.ts:1:1
+Module not found: Can't resolve 'zod'
+> 1 | import { z } from "zod";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+  2 | import { fieldSchema, fieldArraySchema } from "./fields";
+  3 |
+  4 | export const apiInputSchema = z.object({
+
+Import traces:
+  Client Component Browser:
+    ./lib/domain/schemas/io-schemas.ts [Client Component Browser]
+    ./lib/domain/schemas/system-design.ts [Client Component Browser]
+    ./lib/data/deliverable-migration.ts [Client Component Browser]
+    ./lib/data/system-functions.ts [Client Component Browser]
+    ./hooks/use-system-requirement-cascade.ts [Client Component Browser]
+    ./components/tickets/impact-scope-selector.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./lib/domain/schemas/io-schemas.ts [Client Component SSR]
+    ./lib/domain/schemas/system-design.ts [Client Component SSR]
+    ./lib/data/deliverable-migration.ts [Client Component SSR]
+    ./lib/data/system-functions.ts [Client Component SSR]
+    ./hooks/use-system-requirement-cascade.ts [Client Component SSR]
+    ./components/tickets/impact-scope-selector.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1563856ms] [ERROR] ./lib/domain/schemas/non-functional.ts:1:1
+Module not found: Can't resolve 'zod'
+> 1 | import { z } from "zod";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+  2 |
+  3 | export const performanceSchema = z.object({
+  4 |   responseTime: z
+
+Import traces:
+  Client Component Browser:
+    ./lib/domain/schemas/non-functional.ts [Client Component Browser]
+    ./lib/domain/schemas/system-design.ts [Client Component Browser]
+    ./lib/data/deliverable-migration.ts [Client Component Browser]
+    ./lib/data/system-functions.ts [Client Component Browser]
+    ./hooks/use-system-requirement-cascade.ts [Client Component Browser]
+    ./components/tickets/impact-scope-selector.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./lib/domain/schemas/non-functional.ts [Client Component SSR]
+    ./lib/domain/schemas/system-design.ts [Client Component SSR]
+    ./lib/data/deliverable-migration.ts [Client Component SSR]
+    ./lib/data/system-functions.ts [Client Component SSR]
+    ./hooks/use-system-requirement-cascade.ts [Client Component SSR]
+    ./components/tickets/impact-scope-selector.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1563859ms] [ERROR] ./lib/domain/schemas/side-effects.ts:1:1
+Module not found: Can't resolve 'zod'
+> 1 | import { z } from "zod";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+  2 | import { fieldArraySchema } from "./fields";
+  3 |
+  4 | export const dbOperationSchema = z.object({
+
+Import traces:
+  Client Component Browser:
+    ./lib/domain/schemas/side-effects.ts [Client Component Browser]
+    ./lib/domain/schemas/system-design.ts [Client Component Browser]
+    ./lib/data/deliverable-migration.ts [Client Component Browser]
+    ./lib/data/system-functions.ts [Client Component Browser]
+    ./hooks/use-system-requirement-cascade.ts [Client Component Browser]
+    ./components/tickets/impact-scope-selector.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./lib/domain/schemas/side-effects.ts [Client Component SSR]
+    ./lib/domain/schemas/system-design.ts [Client Component SSR]
+    ./lib/data/deliverable-migration.ts [Client Component SSR]
+    ./lib/data/system-functions.ts [Client Component SSR]
+    ./hooks/use-system-requirement-cascade.ts [Client Component SSR]
+    ./components/tickets/impact-scope-selector.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1563863ms] [ERROR] ./lib/domain/schemas/system-design.ts:1:1
+Module not found: Can't resolve 'zod'
+> 1 | import { z } from "zod";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+  2 | import {
+  3 |   apiInputSchema,
+  4 |   apiOutputSchema,
+
+Import traces:
+  Client Component Browser:
+    ./lib/domain/schemas/system-design.ts [Client Component Browser]
+    ./lib/data/deliverable-migration.ts [Client Component Browser]
+    ./lib/data/system-functions.ts [Client Component Browser]
+    ./hooks/use-system-requirement-cascade.ts [Client Component Browser]
+    ./components/tickets/impact-scope-selector.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./lib/domain/schemas/system-design.ts [Client Component SSR]
+    ./lib/data/deliverable-migration.ts [Client Component SSR]
+    ./lib/data/system-functions.ts [Client Component SSR]
+    ./hooks/use-system-requirement-cascade.ts [Client Component SSR]
+    ./components/tickets/impact-scope-selector.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1564490ms] [ERROR] ./lib/domain/schemas/exceptions.ts:1:1
+Module not found: Can't resolve 'zod'
+> 1 | import { z } from "zod";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+  2 |
+  3 | export const exceptionTypeSchema = z.enum([
+  4 |   "validation",
+
+Import traces:
+  Client Component Browser:
+    ./lib/domain/schemas/exceptions.ts [Client Component Browser]
+    ./lib/domain/schemas/system-design.ts [Client Component Browser]
+    ./lib/data/deliverable-migration.ts [Client Component Browser]
+    ./lib/data/system-functions.ts [Client Component Browser]
+    ./hooks/use-system-requirement-cascade.ts [Client Component Browser]
+    ./components/tickets/impact-scope-selector.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./lib/domain/schemas/exceptions.ts [Client Component SSR]
+    ./lib/domain/schemas/system-design.ts [Client Component SSR]
+    ./lib/data/deliverable-migration.ts [Client Component SSR]
+    ./lib/data/system-functions.ts [Client Component SSR]
+    ./hooks/use-system-requirement-cascade.ts [Client Component SSR]
+    ./components/tickets/impact-scope-selector.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1564492ms] [ERROR] ./lib/domain/schemas/fields.ts:1:1
+Module not found: Can't resolve 'zod'
+> 1 | import { z } from "zod";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+  2 |
+  3 | export const fieldTypeEnum = z.enum([
+  4 |   "string",
+
+Import traces:
+  Client Component Browser:
+    ./lib/domain/schemas/fields.ts [Client Component Browser]
+    ./lib/domain/schemas/side-effects.ts [Client Component Browser]
+    ./lib/domain/schemas/system-design.ts [Client Component Browser]
+    ./lib/data/deliverable-migration.ts [Client Component Browser]
+    ./lib/data/system-functions.ts [Client Component Browser]
+    ./hooks/use-system-requirement-cascade.ts [Client Component Browser]
+    ./components/tickets/impact-scope-selector.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./lib/domain/schemas/fields.ts [Client Component SSR]
+    ./lib/domain/schemas/side-effects.ts [Client Component SSR]
+    ./lib/domain/schemas/system-design.ts [Client Component SSR]
+    ./lib/data/deliverable-migration.ts [Client Component SSR]
+    ./lib/data/system-functions.ts [Client Component SSR]
+    ./hooks/use-system-requirement-cascade.ts [Client Component SSR]
+    ./components/tickets/impact-scope-selector.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1564493ms] [ERROR] ./lib/domain/schemas/io-schemas.ts:1:1
+Module not found: Can't resolve 'zod'
+> 1 | import { z } from "zod";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+  2 | import { fieldSchema, fieldArraySchema } from "./fields";
+  3 |
+  4 | export const apiInputSchema = z.object({
+
+Import traces:
+  Client Component Browser:
+    ./lib/domain/schemas/io-schemas.ts [Client Component Browser]
+    ./lib/domain/schemas/system-design.ts [Client Component Browser]
+    ./lib/data/deliverable-migration.ts [Client Component Browser]
+    ./lib/data/system-functions.ts [Client Component Browser]
+    ./hooks/use-system-requirement-cascade.ts [Client Component Browser]
+    ./components/tickets/impact-scope-selector.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./lib/domain/schemas/io-schemas.ts [Client Component SSR]
+    ./lib/domain/schemas/system-design.ts [Client Component SSR]
+    ./lib/data/deliverable-migration.ts [Client Component SSR]
+    ./lib/data/system-functions.ts [Client Component SSR]
+    ./hooks/use-system-requirement-cascade.ts [Client Component SSR]
+    ./components/tickets/impact-scope-selector.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1564494ms] [ERROR] ./lib/domain/schemas/non-functional.ts:1:1
+Module not found: Can't resolve 'zod'
+> 1 | import { z } from "zod";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+  2 |
+  3 | export const performanceSchema = z.object({
+  4 |   responseTime: z
+
+Import traces:
+  Client Component Browser:
+    ./lib/domain/schemas/non-functional.ts [Client Component Browser]
+    ./lib/domain/schemas/system-design.ts [Client Component Browser]
+    ./lib/data/deliverable-migration.ts [Client Component Browser]
+    ./lib/data/system-functions.ts [Client Component Browser]
+    ./hooks/use-system-requirement-cascade.ts [Client Component Browser]
+    ./components/tickets/impact-scope-selector.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./lib/domain/schemas/non-functional.ts [Client Component SSR]
+    ./lib/domain/schemas/system-design.ts [Client Component SSR]
+    ./lib/data/deliverable-migration.ts [Client Component SSR]
+    ./lib/data/system-functions.ts [Client Component SSR]
+    ./hooks/use-system-requirement-cascade.ts [Client Component SSR]
+    ./components/tickets/impact-scope-selector.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1564495ms] [ERROR] ./lib/domain/schemas/side-effects.ts:1:1
+Module not found: Can't resolve 'zod'
+> 1 | import { z } from "zod";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+  2 | import { fieldArraySchema } from "./fields";
+  3 |
+  4 | export const dbOperationSchema = z.object({
+
+Import traces:
+  Client Component Browser:
+    ./lib/domain/schemas/side-effects.ts [Client Component Browser]
+    ./lib/domain/schemas/system-design.ts [Client Component Browser]
+    ./lib/data/deliverable-migration.ts [Client Component Browser]
+    ./lib/data/system-functions.ts [Client Component Browser]
+    ./hooks/use-system-requirement-cascade.ts [Client Component Browser]
+    ./components/tickets/impact-scope-selector.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./lib/domain/schemas/side-effects.ts [Client Component SSR]
+    ./lib/domain/schemas/system-design.ts [Client Component SSR]
+    ./lib/data/deliverable-migration.ts [Client Component SSR]
+    ./lib/data/system-functions.ts [Client Component SSR]
+    ./hooks/use-system-requirement-cascade.ts [Client Component SSR]
+    ./components/tickets/impact-scope-selector.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1564496ms] [ERROR] ./lib/domain/schemas/system-design.ts:1:1
+Module not found: Can't resolve 'zod'
+> 1 | import { z } from "zod";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+  2 | import {
+  3 |   apiInputSchema,
+  4 |   apiOutputSchema,
+
+Import traces:
+  Client Component Browser:
+    ./lib/domain/schemas/system-design.ts [Client Component Browser]
+    ./lib/data/deliverable-migration.ts [Client Component Browser]
+    ./lib/data/system-functions.ts [Client Component Browser]
+    ./hooks/use-system-requirement-cascade.ts [Client Component Browser]
+    ./components/tickets/impact-scope-selector.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./lib/domain/schemas/system-design.ts [Client Component SSR]
+    ./lib/data/deliverable-migration.ts [Client Component SSR]
+    ./lib/data/system-functions.ts [Client Component SSR]
+    ./hooks/use-system-requirement-cascade.ts [Client Component SSR]
+    ./components/tickets/impact-scope-selector.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1564626ms] [ERROR] ./lib/domain/schemas/exceptions.ts:1:1
+Module not found: Can't resolve 'zod'
+> 1 | import { z } from "zod";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+  2 |
+  3 | export const exceptionTypeSchema = z.enum([
+  4 |   "validation",
+
+Import traces:
+  Client Component Browser:
+    ./lib/domain/schemas/exceptions.ts [Client Component Browser]
+    ./lib/domain/schemas/system-design.ts [Client Component Browser]
+    ./lib/data/deliverable-migration.ts [Client Component Browser]
+    ./lib/data/system-functions.ts [Client Component Browser]
+    ./hooks/use-system-requirement-cascade.ts [Client Component Browser]
+    ./components/tickets/impact-scope-selector.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./lib/domain/schemas/exceptions.ts [Client Component SSR]
+    ./lib/domain/schemas/system-design.ts [Client Component SSR]
+    ./lib/data/deliverable-migration.ts [Client Component SSR]
+    ./lib/data/system-functions.ts [Client Component SSR]
+    ./hooks/use-system-requirement-cascade.ts [Client Component SSR]
+    ./components/tickets/impact-scope-selector.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1564628ms] [ERROR] ./lib/domain/schemas/fields.ts:1:1
+Module not found: Can't resolve 'zod'
+> 1 | import { z } from "zod";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+  2 |
+  3 | export const fieldTypeEnum = z.enum([
+  4 |   "string",
+
+Import traces:
+  Client Component Browser:
+    ./lib/domain/schemas/fields.ts [Client Component Browser]
+    ./lib/domain/schemas/side-effects.ts [Client Component Browser]
+    ./lib/domain/schemas/system-design.ts [Client Component Browser]
+    ./lib/data/deliverable-migration.ts [Client Component Browser]
+    ./lib/data/system-functions.ts [Client Component Browser]
+    ./hooks/use-system-requirement-cascade.ts [Client Component Browser]
+    ./components/tickets/impact-scope-selector.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./lib/domain/schemas/fields.ts [Client Component SSR]
+    ./lib/domain/schemas/side-effects.ts [Client Component SSR]
+    ./lib/domain/schemas/system-design.ts [Client Component SSR]
+    ./lib/data/deliverable-migration.ts [Client Component SSR]
+    ./lib/data/system-functions.ts [Client Component SSR]
+    ./hooks/use-system-requirement-cascade.ts [Client Component SSR]
+    ./components/tickets/impact-scope-selector.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1564629ms] [ERROR] ./lib/domain/schemas/io-schemas.ts:1:1
+Module not found: Can't resolve 'zod'
+> 1 | import { z } from "zod";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+  2 | import { fieldSchema, fieldArraySchema } from "./fields";
+  3 |
+  4 | export const apiInputSchema = z.object({
+
+Import traces:
+  Client Component Browser:
+    ./lib/domain/schemas/io-schemas.ts [Client Component Browser]
+    ./lib/domain/schemas/system-design.ts [Client Component Browser]
+    ./lib/data/deliverable-migration.ts [Client Component Browser]
+    ./lib/data/system-functions.ts [Client Component Browser]
+    ./hooks/use-system-requirement-cascade.ts [Client Component Browser]
+    ./components/tickets/impact-scope-selector.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./lib/domain/schemas/io-schemas.ts [Client Component SSR]
+    ./lib/domain/schemas/system-design.ts [Client Component SSR]
+    ./lib/data/deliverable-migration.ts [Client Component SSR]
+    ./lib/data/system-functions.ts [Client Component SSR]
+    ./hooks/use-system-requirement-cascade.ts [Client Component SSR]
+    ./components/tickets/impact-scope-selector.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1564630ms] [ERROR] ./lib/domain/schemas/non-functional.ts:1:1
+Module not found: Can't resolve 'zod'
+> 1 | import { z } from "zod";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+  2 |
+  3 | export const performanceSchema = z.object({
+  4 |   responseTime: z
+
+Import traces:
+  Client Component Browser:
+    ./lib/domain/schemas/non-functional.ts [Client Component Browser]
+    ./lib/domain/schemas/system-design.ts [Client Component Browser]
+    ./lib/data/deliverable-migration.ts [Client Component Browser]
+    ./lib/data/system-functions.ts [Client Component Browser]
+    ./hooks/use-system-requirement-cascade.ts [Client Component Browser]
+    ./components/tickets/impact-scope-selector.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./lib/domain/schemas/non-functional.ts [Client Component SSR]
+    ./lib/domain/schemas/system-design.ts [Client Component SSR]
+    ./lib/data/deliverable-migration.ts [Client Component SSR]
+    ./lib/data/system-functions.ts [Client Component SSR]
+    ./hooks/use-system-requirement-cascade.ts [Client Component SSR]
+    ./components/tickets/impact-scope-selector.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1564630ms] [ERROR] ./lib/domain/schemas/side-effects.ts:1:1
+Module not found: Can't resolve 'zod'
+> 1 | import { z } from "zod";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+  2 | import { fieldArraySchema } from "./fields";
+  3 |
+  4 | export const dbOperationSchema = z.object({
+
+Import traces:
+  Client Component Browser:
+    ./lib/domain/schemas/side-effects.ts [Client Component Browser]
+    ./lib/domain/schemas/system-design.ts [Client Component Browser]
+    ./lib/data/deliverable-migration.ts [Client Component Browser]
+    ./lib/data/system-functions.ts [Client Component Browser]
+    ./hooks/use-system-requirement-cascade.ts [Client Component Browser]
+    ./components/tickets/impact-scope-selector.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./lib/domain/schemas/side-effects.ts [Client Component SSR]
+    ./lib/domain/schemas/system-design.ts [Client Component SSR]
+    ./lib/data/deliverable-migration.ts [Client Component SSR]
+    ./lib/data/system-functions.ts [Client Component SSR]
+    ./hooks/use-system-requirement-cascade.ts [Client Component SSR]
+    ./components/tickets/impact-scope-selector.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1564631ms] [ERROR] ./lib/domain/schemas/system-design.ts:1:1
+Module not found: Can't resolve 'zod'
+> 1 | import { z } from "zod";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+  2 | import {
+  3 |   apiInputSchema,
+  4 |   apiOutputSchema,
+
+Import traces:
+  Client Component Browser:
+    ./lib/domain/schemas/system-design.ts [Client Component Browser]
+    ./lib/data/deliverable-migration.ts [Client Component Browser]
+    ./lib/data/system-functions.ts [Client Component Browser]
+    ./hooks/use-system-requirement-cascade.ts [Client Component Browser]
+    ./components/tickets/impact-scope-selector.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./lib/domain/schemas/system-design.ts [Client Component SSR]
+    ./lib/data/deliverable-migration.ts [Client Component SSR]
+    ./lib/data/system-functions.ts [Client Component SSR]
+    ./hooks/use-system-requirement-cascade.ts [Client Component SSR]
+    ./components/tickets/impact-scope-selector.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1566037ms] [ERROR] ./lib/domain/schemas/exceptions.ts:1:1
+Module not found: Can't resolve 'zod'
+> 1 | import { z } from "zod";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+  2 |
+  3 | export const exceptionTypeSchema = z.enum([
+  4 |   "validation",
+
+Import traces:
+  Client Component Browser:
+    ./lib/domain/schemas/exceptions.ts [Client Component Browser]
+    ./lib/domain/schemas/system-design.ts [Client Component Browser]
+    ./lib/data/deliverable-migration.ts [Client Component Browser]
+    ./lib/data/system-functions.ts [Client Component Browser]
+    ./hooks/use-system-requirement-cascade.ts [Client Component Browser]
+    ./components/tickets/impact-scope-selector.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./lib/domain/schemas/exceptions.ts [Client Component SSR]
+    ./lib/domain/schemas/system-design.ts [Client Component SSR]
+    ./lib/data/deliverable-migration.ts [Client Component SSR]
+    ./lib/data/system-functions.ts [Client Component SSR]
+    ./hooks/use-system-requirement-cascade.ts [Client Component SSR]
+    ./components/tickets/impact-scope-selector.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1566038ms] [ERROR] ./lib/domain/schemas/fields.ts:1:1
+Module not found: Can't resolve 'zod'
+> 1 | import { z } from "zod";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+  2 |
+  3 | export const fieldTypeEnum = z.enum([
+  4 |   "string",
+
+Import traces:
+  Client Component Browser:
+    ./lib/domain/schemas/fields.ts [Client Component Browser]
+    ./lib/domain/schemas/side-effects.ts [Client Component Browser]
+    ./lib/domain/schemas/system-design.ts [Client Component Browser]
+    ./lib/data/deliverable-migration.ts [Client Component Browser]
+    ./lib/data/system-functions.ts [Client Component Browser]
+    ./hooks/use-system-requirement-cascade.ts [Client Component Browser]
+    ./components/tickets/impact-scope-selector.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./lib/domain/schemas/fields.ts [Client Component SSR]
+    ./lib/domain/schemas/side-effects.ts [Client Component SSR]
+    ./lib/domain/schemas/system-design.ts [Client Component SSR]
+    ./lib/data/deliverable-migration.ts [Client Component SSR]
+    ./lib/data/system-functions.ts [Client Component SSR]
+    ./hooks/use-system-requirement-cascade.ts [Client Component SSR]
+    ./components/tickets/impact-scope-selector.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1566038ms] [ERROR] ./lib/domain/schemas/io-schemas.ts:1:1
+Module not found: Can't resolve 'zod'
+> 1 | import { z } from "zod";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+  2 | import { fieldSchema, fieldArraySchema } from "./fields";
+  3 |
+  4 | export const apiInputSchema = z.object({
+
+Import traces:
+  Client Component Browser:
+    ./lib/domain/schemas/io-schemas.ts [Client Component Browser]
+    ./lib/domain/schemas/system-design.ts [Client Component Browser]
+    ./lib/data/deliverable-migration.ts [Client Component Browser]
+    ./lib/data/system-functions.ts [Client Component Browser]
+    ./hooks/use-system-requirement-cascade.ts [Client Component Browser]
+    ./components/tickets/impact-scope-selector.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./lib/domain/schemas/io-schemas.ts [Client Component SSR]
+    ./lib/domain/schemas/system-design.ts [Client Component SSR]
+    ./lib/data/deliverable-migration.ts [Client Component SSR]
+    ./lib/data/system-functions.ts [Client Component SSR]
+    ./hooks/use-system-requirement-cascade.ts [Client Component SSR]
+    ./components/tickets/impact-scope-selector.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1566040ms] [ERROR] ./lib/domain/schemas/non-functional.ts:1:1
+Module not found: Can't resolve 'zod'
+> 1 | import { z } from "zod";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+  2 |
+  3 | export const performanceSchema = z.object({
+  4 |   responseTime: z
+
+Import traces:
+  Client Component Browser:
+    ./lib/domain/schemas/non-functional.ts [Client Component Browser]
+    ./lib/domain/schemas/system-design.ts [Client Component Browser]
+    ./lib/data/deliverable-migration.ts [Client Component Browser]
+    ./lib/data/system-functions.ts [Client Component Browser]
+    ./hooks/use-system-requirement-cascade.ts [Client Component Browser]
+    ./components/tickets/impact-scope-selector.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./lib/domain/schemas/non-functional.ts [Client Component SSR]
+    ./lib/domain/schemas/system-design.ts [Client Component SSR]
+    ./lib/data/deliverable-migration.ts [Client Component SSR]
+    ./lib/data/system-functions.ts [Client Component SSR]
+    ./hooks/use-system-requirement-cascade.ts [Client Component SSR]
+    ./components/tickets/impact-scope-selector.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1566048ms] [ERROR] ./lib/domain/schemas/side-effects.ts:1:1
+Module not found: Can't resolve 'zod'
+> 1 | import { z } from "zod";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+  2 | import { fieldArraySchema } from "./fields";
+  3 |
+  4 | export const dbOperationSchema = z.object({
+
+Import traces:
+  Client Component Browser:
+    ./lib/domain/schemas/side-effects.ts [Client Component Browser]
+    ./lib/domain/schemas/system-design.ts [Client Component Browser]
+    ./lib/data/deliverable-migration.ts [Client Component Browser]
+    ./lib/data/system-functions.ts [Client Component Browser]
+    ./hooks/use-system-requirement-cascade.ts [Client Component Browser]
+    ./components/tickets/impact-scope-selector.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./lib/domain/schemas/side-effects.ts [Client Component SSR]
+    ./lib/domain/schemas/system-design.ts [Client Component SSR]
+    ./lib/data/deliverable-migration.ts [Client Component SSR]
+    ./lib/data/system-functions.ts [Client Component SSR]
+    ./hooks/use-system-requirement-cascade.ts [Client Component SSR]
+    ./components/tickets/impact-scope-selector.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1566049ms] [ERROR] ./lib/domain/schemas/system-design.ts:1:1
+Module not found: Can't resolve 'zod'
+> 1 | import { z } from "zod";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+  2 | import {
+  3 |   apiInputSchema,
+  4 |   apiOutputSchema,
+
+Import traces:
+  Client Component Browser:
+    ./lib/domain/schemas/system-design.ts [Client Component Browser]
+    ./lib/data/deliverable-migration.ts [Client Component Browser]
+    ./lib/data/system-functions.ts [Client Component Browser]
+    ./hooks/use-system-requirement-cascade.ts [Client Component Browser]
+    ./components/tickets/impact-scope-selector.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component Browser]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./lib/domain/schemas/system-design.ts [Client Component SSR]
+    ./lib/data/deliverable-migration.ts [Client Component SSR]
+    ./lib/data/system-functions.ts [Client Component SSR]
+    ./hooks/use-system-requirement-cascade.ts [Client Component SSR]
+    ./components/tickets/impact-scope-selector.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Client Component SSR]
+    ./app/(with-sidebar)/tickets/create/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1696514ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=-3TVkoEGiQQq9Nsa4NiPh' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10876
+[ 1697522ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=-3TVkoEGiQQq9Nsa4NiPh' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10876
+[ 1698525ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=-3TVkoEGiQQq9Nsa4NiPh' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10876
+[ 1699529ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=-3TVkoEGiQQq9Nsa4NiPh' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10876
+[ 1700534ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=-3TVkoEGiQQq9Nsa4NiPh' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10876

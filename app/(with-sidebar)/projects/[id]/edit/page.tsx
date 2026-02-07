@@ -117,7 +117,7 @@ export default function ProjectEditPage({ params }: { params: Promise<{ id: stri
 
   if (loading) {
     return (
-      <div className="flex-1 min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-slate-50">
         <div className="mx-auto max-w-[1200px] p-8">
           <div className="space-y-4">
             <div className="h-8 bg-slate-200 rounded w-32 animate-pulse" />
@@ -131,7 +131,7 @@ export default function ProjectEditPage({ params }: { params: Promise<{ id: stri
 
   if (!project) {
     return (
-      <div className="flex-1 min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-slate-50">
         <div className="mx-auto max-w-[1200px] p-8">
           <p className="text-sm text-rose-600">{error ?? "プロジェクトが見つかりません"}</p>
           <Link
@@ -147,7 +147,7 @@ export default function ProjectEditPage({ params }: { params: Promise<{ id: stri
   }
 
   return (
-    <div className="flex-1 min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-[1200px] p-8">
         <Link
           href="/projects"

@@ -217,7 +217,7 @@ const AMBIGUOUS_WORDS = ["高速", "柔軟", "便利", "適切", "迅速", "安�
 
 ### 3.1 フック更新
 
-**`app/(with-sidebar)/system-domains/[id]/[srfId]/edit/hooks/useSystemFunctionForm.ts`**
+**`app/(with-sidebar)/system/[id]/[srfId]/edit/hooks/useSystemFunctionForm.ts`**
 
 - `systemDesign` 状態を V2/Legacy 分離管理に変更
 - `targets` 状態を追加
@@ -225,7 +225,7 @@ const AMBIGUOUS_WORDS = ["高速", "柔軟", "便利", "適切", "迅速", "安�
 
 ### 3.2 編集ページ統合
 
-**`app/(with-sidebar)/system-domains/[id]/[srfId]/edit/page.tsx`**
+**`app/(with-sidebar)/system/[id]/[srfId]/edit/page.tsx`**
 
 - 既存`SystemDesignSection`を新`SystemDesignEditor`に置き換え
 
@@ -253,9 +253,9 @@ const AMBIGUOUS_WORDS = ["高速", "柔軟", "便利", "適切", "迅速", "安�
 | `lib/data/system-design-migration.ts` | **新規** - 移行ロジック |
 | `components/forms/design/*.tsx` | **新規** - UIコンポーネント群 |
 | `lib/domain/entities.ts` | systemDesign型をユニオンに |
-| `app/(with-sidebar)/system-domains/[id]/[srfId]/edit/hooks/useSystemFunctionForm.ts` | 状態管理拡張 |
-| `app/(with-sidebar)/system-domains/[id]/[srfId]/edit/page.tsx` | 新コンポーネント統合 |
-| `app/(with-sidebar)/system-domains/[id]/[srfId]/edit/components/SystemDesignSection.tsx` | 削除（置き換え） |
+| `app/(with-sidebar)/system/[id]/[srfId]/edit/hooks/useSystemFunctionForm.ts` | 状態管理拡張 |
+| `app/(with-sidebar)/system/[id]/[srfId]/edit/page.tsx` | 新コンポーネント統合 |
+| `app/(with-sidebar)/system/[id]/[srfId]/edit/components/SystemDesignSection.tsx` | 削除（置き換え） |
 | `components/system-domains/system-design-section.tsx` | V2表示対応 |
 
 ---

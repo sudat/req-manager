@@ -11,7 +11,7 @@ import { listBusinessRequirements } from "@/lib/data/business-requirements";
 import { listConcepts } from "@/lib/data/concepts";
 import { listSystemFunctions } from "@/lib/data/system-functions";
 import { listSystemRequirements } from "@/lib/data/system-requirements";
-import { listImplUnitSds } from "@/lib/data/impl-unit-sds";
+import { listDesignDocuments } from "@/lib/data/design-documents";
 import { useProject } from "@/components/project/project-context";
 import {
 	buildHealthScoreSummary,
@@ -55,7 +55,7 @@ export default function DashboardPage() {
 					listSystemRequirements(projectId),
 					listSystemFunctions(projectId),
 					listConcepts(projectId),
-					listImplUnitSds(projectId),
+					listDesignDocuments(projectId),
 				]);
 
 			if (!active) return;
@@ -83,7 +83,7 @@ export default function DashboardPage() {
 				businessRequirements: businessRequirementsForHealth,
 				systemRequirements: systemResult.data ?? [],
 				systemFunctions: functionResult.data ?? [],
-				implUnitSds: implUnitResult.data ?? [],
+				designDocuments: implUnitResult.data ?? [],
 				concepts: conceptResult.data ?? [],
 			});
 

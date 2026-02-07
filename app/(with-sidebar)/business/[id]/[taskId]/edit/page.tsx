@@ -261,7 +261,6 @@ export default function TaskDetailEditPage({
 				systemDomains={systemDomains}
 				businessRequirements={businessRequirementItems}
 				systemRequirements={[]}
-				deliverables={[]}
 				onUpdateRequirement={(reqId, patch) => {
 					updateRequirement("businessRequirements", reqId, patch);
 				}}

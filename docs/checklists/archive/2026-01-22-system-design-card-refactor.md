@@ -149,7 +149,7 @@
 
 ```
 1. システム機能の編集画面を開く
-   /system-domains/{domainId}/{srfId}/edit
+   /system/{domainId}/{srfId}/edit
 
 2. 「設計項目」セクションで対象物を選択（または新規作成）
    ┌───────────────────────────────────────────────────┐
@@ -285,7 +285,7 @@ components/forms/design/
 - [ ] `SystemDesignEditor` コンポーネント作成（タブ切替）
 - [ ] 分類別フォームコンポーネント5つ作成
 - [ ] 曖昧語lint機能の実装（警告表示）
-- [ ] 既存の `/system-domains/{domainId}/{srfId}/edit` に組み込み
+- [ ] 既存の `/system/{domainId}/{srfId}/edit` に組み込み
 - [ ] Storybookでコンポーネント確認
 
 ### Phase 3: 既存データ移行・表示・紐づけ（0.5日）

@@ -3,10 +3,13 @@
 import { useState } from 'react';
 import { Layers, ChevronDown, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { SfDraft, SrDraft } from './types';
+import { Button } from '@/components/ui/button';
+import type { SfDraft, SrDraft, DraftCommitState } from './types';
 
 type SfDraftCardProps = {
   draft: SfDraft;
+  commitState?: DraftCommitState;
+  onCommit?: () => void;
 };
 
 /**
@@ -14,8 +17,28 @@ type SfDraftCardProps = {
  *
  * AIが生成したシステム機能（SF）草案を表形式で表示する。
  */
-export function SfDraftCard({ draft }: SfDraftCardProps) {
+export function SfDraftCard({ draft, commitState, onCommit }: SfDraftCardProps) {
   const [isExpanded, setIsExpanded] = useState(true);
+  const baseStatus = commitState?.status ?? 'idle';
+  const status = draft.isCommitted && baseStatus === 'idle' ? 'success' : baseStatus;
+  const statusLabel =
+    status === 'success'
+      ? '登録済'
+      : status === 'loading'
+        ? '登録中'
+        : status === 'error'
+          ? '登録失敗'
+          : '未確定';
+  const statusClass =
+    status === 'success'
+      ? 'bg-emerald-100 text-emerald-700'
+      : status === 'loading'
+        ? 'bg-sky-100 text-sky-700'
+        : status === 'error'
+          ? 'bg-rose-100 text-rose-700'
+          : 'bg-amber-100 text-amber-700';
+
+  const isLocked = draft.isCommitted === true;
 
   return (
     <div className="mt-3 rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
@@ -27,8 +50,8 @@ export function SfDraftCard({ draft }: SfDraftCardProps) {
             システム機能草案
           </h3>
         </div>
-        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-700">
-          未確定
+        <span className={cn('inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium', statusClass)}>
+          {statusLabel}
         </span>
       </div>
 
@@ -65,6 +88,22 @@ export function SfDraftCard({ draft }: SfDraftCardProps) {
           )}
         </div>
       )}
+
+      {onCommit && status !== 'success' && !isLocked && (
+        <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-slate-200 bg-slate-50/50">
+          <div className="text-[11px] text-rose-600 min-h-[16px]">
+            {status === 'error' ? commitState?.message : ''}
+          </div>
+          <Button
+            size="sm"
+            onClick={onCommit}
+            disabled={status === 'loading'}
+            className="h-8 px-4 text-[12px] bg-slate-900 hover:bg-slate-800"
+          >
+            {status === 'loading' ? '登録中...' : '登録する'}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
@@ -74,6 +113,8 @@ export function SfDraftCard({ draft }: SfDraftCardProps) {
  */
 function SrListItem({ sr }: { sr: SrDraft }) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const title = sr.title || sr.requirement;
+  const summary = sr.summary || sr.requirement;
 
   return (
     <div className="border-b border-slate-100 last:border-b-0">
@@ -83,7 +124,7 @@ function SrListItem({ sr }: { sr: SrDraft }) {
       >
         <div className="flex items-center gap-2 text-left">
           <span className="text-[11px] font-mono text-slate-500">{sr.code}</span>
-          <span className="text-[12px] text-slate-700 truncate">{sr.requirement}</span>
+          <span className="text-[12px] text-slate-700 truncate">{title}</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-[10px] text-slate-400">AC: {sr.acs.length}件</span>
@@ -95,15 +136,18 @@ function SrListItem({ sr }: { sr: SrDraft }) {
         </div>
       </button>
 
-      {isExpanded && (
-        <div className="px-4 pb-2 bg-slate-50/50">
-          <div className="pl-4 border-l-2 border-slate-200 space-y-2">
-            <div className="text-[11px] text-slate-600">
-              <span className="font-medium">タイプ:</span> {sr.type}
-            </div>
-            <div className="text-[11px] text-slate-600">
-              <span className="font-medium">根拠:</span> {sr.rationale}
-            </div>
+          {isExpanded && (
+            <div className="px-4 pb-2 bg-slate-50/50">
+              <div className="pl-4 border-l-2 border-slate-200 space-y-2">
+                <div className="text-[11px] text-slate-600">
+                  <span className="font-medium">タイプ:</span> {sr.type}
+                </div>
+                <div className="text-[11px] text-slate-600">
+                  <span className="font-medium">概要:</span> {summary}
+                </div>
+                <div className="text-[11px] text-slate-600">
+                  <span className="font-medium">根拠:</span> {sr.rationale}
+                </div>
             {sr.acs.length > 0 && (
               <div className="mt-2">
                 <div className="text-[10px] font-medium text-slate-500 mb-1">受入基準:</div>

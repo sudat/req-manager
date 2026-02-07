@@ -4,7 +4,7 @@
 
 ### 1. リストページのDRY違反解消
 - `app/business/page.tsx` (247行)
-- `app/system-domains/page.tsx` (224行)
+- `app/(with-sidebar)/system/page.tsx` (224行)
 - `app/ideas/page.tsx` (250行)
 
 **現状**: 3ファイルがほぼ同じ構造で重複
@@ -40,7 +40,7 @@
 
 #### 1.4 設定オブジェクト
 - **ファイル**: `config/resource-lists.ts` (新規)
-- **内容**: 各リソース（business/system-domains/ideas）のカラム・アクション定義
+- **内容**: 各リソース（business/system/ideas）のカラム・アクション定義
 
 #### 1.5 既存ページの置き換え
 - 3ファイルを `ResourceListPage` 使用に書き換え
@@ -88,7 +88,7 @@
 
 ### 変更
 - `app/business/page.tsx`
-- `app/system-domains/page.tsx`
+- `app/(with-sidebar)/system/page.tsx`
 - `app/ideas/page.tsx`
 - `app/business/[id]/tasks/[taskId]/page.tsx`
 
@@ -97,7 +97,7 @@
 ## 検証方法
 
 ### Playwright MCP で動作確認
-1. **リストページ**: business, system-domains, ideas の各一覧画面で
+1. **リストページ**: business, system, ideas の各一覧画面で
    - 検索が動作する
    - フィルタが動作する
    - ページネーションが動作する

@@ -22,7 +22,7 @@ export type BusinessRequirementPriority = "Must" | "Should" | "Could";
 
 /**
  * システム要件カテゴリ（PRD v1.3）
- * @deprecated 要件に観点は不要。成果物への紐づけ（relatedDeliverableIds）を使用してください
+ * @deprecated 要件に観点は不要です。
  */
 export type SystemRequirementCategory =
   | "function"
@@ -65,26 +65,39 @@ export interface SystemDesignItem {
 }
 
 /**
- * 実装単位の種別
+ * DD（Design Document）の種別
  */
-export type ImplUnitType = "screen" | "api" | "batch" | "external_if";
+export type DdType =
+  | "screen"
+  | "api"
+  | "batch"
+  | "external_if"
+  | "model"
+  | "report"
+  | "job";
 
 /**
- * 実装単位の種別ラベル定義
+ * DD種別ラベル定義
  */
-export const IMPL_UNIT_TYPE_LABELS: Record<ImplUnitType, string> = {
+export const DD_TYPE_LABELS: Record<DdType, string> = {
   screen: "画面",
   api: "API",
   batch: "バッチ",
   external_if: "外部I/F",
+  model: "モデル",
+  report: "レポート",
+  job: "ジョブ",
 };
 
 /**
- * 実装単位の種別ごとの色設定（Badge用）
+ * DD種別ごとの色設定（Badge用）
  */
-export const IMPL_UNIT_TYPE_COLORS: Record<ImplUnitType, string> = {
+export const DD_TYPE_COLORS: Record<DdType, string> = {
   screen: "border-violet-200 bg-violet-50 text-violet-700",
   api: "border-emerald-200 bg-emerald-50 text-emerald-700",
   batch: "border-amber-200 bg-amber-50 text-amber-700",
   external_if: "border-sky-200 bg-sky-50 text-sky-700",
+  model: "border-indigo-200 bg-indigo-50 text-indigo-700",
+  report: "border-rose-200 bg-rose-50 text-rose-700",
+  job: "border-teal-200 bg-teal-50 text-teal-700",
 };

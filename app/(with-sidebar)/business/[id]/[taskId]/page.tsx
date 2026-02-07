@@ -126,7 +126,7 @@ export default function TaskDetailPage({ params }: PageProps) {
 	return (
 		<>
 			<MobileHeader />
-			<div className="flex-1 min-h-screen bg-slate-50">
+			<div className="min-h-screen bg-slate-50">
 				<div className="mx-auto max-w-[1400px] px-8 py-4">
 					{/* パンくずリスト */}
 					<Breadcrumb className="mb-4">

@@ -272,7 +272,6 @@ function BusinessTaskCreatePageContent({ businessKey }: BusinessTaskCreatePageCo
         systemDomains={systemDomains}
         businessRequirements={businessRequirementItems}
         systemRequirements={systemRequirements}
-        deliverables={[]}
         onUpdateRequirement={updateRequirement}
       />
     </>

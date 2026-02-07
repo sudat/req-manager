@@ -153,5 +153,38 @@ export type ImpactScopeTargetType = 'business_requirement' | 'system_requirement
 export type AcceptanceCriterionSourceType = 'business_requirement' | 'system_requirement';
 export type AcceptanceConfirmationStatus = 'unverified' | 'verified_ok' | 'verified_ng';
 
+/**
+ * 影響調査結果ステータス（Phase 5）
+ */
+export type InvestigationResultStatus = 'pending' | 'running' | 'completed' | 'failed';
+
+/**
+ * 影響調査結果（Phase 5）
+ */
+export interface InvestigationResult {
+  id: string;
+  changeRequestId: string;
+  projectId: string;
+  status: InvestigationResultStatus;
+  topDownResult: {
+    affectedBRs: string[];
+    affectedSFs: string[];
+    affectedSRs: string[];
+    affectedACs: string[];
+    affectedEntryPoints: Array<{ sfId: string; path: string }>;
+  };
+  suspectLinksDetected: Array<{
+    id: string;
+    sourceType: string;
+    sourceId: string;
+    targetType: string;
+    targetId: string;
+    linkType: string;
+    suspectReason: string | null;
+  }>;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Import types used in value objects
 import type { BusinessArea } from "./enums";

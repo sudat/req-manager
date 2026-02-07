@@ -2,7 +2,7 @@
 
 ## 調査概要
 - **Businessページ**: http://localhost:3000/business
-- **System-domainsページ**: http://localhost:3000/system-domains
+- **System-domainsページ**: http://localhost:3000/system
 - **課題**: System-domainsの「機能数」列の文字サイズがBusinessページより小さい
 
 ---
@@ -12,7 +12,7 @@
 | ページ | メインファイル | 設定ファイル |
 |--------|----------------|--------------|
 | Business | `app/(with-sidebar)/business/page.tsx` | `config/resource-lists.tsx:60-143` |
-| System-domains | `app/(with-sidebar)/system-domains/page.tsx` | `config/resource-lists.tsx:151-204` |
+| System-domains | `app/(with-sidebar)/system/page.tsx` | `config/resource-lists.tsx:151-204` |
 
 **共通コンポーネント**: `components/resource-page/resource-list-page.tsx`
 
@@ -212,7 +212,7 @@ System-domainsページの「機能数」列を、Businessページの「要件�
 ---
 
 ## 検証方法
-1. http://localhost:3000/system-domains にアクセス
+1. http://localhost:3000/system にアクセス
 2. 「機能数」列の数字が大きく（16px）、太字で表示されることを確認
 3. 「件」ユニットが付いていることを確認
 4. Businessページの「要件数」と同じ見た目であることを確認

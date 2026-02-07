@@ -66,7 +66,7 @@ TASK-002の「売掛金自動計上バッチ処理」に該当するシステム
 **領域:** AR（債権管理）
 
 **作成手順:**
-1. UIで作成: `http://localhost:3000/system-domains/AR/functions/create` にアクセス
+1. UIで作成: `http://localhost:3000/system/AR/functions/create` にアクセス
 2. 以下を入力:
    - ID: SRF-009
    - 機能名: 売掛金自動計上バッチ処理

@@ -104,7 +104,7 @@ export default function IdeaEditPage({ params }: { params: Promise<{ id: string 
   if (loading) {
     return (
     <>
-        <div className="flex-1 min-h-screen bg-slate-50">
+        <div className="min-h-screen bg-slate-50">
           <div className="mx-auto max-w-[1400px] p-8">
             <div className="animate-pulse space-y-3">
               <div className="h-4 bg-slate-200 rounded w-24" />
@@ -119,7 +119,7 @@ export default function IdeaEditPage({ params }: { params: Promise<{ id: string 
   if (!concept) {
     return (
     <>
-        <div className="flex-1 min-h-screen bg-slate-50">
+        <div className="min-h-screen bg-slate-50">
           <div className="mx-auto max-w-[1400px] p-8">
             <p className="text-sm text-rose-600">{error ?? "概念が見つかりません"}</p>
             <Link href="/ideas" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900 mt-4">
@@ -134,7 +134,7 @@ export default function IdeaEditPage({ params }: { params: Promise<{ id: string 
 
   return (
     <>
-      <div className="flex-1 min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-slate-50">
         <div className="mx-auto max-w-[1400px] p-8">
           <Link href={`/ideas/${id}`} className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900 mb-4">
             <ArrowLeft className="h-4 w-4" />

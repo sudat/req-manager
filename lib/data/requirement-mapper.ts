@@ -70,7 +70,6 @@ export function toSystemRequirementInput(
 		conceptIds: requirement.conceptIds,
 		impacts: [], // 影響領域は廃止
 		category: requirement.category,
-		relatedDeliverableIds: requirement.relatedDeliverableIds ?? [],
 		acceptanceCriteriaJson,
 		acceptanceCriteria: acceptanceCriteriaJsonToLegacy(acceptanceCriteriaJson),
 		systemDomainIds: requirement.systemDomainIds,
@@ -97,7 +96,6 @@ export function fromSystemRequirement(
 		acceptanceCriteriaJson: sr.acceptanceCriteriaJson,
 		category: sr.category,
 		businessRequirementIds: sr.businessRequirementIds ?? [],
-		relatedDeliverableIds: sr.relatedDeliverableIds ?? [],
 		relatedSystemRequirementIds: [],
 		taskId: sr.taskId, // taskIdを追加（外部キー制約対応）
 	};

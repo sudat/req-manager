@@ -42,7 +42,7 @@ export function AmbiguousWordLint({ text }: AmbiguousWordLintProps) {
 ## 検証
 
 1. 修正後にページを再読み込み
-2. `/system-domains/GL/SRF-027/edit` にアクセス
+2. `/system/GL/SRF-027/edit` にアクセス
 3. エラーが発生しないことを確認
 4. 曖昧語（「高速」「柔軟」など）を入力した際に警告が表示されることを確認
 

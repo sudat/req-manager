@@ -86,7 +86,7 @@
    ```
 2. Playwright MCP でシステム機能詳細ページにアクセス
    ```
-   URL: http://localhost:3002/system-domains/GL/SRF-017
+   URL: http://localhost:3002/system/GL/SRF-017
    ```
 3. システム要件カードを展開
 4. 以下を確認：

@@ -20,7 +20,6 @@ export function useToggleHandlers(
 			| "systemDomainIds"
 			| "businessRequirementIds"
 			| "relatedSystemRequirementIds"
-			| "relatedDeliverableIds"
 	) => {
 		return (itemId: string, checked: boolean) => {
 			if (!activeRequirement) return;
@@ -38,6 +37,5 @@ export function useToggleHandlers(
 		handleDomainToggle: createMultiToggle("systemDomainIds"),
 		handleBusinessRequirementToggle: createMultiToggle("businessRequirementIds"),
 		handleSystemRequirementToggle: createMultiToggle("relatedSystemRequirementIds"),
-		handleDeliverableToggle: createMultiToggle("relatedDeliverableIds"),
 	};
 }

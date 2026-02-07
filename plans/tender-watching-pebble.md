@@ -62,7 +62,7 @@ selectedIds.map((id) => (
 
 他のファイルでのtruncate実装例:
 - `app/business/page.tsx` L184: `max-w-[300px] truncate`
-- `app/system-domains/[id]/page.tsx` L284: `max-w-[300px] truncate block`
+- `app/(with-sidebar)/system/[id]/page.tsx` L284: `max-w-[300px] truncate block`
 - `components/forms/SelectionDialog.tsx` L67: `truncate`
 
 今回の修正は、Badge特有の制約(`w-fit`, `shrink-0`の上書き)を考慮し、`max-w-[200px]`というより小さい幅を採用。
@@ -105,4 +105,4 @@ selectedIds.map((id) => (
 - `/usr/local/src/dev/wsl/personal-pj/req-manager/components/forms/requirement-card.tsx` - 修正対象ファイル（L66-73のBadgeコンポーネント）
 - `/usr/local/src/dev/wsl/personal-pj/req-manager/components/ui/badge.tsx` - Badgeコンポーネントのデフォルトスタイル参照（`w-fit`, `shrink-0`, `whitespace-nowrap`）
 - `/usr/local/src/dev/wsl/personal-pj/req-manager/app/business/page.tsx` - truncate実装の参考例（L184）
-- `/usr/local/src/dev/wsl/personal-pj/req-manager/app/system-domains/[id]/page.tsx` - truncate実装の参考例（L284）
+- `/usr/local/src/dev/wsl/personal-pj/req-manager/app/(with-sidebar)/system/[id]/page.tsx` - truncate実装の参考例（L284）

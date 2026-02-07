@@ -372,6 +372,36 @@ export const listSrIdsByBrId = async (
  * @param projectId - プロジェクトID
  * @returns 疑義リンクの配列（エラー時は空配列）
  */
+/**
+ * BR IDから関連するSF IDsを取得する（realizes リンク）
+ * top-down分析で BR → SF の辿りに使用
+ * @param brId - 業務要件ID
+ * @param projectId - プロジェクトID
+ * @returns SF IDの配列（エラー時は空配列）
+ */
+export const listSfIdsByBrId = async (
+  brId: string,
+  projectId: string
+): Promise<string[]> => {
+  const result = await listRequirementLinksBySource("br", brId, projectId);
+  if (result.error || !result.data) {
+    console.error(`[listSfIdsByBrId] Error:`, result.error);
+    return [];
+  }
+  return result.data
+    .filter((link) => link.targetType === "sf" && link.linkType === "realizes")
+    .map((link) => link.targetId);
+};
+
+/**
+ * 疑義リンクを解消する（suspect=false に設定）
+ * @param id - リンクID
+ * @param projectId - プロジェクトID
+ */
+export const resolveSuspectLink = async (id: string, projectId: string) => {
+  return updateRequirementLink(id, { suspect: false, suspectReason: null }, projectId);
+};
+
 export const listSuspectLinks = async (
   projectId: string
 ): Promise<RequirementLink[]> => {

@@ -73,7 +73,7 @@ const titles = useRequirementTitles(links, currentProjectId);
 | タイプ | 一意性 | URL例 |
 |--------|--------|-------|
 | BR | ✓ 一意 | `/business/{businessId}/{taskId}` |
-| SR | ✓ 一意 | `/system-domains/{domainId}/{srfId}` |
+| SR | ✓ 一意 | `/system/{domainId}/{srfId}` |
 
 **実装方針**:
 
@@ -96,7 +96,7 @@ function getRequirementUrl(type: string, id: string, info: RequirementTitleInfo)
     return `/business/${info.businessId}/${info.taskId}`;
   }
   if (type === 'sr' && info.srfId) {
-    return `/system-domains/${info.srfId}`;
+    return `/system/${info.srfId}`;
   }
   return '#';
 }

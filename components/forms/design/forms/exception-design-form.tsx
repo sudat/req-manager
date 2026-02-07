@@ -21,13 +21,13 @@ export function ExceptionDesignForm({
         <Textarea
           id="exception-error-cases"
           placeholder="想定されるエラー（バリデーションエラー、タイムアウト、権限不足など）"
-          value={content.errorCases}
+          value={content.errorCases ?? ""}
           onChange={(e) =>
-            onChange({ ...content, errorCases: e.target.value })
+            onChange({ ...content, errorCases: e.target.value || undefined })
           }
           rows={4}
         />
-        <AmbiguousWordLint text={content.errorCases} />
+        <AmbiguousWordLint text={content.errorCases ?? ""} />
       </div>
 
       <div className="space-y-2">

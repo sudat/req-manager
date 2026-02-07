@@ -1,3 +1,5 @@
+import type { EntryPoint, DdType } from "@/lib/domain";
+
 /**
  * AIチャット関連の型定義
  */
@@ -16,6 +18,7 @@ export type BtDraft = {
   business_area: string;
   project_id?: string;
   concept_ids?: string[];
+  isCommitted?: boolean;
 };
 
 /**
@@ -25,7 +28,7 @@ export type BrDraft = {
   code: string;
   requirement: string;
   rationale: string;
-  business_task_id: string;
+  business_task_id: string | null;
   concept_ids?: string[];
 };
 
@@ -41,6 +44,7 @@ export type DraftCommitState = {
  */
 export type AcDraft = {
   code: string;
+  title?: string;
   given: string;
   when: string;
   then: string;
@@ -55,6 +59,31 @@ export type SrDraft = {
   requirement: string;
   rationale: string;
   acs: AcDraft[];
+  businessRequirementIds?: string[];
+  title?: string;
+  summary?: string;
+  task_id?: string;
+  project_id?: string;
+  srf_ids?: string[];
+  system_domain_ids?: string[];
+  concept_ids?: string[];
+  impacts?: string[];
+};
+
+/**
+ * DD草案の型定義
+ */
+export type DdDraft = {
+  id: string;
+  code?: string;
+  srfId: string;
+  name: string;
+  type: DdType;
+  summary: string;
+  entryPoints: EntryPoint[];
+  designPolicy?: string;
+  details?: Record<string, unknown>;
+  project_id?: string;
 };
 
 /**
@@ -66,6 +95,9 @@ export type SfDraft = {
   description: string;
   system_domain_id: string;
   srs: SrDraft[];
+  project_id?: string;
+  isCommitted?: boolean;
+  brIds?: string[];
 };
 
 /**
@@ -80,8 +112,12 @@ export type ChatMessage = {
   progressSteps?: ChatProgressStep[];
   btDraft?: BtDraft;
   brDraft?: BrDraft;
+  brDrafts?: BrDraft[];
   sfDraft?: SfDraft;
   srDraft?: SrDraft;
+  srDrafts?: SrDraft[];
+  ddDraft?: DdDraft;
+  ddDrafts?: DdDraft[];
 };
 
 /**

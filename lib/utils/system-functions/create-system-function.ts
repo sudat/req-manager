@@ -1,6 +1,6 @@
 import { createSystemFunction } from "@/lib/data/system-functions";
 import { createSystemRequirements } from "@/lib/data/system-requirements";
-import { createImplUnitSds } from "@/lib/data/impl-unit-sds";
+import { createDesignDocuments } from "@/lib/data/design-documents";
 import {
 	createAcceptanceCriteria,
 	acceptanceCriteriaJsonToInputs,
@@ -9,10 +9,10 @@ import type { BusinessRequirement } from "@/lib/data/business-requirements";
 import { prepareSystemRequirementInputs } from "@/lib/utils/system-functions/prepare-system-requirements";
 import { normalizeEntryPointsInput } from "@/lib/utils/system-functions/entry-points";
 import { parseYamlObject } from "@/lib/utils/yaml";
+import { composeStructuredDetails } from "@/lib/utils/design-documents/structured-compat";
 import type { SrfCategory, SrfStatus, EntryPoint } from "@/lib/domain";
-import type { Deliverable } from "@/lib/domain/schemas/deliverable";
-import type { ImplUnitSdDraft } from "@/components/forms/impl-unit-sd-list";
-import type { SystemRequirementCard } from "@/app/(with-sidebar)/system-domains/[id]/create/types";
+import type { DesignDocumentDraft } from "@/components/forms/design-document-list";
+import type { SystemRequirementCard } from "@/app/(with-sidebar)/system/[id]/create/types";
 import {
 	createRequirementLinks,
 	type RequirementLinkCreateInput,
@@ -26,9 +26,8 @@ type CreateSystemFunctionInput = {
 	summary: string;
 	designPolicy: string;
 	status: SrfStatus;
-	deliverables: Deliverable[];
 	entryPoints: EntryPoint[];
-	implUnitSds: ImplUnitSdDraft[];
+	designDocuments: DesignDocumentDraft[];
 	systemRequirements: SystemRequirementCard[];
 	businessRequirements: BusinessRequirement[];
 	projectId: string;
@@ -48,9 +47,8 @@ export async function createSystemFunctionWithRelations(
 		summary,
 		designPolicy,
 		status,
-		deliverables,
 		entryPoints,
-		implUnitSds,
+		designDocuments,
 		systemRequirements,
 		businessRequirements,
 		projectId,
@@ -70,7 +68,6 @@ export async function createSystemFunctionWithRelations(
 		requirementIds: systemRequirements.map((sr) => sr.id),
 		systemDesign: [],
 		codeRefs: [],
-		deliverables,
 		entryPoints: normalizedEntryPoints,
 		projectId,
 	});
@@ -105,9 +102,9 @@ export async function createSystemFunctionWithRelations(
 		return { error: acError };
 	}
 
-	// 4. 実装単位SDを作成
-	if (implUnitSds.length > 0) {
-		const implInputs = implUnitSds.map((unit) => ({
+	// 4. DDを作成
+	if (designDocuments.length > 0) {
+		const implInputs = designDocuments.map((unit) => ({
 			id: unit.id,
 			srfId: nextId,
 			name: unit.name.trim(),
@@ -115,10 +112,13 @@ export async function createSystemFunctionWithRelations(
 			summary: unit.summary.trim(),
 			entryPoints: normalizeEntryPointsInput(unit.entryPoints),
 			designPolicy: unit.designPolicy.trim(),
-			details: parseYamlObject(unit.detailsYaml),
+			details: composeStructuredDetails({
+				structuredSpec: unit.structuredSpec,
+				legacyDetails: parseYamlObject(unit.detailsYaml),
+			}),
 			projectId,
 		}));
-		const { error: implError } = await createImplUnitSds(implInputs);
+		const { error: implError } = await createDesignDocuments(implInputs);
 		if (implError) {
 			return { error: implError };
 		}

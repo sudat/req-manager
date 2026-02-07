@@ -1,6 +1,6 @@
 import { listSystemDomains, type SystemDomain } from "@/lib/data/system-domains";
 import { listSystemFunctionsByDomain } from "@/lib/data/system-functions";
-import { listSystemRequirementsByTaskId } from "@/lib/data/system-requirements";
+import { listSystemRequirementsBySrfId } from "@/lib/data/system-requirements";
 import type { SystemRequirement } from "@/lib/data/system-requirements";
 import type { SystemFunction } from "@/lib/domain/entities";
 import { useCascadeFetch } from "./use-cascade-fetch";
@@ -35,7 +35,7 @@ export function useSystemRequirementCascade(): UseSystemRequirementCascadeReturn
 	} = useCascadeFetch<SystemDomain, SystemFunction, SystemRequirement>({
 		fetchLevel1: listSystemDomains,
 		fetchLevel2: listSystemFunctionsByDomain,
-		fetchLevel3: listSystemRequirementsByTaskId,
+		fetchLevel3: listSystemRequirementsBySrfId,
 	});
 
 	return {

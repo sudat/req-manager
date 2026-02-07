@@ -119,7 +119,7 @@ lib/utils/system-functions/
 ├── save-system-function.ts        # 120行
 └── create-system-function.ts      # 80行
 
-app/(with-sidebar)/system-domains/[id]/[srfId]/edit/hooks/
+app/(with-sidebar)/system/[id]/[srfId]/edit/hooks/
 ├── useSystemFunctionFormState.ts   # 80行
 ├── useSystemFunctionFormActions.ts # 100行
 └── useSystemFunctionDataFetch.ts   # 150行
@@ -140,8 +140,8 @@ components/forms/
 ## 影響範囲
 
 ### インポート変更が必要なファイル
-- `app/(with-sidebar)/system-domains/[id]/[srfId]/edit/page.tsx`
-- `app/(with-sidebar)/system-domains/[id]/create/page.tsx`
+- `app/(with-sidebar)/system/[id]/[srfId]/edit/page.tsx`
+- `app/(with-sidebar)/system/[id]/create/page.tsx`
 - `impl-unit-sd-list.tsx`を使用している全ファイル
 
 ### 公開インターフェース
@@ -154,7 +154,7 @@ components/forms/
 
 1. **TypeScriptコンパイル**: `bun run build` でエラーなし
 2. **E2Eテスト**: Playwright MCPで以下の画面を確認
-   - システム機能編集画面 (`/system-domains/[id]/[srfId]/edit`)
-   - システム機能作成画面 (`/system-domains/[id]/create`)
+   - システム機能編集画面 (`/system/[id]/[srfId]/edit`)
+   - システム機能作成画面 (`/system/[id]/create`)
    - タスク詳細画面 (`/business/[id]/[taskId]`)
 3. **行数確認**: 各ファイルが基準内に収まっていること

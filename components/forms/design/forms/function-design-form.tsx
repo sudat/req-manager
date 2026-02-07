@@ -4,6 +4,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { FunctionDesignContent } from "@/lib/domain/schemas/system-design";
 import { AmbiguousWordLint } from "../ambiguous-word-lint";
+import { StructuredIoSection } from "@/components/forms/StructuredIoSection";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Button } from "@/components/ui/button";
 
 interface FunctionDesignFormProps {
   content: FunctionDesignContent;
@@ -16,16 +19,25 @@ export function FunctionDesignForm({
 }: FunctionDesignFormProps) {
   return (
     <div className="space-y-4">
+      <StructuredIoSection content={content} onChange={onChange} />
+
+      <Collapsible>
+        <CollapsibleTrigger asChild>
+          <Button variant="outline" size="sm">
+            旧形式（テキスト）を編集
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="pt-4 space-y-4">
       <div className="space-y-2">
         <Label htmlFor="function-input">入力 *</Label>
         <Textarea
           id="function-input"
           placeholder="何を受け取るか（パラメータ、フォーム入力、ファイルなど）"
-          value={content.input}
-          onChange={(e) => onChange({ ...content, input: e.target.value })}
+          value={content.input ?? ""}
+          onChange={(e) => onChange({ ...content, input: e.target.value || undefined })}
           rows={3}
         />
-        <AmbiguousWordLint text={content.input} />
+        <AmbiguousWordLint text={content.input ?? ""} />
       </div>
 
       <div className="space-y-2">
@@ -45,11 +57,11 @@ export function FunctionDesignForm({
         <Textarea
           id="function-output"
           placeholder="何を返すか（レスポンス、画面遷移、ファイル生成など）"
-          value={content.output}
-          onChange={(e) => onChange({ ...content, output: e.target.value })}
+          value={content.output ?? ""}
+          onChange={(e) => onChange({ ...content, output: e.target.value || undefined })}
           rows={3}
         />
-        <AmbiguousWordLint text={content.output} />
+        <AmbiguousWordLint text={content.output ?? ""} />
       </div>
 
       <div className="space-y-2">
@@ -65,6 +77,8 @@ export function FunctionDesignForm({
         />
         <AmbiguousWordLint text={content.sideEffects || ""} />
       </div>
+        </CollapsibleContent>
+      </Collapsible>
     </div>
   );
 }

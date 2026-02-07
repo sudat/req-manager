@@ -11,8 +11,7 @@ export type SelectionDialogType =
   | "system"
   | "domain"
   | "business"
-  | "systemRequirements"
-  | "deliverables";
+  | "systemRequirements";
 
 /**
  * 要件タイプ
@@ -35,11 +34,10 @@ export type Requirement = {
   systemDomainIds: string[];
   acceptanceCriteria: string[];
   acceptanceCriteriaJson: AcceptanceCriterionJson[];
-  /** @deprecated 要件に観点は不要。relatedDeliverableIds を使用してください */
+  /** @deprecated 要件に観点は不要です。 */
   category?: SystemRequirementCategory;
   businessRequirementIds: string[];
   relatedSystemRequirementIds: string[];
-  relatedDeliverableIds?: string[]; // 関連成果物ID配列
   taskId?: string; // システム要件のタスクID（外部キー制約対応）
 };
 

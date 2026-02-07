@@ -25,12 +25,12 @@
 
 ### 方針：URLクエリパラメータによるフィルタリング
 `/links/page.tsx` で使用している `useSearchParams` + フィルタモードのパターンを活用し、
-各一覧画面（`/business`, `/system-domains`）にURLパラメータでフィルタを渡す。
+各一覧画面（`/business`, `/system`）にURLパラメータでフィルタを渡す。
 
 ```
 例:
 - /business?filter=missing_sr_link → システム要件未紐付けの業務要件のみ表示
-- /system-domains?filter=missing_acceptance → 受入条件未設定のシステム要件のみ表示
+- /system?filter=missing_acceptance → 受入条件未設定のシステム要件のみ表示
 ```
 
 ---
@@ -43,7 +43,7 @@
 1. `/lib/health-score/index.ts` - ルールIDとフィルタのマッピング定義を追加
 2. `/components/health-score/health-score-card.tsx` - クリック機能とリンクを追加
 3. `/app/(with-sidebar)/business/page.tsx` - フィルタパラメータ対応を追加
-4. `/app/(with-sidebar)/system-domains/page.tsx` - フィルタパラメータ対応を追加
+4. `/app/(with-sidebar)/system/page.tsx` - フィルタパラメータ対応を追加
 5. `/app/(with-sidebar)/ideas/[id]/page.tsx` - Breadcrumb を追加
 
 ---
@@ -58,7 +58,7 @@
 // 新規追加
 export type HealthIssueFilter = {
   filterParam: string;
-  targetPath: 'business' | 'system-domains';
+  targetPath: 'business' | 'system';
   label: string;
 };
 
@@ -70,12 +70,12 @@ export const healthIssueFilters: Record<string, HealthIssueFilter> = {
   },
   system_requirements_with_business_requirements: {
     filterParam: 'missing_br_link',
-    targetPath: 'system-domains',
+    targetPath: 'system',
     label: '業務要件未紐付け',
   },
   impl_unit_sds_with_entry_points: {
     filterParam: 'missing_entrypoint',
-    targetPath: 'system-domains',
+    targetPath: 'system',
     label: 'エントリポイント未設定',
   },
   concept_terms_with_links: {
@@ -90,12 +90,12 @@ export const healthIssueFilters: Record<string, HealthIssueFilter> = {
   },
   system_requirements_with_category: {
     filterParam: 'missing_category',
-    targetPath: 'system-domains',
+    targetPath: 'system',
     label: '観点種別未設定',
   },
   system_requirements_with_acceptance_criteria: {
     filterParam: 'missing_acceptance',
-    targetPath: 'system-domains',
+    targetPath: 'system',
     label: '受入条件未設定',
   },
 };
@@ -203,9 +203,9 @@ const filtered = useMemo(() => {
 
 ---
 
-### Step 5: /system-domains にフィルタ対応を追加
+### Step 5: /system にフィルタ対応を追加
 
-**ファイル**: `/app/(with-sidebar)/system-domains/page.tsx`
+**ファイル**: `/app/(with-sidebar)/system/page.tsx`
 
 **変更点**: `/business` と同様のパターンで実装
 
@@ -288,5 +288,5 @@ import {
 2. `/components/health-score/health-score-card.tsx` - クリック機能追加
 3. `/app/(with-sidebar)/dashboard/page.tsx` - クリックハンドラー実装
 4. `/app/(with-sidebar)/business/page.tsx` - フィルタ対応追加
-5. `/app/(with-sidebar)/system-domains/page.tsx` - フィルタ対応追加
+5. `/app/(with-sidebar)/system/page.tsx` - フィルタ対応追加
 6. `/app/(with-sidebar)/ideas/[id]/page.tsx` - Breadcrumb 追加

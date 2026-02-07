@@ -74,7 +74,7 @@ export function AmbiguousWordLint({ text }: AmbiguousWordLintProps) {
 
 ## 検証方法
 
-1. システム機能編集ページ (`/system-domains/GL/SRF-027/edit`) を開く
+1. システム機能編集ページ (`/system/GL/SRF-027/edit`) を開く
 2. 任意の設計観点タブをクリック
 3. オプションフィールド（制約、ロギング等）にテキストを入力
 4. エラーが発生しないことを確認

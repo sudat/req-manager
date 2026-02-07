@@ -19,7 +19,7 @@
 | ページパス | 使用Hook | 問題の有無 |
 |-----------|---------|-----------|
 | `/business/[id]/page.tsx` | `useBusinessTasks` | **修正済み** |
-| `/system-domains/[id]/page.tsx` | `useSystemFunctions` | **問題なし** (直接params.idを渡す) |
+| `/system/[id]/page.tsx` | `useSystemFunctions` | **問題なし** (直接params.idを渡す) |
 
 **注記:** `/business/[id]/[taskId]/page.tsx` は `ResourceListPage` を使用していませんが、`useBusinessByKey` を使用しており、このHookで問題が発生します。
 
@@ -100,7 +100,7 @@ const { businessId, businessArea } = useBusinessByKey(businessKey);
 - `useBusinessByKey` がエラーをセットする可能性あり
 - `ResourceListPage` は使用していないが、Hook自体のエラー表示が問題になる
 
-#### `/system-domains/[id]/page.tsx`
+#### `/system/[id]/page.tsx`
 ```typescript
 const { id } = use(params);
 const { functions, loading, error, deleteFunction, clearError } = useSystemFunctions(id);

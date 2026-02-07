@@ -146,28 +146,54 @@ export const createSSEStream = ({
           if (!toolName || ctx.hasSentDraft || !output || typeof output !== 'object') return;
           const normalized = normalizeToolName(toolName);
           const data = output as Record<string, unknown>;
+          let didSendDraft = false;
 
           if (normalized === 'bt_draft' && data.btDraft) {
             ctx.sendData({ event: 'draft', draft: data.btDraft });
-            ctx.hasSentDraft = true;
+            didSendDraft = true;
+            if (Array.isArray(data.brDrafts)) {
+              for (const brDraft of data.brDrafts) {
+                ctx.sendData({ event: 'draft', draftType: 'br', draft: brDraft });
+                didSendDraft = true;
+              }
+            }
+            if (didSendDraft) ctx.hasSentDraft = true;
             return;
           }
           if (normalized === 'br_draft' && data.brDraft) {
+            if (data.btDraft) {
+              ctx.sendData({ event: 'draft', draft: data.btDraft });
+              didSendDraft = true;
+            }
             ctx.sendData({ event: 'draft', draftType: 'br', draft: data.brDraft });
-            ctx.hasSentDraft = true;
+            didSendDraft = true;
+            if (didSendDraft) ctx.hasSentDraft = true;
             return;
           }
           if (normalized === 'system_draft' && Array.isArray(data.sfDrafts)) {
             for (const sfDraft of data.sfDrafts) {
               ctx.sendData({ event: 'draft', draftType: 'sf', draft: sfDraft });
-              ctx.hasSentDraft = true;
+              didSendDraft = true;
               if (sfDraft?.srs && Array.isArray(sfDraft.srs)) {
                 for (const srDraft of sfDraft.srs) {
                   ctx.sendData({ event: 'draft', draftType: 'sr', draft: srDraft, parentSfCode: sfDraft.code });
-                  ctx.hasSentDraft = true;
+                  didSendDraft = true;
                 }
               }
             }
+            if (didSendDraft) ctx.hasSentDraft = true;
+          }
+          if ((normalized === 'dd_draft' || normalized === 'impl_unit_draft') && Array.isArray(data.ddDrafts)) {
+            for (const ddDraft of data.ddDrafts) {
+              ctx.sendData({ event: 'draft', draftType: 'dd', draft: ddDraft });
+              didSendDraft = true;
+            }
+            if (didSendDraft) ctx.hasSentDraft = true;
+            return;
+          }
+          if (normalized === 'impl_unit_draft' && data.implUnitDraft) {
+            ctx.sendData({ event: 'draft', draftType: 'dd', draft: data.implUnitDraft });
+            ctx.hasSentDraft = true;
           }
         };
 

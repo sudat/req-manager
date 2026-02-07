@@ -5,9 +5,9 @@ import {
 	listSystemRequirementsBySrfId,
 } from "@/lib/data/system-requirements";
 import {
-	deleteImplUnitSdsBySrfId,
-	createImplUnitSds,
-} from "@/lib/data/impl-unit-sds";
+	deleteDesignDocumentsBySrfId,
+	createDesignDocuments,
+} from "@/lib/data/design-documents";
 import {
 	createAcceptanceCriteria,
 	acceptanceCriteriaJsonToInputs,
@@ -15,12 +15,12 @@ import {
 import { syncBrSrLinksToRequirementLinks } from "@/lib/data/task-sync";
 import { normalizeEntryPointsInput } from "./entry-points";
 import { parseYamlObject } from "@/lib/utils/yaml";
+import { composeStructuredDetails } from "@/lib/utils/design-documents/structured-compat";
 import type { Requirement } from "@/lib/domain/forms";
 import type { SystemDesignItem, EntryPoint, CodeRef } from "@/lib/domain";
 import type { DesignTarget, SystemDesignItemV2 } from "@/lib/domain/schemas/system-design";
-import type { Deliverable } from "@/lib/domain/schemas/deliverable";
 import type { SystemFunction, SrfCategory, SrfStatus } from "@/lib/domain";
-import type { ImplUnitSdDraft } from "@/components/forms/impl-unit-sd-list";
+import type { DesignDocumentDraft } from "@/components/forms/design-document-list";
 
 type SaveSystemFunctionInput = {
 	srfId: string;
@@ -31,18 +31,204 @@ type SaveSystemFunctionInput = {
 	title: string;
 	summary: string;
 	designPolicy: string;
-	deliverables: Deliverable[];
 	designItemsV2: SystemDesignItemV2[];
 	systemDesign: SystemDesignItem[];
 	entryPoints: EntryPoint[];
-	implUnitSds: ImplUnitSdDraft[];
+	designDocuments: DesignDocumentDraft[];
 	codeRefs: CodeRef[];
 	systemRequirements: Requirement[];
 	projectId: string;
 };
 
 /**
- * システム機能とその関連データを保存
+ * 基本情報のみを保存（SR/DDは既存データを維持）
+ */
+export async function saveBasicInfo(input: {
+	srfId: string;
+	existingSrf: SystemFunction;
+	systemDomainId: string;
+	category: SrfCategory;
+	status: SrfStatus;
+	title: string;
+	summary: string;
+	designPolicy: string;
+	projectId: string;
+}): Promise<{ error: string | null }> {
+	const {
+		srfId,
+		existingSrf,
+		systemDomainId,
+		category,
+		status,
+		title,
+		summary,
+		designPolicy,
+		projectId,
+	} = input;
+
+	// 既存のSR/DD/entryPoints/codeRefsは維持
+	const { error: saveError } = await updateSystemFunction(
+		srfId,
+		{
+			systemDomainId,
+			category,
+			status,
+			title,
+			summary,
+			designPolicy,
+			relatedTaskIds: existingSrf.relatedTaskIds ?? [],
+			requirementIds: existingSrf.requirementIds ?? [],
+			systemDesign: existingSrf.systemDesign ?? [],
+			entryPoints: existingSrf.entryPoints ?? [],
+			codeRefs: existingSrf.codeRefs ?? [],
+		},
+		projectId
+	);
+
+	if (saveError) {
+		return { error: saveError };
+	}
+
+	return { error: null };
+}
+
+/**
+ * システム要件のみを保存（基本情報/DDは触らない）
+ */
+export async function saveSystemRequirements(input: {
+	srfId: string;
+	existingSrf: SystemFunction;
+	systemDomainId: string;
+	systemRequirements: Requirement[];
+	projectId: string;
+}): Promise<{ error: string | null }> {
+	const { srfId, existingSrf, systemDomainId, systemRequirements, projectId } = input;
+
+	// 1. 既存SRのIDを取得（リンク削除用）
+	const { data: existingSystemReqs, error: existingSrError } =
+		await listSystemRequirementsBySrfId(srfId, projectId);
+	if (existingSrError) {
+		return { error: existingSrError };
+	}
+	const existingSrIds = (existingSystemReqs ?? []).map((req) => req.id);
+
+	// 2. システム要件を保存（既存削除 + 再作成）
+	await deleteSystemRequirementsBySrfId(srfId, projectId);
+
+	if (systemRequirements.length > 0) {
+		const sysReqInputs = systemRequirements.map((req, index) => ({
+			id: req.id,
+			taskId: req.taskId || "",
+			srfIds: [srfId],
+			title: req.title,
+			summary: req.summary,
+			conceptIds: req.conceptIds,
+			impacts: [],
+			category: req.category,
+			acceptanceCriteriaJson: req.acceptanceCriteriaJson,
+			acceptanceCriteria: req.acceptanceCriteria,
+			systemDomainIds: req.systemDomainIds,
+			sortOrder: index,
+			projectId,
+		}));
+
+		const { error: sysReqError } = await createSystemRequirements(sysReqInputs);
+		if (sysReqError) {
+			return { error: sysReqError };
+		}
+	}
+
+	// 3. 受入基準を保存
+	const acceptanceInputs = systemRequirements.flatMap((req) =>
+		acceptanceCriteriaJsonToInputs(req.acceptanceCriteriaJson ?? [], req.id, projectId)
+	);
+	const { error: acError } = await createAcceptanceCriteria(acceptanceInputs);
+	if (acError) {
+		return { error: acError };
+	}
+
+	// 4. requirement_linksにSR↔BRリンクを同期
+	const linkError = await syncBrSrLinksToRequirementLinks(
+		systemRequirements.map((req) => ({
+			id: req.id,
+			businessRequirementIds: req.businessRequirementIds ?? [],
+		})),
+		projectId,
+		{ deleteSourceIds: existingSrIds }
+	);
+	if (linkError) {
+		return { error: `リンク同期エラー: ${linkError}` };
+	}
+
+	// 5. system_functionsのrequirementIdsを更新
+	const { error: updateError } = await updateSystemFunction(
+		srfId,
+		{
+			systemDomainId,
+			category: existingSrf.category,
+			status: existingSrf.status,
+			title: existingSrf.title,
+			summary: existingSrf.summary,
+			designPolicy: existingSrf.designPolicy,
+			relatedTaskIds: existingSrf.relatedTaskIds ?? [],
+			requirementIds: systemRequirements.map((req) => req.id),
+			systemDesign: existingSrf.systemDesign ?? [],
+			entryPoints: existingSrf.entryPoints ?? [],
+			codeRefs: existingSrf.codeRefs ?? [],
+		},
+		projectId
+	);
+
+	if (updateError) {
+		return { error: updateError };
+	}
+
+	return { error: null };
+}
+
+/**
+ * DDのみを保存（基本情報/SRは触らない）
+ */
+export async function saveDesignDocuments(input: {
+	srfId: string;
+	designDocuments: DesignDocumentDraft[];
+	projectId: string;
+}): Promise<{ error: string | null }> {
+	const { srfId, designDocuments, projectId } = input;
+
+	// 1. DDを保存（既存削除 + 再作成）
+	const { error: implDeleteError } = await deleteDesignDocumentsBySrfId(srfId, projectId);
+	if (implDeleteError) {
+		return { error: implDeleteError };
+	}
+
+	if (designDocuments.length > 0) {
+		const implInputs = designDocuments.map((unit) => ({
+			id: unit.id,
+			srfId,
+			name: unit.name.trim(),
+			type: unit.type || "screen",
+			summary: unit.summary.trim(),
+			entryPoints: normalizeEntryPointsInput(unit.entryPoints),
+			designPolicy: unit.designPolicy.trim(),
+			details: composeStructuredDetails({
+				structuredSpec: unit.structuredSpec,
+				legacyDetails: parseYamlObject(unit.detailsYaml),
+			}),
+			projectId,
+		}));
+		const { error: implError } = await createDesignDocuments(implInputs);
+		if (implError) {
+			return { error: implError };
+		}
+	}
+
+	return { error: null };
+}
+
+/**
+ * システム機能とその関連データを保存（旧関数: 非推奨）
+ * @deprecated 分割された saveBasicInfo / saveSystemRequirements / saveDesignDocuments を使用してください
  */
 export async function saveSystemFunction(
 	input: SaveSystemFunctionInput
@@ -56,11 +242,10 @@ export async function saveSystemFunction(
 		title,
 		summary,
 		designPolicy,
-		deliverables,
 		designItemsV2,
 		systemDesign,
 		entryPoints,
-		implUnitSds,
+		designDocuments,
 		codeRefs,
 		systemRequirements,
 		projectId,
@@ -85,7 +270,6 @@ export async function saveSystemFunction(
 			requirementIds: systemRequirements.map((req) => req.id),
 			systemDesign: mergedDesignItems,
 			entryPoints: normalizedEntryPoints,
-			deliverables,
 			codeRefs,
 		},
 		projectId
@@ -116,7 +300,6 @@ export async function saveSystemFunction(
 			conceptIds: req.conceptIds,
 			impacts: [],
 			category: req.category,
-			relatedDeliverableIds: req.relatedDeliverableIds ?? [],
 			acceptanceCriteriaJson: req.acceptanceCriteriaJson,
 			acceptanceCriteria: req.acceptanceCriteria,
 			systemDomainIds: req.systemDomainIds,
@@ -139,14 +322,14 @@ export async function saveSystemFunction(
 		return { error: acError };
 	}
 
-	// 5. 実装単位SDを保存（既存削除 + 再作成）
-	const { error: implDeleteError } = await deleteImplUnitSdsBySrfId(srfId, projectId);
+	// 5. DDを保存（既存削除 + 再作成）
+	const { error: implDeleteError } = await deleteDesignDocumentsBySrfId(srfId, projectId);
 	if (implDeleteError) {
 		return { error: implDeleteError };
 	}
 
-	if (implUnitSds.length > 0) {
-		const implInputs = implUnitSds.map((unit) => ({
+	if (designDocuments.length > 0) {
+		const implInputs = designDocuments.map((unit) => ({
 			id: unit.id,
 			srfId,
 			name: unit.name.trim(),
@@ -154,10 +337,13 @@ export async function saveSystemFunction(
 			summary: unit.summary.trim(),
 			entryPoints: normalizeEntryPointsInput(unit.entryPoints),
 			designPolicy: unit.designPolicy.trim(),
-			details: parseYamlObject(unit.detailsYaml),
+			details: composeStructuredDetails({
+				structuredSpec: unit.structuredSpec,
+				legacyDetails: parseYamlObject(unit.detailsYaml),
+			}),
 			projectId,
 		}));
-		const { error: implError } = await createImplUnitSds(implInputs);
+		const { error: implError } = await createDesignDocuments(implInputs);
 		if (implError) {
 			return { error: implError };
 		}

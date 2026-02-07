@@ -15,9 +15,12 @@ import {
 import { getChangeRequestById } from "@/lib/data/change-requests";
 import { listImpactScopesByChangeRequestId } from "@/lib/data/impact-scopes";
 import { getAcceptanceConfirmationCompletionStatus } from "@/lib/data/acceptance-confirmations";
+import { getInvestigationResultByChangeRequestId } from "@/lib/data/investigation-results";
 import { TicketBasicInfoCard } from "@/components/tickets/ticket-basic-info-card";
 import { TicketImpactCard } from "@/components/tickets/ticket-impact-card";
 import { AcceptanceConfirmationPanel } from "@/components/tickets/acceptance-confirmation-panel";
+import { InvestigateButton } from "@/components/tickets/investigate-button";
+import { TicketInvestigationSection } from "@/components/tickets/ticket-investigation-section";
 
 const DEFAULT_PROJECT_ID = "00000000-0000-0000-0000-000000000001";
 
@@ -33,11 +36,12 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
 
   const { data: impactScopes } = await listImpactScopesByChangeRequestId(id);
   const { data: completionStatus } = await getAcceptanceConfirmationCompletionStatus(id);
+  const { data: investigationResult } = await getInvestigationResultByChangeRequestId(id, projectId);
 
   return (
     <>
       <MobileHeader />
-      <div className="flex-1 min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-slate-50">
         <div className="mx-auto max-w-[1400px] px-8 py-4">
           {/* パンくずリスト */}
           <Breadcrumb className="mb-4">
@@ -62,6 +66,9 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
                   編集
                 </Button>
               </Link>
+              {changeRequest.status === "open" && (
+                <InvestigateButton changeRequestId={id} />
+              )}
               <Button className="h-8 gap-2 text-[14px] bg-slate-900 hover:bg-slate-800">
                 <CheckCircle2 className="h-4 w-4" />
                 ベースラインに反映
@@ -78,6 +85,13 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
             {impactScopes && impactScopes.length > 0 && (
               <TicketImpactCard impactScopes={impactScopes} />
             )}
+
+            {/* 影響調査結果（Phase 5） */}
+            <TicketInvestigationSection
+              changeRequestId={id}
+              projectId={projectId}
+              initialResult={investigationResult ?? null}
+            />
 
             {/* 受入条件確認パネル - Phase 5.6で実装済み */}
             <AcceptanceConfirmationPanel changeRequestId={id} />

@@ -46,7 +46,7 @@ const llmResponse = await fetch('https://api.openai.com/v1/chat/completions', {
 
 | ファイル | 行数 |
 |----------|------|
-| `app/(with-sidebar)/system-domains/page.tsx` | 339行 |
+| `app/(with-sidebar)/system/page.tsx` | 339行 |
 | `app/(with-sidebar)/business/[id]/page.tsx` | 304行 |
 | `app/(with-sidebar)/ideas/[id]/page.tsx` | 326行 |
 | `app/(with-sidebar)/projects/page.tsx` | - |
@@ -199,7 +199,7 @@ export const toolError = (error: Error, message: string) => ({
 ### 次ステップ推奨（難易度：★★☆）
 
 1. **一覧ページのリファクタリング**
-   - `system-domains/page.tsx`
+   - `system/page.tsx`
    - `business/[id]/page.tsx`
    - `ideas/[id]/page.tsx`
    - → `ResourceListPage` または `useResourceList` を活用
@@ -215,6 +215,6 @@ export const toolError = (error: Error, message: string) => ({
 1. **型チェック**: `bun run typecheck`
 2. **ビルド**: `bun run build`
 3. **動作確認**: Playwright MCPで主要画面を確認
-   - 一覧ページ（system-domains, business）
+   - 一覧ページ（system, business）
    - AIチャット機能
    - エクスポート機能

@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
 	DEFAULT_PROJECT_ID,
 	useProject,
@@ -46,6 +48,7 @@ export function ChatContainer({ config }: ChatContainerProps) {
 		DEFAULT_REASONING_EFFORT,
 	);
 	const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+	const [isConceptsOpen, setIsConceptsOpen] = useState(false);
 
 	const concept = useConceptManagement({ projectId: resolvedProjectId });
 
@@ -121,31 +124,51 @@ export function ChatContainer({ config }: ChatContainerProps) {
 					getCommitState={draft.getCommitState}
 				/>
 
-				{/* 概念候補提案 */}
+				{/* 概念候補提案（折り畳み） */}
 				{concept.candidates.length > 0 && (
-					<div className="px-6 py-4 space-y-3 max-w-3xl mx-auto">
-						<div className="text-[11px] font-medium text-slate-500 uppercase tracking-wide mb-2">
-							検出された概念候補
-						</div>
-						{concept.candidates.map((candidate) => (
-							<div key={candidate.term}>
-								{concept.activeFormTerm === candidate.term ? (
-									<ConceptApprovalForm
-										initialTerm={candidate.term}
-										onSubmit={concept.handleApproval}
-										onCancel={() => concept.setActiveFormTerm(null)}
-									/>
-								) : (
-									<ConceptSuggestionCard
-										candidate={candidate}
-										onAction={(action) =>
-											concept.handleAction(candidate, action)
-										}
-										disabled={isLoading}
-									/>
-								)}
+					<div className="px-6 py-2 max-w-3xl mx-auto">
+						{/* トグルヘッダー */}
+						<button
+							type="button"
+							onClick={() => setIsConceptsOpen((prev) => !prev)}
+							className="inline-flex items-center gap-2 text-[12px] text-slate-600 hover:text-slate-800 cursor-pointer"
+							aria-expanded={isConceptsOpen || Boolean(concept.activeFormTerm)}
+						>
+							<ChevronDown className={`h-3 w-3 transition-transform ${isConceptsOpen || Boolean(concept.activeFormTerm) ? 'rotate-180' : ''}`} />
+							<span>概念候補 ({concept.candidates.length}件)</span>
+						</button>
+
+						{/* 折り畳みコンテンツ */}
+						<div
+							className={cn(
+								'overflow-hidden transition-all duration-300 ease-in-out',
+								isConceptsOpen || Boolean(concept.activeFormTerm)
+									? 'max-h-[600px] opacity-100 mt-2'
+									: 'max-h-0 opacity-0 mt-0'
+							)}
+						>
+							<div className="space-y-2">
+								{concept.candidates.map((candidate) => (
+									<div key={candidate.term}>
+										{concept.activeFormTerm === candidate.term ? (
+											<ConceptApprovalForm
+												initialTerm={candidate.term}
+												onSubmit={concept.handleApproval}
+												onCancel={() => concept.setActiveFormTerm(null)}
+											/>
+										) : (
+											<ConceptSuggestionCard
+												candidate={candidate}
+												onAction={(action) =>
+													concept.handleAction(candidate, action)
+												}
+												disabled={isLoading}
+											/>
+										)}
+									</div>
+								))}
 							</div>
-						))}
+						</div>
 					</div>
 				)}
 

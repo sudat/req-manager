@@ -33,7 +33,6 @@ export type SystemRequirement = {
 	category: SystemRequirementCategory;
 	categoryRaw?: string | null;
 	businessRequirementIds: string[];
-	relatedDeliverableIds: string[];
 	acceptanceCriteriaJson: AcceptanceCriterionJson[];
 	acceptanceCriteria: string[];
 	systemDomainIds: string[];
@@ -51,7 +50,6 @@ export type SystemRequirementInput = {
 	conceptIds: string[];
 	impacts: string[];
 	category?: SystemRequirementCategory;
-	relatedDeliverableIds?: string[];
 	acceptanceCriteriaJson?: AcceptanceCriterionJson[];
 	acceptanceCriteria: string[];
 	systemDomainIds: string[];
@@ -71,7 +69,6 @@ type SystemRequirementRow = {
 	concept_ids: string[] | null;
 	impacts: string[] | null;
 	category: string | null;
-	related_deliverable_ids: string[] | null;
 	acceptance_criteria_json: unknown | null;
 	acceptance_criteria: string[] | null;
 	system_domain_ids: string[] | null;
@@ -105,7 +102,6 @@ const toSystemRequirement = (row: SystemRequirementRow): SystemRequirement => {
 		category: normalizeCategory(row.category),
 		categoryRaw: row.category,
 		businessRequirementIds: [],
-		relatedDeliverableIds: row.related_deliverable_ids ?? [],
 		// 受入条件は正本テーブル acceptance_criteria からマージする
 		acceptanceCriteriaJson: [],
 		acceptanceCriteria: [],
@@ -245,7 +241,6 @@ export const createSystemRequirements = async (inputs: SystemRequirementCreateIn
 			...toSystemRequirementRowBase(input),
 			project_id: input.projectId,
 			category: input.category ?? "function",
-			related_deliverable_ids: input.relatedDeliverableIds ?? [],
 			created_at: now,
 			updated_at: now,
 		};
@@ -281,7 +276,6 @@ export const createSystemRequirement = async (input: SystemRequirementCreateInpu
     ...toSystemRequirementRowBase(input),
 		project_id: input.projectId,
 		category: input.category ?? "function",
-		related_deliverable_ids: input.relatedDeliverableIds ?? [],
     created_at: now,
     updated_at: now,
   };
@@ -306,7 +300,7 @@ export const updateSystemRequirement = async (
 
 	let fetchQuery = supabase
 		.from("system_requirements")
-		.select("category, related_deliverable_ids")
+		.select("category")
 		.eq("id", id);
 
 	if (projectId) {
@@ -322,7 +316,6 @@ export const updateSystemRequirement = async (
 	const payload = {
 		...toSystemRequirementRowBase({ ...input, id }),
 		category: input.category ?? normalizeCategory(existingRow?.category),
-		related_deliverable_ids: input.relatedDeliverableIds ?? existingRow?.related_deliverable_ids ?? [],
 		updated_at: now,
 	};
 

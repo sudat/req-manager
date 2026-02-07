@@ -279,8 +279,8 @@ function TicketEditForm({ changeRequest }: { changeRequest: ChangeRequest }) {
 ### 参照すべき既存実装
 | ファイル | 用途 |
 |---------|------|
-| `app/system-domains/page.tsx` | DB連携・ローディング・エラーハンドリング |
-| `app/system-domains/[id]/functions/page.tsx` | フィルタ・削除機能 |
+| `app/(with-sidebar)/system/page.tsx` | DB連携・ローディング・エラーハンドリング |
+| `app/(with-sidebar)/system/[id]/functions/page.tsx` | フィルタ・削除機能 |
 | `components/tickets/*.tsx` | 既存Cardコンポーネント |
 
 ### 新規作成ファイル

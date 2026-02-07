@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { MessageBubble } from "./message-bubble";
-import type { BrDraft, BtDraft, ChatMessage, DraftCommitState } from "./types";
+import type { BrDraft, BtDraft, ChatMessage, DraftCommitState, SfDraft, SrDraft, DdDraft } from "./types";
 
 type ChatMessagesProps = {
 	messages: ChatMessage[];
@@ -18,13 +18,13 @@ type ChatMessagesProps = {
 	onNewChat?: () => void;
 	onCommitDraft?: (payload: {
 		messageId: string;
-		type: "bt" | "br";
+		type: "bt" | "br" | "sf" | "sr" | "dd";
 		code: string;
-		content: BtDraft | BrDraft;
+		content: BtDraft | BrDraft | SfDraft | SrDraft | DdDraft;
 	}) => void;
 	getCommitState?: (
 		messageId: string,
-		type: "bt" | "br",
+		type: "bt" | "br" | "sf" | "sr" | "dd",
 		code: string,
 	) => DraftCommitState | undefined;
 };

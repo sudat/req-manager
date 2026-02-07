@@ -212,7 +212,7 @@ export default function ProductRequirementEditPage() {
 	return (
 		<>
 			<MobileHeader />
-			<div className="flex-1 min-h-screen bg-slate-50">
+			<div className="min-h-screen bg-slate-50">
 				<div className="mx-auto max-w-[1200px] p-8">
 					<EditHeader
 						onSave={handleSave}

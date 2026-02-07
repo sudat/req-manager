@@ -1,8 +1,8 @@
-# plan: system-domainsページのTypeError修正（v2）
+# plan: systemページのTypeError修正（v2）
 
 ## 問題概要
 
-`/system-domains`ページで以下のランタイムエラーが発生:
+`/system`ページで以下のランタイムエラーが発生:
 ```
 (codeRefs ?? []) is not iterable
 lib/data/structured.ts (99:33) @ codeRefsToEntryPoints
@@ -114,6 +114,6 @@ const toSystemFunction = (row: SystemFunctionRow): SystemFunction => {
 
 ## 検証方法
 
-1. 修正後にPlaywrightで`/system-domains`ページにアクセス
+1. 修正後にPlaywrightで`/system`ページにアクセス
 2. ページが正常にレンダリングされることを確認
 3. SystemFunctionのデータ（code_refs）が正しく表示されていることを確認

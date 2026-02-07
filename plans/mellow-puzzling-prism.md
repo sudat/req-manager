@@ -115,7 +115,7 @@ business/[id]/
    - パンくずリストが正しく動作するか
 
 3. **System Domains側との一貫性確認**
-   - `/system-domains/[id]` と `/business/[id]` のURL構造が一致しているか
+   - `/system/[id]` と `/business/[id]` のURL構造が一致しているか
 
 ---
 

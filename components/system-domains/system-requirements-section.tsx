@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { ExternalLink, ChevronDown } from "lucide-react";
+import { ExternalLink, ChevronDown, Pencil } from "lucide-react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SectionCard, EmptyState, SectionLabel } from "./section-card";
 import { useRelatedRequirements } from "@/hooks/use-related-requirements";
@@ -19,14 +20,24 @@ import { SuspectLinkBadge } from "@/components/requirement-links/suspect-link-ba
 
 interface SystemRequirementsSectionProps {
 	srfId: string;
+	systemDomainId?: string;
 }
 
-export function SystemRequirementsSection({ srfId }: SystemRequirementsSectionProps): React.ReactNode {
+export function SystemRequirementsSection({ srfId, systemDomainId }: SystemRequirementsSectionProps): React.ReactNode {
 	const { data: relatedReqs, loading, error } = useRelatedRequirements(srfId);
+
+	const editButton = systemDomainId ? (
+		<Link href={`/system/${systemDomainId}/${srfId}/edit/requirements`}>
+			<Button variant="ghost" size="sm" className="h-7 gap-1.5 text-[12px]">
+				<Pencil className="h-3.5 w-3.5" />
+				編集
+			</Button>
+		</Link>
+	) : null;
 
 	if (loading) {
 		return (
-			<SectionCard title="システム要件">
+			<SectionCard title="システム要件" action={editButton}>
 				<CardSkeleton />
 			</SectionCard>
 		);
@@ -34,14 +45,14 @@ export function SystemRequirementsSection({ srfId }: SystemRequirementsSectionPr
 
 	if (error) {
 		return (
-			<SectionCard title="システム要件">
+			<SectionCard title="システム要件" action={editButton}>
 				<div className="text-[13px] text-rose-600">{error}</div>
 			</SectionCard>
 		);
 	}
 
 	return (
-		<SectionCard title="システム要件" count={relatedReqs.length}>
+		<SectionCard title="システム要件" count={relatedReqs.length} action={editButton}>
 			{relatedReqs.length === 0 ? (
 				<EmptyState message="まだ登録されていません。" />
 			) : (

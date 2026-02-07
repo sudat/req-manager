@@ -2,11 +2,11 @@ import { z } from 'zod';
 
 /**
  * 草案状態スキーマ
- * BT, BR, SF, SR, AC, impl_unit いずれかの種別の草案を表す
+ * BT, BR, SF, SR, AC, DD いずれかの種別の草案を表す
  */
 export const DraftItemSchema = z.object({
   id: z.string().optional(),
-  type: z.enum(['bt', 'br', 'sf', 'sr', 'ac', 'impl_unit']),
+  type: z.enum(['bt', 'br', 'sf', 'sr', 'ac', 'dd', 'impl_unit']),
   content: z.any().optional(),
   status: z.enum(['draft', 'committed', 'discarded']).optional(),
   previewAvailable: z.boolean().optional(),
@@ -28,10 +28,10 @@ export const LocationInfoSchema = z.object({
 
 /**
  * コミット済みアイテムスキーマ
- * コミット済みのBT, BR, SF, SR, AC, impl_unitを表す
+ * コミット済みのBT, BR, SF, SR, AC, DDを表す
  */
 const CommittedItemSchema = z.object({
-  type: z.enum(['bt', 'br', 'sf', 'sr', 'ac', 'impl_unit']),
+  type: z.enum(['bt', 'br', 'sf', 'sr', 'ac', 'dd', 'impl_unit']),
   id: z.string(),
   code: z.string(),
   name: z.string(),
@@ -63,11 +63,20 @@ const SessionMetadataSchema = z.object({
  * Working Memoryメインスキーマ
  * セッション状態を構造化された形式で管理する
  */
+const ActiveDraftsSchema = z
+  .array(z.union([DraftItemSchema, z.string()]))
+  .transform((items) =>
+    items.filter(
+      (item): item is z.infer<typeof DraftItemSchema> =>
+        typeof item === 'object' && item !== null
+    )
+  );
+
 export const WorkingMemorySchema = z.object({
   /** 現在の作業位置 */
   currentLocation: LocationInfoSchema.optional(),
   /** アクティブな草案リスト */
-  activeDrafts: z.array(DraftItemSchema).optional(),
+  activeDrafts: ActiveDraftsSchema.optional(),
   /** コミット済みアイテムリスト */
   committedItems: z.array(CommittedItemSchema).optional(),
   /** 保留中の課題リスト */

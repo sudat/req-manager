@@ -33,7 +33,7 @@ export const btDraftTool = createTool({
     bdId: z.string().optional().describe('業務領域コード（例: "AR", "GL" など、searchBusinessDomainsToolが返すarea）'),
     bdName: z.string().optional().describe('業務領域名（例: "一般会計"）- bdIdがない場合に使用。searchBusinessDomainsToolで業務領域を検索してからbdIdを取得することを推奨'),
     projectId: z.string().describe('プロジェクトID（UUID形式）。必須。'),
-    generateBR: z.boolean().optional().default(false).describe('同時にBR草案も生成するか'),
+    generateBR: z.boolean().optional().default(true).describe('同時にBR草案も生成するか'),
   }),
   execute: async (inputData) => {
     const { naturalLanguageInput, bdId, bdName, projectId, generateBR } = inputData;
@@ -215,16 +215,73 @@ ${bd.area} - ${bd.name}
         concept_ids: [],
       };
 
-      // 6. BR草案も生成する場合（オプション）
+      // 6. BR草案も生成する場合
       const brDrafts: any[] = [];
       if (generateBR) {
-        // TODO: BRの自動生成ロジック
-        brDrafts.push({
-          code: `${newCode}-001`,
-          requirement: `${btDraft.name}を実行できる`,
-          rationale: '業務を効率的に実行するため',
-          business_task_id: null, // 確定後に設定
-        });
+        try {
+          const brLlmPrompt = `以下の業務タスク情報から、必要な業務要件（BR）を1～3件生成してください。
+業務要件とは、業務タスクを達成するために必要な「ケイパビリティ」のことです。
+
+【業務タスク情報】
+名称: ${btDraft.name}
+概要: ${btDraft.summary}
+業務コンテキスト: ${btDraft.businessContext}
+
+【プロセス】
+${btDraft.processSteps.map((s: { when: string; who: string; action: string }) => `- ${s.when}: ${s.who}が${s.action}`).join('\n')}
+
+【入力】
+${btDraft.input.map((i: { name: string; source: string }) => `- ${i.name}（${i.source}）`).join('\n')}
+
+【出力】
+${btDraft.output.map((o: { name: string; source: string }) => `- ${o.name}（${o.source}）`).join('\n')}
+
+【厳密な出力形式】
+- 以下のJSONスキーマに厳密に従うこと
+- 純粋なJSONのみを出力すること
+
+【出力形式（JSON）】
+{
+  "items": [
+    { "requirement": "～できる（ケイパビリティの形式で記述）", "rationale": "なぜこの要件が必要か（業務の目的や効率性観点）" }
+  ]
+}
+
+【ガイドライン】
+- requirementは「～できる」の形で記述する
+- rationaleは業務の目的や効率性観点で簡潔に記述する
+- 業務のコア活動に対応する要件を優先する
+- 1～3件で、重複を避ける
+- 純粋なJSONのみを出力する
+`;
+
+          const brLlmResponse = await callOpenAI<{
+            items?: Array<{ requirement: string; rationale: string }>;
+          }>({
+            systemPrompt: 'あなたは業務分析の専門家です。業務タスクから必要な業務要件を抽出します。',
+            userPrompt: brLlmPrompt,
+            jsonMode: true,
+            provider: llmOptions.provider,
+            model: llmOptions.model,
+            temperature: llmOptions.temperature,
+            baseUrl: llmOptions.baseUrl,
+            maxTokens: 1500,
+            timeoutMs: 120000,
+          });
+
+          const brItems = brLlmResponse.content?.items || [];
+          for (let i = 0; i < brItems.length; i++) {
+            if (!brItems[i].requirement) continue;
+            brDrafts.push({
+              code: `${newCode}-${String(i + 1).padStart(3, '0')}`,
+              requirement: brItems[i].requirement,
+              rationale: brItems[i].rationale || '',
+              business_task_id: null,
+            });
+          }
+        } catch (brError) {
+          console.warn('[bt_draft] BR生成に失敗しました。BT草案のみで続行。', brError);
+        }
       }
 
       // 7. 概念候補を抽出し、既存概念と照合

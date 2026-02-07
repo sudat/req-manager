@@ -135,7 +135,7 @@ UPDATE public.system_functions SET design_policy = '- テスト伝票は本番�
 ## 検証方法
 
 1. Supabase MCPで更新後のデータを確認
-2. ブラウザで各SF詳細画面を確認（http://localhost:3002/system-domains/{ドメイン}/{SF-ID}）
+2. ブラウザで各SF詳細画面を確認（http://localhost:3002/system/{ドメイン}/{SF-ID}）
 3. design_policyが正しく表示されていることを確認
 
 ## リスク

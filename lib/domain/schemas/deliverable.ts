@@ -105,5 +105,18 @@ export function validateDeliverable(deliverable: Deliverable): string[] {
     errors.push("少なくとも1つの設計観点を入力してください");
   }
 
+  const func = deliverable.design.function;
+  if (func) {
+    const hasStructured = Boolean(func.structuredInput || func.structuredOutput);
+    if (hasStructured) {
+      const parsed = functionDesignContentSchema.safeParse(func);
+      if (!parsed.success) {
+        errors.push(...parsed.error.errors.map((e) => e.message));
+      }
+    } else if (!func.input || !func.output) {
+      errors.push("入出力定義が必要です（structuredInput/structuredOutputまたはinput/output）");
+    }
+  }
+
   return errors;
 }

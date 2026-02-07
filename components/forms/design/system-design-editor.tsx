@@ -42,11 +42,26 @@ const EMPTY_CONTENTS: Record<
   DesignPerspective,
   FunctionDesignContent | DataDesignContent | ExceptionDesignContent | AuthDesignContent | NonFunctionalDesignContent
 > = {
-  function: { input: "", process: "", output: "", sideEffects: undefined },
+  function: {
+    input: "",
+    process: "",
+    output: "",
+    sideEffects: undefined,
+    ioType: undefined,
+    structuredInput: undefined,
+    structuredOutput: undefined,
+    structuredSideEffects: undefined,
+  },
   data: { fields: "", tables: [], constraints: undefined, migration: undefined },
   exception: { errorCases: "", userNotification: undefined, logging: undefined, recovery: undefined },
   auth: { roles: "", operations: "", boundary: undefined },
-  non_functional: { performance: undefined, availability: undefined, monitoring: undefined },
+  non_functional: {
+    performance: undefined,
+    availability: undefined,
+    monitoring: undefined,
+    security: undefined,
+    scalability: undefined,
+  },
 };
 
 export function SystemDesignEditor({

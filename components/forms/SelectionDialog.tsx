@@ -16,7 +16,6 @@ type SelectionDialogProps = {
 	systemDomains: SelectableItem[];
 	businessRequirements: SelectableItem[];
 	systemRequirements?: SelectableItem[];
-	deliverables?: SelectableItem[];
 	onUpdateRequirement: (reqId: string, patch: Partial<Requirement>) => void;
 };
 
@@ -32,8 +31,6 @@ function getDialogTitle(type: SelectionDialogType): string {
 			return "業務要件を選択";
 		case "systemRequirements":
 			return "関連システム要件を選択";
-		case "deliverables":
-			return "関連成果物を選択";
 		default:
 			return "";
 	}
@@ -88,7 +85,6 @@ export function SelectionDialog({
 	systemDomains,
 	businessRequirements,
 	systemRequirements = [],
-	deliverables = [],
 	onUpdateRequirement,
 }: SelectionDialogProps) {
 	const [searchQuery, setSearchQuery] = useState("");
@@ -99,7 +95,6 @@ export function SelectionDialog({
 	const filteredSystemDomains = useFilteredItems(systemDomains, searchQuery);
 	const filteredBusinessRequirements = useFilteredItems(businessRequirements, searchQuery);
 	const filteredSystemRequirements = useFilteredItems(systemRequirements, searchQuery);
-	const filteredDeliverables = useFilteredItems(deliverables, searchQuery);
 
 	// トグルハンドラー
 	const {
@@ -108,7 +103,6 @@ export function SelectionDialog({
 		handleDomainToggle,
 		handleBusinessRequirementToggle,
 		handleSystemRequirementToggle,
-		handleDeliverableToggle,
 	} = useToggleHandlers(activeRequirement, onUpdateRequirement);
 
 	function handleOpenChange(open: boolean): void {
@@ -180,14 +174,6 @@ export function SelectionDialog({
 							/>
 						)}
 
-						{dialogState?.type === "deliverables" && activeRequirement && (
-							<CheckboxList
-								items={filteredDeliverables}
-								emptyMessage="該当する成果物がありません。"
-								isChecked={(id) => (activeRequirement.relatedDeliverableIds ?? []).includes(id)}
-								onToggle={handleDeliverableToggle}
-							/>
-						)}
 					</div>
 				</div>
 			</DialogContent>

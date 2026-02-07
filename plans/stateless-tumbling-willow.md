@@ -138,13 +138,13 @@ const addEntryPoint = () => {
 ## 検証方法
 
 1. **表示確認（Playwright MCP）**
-   - http://localhost:3002/system-domains/AR/SRF-001 にアクセス
+   - http://localhost:3002/system/AR/SRF-001 にアクセス
    - entry_pointが名称直下に表示されていることを確認
    - 種別ごとに色分けされていることを確認
    - type/responsibilityが表示されていることを確認
 
 2. **編集確認**
-   - http://localhost:3002/system-domains/AR/SRF-001/edit にアクセス
+   - http://localhost:3002/system/AR/SRF-001/edit にアクセス
    - 実装単位SDを追加→エントリポイント追加時にauto-focusされることを確認
    - 削除ボタンのaria-labelがスクリーンリーダーで読み上げられることを確認
 

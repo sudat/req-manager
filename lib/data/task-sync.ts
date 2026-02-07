@@ -51,7 +51,6 @@ export function hasRequirementChanged<T extends {
 	category?: string | null;
 	businessRequirementIds?: string[];
 	relatedSystemRequirementIds?: string[];
-	relatedDeliverableIds?: string[];
 }>(req: T, existing: T): boolean {
 	return !(
 		req.title === existing.title &&
@@ -69,9 +68,7 @@ export function hasRequirementChanged<T extends {
 		JSON.stringify(req.businessRequirementIds ?? []) ===
 			JSON.stringify(existing.businessRequirementIds ?? []) &&
 		JSON.stringify(req.relatedSystemRequirementIds ?? []) ===
-			JSON.stringify(existing.relatedSystemRequirementIds ?? []) &&
-		JSON.stringify(req.relatedDeliverableIds ?? []) ===
-			JSON.stringify(existing.relatedDeliverableIds ?? [])
+			JSON.stringify(existing.relatedSystemRequirementIds ?? [])
 	);
 }
 

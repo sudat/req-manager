@@ -15,3 +15,6 @@ export * from "./forms";
 
 // タスク知識型
 export type { TaskKnowledge } from "./task-knowledge.types";
+
+// 追加型（構造化IO）
+export * from "./types";

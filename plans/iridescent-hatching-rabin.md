@@ -8,7 +8,7 @@
 `components/system-domains/basic-info-section.tsx` で `srf.category` を直接表示している。
 
 ## 既存のマッピング
-一覧画面 (`app/system-domains/[id]/page.tsx`) に既に `categoryLabels` が存在する：
+一覧画面 (`app/(with-sidebar)/system/[id]/page.tsx`) に既に `categoryLabels` が存在する：
 ```typescript
 const categoryLabels: Record<string, string> = {
   screen: "画面",
@@ -52,6 +52,6 @@ const categoryLabels: Record<string, string> = {
 ```
 
 ## 検証方法
-1. http://localhost:3000/system-domains/AR/SRF-001 にアクセス
+1. http://localhost:3000/system/AR/SRF-001 にアクセス
 2. 機能分類が「画面」と日本語で表示されていることを確認
 3. 他の分類値（内部、IF）も正しく表示されることを確認

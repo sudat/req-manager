@@ -2,7 +2,7 @@
 
 ## 概要
 
-`http://localhost:3000/system-domains/` 配下のAP/AR/GLシステムドメインに対して、システム要件の受入基準とシステム機能の実装単位SDを追加する。
+`http://localhost:3000/system/` 配下のAP/AR/GLシステムドメインに対して、システム要件の受入基準とシステム機能の実装単位SDを追加する。
 
 ## 現状分析
 
@@ -372,9 +372,9 @@ ORDER BY sf.id, ius.id;
 ```
 
 ### 2. UI確認
-- `http://localhost:3000/system-domains/AR/SRF-001` で受入基準が表示されるか
-- `http://localhost:3000/system-domains/AP/SRF-009` で実装単位SDが表示されるか
-- `http://localhost:3000/system-domains/GL/SRF-019` でデータが正しくリンクされているか
+- `http://localhost:3000/system/AR/SRF-001` で受入基準が表示されるか
+- `http://localhost:3000/system/AP/SRF-009` で実装単位SDが表示されるか
+- `http://localhost:3000/system/GL/SRF-019` でデータが正しくリンクされているか
 
 ### 3. E2Eテスト
 - Playwright MCPで各システムドメインページにアクセス

@@ -40,6 +40,26 @@ const upsertProgressStep = (
   return nextSteps.sort((a, b) => a.index - b.index);
 };
 
+const upsertDraftByCode = <T extends { code?: string; id?: string }>(
+  drafts: T[] | undefined,
+  incoming: T
+) => {
+  const nextDrafts = drafts ? [...drafts] : [];
+  const incomingKey = incoming.code ?? incoming.id ?? "";
+  const existingIndex = nextDrafts.findIndex((draft) => (draft.code ?? draft.id) === incomingKey);
+
+  if (existingIndex >= 0) {
+    nextDrafts[existingIndex] = {
+      ...nextDrafts[existingIndex],
+      ...incoming,
+    };
+  } else {
+    nextDrafts.push(incoming);
+  }
+
+  return nextDrafts;
+};
+
 /**
  * ストリーミングチャットフック
  *
@@ -197,10 +217,18 @@ export function useStreamingChat(options: UseStreamingChatOptions): UseStreaming
                     console.log('[Chat] Received draft event:', data.draft.code, 'draftType:', data.draftType);
                     if (data.draftType === 'br') {
                       assistantMessage.brDraft = data.draft;
+                      assistantMessage.brDrafts = upsertDraftByCode(
+                        assistantMessage.brDrafts,
+                        data.draft
+                      );
                       setMessages((prev) =>
                         prev.map((msg) =>
                           msg.id === assistantMessage.id
-                            ? { ...msg, brDraft: assistantMessage.brDraft }
+                            ? {
+                                ...msg,
+                                brDraft: assistantMessage.brDraft,
+                                brDrafts: assistantMessage.brDrafts,
+                              }
                             : msg
                         )
                       );
@@ -215,10 +243,35 @@ export function useStreamingChat(options: UseStreamingChatOptions): UseStreaming
                       );
                     } else if (data.draftType === 'sr') {
                       assistantMessage.srDraft = data.draft;
+                      assistantMessage.srDrafts = upsertDraftByCode(
+                        assistantMessage.srDrafts,
+                        data.draft
+                      );
                       setMessages((prev) =>
                         prev.map((msg) =>
                           msg.id === assistantMessage.id
-                            ? { ...msg, srDraft: assistantMessage.srDraft }
+                            ? {
+                                ...msg,
+                                srDraft: assistantMessage.srDraft,
+                                srDrafts: assistantMessage.srDrafts,
+                              }
+                            : msg
+                        )
+                      );
+                    } else if (data.draftType === 'dd') {
+                      assistantMessage.ddDraft = data.draft;
+                      assistantMessage.ddDrafts = upsertDraftByCode(
+                        assistantMessage.ddDrafts,
+                        data.draft
+                      );
+                      setMessages((prev) =>
+                        prev.map((msg) =>
+                          msg.id === assistantMessage.id
+                            ? {
+                                ...msg,
+                                ddDraft: assistantMessage.ddDraft,
+                                ddDrafts: assistantMessage.ddDrafts,
+                              }
                             : msg
                         )
                       );

@@ -55,7 +55,7 @@ import { Layers2, CircleCheck } from "lucide-react";
 ## 検証方法
 
 1. サーバーが起動している状態で、以下のURLにアクセス
-2. http://localhost:3000/system-domains/AR/SRF-001
+2. http://localhost:3000/system/AR/SRF-001
 3. エラーが解消し、ページが正常に表示されることを確認
 
 ---

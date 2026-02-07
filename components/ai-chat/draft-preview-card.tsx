@@ -17,7 +17,8 @@ type DraftPreviewCardProps = {
  * AIが生成したBT草案を表形式で表示する。
  */
 export function DraftPreviewCard({ draft, commitState, onCommit }: DraftPreviewCardProps) {
-  const status = commitState?.status ?? 'idle';
+  const isCommitted = Boolean(draft.isCommitted);
+  const status = isCommitted ? 'success' : commitState?.status ?? 'idle';
   const statusLabel =
     status === 'success'
       ? '登録済'

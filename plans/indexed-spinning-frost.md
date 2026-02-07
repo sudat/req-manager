@@ -19,7 +19,7 @@
 ```
 
 ## 修正対象ファイル
-- `app/(with-sidebar)/system-domains/page.tsx`
+- `app/(with-sidebar)/system/page.tsx`
 
 ## 修正内容
 

@@ -119,7 +119,6 @@ export function ConceptIdsField({
 				systemDomains={[]}
 				businessRequirements={[]}
 				systemRequirements={[]}
-				deliverables={[]}
 				onUpdateRequirement={handleUpdateRequirement}
 			/>
 		</div>

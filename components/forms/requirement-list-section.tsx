@@ -18,7 +18,6 @@ type RequirementListSectionProps = {
 	systemDomainMap: Map<string, string>;
 	businessRequirementMap?: Map<string, string>;
 	systemRequirementMap?: Map<string, string>;
-	deliverableMap?: Map<string, string>;
 	onOpenDialog: (type: SelectionDialogType, reqId: string) => void;
 };
 
@@ -33,7 +32,6 @@ export function RequirementListSection({
 	systemDomainMap,
 	businessRequirementMap,
 	systemRequirementMap,
-	deliverableMap,
 	onOpenDialog,
 }: RequirementListSectionProps): React.ReactElement {
 	return (
@@ -74,7 +72,6 @@ export function RequirementListSection({
 							systemDomainMap={systemDomainMap}
 							businessRequirementMap={businessRequirementMap}
 							systemRequirementMap={systemRequirementMap}
-							deliverableMap={deliverableMap}
 							onUpdate={(patch) => onUpdate(req.id, patch)}
 							onRemove={() => onRemove(req.id)}
 							onOpenDialog={(type) => onOpenDialog(type, req.id)}

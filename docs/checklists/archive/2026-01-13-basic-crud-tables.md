@@ -76,7 +76,7 @@ Supabaseを永続化の正本として、業務一覧/システム機能一覧/�
 ---
 
 ### 3.6 業務要件（BusinessRequirement）/システム領域（SystemDomain）
-**ファイル**: `app/business/manual-add/page.tsx`, `app/business/[id]/tasks/[taskId]/page.tsx`, `app/settings/system-domains/page.tsx`, `lib/data/business-requirements.ts`, `lib/data/system-domains.ts`
+**ファイル**: `app/business/manual-add/page.tsx`, `app/business/[id]/tasks/[taskId]/page.tsx`, `app/(with-sidebar)/system/page.tsx`, `lib/data/business-requirements.ts`, `lib/data/system-domains.ts`
 
 #### 実装項目
 - [x] business_requirements / system_domains をSupabaseに追加
@@ -94,15 +94,15 @@ Supabaseを永続化の正本として、業務一覧/システム機能一覧/�
 ---
 
 ### 4. システム機能一覧（SystemFunction）CRUD
-**ファイル**: `app/system-domains/page.tsx`, `app/system-domains/[id]/functions/page.tsx`, `app/system-domains/[id]/functions/create/page.tsx`, `app/system-domains/[id]/functions/[srfId]/page.tsx`, `app/system-domains/[id]/functions/[srfId]/edit/page.tsx`
+**ファイル**: `app/(with-sidebar)/system/page.tsx`, `app/(with-sidebar)/system/[id]/functions/page.tsx`, `app/(with-sidebar)/system/[id]/functions/create/page.tsx`, `app/(with-sidebar)/system/[id]/functions/[srfId]/page.tsx`, `app/(with-sidebar)/system/[id]/functions/[srfId]/edit/page.tsx`
 
 #### 実装項目
 - [x] 一覧をストア参照に切り替え、フィルタに連動させる
 - [x] 新規作成ページを追加し、作成後に一覧へ遷移
 - [x] 編集ページの保存をストア更新に差し替える
 - [x] 削除ボタンに確認導線を追加
-- [x] システム領域一覧の遷移を /system-domains/[id] に変更
-- [x] 旧 /system-domains/[id]/functions を新URLへ集約
+- [x] システム領域一覧の遷移を /system/[id] に変更
+- [x] 旧 /system/[id]/functions を新URLへ集約
 
 #### 確認項目
 - [ ] 新規作成/編集/削除が一覧と詳細に反映される
@@ -146,7 +146,7 @@ Supabaseを永続化の正本として、業務一覧/システム機能一覧/�
 - [x] CRUDの保存先（Supabase）と制約をPRDに追記
 - [x] CRUD設計方針（Supabase構成/ID採番/画面遷移）を設計書に整理
 - [x] PRD/設計書を business_domains / business_tasks に更新
-- [x] システム領域導線（/system-domains/[id]）を追記
+- [x] システム領域導線（/system/[id]）を追記
 
 #### 確認項目
 - [x] 仕様変更点がPRDと設計書に反映されている
@@ -164,7 +164,7 @@ Supabaseを永続化の正本として、業務一覧/システム機能一覧/�
 ### ページ表示確認
 - [ ] 一覧/詳細/編集ページがエラーなく表示される
 - [ ] フィルタ・検索の見た目が崩れない
-- [ ] システム領域の遷移が /system-domains/[id] で動く
+- [ ] システム領域の遷移が /system/[id] で動く
 
 ### データ整合性確認
 - [ ] 再読み込み後も作成/編集内容が残る

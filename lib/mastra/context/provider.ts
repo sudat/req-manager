@@ -102,8 +102,9 @@ export class ContextProvider {
         const { data: brs } = await supabase
           .from('business_requirements')
           .select('*')
-          .eq('business_task_id', location.id)
-          .order('code');
+          .eq('task_id', location.id)
+          .order('sort_order')
+          .order('id');
         related.business_requirements = brs || [];
         break;
       }

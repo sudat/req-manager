@@ -211,13 +211,13 @@ export function migrateToDeliverables(
 - `components/forms/design/system-design-editor.tsx` → `deliverable-editor.tsx`
 
 **変更**:
-- `app/(with-sidebar)/system-domains/[id]/[srfId]/edit/page.tsx`
+- `app/(with-sidebar)/system/[id]/[srfId]/edit/page.tsx`
   - BasicInfoSectionから`category`を削除
   - `EntryPointsEditor`を削除
   - `SystemDesignEditor`を`DeliverableEditor`に置換
-- `app/(with-sidebar)/system-domains/[id]/[srfId]/edit/components/BasicInfoSection.tsx`
+- `app/(with-sidebar)/system/[id]/[srfId]/edit/components/BasicInfoSection.tsx`
   - `category`セレクトを削除
-- `app/(with-sidebar)/system-domains/[id]/[srfId]/edit/hooks/useSystemFunctionForm.ts`
+- `app/(with-sidebar)/system/[id]/[srfId]/edit/hooks/useSystemFunctionForm.ts`
   - `deliverables`状態管理を追加
 
 ### Phase 5: データマイグレーション
@@ -250,9 +250,9 @@ export function migrateToDeliverables(
 | `lib/data/system-functions.ts` | 変更 |
 | `lib/data/system-requirements.ts` | 変更 |
 | `components/forms/design/system-design-editor.tsx` | 大幅変更 |
-| `app/(with-sidebar)/system-domains/[id]/[srfId]/edit/page.tsx` | 変更 |
-| `app/(with-sidebar)/system-domains/[id]/[srfId]/edit/components/BasicInfoSection.tsx` | 変更 |
-| `app/(with-sidebar)/system-domains/[id]/[srfId]/edit/hooks/useSystemFunctionForm.ts` | 変更 |
+| `app/(with-sidebar)/system/[id]/[srfId]/edit/page.tsx` | 変更 |
+| `app/(with-sidebar)/system/[id]/[srfId]/edit/components/BasicInfoSection.tsx` | 変更 |
+| `app/(with-sidebar)/system/[id]/[srfId]/edit/hooks/useSystemFunctionForm.ts` | 変更 |
 | `components/forms/EntryPointsEditor.tsx` | 削除 |
 | `scripts/migrate-to-deliverables.ts` | 新規 |
 
@@ -261,7 +261,7 @@ export function migrateToDeliverables(
 ## 検証方法
 
 ### 手動テスト
-1. `/system-domains/GL/SRF-027/edit` を開く
+1. `/system/GL/SRF-027/edit` を開く
 2. 基本情報に「機能分類」がないことを確認
 3. 成果物を追加し、5観点のタブで設計を入力
 4. 保存後、DBのdeliverablesカラムを確認

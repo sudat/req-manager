@@ -186,7 +186,7 @@ interface ProjectContextValue {
 
 **修正対象:**
 - `app/business/page.tsx`
-- `app/system-domains/page.tsx`
+- `app/(with-sidebar)/system/page.tsx`
 - `app/ideas/page.tsx`
 - `app/tickets/page.tsx`
 
@@ -219,7 +219,7 @@ const { currentProjectId } = useProject();
 | `app/layout.tsx` | ProjectProvider追加 |
 | `components/layout/sidebar.tsx` | ProjectSwitcher追加 |
 | `app/business/page.tsx` | useProject利用 |
-| `app/system-domains/page.tsx` | useProject利用 |
+| `app/(with-sidebar)/system/page.tsx` | useProject利用 |
 | `app/ideas/page.tsx` | useProject利用 |
 | `app/tickets/page.tsx` | useProject利用 |
 

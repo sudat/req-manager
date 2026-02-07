@@ -13,7 +13,7 @@ export function MainContent({ children }: { children: React.ReactNode }) {
     <main
       className={cn(
         "flex-1 h-full min-h-0 bg-white transition-all duration-300",
-        isChatRoute ? "overflow-hidden" : "overflow-y-auto",
+        isChatRoute ? "overflow-hidden" : "overflow-y-auto hide-scrollbar",
         isCollapsed ? "md:ml-[64px]" : "md:ml-[280px]"
       )}
     >

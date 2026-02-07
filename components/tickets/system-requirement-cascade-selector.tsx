@@ -19,6 +19,16 @@ interface SystemRequirementCascadeSelectorProps {
 	onToggleReq: (req: SystemRequirement) => void
 }
 
+const normalizeSystemFunctionSummary = (summary: string) =>
+	summary
+		.replace(/\r\n/g, "\n")
+		.replace(/^#{1,6}\s+/gm, "")
+		.replace(/^\s*[-*]\s+/gm, "")
+		.split("\n")
+		.map((line) => line.trim())
+		.filter(Boolean)
+		.join(" ")
+
 export function SystemRequirementCascadeSelector({
 	systemDomains,
 	selectedDomainId,
@@ -72,7 +82,9 @@ export function SystemRequirementCascadeSelector({
 								>
 									<div>
 										<div className="font-medium text-sm">{func.title}</div>
-										<div className="text-xs text-slate-500 mt-1">{func.summary}</div>
+										<div className="text-xs text-slate-500 mt-1 whitespace-normal line-clamp-2">
+											{normalizeSystemFunctionSummary(func.summary)}
+										</div>
 									</div>
 									<ChevronRight className="h-4 w-4 text-slate-400" />
 								</button>

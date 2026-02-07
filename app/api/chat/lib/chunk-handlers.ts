@@ -179,6 +179,7 @@ export function handleToolResult(
   if (normalizedToolName === 'bt_draft') {
     const output = meta.output as {
       btDraft?: unknown;
+      brDrafts?: unknown[];
       conceptCandidates?: Array<{
         term: string;
         context: string;
@@ -195,6 +196,12 @@ export function handleToolResult(
     } else {
       console.log('[Chat API] btDraft not found in output');
     }
+    if (Array.isArray(output?.brDrafts) && output.brDrafts.length > 0) {
+      for (const brDraft of output.brDrafts) {
+        ctx.sendData({ event: 'draft', draftType: 'br', draft: brDraft });
+        ctx.hasSentDraft = true;
+      }
+    }
 
     // conceptCandidatesをそのまま転送
     if (output?.conceptCandidates && output.conceptCandidates.length > 0) {
@@ -205,6 +212,7 @@ export function handleToolResult(
   // br_draftツールの結果を検出してdraftイベントを送信
   if (normalizedToolName === 'br_draft') {
     const output = meta.output as {
+      btDraft?: unknown;
       brDraft?: unknown;
       conceptCandidates?: Array<{
         term: string;
@@ -214,6 +222,10 @@ export function handleToolResult(
         suggestion?: string;
       }>;
     };
+    if (output?.btDraft) {
+      ctx.sendData({ event: 'draft', draft: output.btDraft });
+      ctx.hasSentDraft = true;
+    }
     if (output?.brDraft) {
       ctx.sendData({ event: 'draft', draftType: 'br', draft: output.brDraft });
       ctx.hasSentDraft = true;
@@ -246,6 +258,11 @@ export function handleToolResult(
           }>;
         }>;
       }>;
+      realizesLinks?: Array<{
+        source_id: string;
+        target_id: string;
+        link_type: string;
+      }>;
       previewAvailable?: boolean;
     };
 
@@ -253,9 +270,14 @@ export function handleToolResult(
 
     if (output?.sfDrafts && output.sfDrafts.length > 0) {
       // SFと内包するSRを個別にイベント送信
-      for (const sfDraft of output.sfDrafts) {
-        console.log('[Chat API] Sending draft event with sfDraft:', sfDraft.code);
-        ctx.sendData({ event: 'draft', draftType: 'sf', draft: sfDraft });
+      for (let sfIdx = 0; sfIdx < output.sfDrafts.length; sfIdx++) {
+        const sfDraft = output.sfDrafts[sfIdx];
+        // realizesLinks から、このSFに紐付くBR IDを抽出
+        const brIds = (output.realizesLinks ?? [])
+          .filter(link => link.target_id === `sf-draft-${sfIdx}`)
+          .map(link => link.source_id);
+        console.log('[Chat API] Sending draft event with sfDraft:', sfDraft.code, 'brIds:', brIds);
+        ctx.sendData({ event: 'draft', draftType: 'sf', draft: { ...sfDraft, brIds } });
         ctx.hasSentDraft = true;
 
         for (const srDraft of sfDraft.srs) {
@@ -271,6 +293,30 @@ export function handleToolResult(
       }
     } else {
       console.log('[Chat API] sfDrafts not found in output');
+    }
+  }
+
+  // dd_draft（旧 impl_unit_draft）ツールの結果を検出してdraftイベントを送信
+  if (normalizedToolName === 'dd_draft' || normalizedToolName === 'impl_unit_draft') {
+    const output = meta.output as {
+      ddDrafts?: unknown[];
+      implUnitDraft?: unknown;
+      implUnitDrafts?: unknown[];
+    };
+
+    if (Array.isArray(output?.ddDrafts) && output.ddDrafts.length > 0) {
+      for (const ddDraft of output.ddDrafts) {
+        ctx.sendData({ event: 'draft', draftType: 'dd', draft: ddDraft });
+        ctx.hasSentDraft = true;
+      }
+    } else if (Array.isArray(output?.implUnitDrafts) && output.implUnitDrafts.length > 0) {
+      for (const ddDraft of output.implUnitDrafts) {
+        ctx.sendData({ event: 'draft', draftType: 'dd', draft: ddDraft });
+        ctx.hasSentDraft = true;
+      }
+    } else if (output?.implUnitDraft) {
+      ctx.sendData({ event: 'draft', draftType: 'dd', draft: output.implUnitDraft });
+      ctx.hasSentDraft = true;
     }
   }
 

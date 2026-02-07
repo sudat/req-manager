@@ -1,5 +1,5 @@
 import type {
-	ImplUnitSdHealthInput,
+	DesignDocumentHealthInput,
 	BusinessRequirementHealthInput,
 	SystemRequirementHealthInput,
 	HealthScoreIssue,
@@ -24,17 +24,16 @@ const createIssue = (
 const ensureArray = <T>(value: T[] | undefined): T[] => value ?? [];
 
 /**
- * 実装単位SDにエントリポイントが設定されている
+ * DDにエントリポイントが設定されている
  */
-export const calculateImplUnitSdWithEntryPointsIssue = (
-	implUnitSds: ImplUnitSdHealthInput[]
+export const calculateDesignDocumentWithEntryPointsIssue = (
+	designDocuments: DesignDocumentHealthInput[]
 ): HealthScoreIssue => {
 	return createIssue(
-		"impl_unit_sds_with_entry_points",
-		"実装単位SDにエントリポイントが設定されている",
+		"design_documents_with_entry_points",
+		"DDにエントリポイントが設定されている",
 		"high",
-		implUnitSds.filter((sd) => ensureArray(sd.entryPoints).length > 0).length,
-		implUnitSds.length
+		designDocuments.filter((sd) => ensureArray(sd.entryPoints).length > 0).length,
+		designDocuments.length
 	);
 };
-

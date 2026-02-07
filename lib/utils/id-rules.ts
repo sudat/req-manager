@@ -99,6 +99,19 @@ export const getNextBtId = (area: string, existingIds: string[]): string => {
   return `${prefix}${pad(maxNumber + 1, 4)}`;
 };
 
+export const getNextSfId = (area: string, existingIds: string[]): string => {
+  const normalized = normalizeAreaCode(area) || "SD";
+  const prefix = `SF-${normalized}-`;
+  const maxNumber = existingIds.reduce((max, id) => {
+    const sfMatch = SF_ID_REGEX.exec(id);
+    if (sfMatch && sfMatch[1] === normalized) {
+      return Math.max(max, Number.parseInt(sfMatch[2], 10));
+    }
+    return max;
+  }, 0);
+  return `${prefix}${pad(maxNumber + 1, 4)}`;
+};
+
 export const getBrIdSpecForTask = (taskId: string, existingIds: string[]): IdSpec => {
   const inferred = inferIdSpecFromExisting(existingIds, "BR-");
   if (inferred) return inferred;

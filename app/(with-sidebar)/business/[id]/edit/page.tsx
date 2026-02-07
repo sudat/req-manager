@@ -99,7 +99,7 @@ export default function BusinessEditPage({ params }: { params: Promise<{ id: str
   if (loading) {
     return (
     <>
-        <div className="flex-1 min-h-screen bg-slate-50">
+        <div className="min-h-screen bg-slate-50">
           <div className="mx-auto max-w-[1200px] p-8">
             <div className="space-y-4">
               <div className="h-8 bg-slate-200 rounded w-32 animate-pulse" />
@@ -115,7 +115,7 @@ export default function BusinessEditPage({ params }: { params: Promise<{ id: str
   if (!business) {
     return (
     <>
-        <div className="flex-1 min-h-screen bg-slate-50">
+        <div className="min-h-screen bg-slate-50">
           <div className="mx-auto max-w-[1200px] p-8">
             <p className="text-sm text-rose-600">{error ?? "業務が見つかりません"}</p>
             <Link href="/business" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900 mt-4">
@@ -130,7 +130,7 @@ export default function BusinessEditPage({ params }: { params: Promise<{ id: str
 
   return (
     <>
-      <div className="flex-1 min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-slate-50">
         <div className="mx-auto max-w-[1200px] p-8">
           <Link href="/business" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900 mb-4">
             <ArrowLeft className="h-4 w-4" />

@@ -8,9 +8,9 @@
 
 | ページ | URL | 課題 |
 |--------|-----|------|
-| システム機能詳細 | `/system-domains/[id]/[srfId]` | 受入条件が単純なリスト表示（`string[]`） |
-| システム機能編集 | `/system-domains/[id]/[srfId]/edit` | システム要件編集機能がない |
-| システム機能作成 | `/system-domains/[id]/functions/create` | 構造化された受入条件入力がない |
+| システム機能詳細 | `/system/[id]/[srfId]` | 受入条件が単純なリスト表示（`string[]`） |
+| システム機能編集 | `/system/[id]/[srfId]/edit` | システム要件編集機能がない |
+| システム機能作成 | `/system/[id]/functions/create` | 構造化された受入条件入力がない |
 
 ## 業務タスク側（参照実装）
 
@@ -23,7 +23,7 @@
 
 ### Phase 1: システム機能作成ページに構造化された受入条件入力を追加
 
-**対象**: `/app/system-domains/[id]/functions/create/`
+**対象**: `/app/(with-sidebar)/system/[id]/functions/create/`
 
 1. **`types.ts`** - `acceptanceCriteriaJson` フィールドを追加
    ```typescript
@@ -100,7 +100,7 @@ import { AcceptanceCriteriaDisplay } from "@/components/forms/AcceptanceCriteria
 
 ### Phase 3: システム機能編集ページにシステム要件編集セクションを追加
 
-**対象**: `/app/system-domains/[id]/[srfId]/edit/`
+**対象**: `/app/(with-sidebar)/system/[id]/[srfId]/edit/`
 
 業務タスク編集ページと同様の構造でシステム要件編集を追加します。
 
@@ -176,21 +176,21 @@ import { AcceptanceCriteriaDisplay } from "@/components/forms/AcceptanceCriteria
 
 ## 変更ファイル一覧
 
-1. `/app/system-domains/[id]/functions/create/types.ts` - 型定義に `acceptanceCriteriaJson` を追加
-2. `/app/system-domains/[id]/functions/create/hooks/useSystemRequirements.ts` - 初期値に `acceptanceCriteriaJson` を追加
-3. `/app/system-domains/[id]/functions/create/components/SystemRequirementCard.tsx` - `StructuredAcceptanceCriteriaInput` を追加
+1. `/app/(with-sidebar)/system/[id]/functions/create/types.ts` - 型定義に `acceptanceCriteriaJson` を追加
+2. `/app/(with-sidebar)/system/[id]/functions/create/hooks/useSystemRequirements.ts` - 初期値に `acceptanceCriteriaJson` を追加
+3. `/app/(with-sidebar)/system/[id]/functions/create/components/SystemRequirementCard.tsx` - `StructuredAcceptanceCriteriaInput` を追加
 4. `/lib/domain/value-objects.ts` - `RelatedRequirementInfo` に `acceptanceCriteriaJson` を追加
 5. `/lib/data/transformers/related-requirements-transformer.ts` - `buildRelatedRequirements` を拡張
 6. `/components/system-domains/system-requirements-section.tsx` - `AcceptanceCriteriaDisplay` を使用
-7. `/app/system-domains/[id]/[srfId]/edit/page.tsx` - システム要件編集セクションを追加
-8. `/app/system-domains/[id]/[srfId]/edit/hooks/useSystemFunctionForm.ts` - システム要件の状態管理を追加
+7. `/app/(with-sidebar)/system/[id]/[srfId]/edit/page.tsx` - システム要件編集セクションを追加
+8. `/app/(with-sidebar)/system/[id]/[srfId]/edit/hooks/useSystemFunctionForm.ts` - システム要件の状態管理を追加
 
 ## 検証方法
 
 ### 1. システム機能作成ページ
 
 ```
-1. http://localhost:3000/system-domains/AR/functions/create にアクセス
+1. http://localhost:3000/system/AR/functions/create にアクセス
 2. システム要件を追加
 3. 受入条件（構造化）に入力（説明 + 検証方法）
 4. 保存

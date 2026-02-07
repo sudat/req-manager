@@ -1,7 +1,7 @@
 # AC（受入基準）表示のPRD適合性レビュー
 
 ## 概要
-システム機能詳細ページ（`/system-domains/AR/SRF-001`）のAC表示がPRD 3.8に沿っているか、およびコーディングエージェントへの改修指示の的確さ向上・ユーザビリティの観点でレビューを行う。
+システム機能詳細ページ（`/system/AR/SRF-001`）のAC表示がPRD 3.8に沿っているか、およびコーディングエージェントへの改修指示の的確さ向上・ユーザビリティの観点でレビューを行う。
 
 ---
 
@@ -176,7 +176,7 @@ SF: SRF-001 請求書発行
 | `components/forms/AcceptanceCriteriaDisplay.tsx` | AC読み取り表示（主要改修対象） |
 | `components/forms/StructuredAcceptanceCriteriaInput.tsx` | AC入力フォーム（参考実装あり） |
 | `lib/data/structured.ts` | `AcceptanceCriterionJson` 型定義 |
-| `app/(with-sidebar)/system-domains/[id]/[srfId]/page.tsx` | システム機能詳細ページ |
+| `app/(with-sidebar)/system/[id]/[srfId]/page.tsx` | システム機能詳細ページ |
 
 ---
 
@@ -251,7 +251,7 @@ const toggleExpand = (id: string) => {
 - デフォルトは折りたたみ状態
 
 ### 検証方法
-1. http://localhost:3002/system-domains/AR/SRF-001 を開く
+1. http://localhost:3002/system/AR/SRF-001 を開く
 2. 以下を確認:
    - [ ] ACのID（例: AC-TASK-003-001-01）が表示される
    - [ ] SR-TASK-003-001 のACはGWTが正常表示される

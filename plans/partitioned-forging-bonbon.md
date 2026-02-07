@@ -39,6 +39,6 @@ import { AcceptanceCriteriaDisplay } from "@/components/forms/AcceptanceCriteria
 
 ## 検証方法
 
-1. `http://localhost:3002/system-domains/GL/SRF-017` にアクセス
+1. `http://localhost:3002/system/GL/SRF-017` にアクセス
 2. 「システム要件」セクションの「手動仕訳入力」カードを確認
 3. 影響領域の下に「受入条件」ラベルと共にACが3つ表示されることを確認

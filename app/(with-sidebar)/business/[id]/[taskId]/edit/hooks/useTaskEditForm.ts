@@ -95,7 +95,6 @@ export function useTaskEditForm({
 				category: type === "システム要件" ? "function" : undefined,
 				businessRequirementIds: [],
 				relatedSystemRequirementIds: [],
-				relatedDeliverableIds: [],
 			};
 
 			return {

@@ -63,7 +63,7 @@ const deleteAction = (deleteItem || onDelete)
 | ページ | パス | 渡しているprop |
 |--------|------|----------------|
 | 業務タスク一覧 | `/app/(with-sidebar)/business/[id]/page.tsx` | `onDelete={deleteTask}` |
-| システム機能一覧 | `/app/(with-sidebar)/system-domains/[id]/page.tsx` | `onDelete={deleteFunction}` |
+| システム機能一覧 | `/app/(with-sidebar)/system/[id]/page.tsx` | `onDelete={deleteFunction}` |
 
 ### 回帰テストが必要な既存ページ
 

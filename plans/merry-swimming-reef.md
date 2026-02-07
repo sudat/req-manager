@@ -31,16 +31,16 @@ PRD 3.8（受入基準）と 3.9（実装単位SD）の仕様に対して、実�
 **`components/system-domains/index.ts`**
 - 削除コンポーネントの export を削除
 
-**`app/(with-sidebar)/system-domains/[id]/[srfId]/page.tsx`**（SF詳細画面）
+**`app/(with-sidebar)/system/[id]/[srfId]/page.tsx`**（SF詳細画面）
 - `DeliverablesSection` の import/使用を削除
 - `EntryPointsSection` の import/使用を削除
 - `SystemDesignSection` の import/使用を削除
 
-**`app/(with-sidebar)/system-domains/[id]/[srfId]/edit/page.tsx`**（SF編集画面）
+**`app/(with-sidebar)/system/[id]/[srfId]/edit/page.tsx`**（SF編集画面）
 - `DeliverableList` の使用を削除（ImplUnitSdListに統一）
 - `EntryPointsEditor` の使用を削除
 
-**`app/(with-sidebar)/system-domains/[id]/create/page.tsx`**（SF作成画面）
+**`app/(with-sidebar)/system/[id]/create/page.tsx`**（SF作成画面）
 - `DeliverableList` の使用を削除
 - `EntryPointsEditor` の使用を削除
 
@@ -137,9 +137,9 @@ deprecated な DB カラムは残す（データ移行の安全性確保）:
 
 ### 修正（6ファイル）
 - `components/system-domains/index.ts`
-- `app/(with-sidebar)/system-domains/[id]/[srfId]/page.tsx`
-- `app/(with-sidebar)/system-domains/[id]/[srfId]/edit/page.tsx`
-- `app/(with-sidebar)/system-domains/[id]/create/page.tsx`
+- `app/(with-sidebar)/system/[id]/[srfId]/page.tsx`
+- `app/(with-sidebar)/system/[id]/[srfId]/edit/page.tsx`
+- `app/(with-sidebar)/system/[id]/create/page.tsx`
 - `components/forms/impl-unit-sd-list.tsx`
 - `lib/domain/entities.ts`
 

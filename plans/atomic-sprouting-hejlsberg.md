@@ -89,7 +89,7 @@ if (pageType !== 'business') {
 - `lib/health-score/index.ts`
 - `components/health-score/health-score-card.tsx`
 - `app/(with-sidebar)/business/[id]/[taskId]/page.tsx`
-- `app/(with-sidebar)/system-domains/[id]/[srfId]/page.tsx`
+- `app/(with-sidebar)/system/[id]/[srfId]/page.tsx`
 
 #### Step 1: HealthScoreStats型の変更
 
@@ -227,7 +227,7 @@ const summary = buildHealthScoreSummary({
 
 **システム要件ページ:**
 ```typescript
-// app/(with-sidebar)/system-domains/[id]/[srfId]/page.tsx
+// app/(with-sidebar)/system/[id]/[srfId]/page.tsx
 
 // 1. 実装単位SDデータを取得
 const [implUnitSds, setImplUnitSds] = useState<ImplUnitSd[]>([]);
@@ -324,7 +324,7 @@ if (pageType !== 'business') {
 - `lib/health-score/index.ts` - 型定義、計算ロジック、エントリポイント指標の変更
 - `components/health-score/health-score-card.tsx` - pageType propの追加、表示制御
 - `app/(with-sidebar)/business/[id]/[taskId]/page.tsx` - pageType渡し
-- `app/(with-sidebar)/system-domains/[id]/[srfId]/page.tsx` - pageType渡し、implUnitSds渡し
+- `app/(with-sidebar)/system/[id]/[srfId]/page.tsx` - pageType渡し、implUnitSds渡し
 
 ### 影響する機能
 - 業務要件詳細ページのヘルススコア（検出ルール & 統計）
@@ -360,7 +360,7 @@ if (pageType !== 'business') {
 - ❌ エントリポイントに責務が設定されている（前回削除済み）
 
 ### システム要件詳細ページ
-**アクセス先:** http://localhost:3001/system-domains/AR/SRF-006
+**アクセス先:** http://localhost:3001/system/AR/SRF-006
 
 **期待結果（検出ルール）:**
 - ✅ システム要件に業務要件が紐づいている

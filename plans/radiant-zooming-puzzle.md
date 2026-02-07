@@ -1,7 +1,7 @@
 # 影響領域バッジのリンク化
 
 ## 概要
-タスク詳細ページのシステム要件カードに表示される「影響領域」バッジをクリック時に、対応するシステム領域ページ（`/system-domains/{影響領域}`）に遷移できるようにする。
+タスク詳細ページのシステム要件カードに表示される「影響領域」バッジをクリック時に、対応するシステム領域ページ（`/system/{影響領域}`）に遷移できるようにする。
 
 ## 難易度評価
 ```
@@ -41,7 +41,7 @@
     <div className="text-[12px] font-medium text-slate-500">影響領域</div>
     <div className="flex flex-wrap gap-1.5">
       {requirement.impacts.map((impact) => (
-        <Link key={impact} href={`/system-domains/${impact}`}>
+        <Link key={impact} href={`/system/${impact}`}>
           <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] hover:bg-slate-100">
             {impact}
           </Badge>
@@ -68,7 +68,7 @@
 1. `http://localhost:3000/business/BIZ-001/tasks/TASK-001` にアクセス
 2. システム要件カードの「影響領域」バッジを確認
 3. バッジにホバーしたときに背景色が変わることを確認
-4. バッジをクリックして `/system-domains/AR` に遷移することを確認
+4. バッジをクリックして `/system/AR` に遷移することを確認
 
 ### エッジケース
 - 影響領域が複数ある場合、それぞれのバッジが正しく遷移する

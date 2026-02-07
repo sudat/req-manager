@@ -78,8 +78,10 @@ const deserializeMessages = (raw: unknown): ChatMessage[] => {
 			progressSteps: m.progressSteps,
 			btDraft: m.btDraft,
 			brDraft: m.brDraft,
+			brDrafts: m.brDrafts,
 			sfDraft: m.sfDraft,
 			srDraft: m.srDraft,
+			srDrafts: m.srDrafts,
 		}));
 };
 

@@ -1,7 +1,7 @@
 # /business/[id] ページの ResourceListPage 統一計画
 
 ## 概要
-`/business/[id]` ページを他の3ページ（`/business`, `/system-domains`, `/system-domains/[id]`）と同じ `ResourceListPage` 共通コンポーネントパターンに統一する。
+`/business/[id]` ページを他の3ページ（`/business`, `/system`, `/system/[id]`）と同じ `ResourceListPage` 共通コンポーネントパターンに統一する。
 
 **難易度: ★★☆**
 **根拠: 3 files, 約200行変更, 1コンポーネント追加**
@@ -13,8 +13,8 @@
 | ページ | 実装方式 |
 |--------|----------|
 | `/business` | ResourceListPage ✅ |
-| `/system-domains` | ResourceListPage ✅ |
-| `/system-domains/[id]` | ResourceListPage ✅ |
+| `/system` | ResourceListPage ✅ |
+| `/system/[id]` | ResourceListPage ✅ |
 | `/business/[id]` | **個別実装** ❌ |
 
 - `/business/[id]` のみテーブルHTMLを直接記述

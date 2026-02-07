@@ -1,14 +1,14 @@
-# 修正計画: system-domains/page.tsx の Invalid hook call エラー
+# 修正計画: system/page.tsx の Invalid hook call エラー
 
 ## 問題概要
 
 **エラー**: `Invalid hook call. Hooks can only be called inside of the body of a function component.`
 
-**原因**: `app/system-domains/page.tsx` の24行目で、`useMemo` フックが async 関数 `fetchData` 内で呼び出されている。
+**原因**: `app/(with-sidebar)/system/page.tsx` の24行目で、`useMemo` フックが async 関数 `fetchData` 内で呼び出されている。
 
 ## 修正内容
 
-### ファイル: `app/system-domains/page.tsx`
+### ファイル: `app/(with-sidebar)/system/page.tsx`
 
 **変更前 (24-31行目)**:
 ```typescript
@@ -62,6 +62,6 @@ const data = (domainRows ?? []).map(
 
 1. 修正を適用する
 2. `bun run dev` で開発サーバーを起動
-3. `http://localhost:3000/system-domains` にアクセス
+3. `http://localhost:3000/system` にアクセス
 4. エラーが発生せず、ページが正常に表示されることを確認
 5. システムドメイン一覧が表示され、各ドメインの機能数カウントが正しいことを確認

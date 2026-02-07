@@ -86,7 +86,7 @@ import { cn } from "@/lib/utils";
 ### 1. Playwright MCPでの動作確認
 ```bash
 # e2e-testing スキルを使用
-# http://localhost:3002/system-domains/AR/SRF-001 にアクセス
+# http://localhost:3002/system/AR/SRF-001 にアクセス
 ```
 
 ### 2. 確認項目

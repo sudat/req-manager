@@ -1,5 +1,5 @@
 // ドメインエンティティ型定義
-import type { BusinessArea, TicketStatus, TicketPriority, SrfCategory, SrfStatus, SystemDesignItem, ImplUnitType } from './enums';
+import type { BusinessArea, TicketStatus, TicketPriority, SrfCategory, SrfStatus, SystemDesignItem, DdType } from './enums';
 import type { TicketRequirementReference, TicketChangeItem, TicketConceptReference, TicketVersionApplication, EntryPoint } from './value-objects';
 import type { SystemDesignItemV2 } from './schemas/system-design';
 import type { Deliverable } from './schemas/deliverable';
@@ -102,7 +102,8 @@ export interface SystemFunction {
   systemDesign: (SystemDesignItem | SystemDesignItemV2)[];  // システム設計項目配列（V2とレガシーの混在対応）
   /** @deprecated deliverablesに統合されました。deliverables[].entryPointを使用してください */
   entryPoints?: EntryPoint[];  // PRD v1.3（DB: system_functions.entry_points）
-  deliverables: Deliverable[];  // 成果物配列（新構造）
+  /** @deprecated DBカラムは削除済み。後方互換のため空配列を返します */
+  deliverables: Deliverable[];
   codeRefs: {
     githubUrl?: string;
     paths: string[];
@@ -218,15 +219,15 @@ export interface AcceptanceCriterion {
 }
 
 /**
- * ImplUnitSD（実装単位SD）
- * PRD 3.9準拠: 4種類に限定
+ * DesignDocument（DD）
+ * PRD 3.9準拠 + 拡張: 画面/API/バッチ/外部I/F/モデル/レポート/ジョブ
  */
-export interface ImplUnitSd {
-  id: string;              // IU-XXX
-  srfId: string;           // SRF-XXX
+export interface DesignDocument {
+  id: string;              // DD-XXX
+  srfId: string;           // SF-XXX
   projectId: string;       // UUID
   name: string;
-  type: ImplUnitType;
+  type: DdType;
   summary: string;
   entryPoints: EntryPoint[];
   designPolicy: string;
@@ -238,7 +239,16 @@ export interface ImplUnitSd {
 /**
  * RequirementLink（要件リンク）
  */
-export type RequirementLinkNodeType = "bd" | "bt" | "br" | "sd" | "sf" | "sr" | "ac" | "impl_unit" | string;
+export type RequirementLinkNodeType =
+  | "bd"
+  | "bt"
+  | "br"
+  | "sd"
+  | "sf"
+  | "sr"
+  | "ac"
+  | "dd"
+  | string;
 
 export interface RequirementLink {
   id: string;              // UUID

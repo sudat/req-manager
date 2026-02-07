@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import type { BrDraft, BtDraft, ChatMessage, DraftCommitState } from "@/components/ai-chat/types";
+import type { BrDraft, BtDraft, ChatMessage, DraftCommitState, SfDraft, SrDraft, DdDraft } from "@/components/ai-chat/types";
 
 // ---------------------------------------------------------------------------
 // 内部ヘルパー
 // ---------------------------------------------------------------------------
 
-const buildDraftKey = (messageId: string, type: "bt" | "br", code: string) =>
+const buildDraftKey = (messageId: string, type: "bt" | "br" | "sf" | "sr" | "dd", code: string) =>
 	`${messageId}:${type}:${code}`;
 
 // ---------------------------------------------------------------------------
@@ -24,7 +24,7 @@ export function useDraftCommit({ setMessages }: UseDraftCommitProps) {
 	>({});
 
 	const getCommitState = useCallback(
-		(messageId: string, type: "bt" | "br", code: string) => {
+		(messageId: string, type: "bt" | "br" | "sf" | "sr" | "dd", code: string) => {
 			return draftCommitStates[buildDraftKey(messageId, type, code)];
 		},
 		[draftCommitStates],
@@ -33,9 +33,9 @@ export function useDraftCommit({ setMessages }: UseDraftCommitProps) {
 	const commitDraft = useCallback(
 		async (payload: {
 			messageId: string;
-			type: "bt" | "br";
+			type: "bt" | "br" | "sf" | "sr" | "dd";
 			code: string;
-			content: BtDraft | BrDraft;
+			content: BtDraft | BrDraft | SfDraft | SrDraft | DdDraft;
 		}) => {
 			const key = buildDraftKey(payload.messageId, payload.type, payload.code);
 			setDraftCommitStates((prev) => ({

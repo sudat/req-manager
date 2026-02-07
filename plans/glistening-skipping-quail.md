@@ -21,7 +21,7 @@
 |------|---------|
 | SSEチャンク境界問題 | バッファリング実装済み |
 | 未使用context呼び出し | 削除済み |
-| CRUD共通化（4ファイル） | crud-factory.ts作成、concepts/system-domains/tasks/impl-unit-sds対応 |
+| CRUD共通化（4ファイル） | crud-factory.ts作成、concepts/system/tasks/impl-unit-sds対応 |
 | カスケードフック | use-cascade-fetch.ts作成 |
 | フィルタフック | use-list-filter.ts作成 |
 | View/Edit統合 | field-configs.ts作成 |
@@ -99,7 +99,7 @@ RequirementLinksPage
 
 | ファイル | 行数 | 優先度 | 備考 |
 |---------|------|--------|------|
-| `system-domains/[id]/[srfId]/page.tsx` | 337行 | 低 | 詳細ページ |
+| `system/[id]/[srfId]/page.tsx` | 337行 | 低 | 詳細ページ |
 | `product-requirement/edit/page.tsx` | 331行 | 低 | 編集ページ |
 | `ideas/[id]/page.tsx` | 326行 | 低 | 詳細ページ |
 | `chat-container.tsx` | 414行 | 低 | sendMessage分割検討 |

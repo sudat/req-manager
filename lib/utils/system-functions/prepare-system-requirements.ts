@@ -1,5 +1,5 @@
 import type { SystemRequirementCreateInput } from "@/lib/data/system-requirements";
-import type { SystemRequirementCard } from "@/app/(with-sidebar)/system-domains/[id]/create/types";
+import type { SystemRequirementCard } from "@/app/(with-sidebar)/system/[id]/create/types";
 import type { BusinessRequirement } from "@/lib/data/business-requirements";
 import { acceptanceCriteriaJsonToLegacy } from "@/lib/data/structured";
 
@@ -33,7 +33,6 @@ export function prepareSystemRequirementInputs(
 			conceptIds: [],
 			impacts: [],
 			category: sr.category ?? "function",
-			relatedDeliverableIds: sr.relatedDeliverableIds ?? [],
 			acceptanceCriteriaJson: sr.acceptanceCriteriaJson ?? [],
 			acceptanceCriteria: acceptanceCriteriaJsonToLegacy(sr.acceptanceCriteriaJson ?? []),
 			systemDomainIds: [],

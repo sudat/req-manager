@@ -16,10 +16,13 @@ import {
   btDraftTool,
   brDraftTool,
   systemDraftTool,
-  implUnitDraftTool,
+  ddDraftTool,
   // 分析・検証Tool群
   criticCheckTool,
   conceptExtractTool,
+  // Phase 5: 影響分析・プロダクト要件Tool群
+  impactAnalysisTool,
+  getProductRequirementTool,
 } from '../tools';
 import { resolveProjectAgentModel, resolveProjectLlmRuntimeSettings } from '../utils/llm-settings';
 import { getZaiApiKey } from '@/lib/config/env';
@@ -28,14 +31,14 @@ import { getZaiApiKey } from '@/lib/config/env';
  * Requirements Agent
  *
  * 要件管理DBの登録支援AIエージェント。
- * ユーザーの自然言語入力を構造化された要件（BT/BR/SF/SR/AC/実装単位SD）に整形する。
+ * ユーザーの自然言語入力を構造化された要件（BT/BR/SF/SR/AC/DD）に整形する。
  */
 export const requirementsAgent = new Agent({
   id: 'requirements-agent',
   name: 'Requirements Assistant',
   instructions: `
 あなたは要件管理DBの登録支援AIです。
-ユーザーの自然言語入力を、構造化された要件（BT/BR/SF/SR/AC/実装単位SD）に整形します。
+ユーザーの自然言語入力を、構造化された要件（BT/BR/SF/SR/AC/DD）に整形します。
 
 ## System Context の利用
 
@@ -167,12 +170,12 @@ AI: [brDraftToolをbtId: "BT-GL-0010"で呼び出す]
 - ユーザーが「SF/SR/AC生成」を選んだときは、まず「どのBRからSF/SR/ACを生成しますか？BR ID（例: BR-AP-0001-0001）を教えてください」と尋ねる
 - BR IDを指定されたら、すぐにsystemDraftToolを呼び出す
 
-### 実装単位SD生成を依頼された場合
+### DD（実装単位SD）生成を依頼された場合
 1. **SF IDの収集（重要）:**
    - ユーザーのメッセージにSF ID（例: SF-AP-0002）が含まれている場合は、それを抽出して使う
-   - SF IDが含まれていない場合のみ、「どのSFから実装単位SDを生成しますか？SF ID（例: SF-AP-0002）を教えてください」と尋ねる
+   - SF IDが含まれていない場合のみ、「どのSFからDD（実装単位SD）を生成しますか？SF ID（例: SF-AP-0002）を教えてください」と尋ねる
    - **絶対にToolを呼び出す前に、必ずSF IDが特定できているか確認すること**
-2. **必ず**implUnitDraftTool**を呼び出す**
+2. **必ず**ddDraftTool**を呼び出す**
    - sfId パラメータに、収集したSF IDを渡す（例: "SF-AP-0002"）
    - 追加の設計上の要望がある場合は naturalLanguageInput に渡す
    - **常に** projectId（System ContextのProjectID）を渡す
@@ -238,6 +241,15 @@ AI: [brDraftToolをbtId: "BT-GL-0010"で呼び出す]
 4. 決定した area を使って **btDraftTool** を呼ぶ
 5. 候補にない場合は、候補一覧から選択を促す or 再検索（searchBusinessDomainsTool）する
 
+### プロダクト要件を見せて / 技術スタックを確認したい場合
+1. **getProductRequirementTool** を呼び出す（projectId は System Context の ProjectID）
+2. 結果をユーザーに提示する
+
+### 影響分析を実行したい場合
+1. ユーザーのメッセージに変更要求ID（UUID）が含まれている場合は抽出して使う
+2. **impactAnalysisTool** を呼び出す（crId と projectId を渡す）
+3. 結果の影響対象（BR/SF/SR/entry_points）と疑義リンクを提示する
+
 ## 対話スタイル
 - 簡潔で明確な日本語で応答する
 - Tool呼び出し後、結果を明確に伝える
@@ -268,11 +280,15 @@ AI: [brDraftToolをbtId: "BT-GL-0010"で呼び出す]
     btDraftTool,
     brDraftTool,
     systemDraftTool,
-    implUnitDraftTool,
+    ddDraftTool,
 
     // 分析・検証Tool群
     criticCheckTool,
     conceptExtractTool,
+
+    // Phase 5: 影響分析・プロダクト要件Tool群
+    impactAnalysisTool,
+    getProductRequirementTool,
   },
   // KISS: 入力は推論情報のみ削除し、ツール結果は保持して反復が回るようにする
   inputProcessors: [sanitizeReasoningInputProcessor],
