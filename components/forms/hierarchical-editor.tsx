@@ -14,7 +14,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FileCode, ChevronDown, ChevronRight } from "lucide-react";
 import {
 	HierarchicalValue,
-	jsonToHierarchical,
 	jsonStringToHierarchical,
 	hierarchicalToJsonString,
 	getHierarchicalStats,
@@ -41,6 +40,8 @@ export interface HierarchicalEditorProps {
 	helperText?: string;
 	/** コンテナクラス名 */
 	className?: string;
+	/** キー追加時コールバック */
+	onKeyAdd?: (key: string, logicalLabel: string) => void;
 }
 
 /**
@@ -63,6 +64,7 @@ export function HierarchicalEditor({
 	required = false,
 	helperText,
 	className = "",
+	onKeyAdd,
 }: HierarchicalEditorProps) {
 	// 内部状態：HierarchicalValue
 	const [hierarchicalValue, setHierarchicalValue] = useState<HierarchicalValue>(() => {
@@ -152,6 +154,7 @@ export function HierarchicalEditor({
 								value={hierarchicalValue}
 								onChange={handleChange}
 								path={[]}
+								onKeyAdd={onKeyAdd}
 							/>
 
 							{/* 空の場合のプレースホルダー */}

@@ -91,7 +91,7 @@ export default function SystemFunctionEditRequirementsPage({
 				</h1>
 			</div>
 
-			<div className="max-w-4xl">
+			<div className="max-w-[1400px]">
 				<RequirementListSection
 					title="システム要件"
 					requirements={systemRequirements}

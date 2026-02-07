@@ -53,7 +53,7 @@ export function EntryPointsInlineEditor({
 				</Label>
 				<Button
 					type="button"
-					variant="outline"
+					variant="default"
 					size="sm"
 					className="h-7 gap-2 text-[12px]"
 					onClick={addEntryPoint}
@@ -78,10 +78,10 @@ export function EntryPointsInlineEditor({
 						return (
 							<div
 								key={`${entry.path}-${index}`}
-								className="rounded-md border border-slate-200 bg-white p-3 space-y-3"
+								className="rounded-md border border-slate-200 bg-white p-3"
 							>
-								<div className="flex items-start justify-between gap-3">
-									<div className="space-y-1 flex-1">
+								<div className="grid gap-3 md:grid-cols-[2fr_1fr_1fr_auto] items-start">
+									<div className="space-y-1">
 										<Label className="text-xs">パス</Label>
 										<Input
 											ref={isLast ? lastInputRef : undefined}
@@ -103,21 +103,8 @@ export function EntryPointsInlineEditor({
 											</div>
 										)}
 									</div>
-									<Button
-										type="button"
-										variant="ghost"
-										size="sm"
-										aria-label={`エントリポイント ${entry.path || index + 1} を削除`}
-										onClick={() => removeEntryPoint(index)}
-										className="h-8 w-8 p-0 text-slate-400 hover:text-red-600"
-									>
-										<Trash2 className="h-4 w-4" />
-									</Button>
-								</div>
-
-								<div className="grid gap-3 md:grid-cols-2">
 									<div className="space-y-1">
-										<Label className="text-xs">種別（任意）</Label>
+										<Label className="text-xs">種別</Label>
 										<Input
 											value={entry.type ?? ""}
 											onChange={(e) =>
@@ -130,7 +117,7 @@ export function EntryPointsInlineEditor({
 										/>
 									</div>
 									<div className="space-y-1">
-										<Label className="text-xs">責務（任意）</Label>
+										<Label className="text-xs">責務</Label>
 										<Input
 											value={entry.responsibility ?? ""}
 											onChange={(e) =>
@@ -143,6 +130,18 @@ export function EntryPointsInlineEditor({
 											placeholder="請求書詳細の取得"
 											className="h-9"
 										/>
+									</div>
+									<div className="pt-5">
+										<Button
+											type="button"
+											variant="ghost"
+											size="sm"
+											aria-label={`エントリポイント ${entry.path || index + 1} を削除`}
+											onClick={() => removeEntryPoint(index)}
+											className="h-8 w-8 p-0 text-slate-400 hover:text-red-600"
+										>
+											<Trash2 className="h-4 w-4" />
+										</Button>
 									</div>
 								</div>
 							</div>

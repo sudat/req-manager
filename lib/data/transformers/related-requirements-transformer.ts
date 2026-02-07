@@ -1,5 +1,6 @@
 import type { RelatedRequirementInfo } from "@/lib/domain/value-objects";
 import type { AcceptanceCriterionJson } from "@/lib/data/structured";
+import type { SystemRequirementCategory } from "@/lib/domain";
 import {
 	listRequirementLinksBySource,
 	listRequirementLinksBySourceIds,
@@ -21,6 +22,7 @@ export interface SystemRequirement {
 	taskId: string;
 	title: string;
 	summary: string;
+	category?: SystemRequirementCategory;
 	conceptIds: string[];
 	impacts: string[];
 	acceptanceCriteria: string[];
@@ -102,6 +104,7 @@ function buildRelatedRequirementEntry(
 		systemReqId: sysReq.id,
 		systemReqTitle: sysReq.title,
 		systemReqSummary: sysReq.summary,
+		systemReqCategory: sysReq.category,
 		systemReqConcepts,
 		systemReqImpacts: sysReq.impacts,
 		systemReqAcceptanceCriteria: sysReq.acceptanceCriteria,

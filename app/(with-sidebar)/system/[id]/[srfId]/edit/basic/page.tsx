@@ -72,7 +72,7 @@ export default function SystemFunctionEditBasicPage({
 			</div>
 
 			{/* Form */}
-			<div className="max-w-4xl">
+			<div className="max-w-[1400px]">
 				<BasicInfoSection
 					systemFunctionId={srfId}
 					category={category}

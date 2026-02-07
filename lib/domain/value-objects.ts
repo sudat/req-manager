@@ -1,6 +1,7 @@
 // 値オブジェクト型定義
 
 import type { AcceptanceCriterionJson } from "@/lib/data/structured";
+import type { SystemRequirementCategory } from "@/lib/domain";
 
 /**
  * 関連要件情報
@@ -9,6 +10,7 @@ export interface RelatedRequirementInfo {
   systemReqId: string;       // SR-AR-0003-0001
   systemReqTitle: string;
   systemReqSummary?: string;           // システム要件の概要
+  systemReqCategory?: SystemRequirementCategory;  // システム要件のカテゴリ（function/data/exception/non_functional）
   systemReqConcepts?: { id: string; name: string }[];  // 関連概念
   systemReqImpacts?: string[];         // 影響領域
   systemReqAcceptanceCriteria?: string[];  // 受入条件（レガシー）

@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import { SuspectLinkBadge } from "@/components/requirement-links/suspect-link-badge";
+import { getSystemRequirementCategoryLabel } from "@/lib/data/system-requirements";
 
 interface SystemRequirementsSectionProps {
 	srfId: string;
@@ -77,6 +78,11 @@ function RequirementItem({ req }: { req: RelatedRequirementInfo }): React.ReactN
 						<Badge className="border-blue-200/60 bg-blue-50 text-blue-700 text-[12px] font-medium px-2.5 py-1">
 							{req.systemReqId}
 						</Badge>
+						{req.systemReqCategory && (
+							<Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-medium">
+								{getSystemRequirementCategoryLabel(req.systemReqCategory)}
+							</Badge>
+						)}
 						<span className="text-[14px] font-semibold text-slate-900">
 							{req.systemReqTitle || "名称未設定"}
 						</span>

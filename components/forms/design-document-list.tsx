@@ -3,7 +3,8 @@
 import { type ReactNode } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { DesignDocumentCard } from "@/components/forms/design-document/DesignDocumentCard";
 import { nextSequentialId } from "@/lib/data/id";
 import type { EntryPoint, DdType } from "@/lib/domain";
@@ -62,35 +63,44 @@ export function DesignDocumentList({
 
 	return (
 		<Card>
-			<CardHeader>
-				<div className="flex items-center justify-between">
-					<div>
-						<CardTitle>DD（Design Document） ({items.length})</CardTitle>
-						<CardDescription>
-							SF配下のDDを定義します（entry_points / design_policy / details）。
-						</CardDescription>
+			<CardContent className="pt-6">
+				{/* Header */}
+				<div className="flex items-center justify-between pb-2 border-b border-slate-100">
+					<div className="flex items-center gap-2">
+						<h3 className="text-[14px] font-semibold text-slate-900">
+							DD（Design Document）
+						</h3>
+						<Badge variant="outline" className="font-mono text-[11px] border-slate-200 bg-slate-50 text-slate-600 px-1.5 py-0">
+							{items.length}
+						</Badge>
 					</div>
-					<Button type="button" onClick={handleAdd}>
-						<Plus className="h-4 w-4 mr-2" />
+					<Button type="button" variant="default" size="sm" className="h-7 gap-2 text-[12px]" onClick={handleAdd}>
+						<Plus className="h-4 w-4" />
 						追加
 					</Button>
 				</div>
-			</CardHeader>
-			<CardContent className="space-y-4">
-				{items.length === 0 ? (
-					<p className="text-muted-foreground text-center py-8">
-						DDが登録されていません。
-					</p>
-				) : (
-					items.map((item, index) => (
-						<DesignDocumentCard
-							key={item.id}
-							item={item}
-							onUpdate={(patch) => handleUpdate(index, patch)}
-							onDelete={() => handleDelete(index)}
-						/>
-					))
-				)}
+
+				{/* Content */}
+				<div className="space-y-0">
+					{items.length === 0 ? (
+						<p className="text-muted-foreground text-center py-8">
+							DDが登録されていません。
+						</p>
+					) : (
+						items.map((item, index) => (
+							<div key={item.id}>
+								{index > 0 && (
+									<div className="border-t-2 border-slate-300 my-8" />
+								)}
+								<DesignDocumentCard
+									item={item}
+									onUpdate={(patch) => handleUpdate(index, patch)}
+									onDelete={() => handleDelete(index)}
+								/>
+							</div>
+						))
+					)}
+				</div>
 			</CardContent>
 		</Card>
 	);

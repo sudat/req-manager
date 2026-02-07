@@ -3,6 +3,7 @@ import {
   createEmptyStructuredDesignDocumentSpec,
   ddTypeToStructuredIoType,
   structuredDesignDocumentSpecSchema,
+  type StructuredDesignDocumentIoType,
   type StructuredDesignDocumentSpec,
 } from "@/lib/domain/schemas/design-document-structured";
 
@@ -22,6 +23,11 @@ const summarizeZodIssuePath = (path: readonly PropertyKey[]) =>
         .filter((part): part is string | number => typeof part === "string" || typeof part === "number")
         .map((part) => String(part))
         .join(".");
+
+const isCoreIoType = (
+  ioType: StructuredDesignDocumentIoType
+): ioType is "api" | "screen" | "batch" | "job" =>
+  ioType === "api" || ioType === "screen" || ioType === "batch" || ioType === "job";
 
 export function parseStructuredDetails(
   details: Record<string, unknown> | null | undefined
@@ -91,4 +97,27 @@ export function composeStructuredDetails(params: {
 export function createStructuredSpecFromDdType(ddType: DdType): StructuredDesignDocumentSpec {
   const ioType = ddTypeToStructuredIoType(ddType);
   return createEmptyStructuredDesignDocumentSpec(ioType);
+}
+
+export function syncStructuredSpecToDdType(
+  spec: StructuredDesignDocumentSpec,
+  ddType: DdType
+): StructuredDesignDocumentSpec {
+  const nextIoType = ddTypeToStructuredIoType(ddType);
+  const synced: StructuredDesignDocumentSpec = {
+    ...spec,
+    ioType: nextIoType,
+    typeDetail: undefined,
+  };
+
+  if (isCoreIoType(nextIoType)) {
+    const empty = createEmptyStructuredDesignDocumentSpec(nextIoType);
+    if (!synced.inputSchema) synced.inputSchema = empty.inputSchema;
+    if (!synced.outputSchema) synced.outputSchema = empty.outputSchema;
+    return synced;
+  }
+
+  synced.inputSchema = undefined;
+  synced.outputSchema = undefined;
+  return synced;
 }

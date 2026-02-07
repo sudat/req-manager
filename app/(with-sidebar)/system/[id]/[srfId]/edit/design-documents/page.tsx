@@ -61,7 +61,7 @@ export default function SystemFunctionEditDesignDocumentsPage({
 			</div>
 
 			{/* Form */}
-			<div className="max-w-4xl">
+			<div className="max-w-[1400px]">
 				<DesignDocumentList
 					srfId={srfId}
 					items={designDocuments}

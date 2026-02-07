@@ -5,8 +5,6 @@ import { useRouter } from "next/navigation";
 import { MobileHeader } from "@/components/layout/mobile-header";
 import { useProject } from "@/components/project/project-context";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ViewHeader } from "@/components/product-requirement/view-header";
 import { TargetUsersView } from "@/components/product-requirement/target-users-view";
@@ -17,35 +15,42 @@ import { DesignSystemView } from "@/components/product-requirement/design-system
 import { TechStackView } from "@/components/product-requirement/tech-stack-view";
 import type { ProductRequirement } from "@/lib/domain";
 import { getProductRequirementByProjectId } from "@/lib/data/product-requirements";
+import { listKeyLabelMappings } from "@/lib/data/key-label-mappings";
 
 export default function ProductRequirementPage() {
 	const router = useRouter();
 	const { currentProject } = useProject();
 	const [productRequirement, setProductRequirement] = useState<ProductRequirement | null>(null);
+	const [keyLabelMap, setKeyLabelMap] = useState<Record<string, string>>({});
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
-		if (!currentProject?.id) {
-			setProductRequirement(null);
-			setLoading(false);
-			return;
-		}
-
 		let mounted = true;
 		const fetchData = async () => {
+			if (!currentProject?.id) {
+				if (!mounted) return;
+				setProductRequirement(null);
+				setKeyLabelMap({});
+				setLoading(false);
+				return;
+			}
+
 			setLoading(true);
 
-			const { data, error: fetchError } = await getProductRequirementByProjectId(
-				currentProject.id
-			);
+			const [prResult, labelResult] = await Promise.all([
+				getProductRequirementByProjectId(currentProject.id),
+				listKeyLabelMappings(currentProject.id, "product_requirement"),
+			]);
 
 			if (!mounted) return;
 
-			if (fetchError) {
-				console.error(fetchError);
+			if (prResult.error || labelResult.error) {
+				console.error(prResult.error ?? labelResult.error);
 				setProductRequirement(null);
+				setKeyLabelMap({});
 			} else {
-				setProductRequirement(data);
+				setProductRequirement(prResult.data);
+				setKeyLabelMap(labelResult.data ?? {});
 			}
 
 			setLoading(false);
@@ -133,6 +138,7 @@ export default function ProductRequirementPage() {
 											techStackProfile={productRequirement.techStackProfile}
 											codingConventions={productRequirement.codingConventions}
 											forbiddenChoices={productRequirement.forbiddenChoices}
+											keyLabelMap={keyLabelMap}
 										/>
 									</TabsContent>
 								</Tabs>

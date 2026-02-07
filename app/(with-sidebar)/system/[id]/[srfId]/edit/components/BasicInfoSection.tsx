@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
 	Select,
 	SelectContent,
@@ -115,9 +116,17 @@ export function BasicInfoSection({
 				</div>
 
 				<div className="mt-4 space-y-2">
-					<Label>
-						機能概要<span className="text-rose-500">*</span>
-					</Label>
+					<div className="flex items-center justify-between">
+						<Label>
+							機能概要<span className="text-rose-500">*</span>
+						</Label>
+						<Badge
+							variant="outline"
+							className="text-[10px] px-1.5 py-0 h-5 border-blue-200 bg-blue-50 text-blue-700"
+						>
+							Markdown
+						</Badge>
+					</div>
 					<Textarea
 						value={summary}
 						onChange={(e) => onSummaryChange(e.target.value)}
@@ -127,14 +136,21 @@ export function BasicInfoSection({
 				</div>
 
 				<div className="mt-4 space-y-2">
-					<Label>設計方針</Label>
+					<div className="flex items-center justify-between">
+						<Label>設計方針</Label>
+						<Badge
+							variant="outline"
+							className="text-[10px] px-1.5 py-0 h-5 border-blue-200 bg-blue-50 text-blue-700"
+						>
+							Markdown
+						</Badge>
+					</div>
 					<Textarea
 						value={designPolicy}
 						onChange={(e) => onDesignPolicyChange(e.target.value)}
 						placeholder="複数のDDにまたがる設計方針を入力"
 						className="min-h-[120px]"
 					/>
-					<p className="text-xs text-slate-500">Markdownで記載できます</p>
 				</div>
 			</CardContent>
 		</Card>

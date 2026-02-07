@@ -5,8 +5,6 @@ import { useRouter } from "next/navigation";
 import { MobileHeader } from "@/components/layout/mobile-header";
 import { useProject } from "@/components/project/project-context";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useYamlValidation } from "@/hooks/use-yaml-validation";
 import { EditHeader } from "@/components/product-requirement/edit-header";
@@ -22,6 +20,7 @@ import {
 	getProductRequirementByProjectId,
 	updateProductRequirement,
 } from "@/lib/data/product-requirements";
+import { listKeyLabelMappings, upsertKeyLabelMappings } from "@/lib/data/key-label-mappings";
 
 export default function ProductRequirementEditPage() {
 	const router = useRouter();
@@ -31,6 +30,7 @@ export default function ProductRequirementEditPage() {
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+	const [keyLabelMappings, setKeyLabelMappings] = useState<Record<string, string>>({});
 
 	const [targetUsers, setTargetUsers] = useState("");
 	const [experienceGoals, setExperienceGoals] = useState("");
@@ -49,6 +49,13 @@ export default function ProductRequirementEditPage() {
 	const codingDiag = useYamlValidation(codingConventionsText);
 	const forbiddenDiag = useYamlValidation(forbiddenChoicesText);
 
+	const normalizeKey = (value: string): string =>
+		value
+			.trim()
+			.replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+			.replace(/[-\s]+/g, "_")
+			.toLowerCase();
+
 	const hasChanges = useMemo(() => {
 		if (!productRequirement) return true;
 		return (
@@ -63,53 +70,45 @@ export default function ProductRequirementEditPage() {
 		);
 	}, [productRequirement, targetUsers, experienceGoals, qualityGoals, designSystem, uxGuidelines, techStackProfileText, codingConventionsText, forbiddenChoicesText]);
 
-	const canSave =
-		!!currentProject?.id &&
-		targetUsers.trim().length > 0 &&
-		experienceGoals.trim().length > 0 &&
-		qualityGoals.trim().length > 0 &&
-		designSystem.trim().length > 0 &&
-		uxGuidelines.trim().length > 0 &&
-		techStackDiag.ok &&
-		codingDiag.ok &&
-		forbiddenDiag.ok &&
-		!saving;
-
 	useEffect(() => {
-		if (!currentProject?.id) {
-			setProductRequirement(null);
-			setLoading(false);
-			return;
-		}
-
 		let mounted = true;
 		const fetchData = async () => {
-			setLoading(true);
-			setError(null);
-
-			const { data, error: fetchError } = await getProductRequirementByProjectId(
-				currentProject.id
-			);
-
-			if (!mounted) return;
-
-			if (fetchError) {
-				setError(fetchError);
+			if (!currentProject?.id) {
+				if (!mounted) return;
 				setProductRequirement(null);
 				setLoading(false);
 				return;
 			}
 
-			if (data) {
-				setProductRequirement(data);
-				setTargetUsers(data.targetUsers);
-				setExperienceGoals(data.experienceGoals);
-				setQualityGoals(data.qualityGoals);
-				setDesignSystem(data.designSystem);
-				setUxGuidelines(data.uxGuidelines);
-				setTechStackProfileText(data.techStackProfile ?? "");
-				setCodingConventionsText(data.codingConventions ?? "");
-				setForbiddenChoicesText(data.forbiddenChoices ?? "");
+			setLoading(true);
+			setError(null);
+
+			const [prResult, labelResult] = await Promise.all([
+				getProductRequirementByProjectId(currentProject.id),
+				listKeyLabelMappings(currentProject.id, "product_requirement"),
+			]);
+
+			if (!mounted) return;
+
+			if (prResult.error || labelResult.error) {
+				setError(prResult.error ?? labelResult.error ?? "読み込みに失敗しました");
+				setProductRequirement(null);
+				setLoading(false);
+				return;
+			}
+
+			setKeyLabelMappings(labelResult.data ?? {});
+
+			if (prResult.data) {
+				setProductRequirement(prResult.data);
+				setTargetUsers(prResult.data.targetUsers);
+				setExperienceGoals(prResult.data.experienceGoals);
+				setQualityGoals(prResult.data.qualityGoals);
+				setDesignSystem(prResult.data.designSystem);
+				setUxGuidelines(prResult.data.uxGuidelines);
+				setTechStackProfileText(prResult.data.techStackProfile ?? "");
+				setCodingConventionsText(prResult.data.codingConventions ?? "");
+				setForbiddenChoicesText(prResult.data.forbiddenChoices ?? "");
 			} else {
 				setProductRequirement(null);
 				setTargetUsers("");
@@ -190,6 +189,17 @@ export default function ProductRequirementEditPage() {
 			return;
 		}
 
+		const mappingSaveResult = await upsertKeyLabelMappings({
+			projectId: currentProject.id,
+			context: "product_requirement",
+			mappings: keyLabelMappings,
+		});
+		if (mappingSaveResult.error) {
+			setError(`保存は完了しましたが、論理名マッピング保存に失敗しました: ${mappingSaveResult.error}`);
+			setSaving(false);
+			return;
+		}
+
 		setProductRequirement(result.data);
 		setTechStackProfileText(result.data.techStackProfile ?? "");
 		setCodingConventionsText(result.data.codingConventions ?? "");
@@ -207,6 +217,16 @@ export default function ProductRequirementEditPage() {
 			}
 		}
 		router.push("/product-requirement");
+	};
+
+	const handleKeyLabelAdd = (key: string, logicalLabel: string) => {
+		const normalizedKey = normalizeKey(key);
+		const trimmedLabel = logicalLabel.trim();
+		if (!normalizedKey || !trimmedLabel) return;
+		setKeyLabelMappings((prev) => ({
+			...prev,
+			[normalizedKey]: trimmedLabel,
+		}));
 	};
 
 	return (
@@ -305,13 +325,11 @@ export default function ProductRequirementEditPage() {
 											techStackProfileText={techStackProfileText}
 											codingConventionsText={codingConventionsText}
 											forbiddenChoicesText={forbiddenChoicesText}
-											techStackDiag={techStackDiag}
-											codingDiag={codingDiag}
-											forbiddenDiag={forbiddenDiag}
 											onTechStackProfileChange={setTechStackProfileText}
 											onCodingConventionsChange={setCodingConventionsText}
 											onForbiddenChoicesChange={setForbiddenChoicesText}
 											onClearFieldError={clearFieldError}
+											onKeyLabelAdd={handleKeyLabelAdd}
 										/>
 									</TabsContent>
 								</Tabs>

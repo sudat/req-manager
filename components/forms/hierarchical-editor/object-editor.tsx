@@ -25,16 +25,18 @@ interface ObjectEditorProps {
 	onChange: (value: HierarchicalValue) => void;
 	path: HierarchicalPath;
 	className?: string;
+	onKeyAdd?: (key: string, logicalLabel: string) => void;
 }
 
 interface AddKeyDialogProps {
-	onAdd: (key: string, value: HierarchicalValue) => void;
+	onAdd: (key: string, value: HierarchicalValue, logicalLabel: string) => void;
 	existingKeys: string[];
 	onClose: () => void;
 }
 
 function AddKeyDialog({ onAdd, existingKeys, onClose }: AddKeyDialogProps) {
 	const [newKey, setNewKey] = useState("");
+	const [logicalLabel, setLogicalLabel] = useState("");
 	const [selectedType, setSelectedType] = useState<HierarchicalValue["type"]>("string");
 
 	const handleAdd = () => {
@@ -64,8 +66,9 @@ function AddKeyDialog({ onAdd, existingKeys, onClose }: AddKeyDialogProps) {
 				break;
 		}
 
-		onAdd(trimmedKey, defaultValue);
+		onAdd(trimmedKey, defaultValue, logicalLabel.trim());
 		setNewKey("");
+		setLogicalLabel("");
 		onClose();
 	};
 
@@ -75,7 +78,7 @@ function AddKeyDialog({ onAdd, existingKeys, onClose }: AddKeyDialogProps) {
 				value={newKey}
 				onChange={(e) => setNewKey(e.target.value)}
 				placeholder="新しいキー名"
-				className="h-8 text-[13px] flex-1"
+				className="h-8 text-[13px] flex-1 min-w-[160px]"
 				onKeyDown={(e) => {
 					if (e.key === "Enter") {
 						handleAdd();
@@ -85,10 +88,23 @@ function AddKeyDialog({ onAdd, existingKeys, onClose }: AddKeyDialogProps) {
 				}}
 				autoFocus
 			/>
+			<Input
+				value={logicalLabel}
+				onChange={(e) => setLogicalLabel(e.target.value)}
+				placeholder="論理名（表示名）"
+				className="h-8 text-[13px] flex-1 min-w-[160px]"
+				onKeyDown={(e) => {
+					if (e.key === "Enter") {
+						handleAdd();
+					} else if (e.key === "Escape") {
+						onClose();
+					}
+				}}
+			/>
 			<select
 				value={selectedType}
 				onChange={(e) => setSelectedType(e.target.value as HierarchicalValue["type"])}
-				className="h-8 px-2 text-[13px] border rounded-md bg-background"
+				className="h-8 px-2 text-[13px] border rounded-md bg-background min-w-[110px]"
 			>
 				<option value="string">Text</option>
 				<option value="number">Number</option>
@@ -108,7 +124,7 @@ function AddKeyDialog({ onAdd, existingKeys, onClose }: AddKeyDialogProps) {
 	);
 }
 
-export function ObjectEditor({ value, onChange, path, className }: ObjectEditorProps) {
+export function ObjectEditor({ value, onChange, path, className, onKeyAdd }: ObjectEditorProps) {
 	const [isOpen, setIsOpen] = useState(true);
 	const [isAdding, setIsAdding] = useState(false);
 	const entries = Object.entries(value.value);
@@ -119,13 +135,21 @@ export function ObjectEditor({ value, onChange, path, className }: ObjectEditorP
 	};
 
 	const handleKeyRemove = (key: string) => {
-		const { [key]: removed, ...rest } = value.value;
-		onChange({ type: "object", value: rest });
+		const nextValue = { ...value.value };
+		delete nextValue[key];
+		onChange({ type: "object", value: nextValue });
 	};
 
-	const handleKeyAdd = (newKey: string, newValue: HierarchicalValue) => {
+	const handleKeyAdd = (
+		newKey: string,
+		newValue: HierarchicalValue,
+		logicalLabel: string
+	) => {
 		const newObj = { ...value.value, [newKey]: newValue };
 		onChange({ type: "object", value: newObj });
+		if (logicalLabel) {
+			onKeyAdd?.(newKey, logicalLabel);
+		}
 	};
 
 	return (
@@ -195,6 +219,7 @@ export function ObjectEditor({ value, onChange, path, className }: ObjectEditorP
 										value={childValue}
 										onChange={(newValue) => handleKeyUpdate(key, newValue)}
 										parentPath={[...path, key]}
+										onKeyAdd={onKeyAdd}
 									/>
 								</div>
 							</div>

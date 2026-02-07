@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import type { YamlValidationResult } from "@/lib/utils/yaml";
 
 type YamlTextareaFieldProps = {
@@ -29,11 +30,19 @@ export function YamlTextareaField({
 	const hasError = diag ? !diag.ok : false;
 
 	return (
-		<div className="space-y-1.5">
-			<Label className="text-[12px] font-medium text-slate-500">
-				{label}
-				{required && <span className="text-rose-500">*</span>}
-			</Label>
+		<div className="space-y-1.5 relative">
+			<div className="flex items-center justify-between">
+				<Label className="text-[12px] font-medium text-slate-500">
+					{label}
+					{required && <span className="text-rose-500">*</span>}
+				</Label>
+				<Badge
+					variant="outline"
+					className="text-[10px] px-1.5 py-0 h-5 border-amber-200 bg-amber-50 text-amber-700"
+				>
+					YAML
+				</Badge>
+			</div>
 			<Textarea
 				value={value}
 				onChange={(e) => onChange(e.target.value)}

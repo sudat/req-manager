@@ -3,7 +3,10 @@ import { useRouter } from "next/navigation";
 import { listDesignDocumentsBySrfId } from "@/lib/data/design-documents";
 import { saveDesignDocuments } from "@/lib/utils/system-functions/save-system-function";
 import type { DesignDocumentDraft } from "@/components/forms/design-document-list";
-import { parseStructuredDetails } from "@/lib/utils/design-documents/structured-compat";
+import {
+	parseStructuredDetails,
+	syncStructuredSpecToDdType,
+} from "@/lib/utils/design-documents/structured-compat";
 import { toYamlText } from "@/lib/utils/yaml";
 
 export function useDesignDocumentsForm(srfId: string, systemDomainId: string, projectId: string) {
@@ -47,7 +50,9 @@ export function useDesignDocumentsForm(srfId: string, systemDomainId: string, pr
 					designPolicy: dd.designPolicy,
 					entryPoints: dd.entryPoints ?? [],
 					detailsYaml: toYamlText(legacyDetails),
-					structuredSpec,
+					structuredSpec: structuredSpec
+						? syncStructuredSpecToDdType(structuredSpec, dd.type || "screen")
+						: undefined,
 					structuredSpecParseError: parseError,
 				};
 			});

@@ -59,8 +59,8 @@ export function FieldEditor({ label, fields, onChange }: FieldEditorProps) {
       <div className="space-y-4">
         {fields.map((field, index) => (
           <div key={index} className="rounded-md border p-3 space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="flex-1 space-y-1">
+            <div className="grid grid-cols-[1fr_1fr_3fr_auto_auto] gap-3 items-end">
+              <div className="space-y-1">
                 <Label className="text-xs">名前</Label>
                 <Input
                   value={field.name}
@@ -68,7 +68,7 @@ export function FieldEditor({ label, fields, onChange }: FieldEditorProps) {
                   placeholder="例: customer_id"
                 />
               </div>
-              <div className="w-40 space-y-1">
+              <div className="space-y-1">
                 <Label className="text-xs">型</Label>
                 <Select
                   value={field.type}
@@ -88,7 +88,15 @@ export function FieldEditor({ label, fields, onChange }: FieldEditorProps) {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-center gap-2 pt-5">
+              <div className="space-y-1">
+                <Label className="text-xs">説明</Label>
+                <Input
+                  value={field.description ?? ""}
+                  onChange={(e) => handleFieldChange(index, { description: e.target.value })}
+                  placeholder="例: 顧客ID"
+                />
+              </div>
+              <div className="flex items-center gap-2">
                 <Switch
                   checked={field.required ?? true}
                   onCheckedChange={(checked) =>
@@ -107,18 +115,9 @@ export function FieldEditor({ label, fields, onChange }: FieldEditorProps) {
               </Button>
             </div>
 
-            <div className="space-y-1">
-              <Label className="text-xs">説明</Label>
-              <Input
-                value={field.description ?? ""}
-                onChange={(e) => handleFieldChange(index, { description: e.target.value })}
-                placeholder="例: 顧客ID"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-4 gap-3">
               <div className="space-y-1">
-                <Label className="text-xs">最小値 / 最小長</Label>
+                <Label className="text-xs">最小値</Label>
                 <Input
                   type="number"
                   value={field.constraints?.min ?? ""}
@@ -130,7 +129,7 @@ export function FieldEditor({ label, fields, onChange }: FieldEditorProps) {
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">最大値 / 最大長</Label>
+                <Label className="text-xs">最大値</Label>
                 <Input
                   type="number"
                   value={field.constraints?.max ?? ""}
@@ -146,7 +145,7 @@ export function FieldEditor({ label, fields, onChange }: FieldEditorProps) {
                 <Input
                   value={field.constraints?.pattern ?? ""}
                   onChange={(e) => handleConstraintChange(index, { pattern: e.target.value })}
-                  placeholder="例: ^C[0-9]{6}$"
+                  placeholder="^C[0-9]{6}$"
                 />
               </div>
               <div className="space-y-1">
@@ -154,7 +153,7 @@ export function FieldEditor({ label, fields, onChange }: FieldEditorProps) {
                 <Input
                   value={field.constraints?.format ?? ""}
                   onChange={(e) => handleConstraintChange(index, { format: e.target.value as any })}
-                  placeholder="email / uuid / date など"
+                  placeholder="email/uuid/date"
                 />
               </div>
             </div>
@@ -179,10 +178,12 @@ export function FieldEditor({ label, fields, onChange }: FieldEditorProps) {
           </div>
         ))}
       </div>
-      <Button variant="outline" onClick={addField}>
-        <Plus className="h-4 w-4 mr-2" />
-        フィールド追加
-      </Button>
+      <div className="flex justify-end">
+        <Button variant="default" size="sm" className="h-7 gap-2 text-[12px]" onClick={addField}>
+          <Plus className="h-4 w-4" />
+          追加
+        </Button>
+      </div>
     </div>
   );
 }

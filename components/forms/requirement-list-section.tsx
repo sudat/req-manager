@@ -49,7 +49,7 @@ export function RequirementListSection({
 						</Badge>
 					</div>
 					<Button
-						variant="outline"
+						variant="default"
 						size="sm"
 						className="h-7 gap-2 text-[12px]"
 						onClick={onAdd}
@@ -63,20 +63,26 @@ export function RequirementListSection({
 				{requirements.length === 0 ? (
 					<div className="text-[14px] text-slate-500">まだ登録されていません。</div>
 				) : (
-					requirements.map((req) => (
-						<RequirementCard
-							key={req.id}
-							requirement={req}
-							conceptMap={conceptMap}
-							systemFunctionMap={systemFunctionMap}
-							systemDomainMap={systemDomainMap}
-							businessRequirementMap={businessRequirementMap}
-							systemRequirementMap={systemRequirementMap}
-							onUpdate={(patch) => onUpdate(req.id, patch)}
-							onRemove={() => onRemove(req.id)}
-							onOpenDialog={(type) => onOpenDialog(type, req.id)}
-						/>
-					))
+					<div className="space-y-0">
+						{requirements.map((req, index) => (
+							<div key={req.id}>
+								{index > 0 && (
+									<div className="border-t-2 border-slate-300 my-8" />
+								)}
+								<RequirementCard
+									requirement={req}
+									conceptMap={conceptMap}
+									systemFunctionMap={systemFunctionMap}
+									systemDomainMap={systemDomainMap}
+									businessRequirementMap={businessRequirementMap}
+									systemRequirementMap={systemRequirementMap}
+									onUpdate={(patch) => onUpdate(req.id, patch)}
+									onRemove={() => onRemove(req.id)}
+									onOpenDialog={(type) => onOpenDialog(type, req.id)}
+								/>
+							</div>
+						))}
+					</div>
 				)}
 			</CardContent>
 		</Card>

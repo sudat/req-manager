@@ -22,6 +22,132 @@ import {
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 
+const DD_DETAILS_KEY_LABELS: Record<string, string> = {
+	version: "バージョン",
+	ioType: "I/O種別",
+	typeDetail: "種別詳細",
+	inputSchema: "入力スキーマ",
+	outputSchema: "出力スキーマ",
+	inputFields: "入力項目",
+	outputFields: "出力項目",
+	sideEffects: "副作用",
+	invariants: "不変条件",
+	exceptions: "例外",
+	nonFunctional: "非機能要件",
+	boundaries: "境界",
+	name: "名称",
+	description: "説明",
+	type: "種別",
+	required: "必須",
+	constraints: "制約",
+	min: "最小値",
+	max: "最大値",
+	pattern: "パターン",
+	default: "デフォルト",
+	unique: "一意",
+	errorMessage: "エラーメッセージ",
+	method: "メソッド",
+	path: "パス",
+	route: "ルート",
+	trigger: "トリガー",
+	schedule: "スケジュール",
+	source: "入力ソース",
+	event: "イベント",
+	protocol: "プロトコル",
+	endpoint: "エンドポイント",
+	entity: "エンティティ",
+	table: "テーブル",
+	format: "形式",
+	outputPath: "出力先",
+	query: "クエリ",
+	body: "ボディ",
+	elements: "要素",
+	element: "要素",
+	parameters: "パラメータ",
+	payload: "ペイロード",
+	success: "成功時",
+	error: "エラー時",
+	status: "ステータス",
+	fields: "フィールド",
+	transition: "遷移",
+	messages: "メッセージ",
+	summary: "サマリー",
+	processedCount: "処理件数",
+	successCount: "成功件数",
+	errorCount: "失敗件数",
+	executionTimeMs: "実行時間(ms)",
+	nextBatch: "次バッチ",
+	result: "結果",
+	nextEvent: "次イベント",
+	dbOperations: "DB操作",
+	operation: "操作",
+	condition: "条件",
+	affectedColumns: "影響カラム",
+	externalApiCalls: "外部API呼び出し",
+	retryPolicy: "リトライポリシー",
+	maxRetries: "最大リトライ回数",
+	backoffMs: "バックオフ(ms)",
+	events: "イベント発行",
+	eventType: "イベント種別",
+	destination: "送信先",
+	delayMs: "遅延(ms)",
+	fileOutputs: "ファイル出力",
+	encoding: "文字コード",
+	append: "追記",
+	logs: "ログ",
+	level: "ログレベル",
+	message: "メッセージ",
+	structuredData: "構造化データ",
+	httpStatus: "HTTPステータス",
+	errorCode: "エラーコード",
+	userNotification: "ユーザー通知",
+	logging: "ロギング",
+	recovery: "復旧方式",
+	performance: "性能",
+	responseTime: "応答時間",
+	p95: "P95",
+	p99: "P99",
+	throughput: "スループット",
+	rps: "RPS",
+	concurrency: "同時実行",
+	maxUsers: "最大ユーザー数",
+	availability: "可用性",
+	uptime: "稼働率",
+	monthlyDowntime: "月間停止時間",
+	rto: "RTO",
+	rpo: "RPO",
+	security: "セキュリティ",
+	auth: "認証",
+	sessionTimeout: "セッションタイムアウト",
+	encryption: "暗号化",
+	inTransit: "通信時",
+	atRest: "保存時",
+	compliance: "コンプライアンス",
+	observability: "可観測性",
+	metrics: "メトリクス",
+	collection: "収集方式",
+	scrapeInterval: "収集間隔",
+	includeFields: "対象項目",
+	tracing: "トレーシング",
+	enabled: "有効",
+	samplingRate: "サンプリング率",
+	alerting: "アラート",
+	channels: "通知チャネル",
+	responseTimeMs: "応答時間(ms)",
+	checkPoint: "チェックポイント",
+	keySource: "キーソース",
+	deduplicationRule: "重複排除ルール",
+	onDuplicate: "重複時処理",
+	begin: "開始",
+	commit: "コミット",
+	rollback: "ロールバック",
+	transaction: "トランザクション",
+	authorization: "認可",
+	idempotency: "冪等",
+	allowPaths: "許可パス",
+	denyPaths: "禁止パス",
+};
+
 interface DesignDocumentSectionProps {
 	items: DesignDocument[];
 	loading: boolean;
@@ -124,14 +250,14 @@ function DesignDocumentItem({ item }: { item: DesignDocument }): ReactNode {
 						{entryPoints.length === 0 ? (
 							<div className="text-[12px] text-slate-400">未設定</div>
 						) : (
-							<div className="space-y-2">
+							<div className="space-y-3">
 								{entryPoints.map((entry, index) => (
 									<div
 										key={`${entry.path}-${index}`}
 										className="flex items-start gap-2 text-[13px]"
 									>
 										<FileCode2 className="h-4 w-4 text-slate-500 mt-0.5 flex-shrink-0" />
-										<div className="flex-1 space-y-0.5">
+										<div className="flex-1 space-y-3">
 											<code className="font-mono text-slate-700 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
 												{entry.path}
 											</code>
@@ -180,7 +306,10 @@ function DesignDocumentItem({ item }: { item: DesignDocument }): ReactNode {
 						<SectionLabel>details</SectionLabel>
 						{hierarchicalValue ? (
 							<div className="p-3 bg-slate-50 rounded-md border border-slate-200">
-								<HierarchicalViewer value={hierarchicalValue} />
+								<HierarchicalViewer
+									value={hierarchicalValue}
+									keyLabelMap={DD_DETAILS_KEY_LABELS}
+								/>
 							</div>
 						) : (
 							<div className="p-4 bg-slate-50 rounded-md border border-slate-200">

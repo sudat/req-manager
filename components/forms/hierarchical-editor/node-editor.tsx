@@ -18,6 +18,7 @@ interface NodeEditorProps {
 	onChange: (value: HierarchicalValue) => void;
 	path: HierarchicalPath;
 	className?: string;
+	onKeyAdd?: (key: string, logicalLabel: string) => void;
 }
 
 /**
@@ -26,7 +27,7 @@ interface NodeEditorProps {
  * HierarchicalValue のタイプに応じて適切なエディタを表示し、
  * 階層構造を再帰的にレンダリングする
  */
-export function NodeEditor({ value, onChange, path, className }: NodeEditorProps) {
+export function NodeEditor({ value, onChange, path, className, onKeyAdd }: NodeEditorProps) {
 	// プリミティブ型（string, number, boolean, null）
 	if (
 		value.type === "string" ||
@@ -39,7 +40,15 @@ export function NodeEditor({ value, onChange, path, className }: NodeEditorProps
 
 	// オブジェクト型
 	if (value.type === "object") {
-		return <ObjectEditor value={value} onChange={onChange} path={path} className={className} />;
+		return (
+			<ObjectEditor
+				value={value}
+				onChange={onChange}
+				path={path}
+				className={className}
+				onKeyAdd={onKeyAdd}
+			/>
+		);
 	}
 
 	// 配列型
@@ -66,6 +75,7 @@ interface ChildNodeEditorProps {
 	onChange: (value: HierarchicalValue) => void;
 	parentPath: HierarchicalPath;
 	depth?: number;
+	onKeyAdd?: (key: string, logicalLabel: string) => void;
 }
 
 export function ChildNodeEditor({
@@ -73,6 +83,7 @@ export function ChildNodeEditor({
 	onChange,
 	parentPath,
 	depth = 0,
+	onKeyAdd,
 }: ChildNodeEditorProps) {
 	const childPath = [...parentPath];
 	const maxDepth = 10; // 最大深さを制限して無限再帰を防止
@@ -91,6 +102,7 @@ export function ChildNodeEditor({
 			onChange={onChange}
 			path={childPath}
 			className=""
+			onKeyAdd={onKeyAdd}
 		/>
 	);
 }

@@ -46,9 +46,8 @@ export function StructuredAcceptanceCriteriaInput({
 	category,
 	idPrefix = "AC-",
 }: StructuredAcceptanceCriteriaInputProps) {
-	const [expandedIds, setExpandedIds] = useState<string[]>(
-		values.filter(hasDetails).map((item) => item.id)
-	);
+	// 初期状態は全てクローズ
+	const [expandedIds, setExpandedIds] = useState<string[]>([]);
 	const template = templateByCategory(category);
 
 	const handleAdd = () => {
@@ -89,16 +88,16 @@ export function StructuredAcceptanceCriteriaInput({
 
 	return (
 		<div className={cn("space-y-2", className)}>
-			<Label className="text-[12px] font-medium text-slate-500">
-				受入基準（GWT）
+			<Label className="text-[12px] font-medium text-slate-700">
+				受入基準(GWT)
 			</Label>
-			<div className="space-y-2">
+			<div className="space-y-3 bg-slate-50/30 rounded-md p-3">
 				{values.map((item, index) => {
 					const isExpanded = expandedIds.includes(item.id);
 					return (
 						<div
 							key={item.id}
-							className="rounded-md border border-slate-200 bg-white p-3 space-y-2"
+							className="border-t border-slate-200 pt-3 first:border-0 first:pt-0 space-y-2"
 						>
 							<div className="flex items-center gap-2">
 								<span className="text-[11px] font-mono text-slate-400">
@@ -158,28 +157,25 @@ export function StructuredAcceptanceCriteriaInput({
 							{isExpanded && (
 								<div className="grid gap-3 md:grid-cols-1">
 									<YamlTextareaField
-										label="Given"
+										label="Given（前提条件）"
 										value={item.givenText ?? ""}
 										onChange={(value) => updateItem(index, { givenText: value })}
 										minHeight="min-h-[110px]"
 										placeholder={template.givenText}
-										helperText="YAMLで前提条件を記述します。"
 									/>
 									<YamlTextareaField
-										label="When"
+										label="When（操作）"
 										value={item.whenText ?? ""}
 										onChange={(value) => updateItem(index, { whenText: value })}
 										minHeight="min-h-[100px]"
 										placeholder={template.whenText}
-										helperText="YAMLで操作・トリガーを記述します。"
 									/>
 									<YamlTextareaField
-										label="Then"
+										label="Then（期待結果）"
 										value={item.thenText ?? ""}
 										onChange={(value) => updateItem(index, { thenText: value })}
 										minHeight="min-h-[110px]"
 										placeholder={template.thenText}
-										helperText="YAMLで期待結果を記述します。"
 									/>
 									<div className="space-y-1">
 										<Label className="text-[11px] text-slate-500">
@@ -204,7 +200,7 @@ export function StructuredAcceptanceCriteriaInput({
 			</div>
 			<Button
 				type="button"
-				variant="outline"
+				variant="default"
 				size="sm"
 				className="w-full gap-2 text-[12px]"
 				onClick={handleAdd}

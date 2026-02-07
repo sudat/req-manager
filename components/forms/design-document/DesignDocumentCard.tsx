@@ -1,9 +1,9 @@
 "use client";
 
-import { type ReactNode } from "react";
-import { AlertTriangle, Plus, Trash2 } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { AlertTriangle, ChevronDown, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { cn } from "@/lib/utils";
 import { HierarchicalEditor } from "@/components/forms/hierarchical-editor";
 import { EntryPointsInlineEditor } from "@/components/forms/entry-points/EntryPointsInlineEditor";
 import { FieldEditor } from "@/components/forms/FieldEditor";
@@ -25,9 +26,9 @@ import { DD_TYPE_LABELS } from "@/lib/domain/enums";
 import {
   createEmptyStructuredDesignDocumentSpec,
   ddTypeToStructuredIoType,
-  type StructuredDesignDocumentIoType,
   type StructuredDesignDocumentSpec,
 } from "@/lib/domain/schemas/design-document-structured";
+import { syncStructuredSpecToDdType } from "@/lib/utils/design-documents/structured-compat";
 
 type DesignDocumentCardProps = {
   item: DesignDocumentDraft;
@@ -43,16 +44,6 @@ const DD_TYPES: { value: DdType; label: string }[] = [
   { value: "model", label: DD_TYPE_LABELS.model },
   { value: "report", label: DD_TYPE_LABELS.report },
   { value: "job", label: DD_TYPE_LABELS.job },
-];
-
-const IO_TYPE_ITEMS: { value: StructuredDesignDocumentIoType; label: string }[] = [
-  { value: "api", label: "API" },
-  { value: "screen", label: "画面" },
-  { value: "batch", label: "バッチ" },
-  { value: "job", label: "ジョブ" },
-  { value: "external_if", label: "外部I/F" },
-  { value: "model", label: "モデル" },
-  { value: "report", label: "レポート" },
 ];
 
 const EXCEPTION_TYPES = [
@@ -91,39 +82,13 @@ const fromLines = (value: string): string[] =>
     .map((line) => line.trim())
     .filter(Boolean);
 
-const isCoreIoType = (
-  ioType: StructuredDesignDocumentIoType
-): ioType is "api" | "screen" | "batch" | "job" =>
-  ioType === "api" || ioType === "screen" || ioType === "batch" || ioType === "job";
-
-const syncSpecToDdType = (
-  spec: StructuredDesignDocumentSpec,
-  ddType: DdType
-): StructuredDesignDocumentSpec => {
-  const nextIoType = ddTypeToStructuredIoType(ddType);
-  const synced: StructuredDesignDocumentSpec = {
-    ...spec,
-    ioType: nextIoType,
-    typeDetail: undefined,
-  };
-
-  if (isCoreIoType(nextIoType)) {
-    const empty = createEmptyStructuredDesignDocumentSpec(nextIoType);
-    if (!synced.inputSchema) synced.inputSchema = empty.inputSchema;
-    if (!synced.outputSchema) synced.outputSchema = empty.outputSchema;
-    return synced;
-  }
-
-  synced.inputSchema = undefined;
-  synced.outputSchema = undefined;
-  return synced;
-};
-
 export function DesignDocumentCard({
   item,
   onUpdate,
   onDelete,
 }: DesignDocumentCardProps): ReactNode {
+  const [isOpen, setIsOpen] = useState(false);
+
   const updateStructuredSpec = (
     updater: (current: StructuredDesignDocumentSpec) => StructuredDesignDocumentSpec
   ) => {
@@ -147,37 +112,53 @@ export function DesignDocumentCard({
 
   const handleTypeChange = (nextType: DdType) => {
     if (!item.structuredSpec) {
-      onUpdate({ type: nextType });
+      onUpdate({
+        type: nextType,
+        structuredSpec: createEmptyStructuredDesignDocumentSpec(ddTypeToStructuredIoType(nextType)),
+        structuredSpecParseError: undefined,
+      });
       return;
     }
     onUpdate({
       type: nextType,
-      structuredSpec: syncSpecToDdType(item.structuredSpec, nextType),
+      structuredSpec: syncStructuredSpecToDdType(item.structuredSpec, nextType),
       structuredSpecParseError: undefined,
     });
   };
 
   return (
-    <Card className="rounded-md border border-slate-200">
-      <CardContent className="p-4 space-y-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="space-y-1">
-            <div className="text-[11px] text-slate-400 font-mono">ID</div>
-            <div className="text-[13px] font-mono text-slate-600">{item.id}</div>
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <div className="pl-4 border-l-4 border-indigo-500 bg-slate-50/50 rounded-md p-4">
+        <CollapsibleTrigger className="w-full cursor-pointer">
+          <div className="flex items-center gap-3 text-left">
+            <ChevronDown className={cn("h-5 w-5 text-slate-500 transition-transform shrink-0", isOpen && "rotate-180")} />
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <span className="font-mono text-sm text-slate-500 shrink-0">{item.id}</span>
+              <span className="text-base font-medium text-slate-900 truncate">{item.name || "（未設定）"}</span>
+            </div>
+            <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700 text-xs font-medium">
+              {DD_TYPE_LABELS[item.type]}
+            </Badge>
           </div>
-          <Button
-            variant="outline"
-            size="icon"
-            title="削除"
-            aria-label={`${item.name || "DD"} を削除`}
-            className="h-8 w-8 rounded-md border-slate-200 hover:bg-slate-900 hover:text-white hover:border-slate-900"
-            onClick={onDelete}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
+        </CollapsibleTrigger>
 
-        <div className="grid gap-3 md:grid-cols-[2fr_1fr]">
+        {isOpen && (
+          <div className="flex justify-end mt-2">
+            <Button
+              variant="outline"
+              size="icon"
+              title="削除"
+              aria-label={`${item.name || "DD"} を削除`}
+              className="h-8 w-8 rounded-md border-slate-200 hover:bg-slate-900 hover:text-white hover:border-slate-900"
+              onClick={onDelete}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+
+        <CollapsibleContent className="mt-4 space-y-4">
+          <div className="grid gap-3 md:grid-cols-[2fr_1fr]">
           <div className="space-y-1.5">
             <Label className="text-[12px] font-medium text-slate-500">
               DD名<span className="text-rose-500">*</span>
@@ -206,92 +187,93 @@ export function DesignDocumentCard({
               </SelectContent>
             </Select>
           </div>
-        </div>
+          </div>
 
-        <div className="space-y-1.5">
-          <Label className="text-[12px] font-medium text-slate-500">
-            概要<span className="text-rose-500">*</span>
-          </Label>
-          <Textarea
-            value={item.summary}
-            onChange={(e) => onUpdate({ summary: e.target.value })}
-            placeholder="入出力と責務の概要を記述"
-            className="min-h-[90px] text-[14px]"
+          <div className="space-y-1.5">
+            <Label className="text-[12px] font-medium text-slate-500">
+              概要<span className="text-rose-500">*</span>
+            </Label>
+            <Textarea
+              value={item.summary}
+              onChange={(e) => onUpdate({ summary: e.target.value })}
+              placeholder="入出力と責務の概要を記述"
+              className="min-h-[90px] text-[14px]"
+            />
+          </div>
+
+          <EntryPointsInlineEditor
+            entryPoints={item.entryPoints}
+            onChange={(entryPoints) => onUpdate({ entryPoints })}
           />
-        </div>
 
-        <EntryPointsInlineEditor
-          entryPoints={item.entryPoints}
-          onChange={(entryPoints) => onUpdate({ entryPoints })}
-        />
+          <div className="space-y-1.5">
+            <Label className="text-[12px] font-medium text-slate-500">設計方針</Label>
+            <Textarea
+              value={item.designPolicy}
+              onChange={(e) => onUpdate({ designPolicy: e.target.value })}
+              placeholder="横断的な設計方針を記述"
+              className="min-h-[90px] text-[14px]"
+            />
+          </div>
 
-        <div className="space-y-1.5">
-          <Label className="text-[12px] font-medium text-slate-500">設計方針</Label>
-          <Textarea
-            value={item.designPolicy}
-            onChange={(e) => onUpdate({ designPolicy: e.target.value })}
-            placeholder="横断的な設計方針を記述"
-            className="min-h-[90px] text-[14px]"
-          />
-        </div>
-
-        <div className="rounded-md border border-slate-200 p-3 space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <div className="text-[13px] font-semibold text-slate-800">構造化設計（Control Plane）</div>
-              <div className="text-[12px] text-slate-500">
-                入出力・副作用・例外・非機能・境界を構造化して定義します
+          <div className="rounded-md border border-slate-200 p-3 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <div className="text-[13px] font-semibold text-slate-800">構造化設計（Control Plane）</div>
+                <div className="text-[12px] text-slate-500">
+                  入出力・副作用・例外・非機能・境界を構造化して定義します
+                </div>
               </div>
+              {item.structuredSpec ? (
+                <Button type="button" variant="outline" size="sm" onClick={handleDisableStructuredSpec}>
+                  構造化を解除
+                </Button>
+              ) : (
+                <Button type="button" size="sm" onClick={handleEnableStructuredSpec}>
+                  <Plus className="h-4 w-4 mr-1" />
+                  構造化を開始
+                </Button>
+              )}
             </div>
-            {item.structuredSpec ? (
-              <Button type="button" variant="outline" size="sm" onClick={handleDisableStructuredSpec}>
-                構造化を解除
-              </Button>
-            ) : (
-              <Button type="button" size="sm" onClick={handleEnableStructuredSpec}>
-                <Plus className="h-4 w-4 mr-1" />
-                構造化を開始
-              </Button>
+
+            {item.structuredSpecParseError && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>既存構造化データを読み込めませんでした</AlertTitle>
+                <AlertDescription>{item.structuredSpecParseError}</AlertDescription>
+              </Alert>
+            )}
+
+            {item.structuredSpec && (
+              <StructuredSpecEditor
+                spec={item.structuredSpec}
+                onChange={(next) =>
+                  onUpdate({ structuredSpec: next, structuredSpecParseError: undefined })
+                }
+                updateStructuredSpec={updateStructuredSpec}
+              />
             )}
           </div>
 
-          {item.structuredSpecParseError && (
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>既存構造化データを読み込めませんでした</AlertTitle>
-              <AlertDescription>{item.structuredSpecParseError}</AlertDescription>
-            </Alert>
-          )}
-
-          {item.structuredSpec && (
-            <StructuredSpecEditor
-              spec={item.structuredSpec}
-              onChange={(next) =>
-                onUpdate({ structuredSpec: next, structuredSpecParseError: undefined })
-              }
-              updateStructuredSpec={updateStructuredSpec}
-            />
-          )}
-        </div>
-
-        <Collapsible>
-          <CollapsibleTrigger asChild>
-            <Button variant="outline" size="sm">
-              details（自由記述）を編集
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="pt-3">
-            <HierarchicalEditor
-              label="details"
-              value={item.detailsYaml ?? ""}
-              onChange={(value) => onUpdate({ detailsYaml: value })}
-              placeholder={"例: api_definition:\n  method: POST\n  endpoint: /api/v1/users"}
-              helperText="既存互換のため保持しています。構造化設計が優先して利用されます。"
-            />
-          </CollapsibleContent>
-        </Collapsible>
-      </CardContent>
-    </Card>
+          <Collapsible>
+            <CollapsibleTrigger asChild>
+              <Button variant="outline" size="sm">
+                details（自由記述）を編集
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-3">
+              <HierarchicalEditor
+                label="details"
+                value={item.detailsYaml ?? ""}
+                onChange={(value) => onUpdate({ detailsYaml: value })}
+                placeholder={"例: api_definition:\n  method: POST\n  endpoint: /api/v1/users"}
+                helperText="既存互換のため保持しています。構造化設計が優先して利用されます。"
+              />
+            </CollapsibleContent>
+          </Collapsible>
+        </CollapsibleContent>
+      </div>
+    </Collapsible>
   );
 }
 
@@ -386,47 +368,6 @@ function StructuredSpecEditor({
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 md:grid-cols-2">
-        <div className="space-y-1">
-          <Label className="text-xs">I/O種別</Label>
-          <Select
-            value={spec.ioType}
-            onValueChange={(value) => {
-              const nextIoType = value as StructuredDesignDocumentIoType;
-              const next = {
-                ...spec,
-                ioType: nextIoType,
-                typeDetail: undefined,
-              } as StructuredDesignDocumentSpec;
-              if (isCoreIoType(nextIoType)) {
-                const empty = createEmptyStructuredDesignDocumentSpec(nextIoType);
-                if (!next.inputSchema) next.inputSchema = empty.inputSchema;
-                if (!next.outputSchema) next.outputSchema = empty.outputSchema;
-              } else {
-                next.inputSchema = undefined;
-                next.outputSchema = undefined;
-              }
-              onChange(next);
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {IO_TYPE_ITEMS.map((item) => (
-                <SelectItem key={item.value} value={item.value}>
-                  {item.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-1">
-          <Label className="text-xs">バージョン</Label>
-          <Input value={spec.version} disabled />
-        </div>
-      </div>
-
       {spec.ioType === "api" && (
         <div className="grid gap-3 md:grid-cols-2">
           <div className="space-y-1">
@@ -693,13 +634,13 @@ function StructuredSpecEditor({
       <div className="space-y-2 rounded-md border border-slate-200 p-3">
         <div className="flex items-center justify-between">
           <Label>副作用: DB操作</Label>
-          <Button size="sm" variant="outline" onClick={addDbOperation}>
-            <Plus className="h-4 w-4 mr-1" />
+          <Button variant="default" size="sm" className="h-7 gap-2 text-[12px]" onClick={addDbOperation}>
+            <Plus className="h-4 w-4" />
             追加
           </Button>
         </div>
         {(spec.sideEffects.dbOperations ?? []).map((op, index) => (
-          <div key={index} className="grid gap-2 md:grid-cols-4">
+          <div key={index} className="grid gap-2 md:grid-cols-[1fr_1fr_4fr_auto] items-center">
             <Input
               placeholder="table"
               value={op.table}
@@ -742,7 +683,6 @@ function StructuredSpecEditor({
               </SelectContent>
             </Select>
             <Input
-              className="md:col-span-2"
               placeholder="condition"
               value={op.condition ?? ""}
               onChange={(e) =>
@@ -756,6 +696,21 @@ function StructuredSpecEditor({
                 })
               }
             />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() =>
+                updateStructuredSpec((current) => ({
+                  ...current,
+                  sideEffects: {
+                    ...current.sideEffects,
+                    dbOperations: (current.sideEffects.dbOperations ?? []).filter((_, i) => i !== index),
+                  },
+                }))
+              }
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
           </div>
         ))}
       </div>
@@ -763,13 +718,13 @@ function StructuredSpecEditor({
       <div className="space-y-2 rounded-md border border-slate-200 p-3">
         <div className="flex items-center justify-between">
           <Label>副作用: 外部API</Label>
-          <Button size="sm" variant="outline" onClick={addExternalApi}>
-            <Plus className="h-4 w-4 mr-1" />
+          <Button variant="default" size="sm" className="h-7 gap-2 text-[12px]" onClick={addExternalApi}>
+            <Plus className="h-4 w-4" />
             追加
           </Button>
         </div>
         {(spec.sideEffects.externalApiCalls ?? []).map((apiCall, index) => (
-          <div key={index} className="grid gap-2 md:grid-cols-3">
+          <div key={index} className="grid gap-2 md:grid-cols-[1fr_1fr_4fr_auto] items-center">
             <Input
               placeholder="endpoint"
               value={apiCall.endpoint}
@@ -831,6 +786,21 @@ function StructuredSpecEditor({
                 })
               }
             />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() =>
+                updateStructuredSpec((current) => ({
+                  ...current,
+                  sideEffects: {
+                    ...current.sideEffects,
+                    externalApiCalls: (current.sideEffects.externalApiCalls ?? []).filter((_, i) => i !== index),
+                  },
+                }))
+              }
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
           </div>
         ))}
       </div>
@@ -838,13 +808,13 @@ function StructuredSpecEditor({
       <div className="space-y-2 rounded-md border border-slate-200 p-3">
         <div className="flex items-center justify-between">
           <Label>副作用: イベント発行</Label>
-          <Button size="sm" variant="outline" onClick={addEvent}>
-            <Plus className="h-4 w-4 mr-1" />
+          <Button variant="default" size="sm" className="h-7 gap-2 text-[12px]" onClick={addEvent}>
+            <Plus className="h-4 w-4" />
             追加
           </Button>
         </div>
         {(spec.sideEffects.events ?? []).map((event, index) => (
-          <div key={index} className="grid gap-2 md:grid-cols-3">
+          <div key={index} className="grid gap-2 md:grid-cols-[1fr_1fr_4fr_auto] items-center">
             <Input
               placeholder="eventType"
               value={event.eventType}
@@ -904,6 +874,21 @@ function StructuredSpecEditor({
                 })
               }
             />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() =>
+                updateStructuredSpec((current) => ({
+                  ...current,
+                  sideEffects: {
+                    ...current.sideEffects,
+                    events: (current.sideEffects.events ?? []).filter((_, i) => i !== index),
+                  },
+                }))
+              }
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
           </div>
         ))}
       </div>
@@ -911,13 +896,13 @@ function StructuredSpecEditor({
       <div className="space-y-2 rounded-md border border-slate-200 p-3">
         <div className="flex items-center justify-between">
           <Label>副作用: ログ</Label>
-          <Button size="sm" variant="outline" onClick={addLog}>
-            <Plus className="h-4 w-4 mr-1" />
+          <Button variant="default" size="sm" className="h-7 gap-2 text-[12px]" onClick={addLog}>
+            <Plus className="h-4 w-4" />
             追加
           </Button>
         </div>
         {(spec.sideEffects.logs ?? []).map((log, index) => (
-          <div key={index} className="grid gap-2 md:grid-cols-3">
+          <div key={index} className="grid gap-2 md:grid-cols-[1fr_4fr_auto] items-center">
             <Select
               value={log.level}
               onValueChange={(value) =>
@@ -943,7 +928,6 @@ function StructuredSpecEditor({
               </SelectContent>
             </Select>
             <Input
-              className="md:col-span-2"
               placeholder="message"
               value={log.message}
               onChange={(e) =>
@@ -957,6 +941,21 @@ function StructuredSpecEditor({
                 })
               }
             />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() =>
+                updateStructuredSpec((current) => ({
+                  ...current,
+                  sideEffects: {
+                    ...current.sideEffects,
+                    logs: (current.sideEffects.logs ?? []).filter((_, i) => i !== index),
+                  },
+                }))
+              }
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
           </div>
         ))}
       </div>
@@ -964,8 +963,8 @@ function StructuredSpecEditor({
       <div className="space-y-2 rounded-md border border-slate-200 p-3">
         <div className="flex items-center justify-between">
           <Label>不変条件</Label>
-          <Button size="sm" variant="outline" onClick={addInvariant}>
-            <Plus className="h-4 w-4 mr-1" />
+          <Button variant="default" size="sm" className="h-7 gap-2 text-[12px]" onClick={addInvariant}>
+            <Plus className="h-4 w-4" />
             追加
           </Button>
         </div>
@@ -1011,114 +1010,116 @@ function StructuredSpecEditor({
       <div className="space-y-2 rounded-md border border-slate-200 p-3">
         <div className="flex items-center justify-between">
           <Label>例外</Label>
-          <Button size="sm" variant="outline" onClick={addException}>
-            <Plus className="h-4 w-4 mr-1" />
+          <Button variant="default" size="sm" className="h-7 gap-2 text-[12px]" onClick={addException}>
+            <Plus className="h-4 w-4" />
             追加
           </Button>
         </div>
         {spec.exceptions.map((exception, index) => (
-          <div key={index} className="grid gap-2 md:grid-cols-3">
-            <Select
-              value={exception.type}
-              onValueChange={(value) =>
-                updateStructuredSpec((current) => {
-                  const next = [...current.exceptions];
-                  next[index] = { ...next[index], type: value as (typeof EXCEPTION_TYPES)[number] };
-                  return { ...current, exceptions: next };
-                })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {EXCEPTION_TYPES.map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {type}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Input
-              placeholder="errorCode"
-              value={exception.errorCode}
-              onChange={(e) =>
-                updateStructuredSpec((current) => {
-                  const next = [...current.exceptions];
-                  next[index] = { ...next[index], errorCode: e.target.value };
-                  return { ...current, exceptions: next };
-                })
-              }
-            />
-            <Input
-              placeholder="httpStatus"
-              type="number"
-              value={exception.httpStatus ?? ""}
-              onChange={(e) =>
-                updateStructuredSpec((current) => {
-                  const next = [...current.exceptions];
-                  next[index] = {
-                    ...next[index],
-                    httpStatus: e.target.value === "" ? undefined : Number(e.target.value),
-                  };
-                  return { ...current, exceptions: next };
-                })
-              }
-            />
-            <Input
-              className="md:col-span-3"
-              placeholder="condition"
-              value={exception.condition}
-              onChange={(e) =>
-                updateStructuredSpec((current) => {
-                  const next = [...current.exceptions];
-                  next[index] = { ...next[index], condition: e.target.value };
-                  return { ...current, exceptions: next };
-                })
-              }
-            />
-            <Input
-              className="md:col-span-2"
-              placeholder="message"
-              value={exception.message}
-              onChange={(e) =>
-                updateStructuredSpec((current) => {
-                  const next = [...current.exceptions];
-                  next[index] = { ...next[index], message: e.target.value };
-                  return { ...current, exceptions: next };
-                })
-              }
-            />
-            <Select
-              value={exception.recovery}
-              onValueChange={(value) =>
-                updateStructuredSpec((current) => {
-                  const next = [...current.exceptions];
-                  next[index] = { ...next[index], recovery: value as (typeof RECOVERY_TYPES)[number] };
-                  return { ...current, exceptions: next };
-                })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {RECOVERY_TYPES.map((recovery) => (
-                  <SelectItem key={recovery} value={recovery}>
-                    {recovery}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div key={index} className="space-y-2">
+            <div className="grid gap-2 md:grid-cols-3">
+              <Select
+                value={exception.type}
+                onValueChange={(value) =>
+                  updateStructuredSpec((current) => {
+                    const next = [...current.exceptions];
+                    next[index] = { ...next[index], type: value as (typeof EXCEPTION_TYPES)[number] };
+                    return { ...current, exceptions: next };
+                  })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {EXCEPTION_TYPES.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                placeholder="errorCode"
+                value={exception.errorCode}
+                onChange={(e) =>
+                  updateStructuredSpec((current) => {
+                    const next = [...current.exceptions];
+                    next[index] = { ...next[index], errorCode: e.target.value };
+                    return { ...current, exceptions: next };
+                  })
+                }
+              />
+              <Input
+                placeholder="httpStatus"
+                type="number"
+                value={exception.httpStatus ?? ""}
+                onChange={(e) =>
+                  updateStructuredSpec((current) => {
+                    const next = [...current.exceptions];
+                    next[index] = {
+                      ...next[index],
+                      httpStatus: e.target.value === "" ? undefined : Number(e.target.value),
+                    };
+                    return { ...current, exceptions: next };
+                  })
+                }
+              />
+            </div>
+            <div className="grid gap-2 md:grid-cols-3">
+              <Input
+                placeholder="condition"
+                value={exception.condition}
+                onChange={(e) =>
+                  updateStructuredSpec((current) => {
+                    const next = [...current.exceptions];
+                    next[index] = { ...next[index], condition: e.target.value };
+                    return { ...current, exceptions: next };
+                  })
+                }
+              />
+              <Input
+                placeholder="message"
+                value={exception.message}
+                onChange={(e) =>
+                  updateStructuredSpec((current) => {
+                    const next = [...current.exceptions];
+                    next[index] = { ...next[index], message: e.target.value };
+                    return { ...current, exceptions: next };
+                  })
+                }
+              />
+              <Select
+                value={exception.recovery}
+                onValueChange={(value) =>
+                  updateStructuredSpec((current) => {
+                    const next = [...current.exceptions];
+                    next[index] = { ...next[index], recovery: value as (typeof RECOVERY_TYPES)[number] };
+                    return { ...current, exceptions: next };
+                  })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {RECOVERY_TYPES.map((recovery) => (
+                    <SelectItem key={recovery} value={recovery}>
+                      {recovery}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         ))}
       </div>
 
       <div className="rounded-md border border-slate-200 p-3 space-y-3">
         <Label>非機能要件（主要項目）</Label>
-        <div className="grid gap-2 md:grid-cols-2">
+        <div className="grid gap-2 md:grid-cols-1">
           <Input
-            placeholder="performance.responseTime.p95"
+            placeholder="応答時間95パーセンタイル（例: 200ms）"
             value={spec.nonFunctional.performance?.responseTime?.p95 ?? ""}
             onChange={(e) =>
               updateStructuredSpec((current) => ({
@@ -1137,7 +1138,7 @@ function StructuredSpecEditor({
             }
           />
           <Input
-            placeholder="availability.uptime"
+            placeholder="稼働率（例: 99.9%）"
             value={spec.nonFunctional.availability?.uptime ?? ""}
             onChange={(e) =>
               updateStructuredSpec((current) => ({
@@ -1155,7 +1156,7 @@ function StructuredSpecEditor({
             }
           />
           <Input
-            placeholder="availability.monthlyDowntime"
+            placeholder="月間ダウンタイム（例: 43分）"
             value={spec.nonFunctional.availability?.monthlyDowntime ?? ""}
             onChange={(e) =>
               updateStructuredSpec((current) => ({
@@ -1172,7 +1173,7 @@ function StructuredSpecEditor({
             }
           />
           <Input
-            placeholder="observability.logging.retention"
+            placeholder="ログ保持期間（例: 30日）"
             value={spec.nonFunctional.observability?.logging?.retention ?? ""}
             onChange={(e) =>
               updateStructuredSpec((current) => ({
@@ -1199,7 +1200,7 @@ function StructuredSpecEditor({
 
       <div className="rounded-md border border-slate-200 p-3 space-y-3">
         <Label>変更境界（Control Plane）</Label>
-        <div className="grid gap-2 md:grid-cols-3">
+        <div className="grid gap-2 md:grid-cols-1">
           <Input
             placeholder="transaction.begin"
             value={spec.boundaries.transaction?.begin ?? ""}
@@ -1288,36 +1289,34 @@ function StructuredSpecEditor({
             }
           />
         </div>
-        <div className="grid gap-2 md:grid-cols-2">
-          <Textarea
-            placeholder={"allowPaths（1行1パス）\n例: src/domain/billing/**"}
-            rows={3}
-            value={toLines(spec.boundaries.allowPaths)}
-            onChange={(e) =>
-              updateStructuredSpec((current) => ({
-                ...current,
-                boundaries: {
-                  ...current.boundaries,
-                  allowPaths: fromLines(e.target.value),
-                },
-              }))
-            }
-          />
-          <Textarea
-            placeholder={"denyPaths（1行1パス）\n例: src/shared/utils/**"}
-            rows={3}
-            value={toLines(spec.boundaries.denyPaths)}
-            onChange={(e) =>
-              updateStructuredSpec((current) => ({
-                ...current,
-                boundaries: {
-                  ...current.boundaries,
-                  denyPaths: fromLines(e.target.value),
-                },
-              }))
-            }
-          />
-        </div>
+        <Textarea
+          placeholder={"allowPaths（1行1パス）\n例: src/domain/billing/**"}
+          rows={3}
+          value={toLines(spec.boundaries.allowPaths)}
+          onChange={(e) =>
+            updateStructuredSpec((current) => ({
+              ...current,
+              boundaries: {
+                ...current.boundaries,
+                allowPaths: fromLines(e.target.value),
+              },
+            }))
+          }
+        />
+        <Textarea
+          placeholder={"denyPaths（1行1パス）\n例: src/shared/utils/**"}
+          rows={3}
+          value={toLines(spec.boundaries.denyPaths)}
+          onChange={(e) =>
+            updateStructuredSpec((current) => ({
+              ...current,
+              boundaries: {
+                ...current.boundaries,
+                denyPaths: fromLines(e.target.value),
+              },
+            }))
+          }
+        />
       </div>
     </div>
   );

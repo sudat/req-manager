@@ -14,10 +14,10 @@ import { listRequirementLinksBySourceIds } from "@/lib/data/requirement-links";
 
 export const getSystemRequirementCategoryLabel = (category: SystemRequirementCategory): string => {
 	const labels: Record<SystemRequirementCategory, string> = {
-		function: "機能",
-		data: "データ",
-		exception: "例外",
-		non_functional: "非機能",
+		function: "機能要件",
+		data: "データ要件",
+		exception: "例外要件",
+		non_functional: "非機能要件",
 	};
 	return labels[category] || category;
 };
