@@ -1,0 +1,232 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - button "サイドバーを閉じる" [ref=e4]:
+        - img
+      - heading "要件管理ツール" [level=2] [ref=e6]
+      - navigation [ref=e7]:
+        - list [ref=e8]:
+          - listitem [ref=e9]:
+            - link "ダッシュボード" [ref=e10] [cursor=pointer]:
+              - /url: /dashboard
+              - img [ref=e11]
+              - generic [ref=e16]: ダッシュボード
+          - listitem [ref=e17]:
+            - link "プロダクト要件" [ref=e18] [cursor=pointer]:
+              - /url: /product-requirement
+              - img [ref=e19]
+              - generic [ref=e22]: プロダクト要件
+          - listitem [ref=e23]:
+            - link "AIチャット" [ref=e24] [cursor=pointer]:
+              - /url: /chat
+              - img [ref=e25]
+              - generic [ref=e28]: AIチャット
+          - listitem [ref=e30]:
+            - link "業務一覧" [ref=e31] [cursor=pointer]:
+              - /url: /business
+              - img [ref=e32]
+              - generic [ref=e35]: 業務一覧
+          - listitem [ref=e36]:
+            - link "システム領域一覧" [ref=e37] [cursor=pointer]:
+              - /url: /system
+              - img [ref=e38]
+              - generic [ref=e48]: システム領域一覧
+          - listitem [ref=e49]:
+            - link "概念辞書" [ref=e50] [cursor=pointer]:
+              - /url: /ideas
+              - img [ref=e51]
+              - generic [ref=e53]: 概念辞書
+          - listitem [ref=e55]:
+            - link "変更要求一覧" [ref=e56] [cursor=pointer]:
+              - /url: /tickets
+              - img [ref=e57]
+              - generic [ref=e60]: 変更要求一覧
+          - listitem [ref=e61]:
+            - link "要件リンク" [ref=e62] [cursor=pointer]:
+              - /url: /links
+              - img [ref=e63]
+              - generic [ref=e66]: 要件リンク
+          - listitem [ref=e67]:
+            - link "ベースライン履歴" [ref=e68] [cursor=pointer]:
+              - /url: /baseline
+              - img [ref=e69]
+              - generic [ref=e73]: ベースライン履歴
+          - listitem [ref=e74]:
+            - link "エクスポート" [ref=e75] [cursor=pointer]:
+              - /url: /export
+              - img [ref=e76]
+              - generic [ref=e79]: エクスポート
+          - listitem [ref=e81]:
+            - link "設定" [ref=e82] [cursor=pointer]:
+              - /url: /settings
+              - img [ref=e83]
+              - generic [ref=e86]: 設定
+      - button "新会計システムプロジェクト" [ref=e104]:
+        - generic [ref=e89]:
+          - img
+          - generic [ref=e90]: 新会計システムプロジェクト
+        - img
+    - main [ref=e91]:
+      - generic [ref=e92]:
+        - link "システム機能詳細に戻る" [ref=e105] [cursor=pointer]:
+          - /url: /system/AR/SF-AR-0001
+          - img [ref=e106]
+          - text: システム機能詳細に戻る
+        - 'heading "編集: システム機能 - DD（Design Document）" [level=1] [ref=e109]'
+        - generic [ref=e110]:
+          - generic [ref=e112]:
+            - generic [ref=e113]:
+              - generic [ref=e114]:
+                - heading "DD（Design Document）" [level=3] [ref=e115]
+                - generic [ref=e116]: "4"
+              - button "追加" [ref=e117]:
+                - img
+                - text: 追加
+            - generic [ref=e118]:
+              - button "DD-AR-001-01 請求書発行画面 画面" [ref=e122] [cursor=pointer]:
+                - generic [ref=e123]:
+                  - img [ref=e124]
+                  - generic [ref=e126]:
+                    - generic [ref=e127]: DD-AR-001-01
+                    - generic [ref=e128]: 請求書発行画面
+                  - generic [ref=e129]: 画面
+              - button "DD-AR-001-02 請求書発行API API" [ref=e134] [cursor=pointer]:
+                - generic [ref=e135]:
+                  - img [ref=e136]
+                  - generic [ref=e138]:
+                    - generic [ref=e139]: DD-AR-001-02
+                    - generic [ref=e140]: 請求書発行API
+                  - generic [ref=e141]: API
+              - button "DD-AR-001-03 請求書一括発行バッチ バッチ" [ref=e146] [cursor=pointer]:
+                - generic [ref=e147]:
+                  - img [ref=e148]
+                  - generic [ref=e150]:
+                    - generic [ref=e151]: DD-AR-001-03
+                    - generic [ref=e152]: 請求書一括発行バッチ
+                  - generic [ref=e153]: バッチ
+              - button "DD-AR-001-04 メール送信I/F 外部I/F" [ref=e158] [cursor=pointer]:
+                - generic [ref=e159]:
+                  - img [ref=e160]
+                  - generic [ref=e162]:
+                    - generic [ref=e163]: DD-AR-001-04
+                    - generic [ref=e164]: メール送信I/F
+                  - generic [ref=e165]: 外部I/F
+          - generic [ref=e166]:
+            - button "保存" [ref=e167]
+            - button "キャンセル" [ref=e168]
+  - button "Open Next.js Dev Tools" [ref=e169] [cursor=pointer]:
+    - generic [ref=e172]:
+      - text: Compiling
+      - generic [ref=e173]:
+        - generic [ref=e174]: .
+        - generic [ref=e175]: .
+        - generic [ref=e176]: .
+  - alert [ref=e177]
+  - button "/agentation v2.2.0 Output Detail Standard React Components Marker Colour Purple Blue Cyan Green Yellow Orange Red Clear on copy/send Block page interactions Manage MCP & Webhooks Manage MCP & Webhooks MCP Connection MCP connection allows agents to receive and act on annotations. Learn more Webhooks Auto-Send The webhook URL will receive live annotation changes and annotation data." [ref=e178] [cursor=pointer]:
+    - img [ref=e180]
+    - generic [ref=e183]:
+      - button [ref=e185]:
+        - img [ref=e186]
+      - button [disabled] [ref=e189]:
+        - img [ref=e190]
+      - button [disabled] [ref=e198]:
+        - img [ref=e199]
+      - generic:
+        - button [disabled]:
+          - img
+      - button [disabled] [ref=e207]:
+        - img [ref=e208]
+      - button [ref=e211]:
+        - img [ref=e212]
+      - button [ref=e217]:
+        - img [ref=e218]
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - generic: /agentation
+            - generic: v2.2.0
+            - button "Switch to light mode":
+              - generic:
+                - generic:
+                  - img
+          - generic:
+            - generic:
+              - generic:
+                - text: Output Detail
+                - generic:
+                  - generic:
+                    - img
+              - button "Standard":
+                - generic: Standard
+            - generic:
+              - generic:
+                - text: React Components
+                - generic:
+                  - generic:
+                    - img
+              - generic:
+                - checkbox [checked]
+          - generic:
+            - generic: Marker Colour
+            - generic:
+              - button "Purple":
+                - generic "Purple"
+              - button "Blue":
+                - generic "Blue"
+              - button "Cyan":
+                - generic "Cyan"
+              - button "Green":
+                - generic "Green"
+              - button "Yellow":
+                - generic "Yellow"
+              - button "Orange":
+                - generic "Orange"
+              - button "Red":
+                - generic "Red"
+          - generic:
+            - generic:
+              - checkbox "Clear on copy/send"
+              - generic:
+                - text: Clear on copy/send
+                - generic:
+                  - generic:
+                    - img
+            - generic:
+              - checkbox "Block page interactions" [checked]
+              - generic:
+                - img
+              - generic: Block page interactions
+          - generic:
+            - button "Manage MCP & Webhooks":
+              - generic: Manage MCP & Webhooks
+              - generic:
+                - img
+        - generic:
+          - button "Manage MCP & Webhooks":
+            - img
+            - generic: Manage MCP & Webhooks
+          - generic:
+            - generic:
+              - generic:
+                - text: MCP Connection
+                - generic:
+                  - generic:
+                    - img
+            - paragraph:
+              - text: MCP connection allows agents to receive and act on annotations.
+              - link "Learn more":
+                - /url: https://agentation.dev/mcp
+          - generic:
+            - generic:
+              - generic:
+                - text: Webhooks
+                - generic:
+                  - generic:
+                    - img
+              - generic:
+                - generic: Auto-Send
+                - generic:
+                  - checkbox [checked] [disabled]
+            - paragraph: The webhook URL will receive live annotation changes and annotation data.
+            - textbox "Webhook URL"

@@ -68,7 +68,7 @@ export const brDraftTool = createTool({
     uncertainties: z.array(z.string()).optional(),
     previewAvailable: z.boolean(),
   }),
-  execute: async (inputData) => {
+  execute: async (inputData, _context) => {
     const { naturalLanguageInput, btId, projectId, btName, allowDraft } = inputData;
 
     try {
@@ -241,17 +241,19 @@ ${naturalLanguageInput}
         concept_ids: [],
       };
 
-      const normalizeJsonArray = <T>(value: unknown): T[] =>
-        Array.isArray(value) ? (value as T[]) : [];
+      const normalizeProcessSteps = (value: unknown): { when: string; who: string; action: string }[] =>
+        Array.isArray(value) ? (value as { when: string; who: string; action: string }[]) : [];
+      const normalizeInputOutput = (value: unknown): { name: string; source: string }[] =>
+        Array.isArray(value) ? (value as { name: string; source: string }[]) : [];
 
       const btDraft = {
         code: btRecord.id,
         name: btRecord.name ?? btId,
         summary: btRecord.summary ?? '',
         businessContext: btRecord.business_context ?? '',
-        processSteps: normalizeJsonArray(btRecord.process_steps),
-        input: normalizeJsonArray(btRecord.input),
-        output: normalizeJsonArray(btRecord.output),
+        processSteps: normalizeProcessSteps(btRecord.process_steps),
+        input: normalizeInputOutput(btRecord.input),
+        output: normalizeInputOutput(btRecord.output),
         business_area: btRecord.business_area || deriveBusinessArea(btRecord.id),
         project_id: btRecord.project_id,
         concept_ids: [],

@@ -8,7 +8,6 @@ import {
 import type { BusinessRequirement } from "@/lib/data/business-requirements";
 import { prepareSystemRequirementInputs } from "@/lib/utils/system-functions/prepare-system-requirements";
 import { normalizeEntryPointsInput } from "@/lib/utils/system-functions/entry-points";
-import { parseYamlObject } from "@/lib/utils/yaml";
 import { composeStructuredDetails } from "@/lib/utils/design-documents/structured-compat";
 import type { SrfCategory, SrfStatus, EntryPoint } from "@/lib/domain";
 import type { DesignDocumentDraft } from "@/components/forms/design-document-list";
@@ -112,10 +111,7 @@ export async function createSystemFunctionWithRelations(
 			summary: unit.summary.trim(),
 			entryPoints: normalizeEntryPointsInput(unit.entryPoints),
 			designPolicy: unit.designPolicy.trim(),
-			details: composeStructuredDetails({
-				structuredSpec: unit.structuredSpec,
-				legacyDetails: parseYamlObject(unit.detailsYaml),
-			}),
+			details: composeStructuredDetails(unit.structuredSpec),
 			projectId,
 		}));
 		const { error: implError } = await createDesignDocuments(implInputs);

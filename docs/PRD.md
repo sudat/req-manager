@@ -814,10 +814,33 @@ DDの入出力定義は、テキスト自由記述に加えて**構造化スキ�
 |------|-------------|------------|
 | 入出力フィールド | `fieldSchema`（name, type, required, constraints） | `lib/domain/schemas/fields.ts` |
 | タイプ別入出力 | API/画面/バッチ/ジョブ別のI/Oスキーマ | `lib/domain/schemas/io-schemas.ts` |
+| コアロジック | 計算式、判定条件、状態遷移、締め処理等の業務ルール | `lib/domain/schemas/core-logic.ts` |
 | 副作用（状態変化） | DB操作/外部API/イベント/ファイル/ログ | `lib/domain/schemas/side-effects.ts` |
 | 例外 | 例外タイプ/復旧戦略/エラーコード | `lib/domain/schemas/exceptions.ts` |
 | 非機能要件 | 性能/可用性/セキュリティ/可観測性 | `lib/domain/schemas/non-functional.ts` |
 | DD統合スキーマ | 上記を統合した構造化DD仕様 | `lib/domain/schemas/design-document-structured.ts` |
+
+#### 情報フロー
+
+構造化DDの情報フローは以下の通り：
+
+```
+入力スキーマ → [コアロジック] → 出力スキーマ → 副作用 → 例外 → 非機能
+```
+
+コアロジックは入力から出力への変換処理を記述し、副作用は出力後の状態変化を記述する。
+
+#### modelタイプの論理エンティティ定義
+
+`model`タイプのDDでは、typeDetailに論理エンティティ（ER図相当）を定義できる：
+
+- **entityName**: エンティティ名
+- **entityDescription**: エンティティの説明
+- **attributes**: 属性定義（name, type, primaryKey, nullable, description, constraints, enumValues）
+- **relationships**: 関連定義（target, type: 1:1/1:N/N:1/N:M, description）
+- **stateTransitions**: 状態遷移定義（from, to[], condition）
+
+これにより、データモデルの論理設計を構造的に記述・管理できる。物理DDLではなく論理エンティティの粒度で定義し、1つのSFにオーナーとして所属させる（他SFからの参照は`sideEffects.dbOperations`で行う）。
 
 #### フィールド制約（constraints）
 

@@ -5,7 +5,6 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { ScreenInput, ScreenOutput } from "@/lib/domain/schemas/io-schemas";
-import { FieldEditor } from "./FieldEditor";
 
 interface ScreenIoFormProps {
   input: ScreenInput;
@@ -26,7 +25,15 @@ export function ScreenIoForm({
     <div className="space-y-5">
       {(mode === "input" || !mode) && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-[20%_20%_60%] gap-3">
+            <div className="space-y-1">
+              <Label>操作対象</Label>
+              <Input
+                value={input.targetElement ?? ""}
+                onChange={(e) => onInputChange({ ...input, targetElement: e.target.value })}
+                placeholder="例: 一括発行ボタン"
+              />
+            </div>
             <div className="space-y-1">
               <Label>トリガー</Label>
               <Select
@@ -47,13 +54,24 @@ export function ScreenIoForm({
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-1">
+              <Label>操作内容</Label>
+              <Input
+                value={input.action ?? ""}
+                onChange={(e) => onInputChange({ ...input, action: e.target.value })}
+                placeholder="例: 請求書を発行"
+              />
+            </div>
           </div>
-
-          <FieldEditor
-            label="画面要素"
-            fields={input.elements ?? []}
-            onChange={(fields) => onInputChange({ ...input, elements: fields })}
-          />
+          <div className="space-y-1">
+            <Label>前提条件</Label>
+            <Textarea
+              value={input.precondition ?? ""}
+              onChange={(e) => onInputChange({ ...input, precondition: e.target.value })}
+              placeholder="例: 請求対象が1件以上選択されている"
+              rows={2}
+            />
+          </div>
         </>
       )}
 
@@ -80,6 +98,26 @@ export function ScreenIoForm({
               }
               placeholder="1行に1メッセージ"
               rows={3}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>期待動作</Label>
+            <Textarea
+              value={output.behavior ?? ""}
+              onChange={(e) => onOutputChange({ ...output, behavior: e.target.value })}
+              placeholder="例: 発行ジョブをキュー投入し、一覧を再読み込み"
+              rows={2}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>画面変化</Label>
+            <Textarea
+              value={output.displayChanges ?? ""}
+              onChange={(e) => onOutputChange({ ...output, displayChanges: e.target.value })}
+              placeholder="例: 対象行のステータスを「発行待ち」に更新、トースト表示"
+              rows={2}
             />
           </div>
         </>

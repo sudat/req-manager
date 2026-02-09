@@ -5,6 +5,7 @@ import type { UILocation } from '@/lib/mastra/context/types';
 import { isReasoningEffort } from '@/lib/mastra/reasoning-effort';
 import { createSSEStream } from './lib/sse-stream-builder';
 import { RequestContext } from '@mastra/core/request-context';
+import { memory } from '@/lib/mastra/memory';
 
 /**
  * チャットAPI（POST）
@@ -215,12 +216,14 @@ export async function POST(request: NextRequest) {
 /**
  * スレッド履歴取得API（GET）
  *
- * 指定されたthreadIdの会話履歴を取得する（将来の拡張用）。
+ * Mastra Memoryから指定されたthreadIdの会話履歴を取得する。
+ * 直近50件のメッセージを返す。
  */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const threadId = searchParams.get('threadId');
+    const resourceId = searchParams.get('resourceId');
 
     if (!threadId) {
       return NextResponse.json(
@@ -229,10 +232,34 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // TODO: Mastra Memoryから履歴を取得する実装
-    // 現時点では未実装のため空配列を返す
+    if (!resourceId) {
+      return NextResponse.json(
+        { error: 'resourceIdが指定されていません' },
+        { status: 400 }
+      );
+    }
+
+    console.log('[Chat API] Getting history for thread:', threadId, 'resource:', resourceId);
+
+    // Mastra Memoryから履歴取得（直近50件）
+    const result = await memory.recall({
+      threadId,
+      resourceId,
+      perPage: 50,
+    });
+
+    // MastraDBMessage型からフロントエンド用の型に変換
+    const messages = result.messages.map((msg) => ({
+      id: msg.id,
+      role: msg.role as 'user' | 'assistant' | 'system',
+      content: msg.content,
+      createdAt: msg.createdAt,
+    }));
+
+    console.log('[Chat API] Retrieved', messages.length, 'messages');
+
     return NextResponse.json({
-      messages: [],
+      messages,
       threadId,
     });
 

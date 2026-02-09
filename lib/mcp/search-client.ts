@@ -220,15 +220,15 @@ const callExecuteSql = async (
   sql: string
 ): Promise<CallToolResult> => {
   const toolName = resolveToolName();
-  const first = await client.callTool({
+  const first = (await client.callTool({
     name: toolName,
     arguments: { sql },
-  });
+  })) as unknown as CallToolResult;
   if (!first.isError) return first;
-  const fallback = await client.callTool({
+  const fallback = (await client.callTool({
     name: toolName,
     arguments: { query: sql },
-  });
+  })) as unknown as CallToolResult;
   return fallback;
 };
 

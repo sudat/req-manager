@@ -9,7 +9,6 @@ import {
 
 type StructuredDetailsParseResult = {
   structuredSpec?: StructuredDesignDocumentSpec;
-  legacyDetails: Record<string, unknown>;
   parseError?: string;
 };
 
@@ -33,64 +32,30 @@ export function parseStructuredDetails(
   details: Record<string, unknown> | null | undefined
 ): StructuredDetailsParseResult {
   const normalized = isRecord(details) ? details : {};
-  const maybeWrappedSpec = normalized.structuredSpec;
-
-  if (maybeWrappedSpec === undefined) {
-    const flatParsed = structuredDesignDocumentSpecSchema.safeParse(normalized);
-    if (flatParsed.success) {
-      return {
-        structuredSpec: flatParsed.data,
-        legacyDetails: normalized,
-      };
-    }
-
-    const maybeStructuredHint =
-      "ioType" in normalized ||
-      "inputFields" in normalized ||
-      "outputFields" in normalized;
-
-    return {
-      structuredSpec: undefined,
-      legacyDetails: normalized,
-      parseError: maybeStructuredHint
-        ? flatParsed.error.issues
-            .map((issue) => `${summarizeZodIssuePath(issue.path)}: ${issue.message}`)
-            .join(", ")
-        : undefined,
-    };
-  }
-
-  const parsed = structuredDesignDocumentSpecSchema.safeParse(maybeWrappedSpec);
+  const parsed = structuredDesignDocumentSpecSchema.safeParse(normalized);
 
   if (!parsed.success) {
+    if (Object.keys(normalized).length === 0) {
+      return { structuredSpec: undefined, parseError: undefined };
+    }
     const parseError = parsed.error.issues
       .map((issue) => `${summarizeZodIssuePath(issue.path)}: ${issue.message}`)
       .join(", ");
     return {
       structuredSpec: undefined,
-      legacyDetails: normalized,
       parseError,
     };
   }
 
   return {
     structuredSpec: parsed.data,
-    legacyDetails: normalized,
   };
 }
 
-export function composeStructuredDetails(params: {
-  structuredSpec?: StructuredDesignDocumentSpec;
-  legacyDetails?: Record<string, unknown>;
-}): Record<string, unknown> {
-  const { structuredSpec, legacyDetails } = params;
-  const normalizedLegacy = isRecord(legacyDetails) ? legacyDetails : {};
-
-  if (!structuredSpec) {
-    return normalizedLegacy;
-  }
-
-  return structuredSpec;
+export function composeStructuredDetails(
+  structuredSpec?: StructuredDesignDocumentSpec
+): Record<string, unknown> {
+  return structuredSpec ?? {};
 }
 
 export function createStructuredSpecFromDdType(ddType: DdType): StructuredDesignDocumentSpec {
@@ -103,20 +68,28 @@ export function syncStructuredSpecToDdType(
   ddType: DdType
 ): StructuredDesignDocumentSpec {
   const nextIoType = ddTypeToStructuredIoType(ddType);
+
+  // 既存のtypeDetailを保存（同じioTypeの場合は復旧する）
+  const prevTypeDetail = spec.typeDetail?.ioType === nextIoType ? spec.typeDetail : undefined;
+
   const synced: StructuredDesignDocumentSpec = {
     ...spec,
     ioType: nextIoType,
-    typeDetail: undefined,
+    typeDetail: undefined, // 一旦クリア
   };
 
   if (isCoreIoType(nextIoType)) {
+    // コアI/Oタイプ（api/screen/batch/job）の場合
     const empty = createEmptyStructuredDesignDocumentSpec(nextIoType);
     if (!synced.inputSchema) synced.inputSchema = empty.inputSchema;
     if (!synced.outputSchema) synced.outputSchema = empty.outputSchema;
-    return synced;
+    synced.typeDetail = prevTypeDetail; // 同じioTypeなら復旧
+  } else {
+    // モデル等の非コアI/Oタイプの場合
+    synced.inputSchema = undefined;
+    synced.outputSchema = undefined;
+    synced.typeDetail = prevTypeDetail; // 同じioTypeなら復旧
   }
 
-  synced.inputSchema = undefined;
-  synced.outputSchema = undefined;
   return synced;
 }

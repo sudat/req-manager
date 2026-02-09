@@ -188,7 +188,7 @@ export function SystemDesignEditor({
                     setPriority(value as "high" | "medium" | "low")
                   }
                 >
-                  <SelectTrigger id="design-priority">
+                  <SelectTrigger id="design-priority" className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

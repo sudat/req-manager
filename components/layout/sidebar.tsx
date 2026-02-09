@@ -5,6 +5,7 @@ import {
 	Bot,
 	Boxes,
 	Briefcase,
+	Database,
 	Download,
 	FileText,
 	History,
@@ -86,6 +87,13 @@ const menuConfig: MenuConfig[] = [
 		label: "概念辞書",
 		href: "/ideas",
 		icon: BookOpen,
+	},
+	{
+		type: "item" as const,
+		key: "schema",
+		label: "ER図",
+		href: "/schema/er",
+		icon: Database,
 	},
 	{ type: "divider" as const },
 	{

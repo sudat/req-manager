@@ -17,7 +17,6 @@ export type DesignDocumentDraft = {
 	summary: string;
 	entryPoints: EntryPoint[];
 	designPolicy: string;
-	detailsYaml?: string;
 	structuredSpec?: StructuredDesignDocumentSpec;
 	structuredSpecParseError?: string;
 };
@@ -26,12 +25,14 @@ type DesignDocumentListProps = {
 	srfId: string;
 	items: DesignDocumentDraft[];
 	onChange: (items: DesignDocumentDraft[]) => void;
+	modelDDs?: DesignDocumentDraft[];
 };
 
 export function DesignDocumentList({
 	srfId,
 	items,
 	onChange,
+	modelDDs,
 }: DesignDocumentListProps): ReactNode {
 	const handleAdd = () => {
 		const prefix = `DD-${srfId}-`;
@@ -92,11 +93,12 @@ export function DesignDocumentList({
 								{index > 0 && (
 									<div className="border-t-2 border-slate-300 my-8" />
 								)}
-								<DesignDocumentCard
-									item={item}
-									onUpdate={(patch) => handleUpdate(index, patch)}
-									onDelete={() => handleDelete(index)}
-								/>
+							<DesignDocumentCard
+								item={item}
+								onUpdate={(patch) => handleUpdate(index, patch)}
+								onDelete={() => handleDelete(index)}
+								modelDDs={modelDDs || items}
+							/>
 							</div>
 						))
 					)}

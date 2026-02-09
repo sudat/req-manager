@@ -1,13 +1,12 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { listDesignDocumentsBySrfId } from "@/lib/data/design-documents";
+import { listDesignDocumentsBySrfId, listDesignDocuments } from "@/lib/data/design-documents";
 import { saveDesignDocuments } from "@/lib/utils/system-functions/save-system-function";
 import type { DesignDocumentDraft } from "@/components/forms/design-document-list";
 import {
 	parseStructuredDetails,
 	syncStructuredSpecToDdType,
 } from "@/lib/utils/design-documents/structured-compat";
-import { toYamlText } from "@/lib/utils/yaml";
 
 export function useDesignDocumentsForm(srfId: string, systemDomainId: string, projectId: string) {
 	const router = useRouter();
@@ -17,6 +16,7 @@ export function useDesignDocumentsForm(srfId: string, systemDomainId: string, pr
 
 	// フォーム状態
 	const [designDocuments, setDesignDocuments] = useState<DesignDocumentDraft[]>([]);
+	const [allModelDDs, setAllModelDDs] = useState<DesignDocumentDraft[]>([]);
 
 	// データフェッチ
 	useEffect(() => {
@@ -26,6 +26,7 @@ export function useDesignDocumentsForm(srfId: string, systemDomainId: string, pr
 			setLoading(true);
 			setError(null);
 
+			// 現在のシステム機能の設計書を取得
 			const { data: ddList, error: ddError } = await listDesignDocumentsBySrfId(
 				srfId,
 				projectId
@@ -41,7 +42,7 @@ export function useDesignDocumentsForm(srfId: string, systemDomainId: string, pr
 
 			// DesignDocumentをDesignDocumentDraftに変換
 			const drafts: DesignDocumentDraft[] = (ddList ?? []).map((dd) => {
-				const { structuredSpec, legacyDetails, parseError } = parseStructuredDetails(dd.details);
+				const { structuredSpec, parseError } = parseStructuredDetails(dd.details);
 				return {
 					id: dd.id,
 					name: dd.name,
@@ -49,7 +50,6 @@ export function useDesignDocumentsForm(srfId: string, systemDomainId: string, pr
 					summary: dd.summary,
 					designPolicy: dd.designPolicy,
 					entryPoints: dd.entryPoints ?? [],
-					detailsYaml: toYamlText(legacyDetails),
 					structuredSpec: structuredSpec
 						? syncStructuredSpecToDdType(structuredSpec, dd.type || "screen")
 						: undefined,
@@ -58,6 +58,34 @@ export function useDesignDocumentsForm(srfId: string, systemDomainId: string, pr
 			});
 
 			setDesignDocuments(drafts);
+
+			// プロジェクト全体のモデル型設計書を取得（関連設定用）
+			const { data: allDDs, error: allError } = await listDesignDocuments(projectId);
+
+			if (cancelled) return;
+
+			if (!allError && allDDs) {
+				const modelDrafts: DesignDocumentDraft[] = allDDs
+					.filter((dd) => dd.type === "model")
+					.map((dd) => {
+						const { structuredSpec, parseError } = parseStructuredDetails(dd.details);
+						return {
+							id: dd.id,
+							name: dd.name,
+							type: dd.type || "screen",
+							summary: dd.summary,
+							designPolicy: dd.designPolicy,
+							entryPoints: dd.entryPoints ?? [],
+							structuredSpec: structuredSpec
+								? syncStructuredSpecToDdType(structuredSpec, dd.type || "screen")
+								: undefined,
+							structuredSpecParseError: parseError,
+						};
+					});
+
+				setAllModelDDs(modelDrafts);
+			}
+
 			setLoading(false);
 		}
 
@@ -96,6 +124,7 @@ export function useDesignDocumentsForm(srfId: string, systemDomainId: string, pr
 		// フォーム状態
 		designDocuments,
 		setDesignDocuments,
+		allModelDDs,
 		// アクション
 		handleSave,
 	};

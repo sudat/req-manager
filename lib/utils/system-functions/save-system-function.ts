@@ -14,8 +14,8 @@ import {
 } from "@/lib/data/acceptance-criteria";
 import { syncBrSrLinksToRequirementLinks } from "@/lib/data/task-sync";
 import { normalizeEntryPointsInput } from "./entry-points";
-import { parseYamlObject } from "@/lib/utils/yaml";
 import { composeStructuredDetails } from "@/lib/utils/design-documents/structured-compat";
+import { structuredDesignDocumentSpecSchema } from "@/lib/domain/schemas/design-document-structured";
 import type { Requirement } from "@/lib/domain/forms";
 import type { SystemDesignItem, EntryPoint, CodeRef } from "@/lib/domain";
 import type { DesignTarget, SystemDesignItemV2 } from "@/lib/domain/schemas/system-design";
@@ -196,6 +196,28 @@ export async function saveDesignDocuments(input: {
 }): Promise<{ error: string | null }> {
 	const { srfId, designDocuments, projectId } = input;
 
+	// === zodバリデーション ===
+	const validationErrors: string[] = [];
+
+	for (const [index, dd] of designDocuments.entries()) {
+		if (dd.structuredSpec) {
+			const result = structuredDesignDocumentSpecSchema.safeParse(dd.structuredSpec);
+			if (!result.success) {
+				const issues = result.error.issues
+					.map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+					.join(", ");
+				validationErrors.push(`DD「${dd.name}」(${index + 1}件目): ${issues}`);
+			}
+		}
+	}
+
+	if (validationErrors.length > 0) {
+		return {
+			error: `構造化設計書のバリデーションエラーが発生しました:\n${validationErrors.join("\n")}`,
+		};
+	}
+	// === バリデーションここまで ===
+
 	// 1. DDを保存（既存削除 + 再作成）
 	const { error: implDeleteError } = await deleteDesignDocumentsBySrfId(srfId, projectId);
 	if (implDeleteError) {
@@ -211,10 +233,7 @@ export async function saveDesignDocuments(input: {
 			summary: unit.summary.trim(),
 			entryPoints: normalizeEntryPointsInput(unit.entryPoints),
 			designPolicy: unit.designPolicy.trim(),
-			details: composeStructuredDetails({
-				structuredSpec: unit.structuredSpec,
-				legacyDetails: parseYamlObject(unit.detailsYaml),
-			}),
+			details: composeStructuredDetails(unit.structuredSpec),
 			projectId,
 		}));
 		const { error: implError } = await createDesignDocuments(implInputs);
@@ -337,10 +356,7 @@ export async function saveSystemFunction(
 			summary: unit.summary.trim(),
 			entryPoints: normalizeEntryPointsInput(unit.entryPoints),
 			designPolicy: unit.designPolicy.trim(),
-			details: composeStructuredDetails({
-				structuredSpec: unit.structuredSpec,
-				legacyDetails: parseYamlObject(unit.detailsYaml),
-			}),
+			details: composeStructuredDetails(unit.structuredSpec),
 			projectId,
 		}));
 		const { error: implError } = await createDesignDocuments(implInputs);

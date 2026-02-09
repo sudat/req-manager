@@ -5,7 +5,6 @@ import { listSystemRequirementsBySrfId } from "@/lib/data/system-requirements";
 import { listDesignDocumentsBySrfId } from "@/lib/data/design-documents";
 import { fromSystemRequirement } from "@/lib/data/requirement-mapper";
 import { classifyDesignItems, extractTargetsFromLegacyItems } from "@/lib/data/system-design-migration";
-import { toYamlText } from "@/lib/utils/yaml";
 import { parseStructuredDetails } from "@/lib/utils/design-documents/structured-compat";
 import type { SystemFunction, EntryPoint, SystemDesignItem } from "@/lib/domain";
 import type { Requirement } from "@/lib/domain/forms";
@@ -117,7 +116,7 @@ export function useSystemFunctionDataFetch(
 			} else {
 				input.setDesignDocuments(
 					(ddUnits ?? []).map((unit) => {
-						const { structuredSpec, legacyDetails, parseError } = parseStructuredDetails(
+						const { structuredSpec, parseError } = parseStructuredDetails(
 							unit.details
 						);
 						return {
@@ -127,7 +126,6 @@ export function useSystemFunctionDataFetch(
 							summary: unit.summary,
 							entryPoints: unit.entryPoints ?? [],
 							designPolicy: unit.designPolicy ?? "",
-							detailsYaml: toYamlText(legacyDetails),
 							structuredSpec,
 							structuredSpecParseError: parseError,
 						};

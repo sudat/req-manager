@@ -1,5 +1,4 @@
 import { validateEntryPoints } from "./entry-points";
-import { validateYaml } from "@/lib/utils/yaml";
 import { structuredDesignDocumentSpecSchema } from "@/lib/domain/schemas/design-document-structured";
 import type { EntryPoint } from "@/lib/domain";
 import type { DesignDocumentDraft } from "@/components/forms/design-document-list";
@@ -48,10 +47,6 @@ export function validateDesignDocuments(
 		const unitEntryError = validateEntryPoints(unit.entryPoints);
 		if (unitEntryError) {
 			return `DD（${unit.id}）: ${unitEntryError}`;
-		}
-		const yamlDiag = validateYaml(unit.detailsYaml);
-		if (!yamlDiag.ok) {
-			return `DD（${unit.id}）: ${yamlDiag.message ?? "detailsのYAMLが不正です。"}`;
 		}
 		if (unit.structuredSpec) {
 			const result = structuredDesignDocumentSpecSchema.safeParse(unit.structuredSpec);

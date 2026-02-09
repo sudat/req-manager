@@ -23,6 +23,7 @@ export default function SystemFunctionEditDesignDocumentsPage({
 		error,
 		designDocuments,
 		setDesignDocuments,
+		allModelDDs,
 		handleSave,
 	} = useDesignDocumentsForm(srfId, systemDomainId, DEFAULT_PROJECT_ID);
 
@@ -66,6 +67,7 @@ export default function SystemFunctionEditDesignDocumentsPage({
 					srfId={srfId}
 					items={designDocuments}
 					onChange={setDesignDocuments}
+					modelDDs={allModelDDs}
 				/>
 
 				{/* Action Buttons */}

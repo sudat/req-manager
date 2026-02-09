@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { supabase } from '@/lib/supabase/client';
 import { callOpenAI } from '@/lib/mastra/utils/llm-helpers';
 import { resolveProjectLlmRuntimeSettings } from '@/lib/mastra/utils/llm-settings';
+import { zodSchemaToPrompt } from '@/lib/mastra/utils/schema-to-prompt';
+import { structuredDesignDocumentSpecSchema } from '@/lib/domain/schemas/design-document-structured';
 import { DD_TYPE_LABELS } from '@/lib/domain/enums';
 import type { DdType, EntryPoint } from '@/lib/domain';
 
@@ -284,8 +286,17 @@ export const ddDraftTool = createTool({
         : 1;
 
       // 5. LLMでDD草案を生成
+      // スキーマから動的にプロンプトを生成
+      const schemaPrompt = zodSchemaToPrompt(structuredDesignDocumentSpecSchema, {
+        includeNestedDescriptions: true,
+        maxDepth: 3,
+      });
+
       const llmPrompt = `
 以下のシステム機能（SF）と関連SRをもとに、DD（Design Document）の草案を複数作成してください。
+
+【設計書スキーマ定義】
+${schemaPrompt}
 
 【システム機能】
 - ID: ${sfIdValue}
@@ -300,15 +311,6 @@ ${naturalLanguageInput || 'なし'}
 
 【技術スタック】
 ${pr?.tech_stack_profile || 'Next.js + TypeScript'}
-
-【DD種別の定義】
-- screen: 画面/UI。ユーザー操作や入力・一覧・詳細などのUI設計
-- api: アプリ内API。画面や他機能から呼び出す同期/非同期API設計
-- batch: 定期バッチ。夜間/締め処理などスケジュール実行される一括処理
-- job: 非同期ジョブ。イベント/キュー起動で実行するバックグラウンド処理
-- external_if: 外部I/F。外部システム連携（送受信、マッピング、認証など）
-- model: データモデル。テーブル/集計ビュー/ドメインモデルの設計
-- report: レポート/帳票。PDF/CSVなどの出力設計
 
 【出力形式（JSON）】
 {
@@ -339,6 +341,9 @@ ${pr?.tech_stack_profile || 'Next.js + TypeScript'}
 - 各DDは1つの種別のみ
 - できるだけ重複しない粒度で分割する
 - 入力が不足する場合はuncertaintiesに記載する
+- 設計書スキーマ定義に従って、structuredSpecを構造化データとして生成すること
+- コアロジック（coreLogic）：入力→出力の変換処理で適用されるビジネスルール（検証、計算、状態遷移、判定、集約等）を記述する
+- modelタイプの場合：typeDetailにエンティティ定義（entityName, attributes, relationships, stateTransitions）を含めること
 `;
 
       const llmResponse = await callOpenAI<{ dd_drafts: LlmDdDraft[]; uncertainties?: string[] }>({

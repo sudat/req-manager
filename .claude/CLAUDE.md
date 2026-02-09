@@ -7,3 +7,8 @@
 
 - 直近の作業計画はチェックリストを参照する。作業後は更新する。
 - 直近のチェックリスト: docs/checklists/active/*.md
+
+@docs/design/database-schema-design.md
+テーブル定義書
+- スキーマを定義する。
+- テーブル定義を追加・更新・削除する都度、設計書も更新する。

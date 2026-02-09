@@ -33,14 +33,20 @@ interface StructuredIoSectionProps {
 
 const defaultStructuredInput: Record<IoType, StructuredInput> = {
   api: { method: "POST", path: "", query: [], body: [] },
-  screen: { trigger: "click", elements: [] },
+  screen: {
+    trigger: "click",
+    action: "",
+    targetElement: "",
+    precondition: "",
+    elements: [],
+  },
   batch: { schedule: "", source: "", parameters: [] },
   job: { event: "", payload: [] },
 };
 
 const defaultStructuredOutput: Record<IoType, StructuredOutput> = {
   api: { success: { status: 200, fields: [] }, error: [] },
-  screen: { transition: "", messages: [] },
+  screen: { transition: "", messages: [], behavior: "", displayChanges: "" },
   batch: {
     summary: { processedCount: 0, successCount: 0, errorCount: 0, status: "completed" },
     nextBatch: "",

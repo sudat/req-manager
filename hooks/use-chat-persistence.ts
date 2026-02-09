@@ -194,23 +194,78 @@ export function useChatPersistence({
 		setThreads(loadThreads(projectId, config.resourceId, contextKey));
 	}, [config.resourceId, projectId, contextKey]);
 
-	// Effect 2: 既存履歴を復元
+	// Effect 2: 既存履歴を復元（Mastra Memory + localStorage drafts）
 	useEffect(() => {
 		if (typeof window === "undefined") return;
 		if (hasLoadedHistoryRef.current) return;
 
-		const key = getMessagesStorageKey(projectId, config.resourceId, threadId);
-		const raw = loadFromStorage<unknown>(key);
-		if (raw) {
-			const restored = deserializeMessages(raw);
-			if (restored.length > 0) {
-				setMessages(restored);
-				hasLoadedHistoryRef.current = true;
-				return;
-			}
-		}
+		const loadHistory = async () => {
+			try {
+				// 1. Mastra Memoryから基本メッセージを取得
+				const response = await fetch(
+					`/api/chat?threadId=${encodeURIComponent(threadId)}&resourceId=${encodeURIComponent(config.resourceId)}`,
+				);
+				
+				if (!response.ok) {
+					throw new Error(`Failed to load history: ${response.status}`);
+				}
+				
+				const data = await response.json();
+				const mastraMessages: Array<{
+					id: string;
+					role: 'user' | 'assistant' | 'system';
+					content: string;
+					createdAt: string;
+				}> = data.messages || [];
 
-		hasLoadedHistoryRef.current = true;
+				// 2. localStorageからdraftsデータを取得（IDマッチング用）
+				const key = getMessagesStorageKey(projectId, config.resourceId, threadId);
+				const raw = loadFromStorage<unknown>(key);
+				const draftsData = raw ? deserializeMessages(raw) : [];
+				const draftsMap = new Map(draftsData.map((d) => [d.id, d]));
+
+				// 3. マージ（基本メッセージ + draftsデータ）
+				const merged: ChatMessage[] = mastraMessages.map((m) => {
+					const draft = draftsMap.get(m.id);
+					return {
+						id: m.id,
+						role: m.role,
+						content: m.content,
+						timestamp: new Date(m.createdAt),
+						isStreaming: false,
+						// draftsデータがあればマージ（マッチしなければundefined）
+						progressSteps: draft?.progressSteps,
+						btDraft: draft?.btDraft,
+						brDraft: draft?.brDraft,
+						brDrafts: draft?.brDrafts,
+						sfDraft: draft?.sfDraft,
+						srDraft: draft?.srDraft,
+						srDrafts: draft?.srDrafts,
+						ddDraft: draft?.ddDraft,
+						ddDrafts: draft?.ddDrafts,
+					};
+				});
+
+				if (merged.length > 0) {
+					setMessages(merged);
+				}
+			} catch (error) {
+				console.error('[useChatPersistence] Failed to load history:', error);
+				// エラー時はlocalStorageのフォールバック
+				const key = getMessagesStorageKey(projectId, config.resourceId, threadId);
+				const raw = loadFromStorage<unknown>(key);
+				if (raw) {
+					const restored = deserializeMessages(raw);
+					if (restored.length > 0) {
+						setMessages(restored);
+					}
+				}
+			} finally {
+				hasLoadedHistoryRef.current = true;
+			}
+		};
+
+		loadHistory();
 	}, [config.resourceId, projectId, setMessages, threadId]);
 
 	// Effect 3: initialPrompt → 履歴なし時のシステムメッセージ
@@ -229,7 +284,7 @@ export function useChatPersistence({
 		}
 	}, [config.initialPrompt, messages.length, setMessages]);
 
-	// Effect 4: メッセージのデバウンス保存
+	// Effect 4: draftsデータのみlocalStorageに保存（メッセージ本体はMastra Memoryが管理）
 	useEffect(() => {
 		if (typeof window === "undefined") return;
 		if (!hasLoadedHistoryRef.current) return;
@@ -239,14 +294,30 @@ export function useChatPersistence({
 		}
 
 		persistTimerRef.current = window.setTimeout(() => {
-			const key = getMessagesStorageKey(projectId, config.resourceId, threadId);
-			const trimmed = messages.slice(-200);
-			saveToStorage(key, serializeMessages(trimmed));
+			// draftsデータのみ抽出して保存
+			const draftsOnly = messages
+				.filter((m) =>
+					m.btDraft ||
+					m.brDraft ||
+					m.brDrafts ||
+					m.sfDraft ||
+					m.srDraft ||
+					m.srDrafts ||
+					m.ddDraft ||
+					m.ddDrafts ||
+					m.progressSteps,
+				)
+				.slice(-200);
+
+			if (draftsOnly.length > 0) {
+				const key = getMessagesStorageKey(projectId, config.resourceId, threadId);
+				saveToStorage(key, serializeMessages(draftsOnly));
+			}
 
 			// スレッド一覧も更新
 			const updatedAt = new Date().toISOString();
 			const title = deriveThreadTitle(
-				trimmed,
+				messages,
 				config.initialPrompt ?? "AI要件アシスタント",
 			);
 			const nextThreads = loadThreads(projectId, config.resourceId, contextKey);
@@ -271,15 +342,66 @@ export function useChatPersistence({
 	// ---------------------------------------------------------------------------
 
 	const selectThread = useCallback(
-		(selectedThreadId: string) => {
+		async (selectedThreadId: string) => {
 			if (typeof window === "undefined") return;
 
-			const key = getMessagesStorageKey(projectId, config.resourceId, selectedThreadId);
-			const raw = loadFromStorage<unknown>(key);
-			if (raw) {
-				setMessages(deserializeMessages(raw));
-			} else {
-				setMessages([]);
+			try {
+				// 1. Mastra Memoryから基本メッセージを取得
+				const response = await fetch(
+					`/api/chat?threadId=${encodeURIComponent(selectedThreadId)}&resourceId=${encodeURIComponent(config.resourceId)}`,
+				);
+
+				if (!response.ok) {
+					throw new Error(`Failed to load history: ${response.status}`);
+				}
+
+				const data = await response.json();
+				const mastraMessages: Array<{
+					id: string;
+					role: 'user' | 'assistant' | 'system';
+					content: string;
+					createdAt: string;
+				}> = data.messages || [];
+
+				// 2. localStorageからdraftsデータを取得（IDマッチング用）
+				const key = getMessagesStorageKey(projectId, config.resourceId, selectedThreadId);
+				const raw = loadFromStorage<unknown>(key);
+				const draftsData = raw ? deserializeMessages(raw) : [];
+				const draftsMap = new Map(draftsData.map((d) => [d.id, d]));
+
+				// 3. マージ（基本メッセージ + draftsデータ）
+				const merged: ChatMessage[] = mastraMessages.map((m) => {
+					const draft = draftsMap.get(m.id);
+					return {
+						id: m.id,
+						role: m.role,
+						content: m.content,
+						timestamp: new Date(m.createdAt),
+						isStreaming: false,
+						// draftsデータがあればマージ（マッチしなければundefined）
+						progressSteps: draft?.progressSteps,
+						btDraft: draft?.btDraft,
+						brDraft: draft?.brDraft,
+						brDrafts: draft?.brDrafts,
+						sfDraft: draft?.sfDraft,
+						srDraft: draft?.srDraft,
+						srDrafts: draft?.srDrafts,
+						ddDraft: draft?.ddDraft,
+						ddDrafts: draft?.ddDrafts,
+					};
+				});
+
+				setMessages(merged);
+			} catch (error) {
+				console.error('[useChatPersistence] Failed to load thread:', error);
+				// エラー時はlocalStorageのフォールバック
+				const key = getMessagesStorageKey(projectId, config.resourceId, selectedThreadId);
+				const raw = loadFromStorage<unknown>(key);
+				if (raw) {
+					setMessages(deserializeMessages(raw));
+				} else {
+					setMessages([]);
+				}
 			}
 
 			// ポインタを更新（raw 文字列）

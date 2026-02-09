@@ -111,7 +111,7 @@ export function validateDeliverable(deliverable: Deliverable): string[] {
     if (hasStructured) {
       const parsed = functionDesignContentSchema.safeParse(func);
       if (!parsed.success) {
-        errors.push(...parsed.error.errors.map((e) => e.message));
+        errors.push(...parsed.error.issues.map((e) => e.message));
       }
     } else if (!func.input || !func.output) {
       errors.push("入出力定義が必要です（structuredInput/structuredOutputまたはinput/output）");
