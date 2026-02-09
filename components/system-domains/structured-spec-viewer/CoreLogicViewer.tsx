@@ -1,6 +1,7 @@
 import type { CoreLogic } from "@/lib/domain/schemas/core-logic";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { EmptyState } from "./EmptyState";
 
 interface CoreLogicViewerProps {
   coreLogic: CoreLogic;
@@ -27,11 +28,7 @@ const ruleTypeLabels: Record<string, string> = {
 
 export function CoreLogicViewer({ coreLogic }: CoreLogicViewerProps) {
   if (!coreLogic.rules || coreLogic.rules.length === 0) {
-    return (
-      <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
-        コアロジックが定義されていません
-      </div>
-    );
+    return <EmptyState message="コアロジックが定義されていません" />;
   }
 
   return (

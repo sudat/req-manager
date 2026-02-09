@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import type { Field } from "@/lib/domain/schemas/fields";
+import { EmptyState } from "./EmptyState";
 
 interface FieldsViewerProps {
   fields: Field[];
@@ -11,11 +12,7 @@ interface FieldsViewerProps {
 
 export function FieldsViewer({ fields, emptyMessage = "未設定" }: FieldsViewerProps): ReactNode {
   if (fields.length === 0) {
-    return (
-      <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
-        {emptyMessage}
-      </div>
-    );
+    return <EmptyState message={emptyMessage} />;
   }
 
   return (

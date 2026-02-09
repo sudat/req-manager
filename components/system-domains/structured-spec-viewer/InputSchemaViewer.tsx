@@ -4,18 +4,50 @@ import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import type {
   ApiInput,
-  ScreenInput,
   BatchInput,
   JobInput,
+  ScreenInput,
 } from "@/lib/domain/schemas/io-schemas";
 import type { StructuredDesignDocumentIoType } from "@/lib/domain/schemas/design-document-structured";
 import type { Field } from "@/lib/domain/schemas/fields";
+import { EmptyState } from "./EmptyState";
 import { FieldsViewer } from "./FieldsViewer";
+import { LabeledValue } from "./LabeledValue";
 
 interface InputSchemaViewerProps {
   inputSchema?: ApiInput | ScreenInput | BatchInput | JobInput;
   ioType: StructuredDesignDocumentIoType;
   elements?: Field[];
+}
+
+type StructuredInputSchema = InputSchemaViewerProps["inputSchema"];
+
+function isApiInputSchema(inputSchema: StructuredInputSchema): inputSchema is ApiInput {
+  return Boolean(inputSchema && "method" in inputSchema);
+}
+
+function isScreenInputSchema(inputSchema: StructuredInputSchema): inputSchema is ScreenInput {
+  return Boolean(inputSchema && "trigger" in inputSchema);
+}
+
+function isBatchInputSchema(inputSchema: StructuredInputSchema): inputSchema is BatchInput {
+  return Boolean(inputSchema && "schedule" in inputSchema);
+}
+
+function isJobInputSchema(inputSchema: StructuredInputSchema): inputSchema is JobInput {
+  return Boolean(inputSchema && "event" in inputSchema);
+}
+
+function renderFieldGroup(label: string, fields: Field[] | undefined): ReactNode {
+  if (!fields || fields.length === 0) {
+    return null;
+  }
+
+  return (
+    <LabeledValue label={label} labelClassName="font-medium" valueClassName="">
+      <FieldsViewer fields={fields} />
+    </LabeledValue>
+  );
 }
 
 export function InputSchemaViewer({
@@ -24,118 +56,96 @@ export function InputSchemaViewer({
   elements,
 }: InputSchemaViewerProps): ReactNode {
   if (!inputSchema) {
-    return <div className="text-sm text-slate-400 italic">未設定</div>;
+    return <EmptyState message="未設定" variant="inline" />;
   }
 
-  // APIタイプ
-  if (ioType === "api" && "method" in inputSchema) {
-    const apiInput = inputSchema as ApiInput;
-    return (
-      <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <Badge variant="default" className="font-mono">{apiInput.method || "GET"}</Badge>
-          <span className="font-mono text-sm text-slate-700">{apiInput.path || "/"}</span>
+  switch (ioType) {
+    case "api": {
+      if (!isApiInputSchema(inputSchema)) {
+        break;
+      }
+
+      return (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Badge variant="default" className="font-mono">
+              {inputSchema.method || "GET"}
+            </Badge>
+            <span className="font-mono text-sm text-slate-700">{inputSchema.path || "/"}</span>
+          </div>
+
+          {renderFieldGroup("クエリパラメータ", inputSchema.query)}
+          {renderFieldGroup("リクエストボディ", inputSchema.body)}
         </div>
-        
-        {apiInput.query && apiInput.query.length > 0 && (
-          <div className="space-y-1">
-            <div className="text-xs font-medium text-slate-500">クエリパラメータ</div>
-            <FieldsViewer fields={apiInput.query} />
-          </div>
-        )}
-        
-        {apiInput.body && apiInput.body.length > 0 && (
-          <div className="space-y-1">
-            <div className="text-xs font-medium text-slate-500">リクエストボディ</div>
-            <FieldsViewer fields={apiInput.body} />
-          </div>
-        )}
-      </div>
-    );
-  }
+      );
+    }
+    case "screen": {
+      if (!isScreenInputSchema(inputSchema)) {
+        break;
+      }
 
-  // 画面タイプ
-  if (ioType === "screen" && "trigger" in inputSchema) {
-    const screenInput = inputSchema as ScreenInput;
-    return (
-      <div className="space-y-3">
-        <div className="grid grid-cols-3 gap-3">
-          <div className="space-y-1">
-            <div className="text-xs text-slate-500">操作対象</div>
-            <div className="text-sm font-medium">{screenInput.targetElement || "未設定"}</div>
+      return (
+        <div className="space-y-3">
+          <div className="grid grid-cols-3 gap-3">
+            <LabeledValue label="操作対象" valueClassName="font-medium">
+              {inputSchema.targetElement || "未設定"}
+            </LabeledValue>
+            <LabeledValue label="トリガー" valueClassName="">
+              <Badge variant="outline">{inputSchema.trigger || "click"}</Badge>
+            </LabeledValue>
+            <LabeledValue label="操作内容" valueClassName="font-medium">
+              {inputSchema.action || "未設定"}
+            </LabeledValue>
           </div>
-          <div className="space-y-1">
-            <div className="text-xs text-slate-500">トリガー</div>
-            <Badge variant="outline">{screenInput.trigger || "click"}</Badge>
-          </div>
-          <div className="space-y-1">
-            <div className="text-xs text-slate-500">操作内容</div>
-            <div className="text-sm font-medium">{screenInput.action || "未設定"}</div>
-          </div>
+
+          {inputSchema.precondition && (
+            <LabeledValue label="前提条件" valueClassName="rounded bg-slate-50 p-2 text-slate-600">
+              {inputSchema.precondition}
+            </LabeledValue>
+          )}
+
+          {renderFieldGroup("入力要素", elements)}
         </div>
-        
-        {screenInput.precondition && (
-          <div className="space-y-1">
-            <div className="text-xs text-slate-500">前提条件</div>
-            <div className="text-sm text-slate-600 bg-slate-50 p-2 rounded">{screenInput.precondition}</div>
-          </div>
-        )}
-        
-        {elements && elements.length > 0 && (
-          <div className="space-y-1">
-            <div className="text-xs font-medium text-slate-500">入力要素</div>
-            <FieldsViewer fields={elements} />
-          </div>
-        )}
-      </div>
-    );
-  }
+      );
+    }
+    case "batch": {
+      if (!isBatchInputSchema(inputSchema)) {
+        break;
+      }
 
-  // バッチタイプ
-  if (ioType === "batch" && "schedule" in inputSchema) {
-    const batchInput = inputSchema as BatchInput;
-    return (
-      <div className="space-y-3">
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1">
-            <div className="text-xs text-slate-500">スケジュール</div>
-            <div className="text-sm font-medium">{batchInput.schedule || "未設定"}</div>
+      return (
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <LabeledValue label="スケジュール" valueClassName="font-medium">
+              {inputSchema.schedule || "未設定"}
+            </LabeledValue>
+            <LabeledValue label="入力ソース" valueClassName="font-medium">
+              {inputSchema.source || "未設定"}
+            </LabeledValue>
           </div>
-          <div className="space-y-1">
-            <div className="text-xs text-slate-500">入力ソース</div>
-            <div className="text-sm font-medium">{batchInput.source || "未設定"}</div>
-          </div>
+
+          {renderFieldGroup("パラメータ", inputSchema.parameters)}
         </div>
-        
-        {batchInput.parameters && batchInput.parameters.length > 0 && (
-          <div className="space-y-1">
-            <div className="text-xs font-medium text-slate-500">パラメータ</div>
-            <FieldsViewer fields={batchInput.parameters} />
-          </div>
-        )}
-      </div>
-    );
-  }
+      );
+    }
+    case "job": {
+      if (!isJobInputSchema(inputSchema)) {
+        break;
+      }
 
-  // ジョブタイプ
-  if (ioType === "job" && "event" in inputSchema) {
-    const jobInput = inputSchema as JobInput;
-    return (
-      <div className="space-y-3">
-        <div className="space-y-1">
-          <div className="text-xs text-slate-500">トリガーイベント</div>
-          <div className="text-sm font-medium">{jobInput.event || "未設定"}</div>
+      return (
+        <div className="space-y-3">
+          <LabeledValue label="トリガーイベント" valueClassName="font-medium">
+            {inputSchema.event || "未設定"}
+          </LabeledValue>
+
+          {renderFieldGroup("ペイロード", inputSchema.payload)}
         </div>
-        
-        {jobInput.payload && jobInput.payload.length > 0 && (
-          <div className="space-y-1">
-            <div className="text-xs font-medium text-slate-500">ペイロード</div>
-            <FieldsViewer fields={jobInput.payload} />
-          </div>
-        )}
-      </div>
-    );
+      );
+    }
+    default:
+      break;
   }
 
-  return <div className="text-sm text-slate-400 italic">未設定</div>;
+  return <EmptyState message="未設定" variant="inline" />;
 }

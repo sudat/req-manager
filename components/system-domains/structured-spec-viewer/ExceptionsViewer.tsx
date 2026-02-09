@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertCircle } from "lucide-react";
 import { structuredExceptionSchema } from "@/lib/domain/schemas/exceptions";
 import type { z } from "zod";
+import { EmptyState } from "./EmptyState";
 
 type StructuredException = z.infer<typeof structuredExceptionSchema>;
 
@@ -32,11 +33,7 @@ const RECOVERY_TYPE_LABELS: Record<string, string> = {
 
 export function ExceptionsViewer({ exceptions }: ExceptionsViewerProps): ReactNode {
   if (exceptions.length === 0) {
-    return (
-      <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
-        未設定
-      </div>
-    );
+    return <EmptyState message="未設定" />;
   }
 
   return (

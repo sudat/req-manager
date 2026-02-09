@@ -1,9 +1,11 @@
 import type { StructuredTypeDetail } from "@/lib/domain/schemas/design-document-structured";
+import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
   extractForeignKeyReference,
   extractCheckConstraints,
 } from "@/lib/utils/foreign-key-helpers";
+import { EmptyState } from "./EmptyState";
 
 interface ModelDetailViewerProps {
   typeDetail: Extract<StructuredTypeDetail, { ioType: "model" }>;
@@ -16,18 +18,33 @@ const relationshipTypeLabels: Record<string, string> = {
   "N:M": "多対多",
 };
 
+function renderConstraintBadges(constraints: string | undefined): ReactNode {
+  const fkRef = extractForeignKeyReference(constraints);
+  const checkConstraints = extractCheckConstraints(constraints);
+
+  return (
+    <>
+      {fkRef && (
+        <Badge variant="outline" className="text-xs">
+          FK → {fkRef.entity}.{fkRef.attribute}
+        </Badge>
+      )}
+      {checkConstraints && (
+        <Badge variant="secondary" className="text-xs">
+          {checkConstraints}
+        </Badge>
+      )}
+    </>
+  );
+}
+
 export function ModelDetailViewer({ typeDetail }: ModelDetailViewerProps) {
-  const hasContent =
-    typeDetail.entityName ||
-    typeDetail.attributes?.length ||
-    typeDetail.relationships?.length;
+  const attributes = typeDetail.attributes ?? [];
+  const relationships = typeDetail.relationships ?? [];
+  const hasContent = Boolean(typeDetail.entityName || attributes.length > 0 || relationships.length > 0);
 
   if (!hasContent) {
-    return (
-      <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
-        エンティティ定義が記述されていません
-      </div>
-    );
+    return <EmptyState message="エンティティ定義が記述されていません" />;
   }
 
   return (
@@ -49,7 +66,7 @@ export function ModelDetailViewer({ typeDetail }: ModelDetailViewerProps) {
       )}
 
       {/* 属性リスト */}
-      {typeDetail.attributes && typeDetail.attributes.length > 0 && (
+      {attributes.length > 0 && (
         <div>
           <h5 className="text-sm font-medium mb-2">属性</h5>
           <div className="rounded-md border overflow-hidden">
@@ -64,7 +81,7 @@ export function ModelDetailViewer({ typeDetail }: ModelDetailViewerProps) {
                 </tr>
               </thead>
               <tbody>
-                {typeDetail.attributes.map((attr, index) => (
+                {attributes.map((attr, index) => (
                   <tr
                     key={index}
                     className="border-t"
@@ -101,25 +118,7 @@ export function ModelDetailViewer({ typeDetail }: ModelDetailViewerProps) {
                     </td>
                     <td className="px-3 py-2">
                       <div className="flex gap-1 flex-wrap">
-                        {(() => {
-                          const fkRef = extractForeignKeyReference(attr.constraints);
-                          const checkConstraints = extractCheckConstraints(attr.constraints);
-
-                          return (
-                            <>
-                              {fkRef && (
-                                <Badge variant="outline" className="text-xs">
-                                  FK → {fkRef.entity}.{fkRef.attribute}
-                                </Badge>
-                              )}
-                              {checkConstraints && (
-                                <Badge variant="secondary" className="text-xs">
-                                  {checkConstraints}
-                                </Badge>
-                              )}
-                            </>
-                          );
-                        })()}
+                        {renderConstraintBadges(attr.constraints)}
                         {attr.enumValues && attr.enumValues.length > 0 && (
                           <span className="text-xs text-muted-foreground">
                             {attr.enumValues.join(", ")}
@@ -137,11 +136,11 @@ export function ModelDetailViewer({ typeDetail }: ModelDetailViewerProps) {
       )}
 
       {/* リレーションシップ */}
-      {typeDetail.relationships && typeDetail.relationships.length > 0 && (
+      {relationships.length > 0 && (
         <div>
           <h5 className="text-sm font-medium mb-2">関連</h5>
           <div className="space-y-2">
-            {typeDetail.relationships.map((rel, index) => (
+            {relationships.map((rel, index) => (
               <div
                 key={index}
                 className="rounded-md border p-3 text-sm space-y-2"

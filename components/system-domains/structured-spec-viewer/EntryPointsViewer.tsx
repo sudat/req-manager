@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { FileCode2 } from "lucide-react";
 import type { EntryPoint } from "@/lib/domain";
+import { EmptyState } from "./EmptyState";
 
 interface EntryPointsViewerProps {
   entryPoints: EntryPoint[];
@@ -10,7 +11,7 @@ interface EntryPointsViewerProps {
 
 export function EntryPointsViewer({ entryPoints }: EntryPointsViewerProps): ReactNode {
   if (entryPoints.length === 0) {
-    return <div className="text-sm text-slate-400 italic">未設定</div>;
+    return <EmptyState message="未設定" variant="inline" />;
   }
 
   return (
