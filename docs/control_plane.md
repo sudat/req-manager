@@ -43,7 +43,7 @@
 | **データスキーマ** | 型（string/number/boolean/enum/object）、必須/任意、デフォルト値 | `amount: number (必須, 0以上), currency: enum['JPY','USD'] (デフォルト: 'JPY')` |
 | **許容範囲（制約）** | 文字数制限、数値範囲、フォーマット（正規表現）、権限 | `0 ≤ amount ≤ 999,999,999`、 `customer_id: /^C[0-9]{6}$/`、 `role: 'admin' or 'editor'` |
 | **出力外形** | 返却データのスキーマ、HTTPステータス、エラーレスポンスの形式 | `200 OK: { invoice_id: string, total: number }`、 `404: { error_code: 'INVOICE_NOT_FOUND' }` |
-| **状態変化（副作用）** | DBテーブルのCRUD、外部API呼び出し、イベント発行、ファイル出力 | `invoices.statusを'draft'→'issued'に更新`、`InvoiceIssuedイベントを発行` |
+| **状態変化（副作用）** | DBテーブルのCRUD、API呼び出し、イベント発行、ファイル出力 | `invoices.statusを'draft'→'issued'に更新`、`InvoiceIssuedイベントを発行` |
 | **不変条件** | 処理前後で変わってはいけない整合性条件 | `請求金額合計 = 明細金額合計`、`発行済み請求書の金額は変更不可` |
 
 ### 方針B：ACは「アサーション可能」にする

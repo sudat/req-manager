@@ -46,9 +46,8 @@ function BusinessTaskCreatePageContent({ businessKey }: BusinessTaskCreatePageCo
     removeRequirement,
   } = useRequirements();
 
-  const [taskName, setTaskName] = useState("");
+	const [taskName, setTaskName] = useState("");
   const [taskSummary, setTaskSummary] = useState("");
-  const [businessContext, setBusinessContext] = useState("");
   const [processSteps, setProcessSteps] = useState("");
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
@@ -61,16 +60,14 @@ function BusinessTaskCreatePageContent({ businessKey }: BusinessTaskCreatePageCo
     () =>
       !!businessArea &&
       !!businessName &&
-      taskName.trim().length > 0 &&
+	taskName.trim().length > 0 &&
       taskSummary.trim().length > 0 &&
-      businessContext.trim().length > 0 &&
       !loading,
     [
       businessArea,
       businessName,
       taskName,
       taskSummary,
-      businessContext,
       loading,
     ]
   );
@@ -122,9 +119,12 @@ function BusinessTaskCreatePageContent({ businessKey }: BusinessTaskCreatePageCo
     const { error: saveError } = await createTask({
       id: taskId,
       businessArea,
-      name: taskName.trim(),
+		name: taskName.trim(),
       summary: taskSummary.trim(),
-      businessContext: businessContext.trim(),
+      triggerDescription: "",
+      triggerTaskIds: [],
+      frequency: "daily",
+      frequencyDescription: "",
       processSteps: processSteps.trim(),
       person: "",
       input: input.trim(),
@@ -228,7 +228,6 @@ function BusinessTaskCreatePageContent({ businessKey }: BusinessTaskCreatePageCo
             businessName={businessName}
             taskName={taskName}
             taskSummary={taskSummary}
-            businessContext={businessContext}
             processSteps={processSteps}
             input={input}
             output={output}
@@ -240,7 +239,6 @@ function BusinessTaskCreatePageContent({ businessKey }: BusinessTaskCreatePageCo
             saving={saving}
             onTaskNameChange={setTaskName}
             onTaskSummaryChange={setTaskSummary}
-            onBusinessContextChange={setBusinessContext}
             onProcessStepsChange={setProcessSteps}
             onInputChange={setInput}
             onOutputChange={setOutput}

@@ -1,5 +1,6 @@
-import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 type LabeledTextareaProps = {
 	label: string;
@@ -9,13 +10,10 @@ type LabeledTextareaProps = {
 	placeholder?: string;
 	className?: string;
 	minHeight?: string;
+	showMarkdownBadge?: boolean;
+	helperText?: string;
 };
 
-/**
- * ラベル付きTextareaコンポーネント
- *
- * Label + Textarea の組み合わせを統一的に提供する。
- */
 export function LabeledTextarea({
 	label,
 	required = false,
@@ -24,6 +22,8 @@ export function LabeledTextarea({
 	placeholder,
 	className,
 	minHeight,
+	showMarkdownBadge = false,
+	helperText,
 }: LabeledTextareaProps) {
 	const textareaClassName = minHeight
 		? `${minHeight} ${className || "text-[14px]"}`
@@ -31,10 +31,21 @@ export function LabeledTextarea({
 
 	return (
 		<div className="space-y-1.5">
-			<Label className="text-[12px] font-medium text-slate-500">
-				{label}
-				{required && <span className="text-rose-500">*</span>}
-			</Label>
+			<div className="flex items-center justify-between">
+				<Label className="text-[14px] font-bold text-slate-900 border-l-4 border-primary pl-3 -ml-3">
+					{label}
+					{required && <span className="text-rose-500">*</span>}
+				</Label>
+				{showMarkdownBadge && (
+					<Badge
+						variant="outline"
+						className="text-[10px] px-1.5 py-0 h-5 border-blue-200 bg-blue-50 text-blue-700"
+					>
+						Markdown
+					</Badge>
+				)}
+			</div>
+			{helperText && <p className="text-[12px] text-slate-500">{helperText}</p>}
 			<Textarea
 				value={value}
 				onChange={(e) => onChange(e.target.value)}

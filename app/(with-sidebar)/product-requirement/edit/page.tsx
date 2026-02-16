@@ -8,12 +8,12 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useYamlValidation } from "@/hooks/use-yaml-validation";
 import { EditHeader } from "@/components/product-requirement/edit-header";
-import { TargetUsersEdit } from "@/components/product-requirement/target-users-edit";
-import { ExperienceGoalsEdit } from "@/components/product-requirement/experience-goals-edit";
-import { QualityGoalsEdit } from "@/components/product-requirement/quality-goals-edit";
-import { DesignSystemEdit } from "@/components/product-requirement/design-system-edit";
-import { UxGuidelinesEdit } from "@/components/product-requirement/ux-guidelines-edit";
-import { TechStackEdit } from "@/components/product-requirement/tech-stack-edit";
+import { TargetUsers } from "@/components/product-requirement/target-users";
+import { ExperienceGoals } from "@/components/product-requirement/experience-goals";
+import { QualityGoals } from "@/components/product-requirement/quality-goals";
+import { DesignSystem } from "@/components/product-requirement/design-system";
+import { UxGuidelines } from "@/components/product-requirement/ux-guidelines";
+import { TechStack } from "@/components/product-requirement/tech-stack";
 import type { ProductRequirement } from "@/lib/domain";
 import {
 	createProductRequirement,
@@ -21,6 +21,7 @@ import {
 	updateProductRequirement,
 } from "@/lib/data/product-requirements";
 import { listKeyLabelMappings, upsertKeyLabelMappings } from "@/lib/data/key-label-mappings";
+import { toast } from "sonner";
 
 export default function ProductRequirementEditPage() {
 	const router = useRouter();
@@ -186,6 +187,9 @@ export default function ProductRequirementEditPage() {
 		if (result.error || !result.data) {
 			setError(result.error ?? "保存に失敗しました");
 			setSaving(false);
+			toast.error("プロダクト要件の更新に失敗しました", {
+				description: result.error ?? "不明なエラーが発生しました",
+			});
 			return;
 		}
 
@@ -197,6 +201,9 @@ export default function ProductRequirementEditPage() {
 		if (mappingSaveResult.error) {
 			setError(`保存は完了しましたが、論理名マッピング保存に失敗しました: ${mappingSaveResult.error}`);
 			setSaving(false);
+			toast.error("論理名マッピングの保存に失敗しました", {
+				description: mappingSaveResult.error,
+			});
 			return;
 		}
 
@@ -206,7 +213,10 @@ export default function ProductRequirementEditPage() {
 		setForbiddenChoicesText(result.data.forbiddenChoices ?? "");
 		setSaving(false);
 
-		// 保存成功後に閲覧モードへ遷移
+		// 保存成功後にトースト表示してから閲覧モードへ遷移
+		toast.success("プロダクト要件を保存しました", {
+			duration: 5000,
+		});
 		router.push("/product-requirement");
 	};
 
@@ -267,7 +277,8 @@ export default function ProductRequirementEditPage() {
 									</TabsList>
 
 									<TabsContent value="targetUsers" className="mt-6">
-										<TargetUsersEdit
+										<TargetUsers
+											isEditing={true}
 											value={targetUsers}
 											onChange={(value) => {
 												setTargetUsers(value);
@@ -278,7 +289,8 @@ export default function ProductRequirementEditPage() {
 									</TabsContent>
 
 									<TabsContent value="experienceGoals" className="mt-6">
-										<ExperienceGoalsEdit
+										<ExperienceGoals
+											isEditing={true}
 											value={experienceGoals}
 											onChange={(value) => {
 												setExperienceGoals(value);
@@ -289,7 +301,8 @@ export default function ProductRequirementEditPage() {
 									</TabsContent>
 
 									<TabsContent value="qualityGoals" className="mt-6">
-										<QualityGoalsEdit
+										<QualityGoals
+											isEditing={true}
 											value={qualityGoals}
 											onChange={(value) => {
 												setQualityGoals(value);
@@ -301,7 +314,8 @@ export default function ProductRequirementEditPage() {
 
 									<TabsContent value="ux" className="mt-6">
 										<div className="space-y-6">
-											<UxGuidelinesEdit
+											<UxGuidelines
+												isEditing={true}
 												value={uxGuidelines}
 												onChange={(value) => {
 													setUxGuidelines(value);
@@ -309,7 +323,8 @@ export default function ProductRequirementEditPage() {
 												}}
 												error={fieldErrors.uxGuidelines}
 											/>
-											<DesignSystemEdit
+											<DesignSystem
+												isEditing={true}
 												value={designSystem}
 												onChange={(value) => {
 													setDesignSystem(value);
@@ -321,10 +336,11 @@ export default function ProductRequirementEditPage() {
 									</TabsContent>
 
 									<TabsContent value="tech" className="mt-6">
-										<TechStackEdit
-											techStackProfileText={techStackProfileText}
-											codingConventionsText={codingConventionsText}
-											forbiddenChoicesText={forbiddenChoicesText}
+										<TechStack
+											isEditing={true}
+											techStackProfile={techStackProfileText}
+											codingConventions={codingConventionsText}
+											forbiddenChoices={forbiddenChoicesText}
 											onTechStackProfileChange={setTechStackProfileText}
 											onCodingConventionsChange={setCodingConventionsText}
 											onForbiddenChoicesChange={setForbiddenChoicesText}

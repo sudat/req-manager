@@ -17,7 +17,7 @@ type UseTaskSaveParams = {
 };
 
 type UseTaskSaveResult = {
-	handleSave: (knowledge: TaskKnowledge) => Promise<void>;
+	handleSave: (knowledge: TaskKnowledge, onSuccess?: () => void) => Promise<void>;
 	isSaving: boolean;
 	saveError: string | null;
 	clearError: () => void;
@@ -43,7 +43,7 @@ export function useTaskSave({
 	const { currentProjectId, loading: projectLoading } = useProject();
 
 	const handleSave = useCallback(
-		async (knowledge: TaskKnowledge): Promise<void> => {
+		async (knowledge: TaskKnowledge, onSuccess?: () => void): Promise<void> => {
 			setIsSaving(true);
 			setSaveError(null);
 
@@ -60,7 +60,10 @@ export function useTaskSave({
 					taskId,
 					knowledge.taskName,
 					knowledge.taskSummary,
-					knowledge.businessContext,
+					knowledge.triggerDescription ?? "",
+					knowledge.triggerTaskIds ?? [],
+					knowledge.frequency ?? 'daily',
+					knowledge.frequencyDescription ?? "",
 					knowledge.processSteps,
 					knowledge.person ?? "",
 					knowledge.input ?? "",
@@ -96,6 +99,9 @@ export function useTaskSave({
 
 				// 成功時はLocalStorageをクリア
 				removeFromStorage(storageKey);
+
+				// 成功時コールバック
+				onSuccess?.();
 
 				router.push(`/business/${bizId}/${taskId}`);
 			} catch (e) {

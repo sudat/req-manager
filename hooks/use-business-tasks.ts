@@ -25,10 +25,10 @@ export const useBusinessTasks = (businessArea: string | null | undefined): UseBu
 			setLoading(false);
 			return;
 		}
-		// null/undefined は「まだ取得中」として扱う（loading状態を維持）
+		// null/undefined は「該当する業務領域が見つからない」としてエラー表示
 		if (businessArea === null || businessArea === undefined) {
-			setLoading(true);
-			setError(null);
+			setLoading(false);
+			setError("該当する業務領域が見つかりません");
 			setTasks([]);
 			return;
 		}

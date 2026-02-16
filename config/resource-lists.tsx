@@ -45,6 +45,8 @@ export type ResourceListConfig<T> = {
 	createHref: string;
 	/** 空状態メッセージ */
 	emptyMessage: string;
+	/** AIチャットへのリンク先（オプション） */
+	aiChatHref?: string;
 	/** エラーメッセージ（エラー時のセルのcolSpan数を含む） */
 	errorColSpan: number;
 	/** カラム定義 */
@@ -125,7 +127,8 @@ export const businessListConfig: ResourceListConfig<Business> = {
 	description: "業務体系の管理（ベースライン/仕様）",
 	searchPlaceholder: "業務名、領域で検索...",
 	createHref: "/business/create",
-	emptyMessage: "該当する業務がありません。",
+	emptyMessage: "業務がまだ登録されていません",
+	aiChatHref: "/chat?screen=business-list",
 	errorColSpan: 6,
 	columns: businessColumns,
 	actions: (biz) => [
@@ -196,7 +199,8 @@ export const systemDomainListConfig: ResourceListConfig<SystemDomain & { functio
 	description: "システム領域ごとに機能を整理します",
 	searchPlaceholder: "システム領域を検索...",
 	createHref: "/system/create",
-	emptyMessage: "該当するシステム領域がありません。",
+	emptyMessage: "システム領域がまだ登録されていません",
+	aiChatHref: "/chat?screen=system-list",
 	errorColSpan: 5,
 	columns: systemDomainColumns,
 	actions: (domain) => [
@@ -297,7 +301,8 @@ export const conceptListConfig: ResourceListConfig<Concept> = {
 	description: "用語の同義語、影響領域、必読ドキュメントを管理",
 	searchPlaceholder: "概念名、同義語、領域で検索...",
 	createHref: "/ideas/create",
-	emptyMessage: "該当する概念がありません。",
+	emptyMessage: "概念がまだ登録されていません",
+	aiChatHref: undefined,
 	errorColSpan: 6,
 	columns: conceptColumns,
 	actions: (concept) => [
@@ -402,7 +407,8 @@ export const createSystemFunctionListConfig = (
 	description: "システム領域に属する機能の一覧",
 	searchPlaceholder: "機能名、IDで検索...",
 	createHref: `/system/${domainId}/create`,
-	emptyMessage: "該当する機能がありません。",
+	emptyMessage: "システム機能がまだ登録されていません",
+	aiChatHref: `/chat?screen=SF&sdId=${domainId}`,
 	errorColSpan: 6,
 	columns: systemFunctionColumns,
 	actions: (sf) => [
@@ -505,7 +511,8 @@ export const createBusinessTaskListConfig = (
 	description: "業務領域内の業務タスク（業務プロセスの細分）",
 	searchPlaceholder: "業務タスク名、ID、業務概要、inputs/outputsで検索...",
 	createHref: `/business/${businessArea}/create`,
-	emptyMessage: "該当する業務タスクがありません。",
+	emptyMessage: "業務タスクがまだ登録されていません",
+	aiChatHref: `/chat?screen=BD&bdId=${businessArea}`,
 	errorColSpan: 6,
 	columns: businessTaskColumns,
 	actions: (task) => [
@@ -525,7 +532,6 @@ export const createBusinessTaskListConfig = (
 		task.id,
 		task.name,
 		task.summary,
-		task.businessContext,
 		task.processSteps,
 		task.input,
 		task.output,

@@ -1,7 +1,7 @@
 import type { AcceptanceCriterionJson } from "@/lib/data/structured";
 import type { EntryPoint } from "@/lib/domain";
 import {
-	calculateBusinessRequirementWithSystemRequirementsIssue,
+	calculateBusinessRequirementWithSystemFunctionsIssue,
 	calculateBusinessRequirementWithConceptsIssue,
 } from "./business-requirement-issues";
 import {
@@ -53,7 +53,7 @@ export type BusinessRequirementHealthInput = {
 	summary: string;
 	conceptIds: string[];
 	impacts: string[];
-	relatedSystemRequirementIds: string[];
+	relatedSystemFunctionIds: string[];
 	acceptanceCriteriaJson: AcceptanceCriterionJson[];
 };
 
@@ -103,10 +103,10 @@ export type HealthIssueFilter = {
 };
 
 export const healthIssueFilters: Record<string, HealthIssueFilter> = {
-	business_requirements_with_system_requirements: {
-		filterParam: 'missing_sr_link',
+	business_requirements_with_system_functions: {
+		filterParam: 'missing_sf_link',
 		targetPath: 'business',
-		label: 'システム要件未紐付け',
+		label: 'システム機能未紐付け',
 	},
 	system_requirements_with_business_requirements: {
 		filterParam: 'missing_br_link',
@@ -210,9 +210,9 @@ export const buildHealthScoreSummary = ({
 }: HealthScoreInput): HealthScoreSummary => {
 	const issues: HealthScoreIssue[] = [];
 
-	// 業務要件にシステム要件が紐づいている（業務要件ページのみ表示）
+	// 業務要件にシステム機能が紐づいている（業務要件ページのみ表示）
 	if (pageType !== 'system') {
-		issues.push(calculateBusinessRequirementWithSystemRequirementsIssue(businessRequirements));
+		issues.push(calculateBusinessRequirementWithSystemFunctionsIssue(businessRequirements));
 	}
 
 	// システム要件に業務要件が紐づいている（システム要件ページのみ表示）

@@ -12,9 +12,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { createBusiness } from "@/lib/data/businesses";
 import type { BusinessArea } from "@/lib/domain";
+import { normalizeBusinessAreaInput } from "@/lib/utils/id-rules";
 import { requireProjectId } from "@/lib/utils/project";
+import { toast } from "sonner";
 
-const areaPattern = /^[A-Z_-]+$/;
+const areaPattern = /^[A-Z0-9_]+$/;
 
 export default function BusinessCreatePage() {
   const router = useRouter();
@@ -26,12 +28,14 @@ export default function BusinessCreatePage() {
   const [saving, setSaving] = useState(false);
   const { currentProjectId, loading: projectLoading } = useProject();
 
-  const isAreaValid = useMemo(() => areaPattern.test(area.trim()), [area]);
+  const normalizedArea = useMemo(() => normalizeBusinessAreaInput(area), [area]);
+  const isAreaValid = useMemo(() => areaPattern.test(normalizedArea), [normalizedArea]);
   const canSubmit = useMemo(() => name.trim().length > 0 && isAreaValid, [name, isAreaValid]);
 
   async function handleSubmit(event: FormEvent): Promise<void> {
     event.preventDefault();
     if (!canSubmit) return;
+    const sanitizedArea = normalizeBusinessAreaInput(area);
     setSaving(true);
     const projectId = requireProjectId({
       currentProjectId,
@@ -44,7 +48,7 @@ export default function BusinessCreatePage() {
     }
     const { error: saveError } = await createBusiness({
       name: name.trim(),
-      area: area.trim() as BusinessArea,
+      area: sanitizedArea as BusinessArea,
       summary: summary.trim(),
       sortOrder: 0,
       projectId,
@@ -52,8 +56,14 @@ export default function BusinessCreatePage() {
     setSaving(false);
     if (saveError) {
       setError(saveError);
+      toast.error("業務領域の作成に失敗しました", {
+        description: saveError,
+      });
       return;
     }
+    toast.success("業務領域を作成しました", {
+      duration: 5000,
+    });
     router.push("/business");
   }
 
@@ -83,12 +93,12 @@ export default function BusinessCreatePage() {
                 </Label>
                 <Input
                   value={area}
-                  onChange={(event) => setArea(event.target.value.toUpperCase().replace(/\s+/g, ""))}
-                  placeholder="例: AR"
+                  onChange={(event) => setArea(normalizeBusinessAreaInput(event.target.value))}
+                  placeholder="例: AR_01"
                   required
                 />
                 {!isAreaValid && area.trim().length > 0 && (
-                  <p className="text-xs text-rose-600">英字と記号（-、_）のみ入力できます</p>
+                  <p className="text-xs text-rose-600">英大文字・数字・_のみ入力できます</p>
                 )}
               </div>
 

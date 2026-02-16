@@ -34,6 +34,8 @@ export function validateSystemFunctionEntryPoints(
 export function validateDesignDocuments(
 	designDocuments: DesignDocumentDraft[]
 ): string | null {
+	const validDdIds = new Set(designDocuments.map((unit) => unit.id));
+
 	for (const unit of designDocuments) {
 		if (!unit.name.trim()) {
 			return `DD（${unit.id}）の名称は必須です。`;
@@ -55,6 +57,21 @@ export function validateDesignDocuments(
 				const issuePath = firstIssue?.path?.join(".") || "structuredSpec";
 				return `DD（${unit.id}）: 構造化設計が不正です（${issuePath}: ${firstIssue?.message ?? "unknown"}）`;
 			}
+		}
+
+		const dependencyKeys = new Set<string>();
+		for (const dependency of unit.dependencies ?? []) {
+			if (!validDdIds.has(dependency.targetDdId)) {
+				return `DD（${unit.id}）: 呼び出し先DD（${dependency.targetDdId}）が存在しません。`;
+			}
+			if (dependency.targetDdId === unit.id) {
+				return `DD（${unit.id}）: 自己参照の呼び出し依存は設定できません。`;
+			}
+			const key = `${dependency.targetDdId}:${dependency.callType}`;
+			if (dependencyKeys.has(key)) {
+				return `DD（${unit.id}）: 呼び出し依存が重複しています（${dependency.targetDdId}/${dependency.callType}）。`;
+			}
+			dependencyKeys.add(key);
 		}
 	}
 	return null;

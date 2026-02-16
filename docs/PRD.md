@@ -1,5 +1,7 @@
 # 要件管理DB PRD（Product Requirements Document）
 
+---
+
 ## 1. プロダクト概要
 
 ### 1.1 目的
@@ -814,8 +816,8 @@ DDの入出力定義は、テキスト自由記述に加えて**構造化スキ�
 |------|-------------|------------|
 | 入出力フィールド | `fieldSchema`（name, type, required, constraints） | `lib/domain/schemas/fields.ts` |
 | タイプ別入出力 | API/画面/バッチ/ジョブ別のI/Oスキーマ | `lib/domain/schemas/io-schemas.ts` |
-| コアロジック | 計算式、判定条件、状態遷移、締め処理等の業務ルール | `lib/domain/schemas/core-logic.ts` |
-| 副作用（状態変化） | DB操作/外部API/イベント/ファイル/ログ | `lib/domain/schemas/side-effects.ts` |
+| コアロジック | 検証・抽出・算出・判定。インメモリで完結する純粋な業務ロジック | `lib/domain/schemas/core-logic.ts` |
+| 保存/通知（sideEffects） | 当該DDが直接実行するDB操作/外部API/イベント/ファイル出力 | `lib/domain/schemas/side-effects.ts` |
 | 例外 | 例外タイプ/復旧戦略/エラーコード | `lib/domain/schemas/exceptions.ts` |
 | 非機能要件 | 性能/可用性/セキュリティ/可観測性 | `lib/domain/schemas/non-functional.ts` |
 | DD統合スキーマ | 上記を統合した構造化DD仕様 | `lib/domain/schemas/design-document-structured.ts` |
@@ -825,10 +827,55 @@ DDの入出力定義は、テキスト自由記述に加えて**構造化スキ�
 構造化DDの情報フローは以下の通り：
 
 ```
-入力スキーマ → [コアロジック] → 出力スキーマ → 副作用 → 例外 → 非機能
+入力スキーマ → [コアロジック] → 出力スキーマ → 保存/通知 → 例外 → 非機能
 ```
 
-コアロジックは入力から出力への変換処理を記述し、副作用は出力後の状態変化を記述する。
+コアロジックは入力から出力への純粋なビジネスロジック（インメモリ処理）を記述する。
+保存/通知（sideEffects）は当該DDが直接実行する外部状態変更を記述する。
+
+##### coreLogicと保存/通知（sideEffects）の設計指針
+
+| 観点 | coreLogic（コアロジック） | sideEffects（保存/通知） |
+|------|-------------------------|------------------------|
+| **性質** | 純粋な業務ロジック | 外部状態の変化 |
+| **実行範囲** | インメモリで完結 | DB/API/イベント/ファイルなど外部システムへの影響 |
+| **UIラベル** | - | 「副作用」→「保存/通知」に変更 |
+
+**coreLogicのルールタイプ**
+
+| タイプ | 説明 | 例 |
+|--------|------|-----|
+| `validate` | 検証・妥当性チェック | 在庫数が注文数以上か確認 |
+| `read` | 抽出・参照 | 該当する注文データを検索 |
+| `derive` | 算出・計算・変換・集計 | 消費税 = 税抜金額 × 税率 |
+| `decide` | 判定・分岐・選択（状態遷移の決定を含む） | ステータスを'draft'→'issued'に変更すべきか判断 |
+
+**設計判断の具体例**
+
+| 要件 | coreLogic | sideEffects |
+|------|-----------|-------------|
+| ステータス遷移の判断 | `decide`: 遷移条件を判定し、新しいステータスを決定 | - |
+| 実際のUPDATE実行 | - | `dbOperations`: `{table: "invoices", operation: "update"}` |
+| バリデーション | `validate`: 入力値の妥当性チェック | - |
+| 計算処理 | `derive`: 金額計算、税計算 | - |
+| API呼び出し | - | `externalApiCalls`: 内部API・外部サービスへのリクエスト |
+| ファイル出力 | - | `fileOutputs`: CSV/PDF生成 |
+
+**sideEffectsのスコープルール**
+
+sideEffectsには**当該DDが直接実行する操作のみ**を記載する。呼び出し先のDDで実行される操作は含めない。
+
+```
+画面DD → API-DDを呼ぶ → バッチ-DDを呼ぶ → DB更新
+   │           │              │
+   │           │              └─ sideEffects: dbOperations（このDDが実行）
+   │           └─ sideEffects: externalApiCalls（外部サービス呼び出し）
+   └─ sideEffects: externalApiCalls（内部API呼び出し）
+```
+
+- **画面DD**: `dbOperations`は持たない（画面が直接DB操作しない）。ただし、`externalApiCalls`を持つことができる（呼び出す内部APIを記載）。
+- **API-DD**: `dbOperations`と`externalApiCalls`の両方を持つことができる。
+- **バッチ/ジョブDD**: `dbOperations`を持つ（自らがDB操作を実行）。
 
 #### modelタイプの論理エンティティ定義
 
@@ -1467,9 +1514,109 @@ affected_scope:
 
 ## 5. AIエージェント構成
 
-本章では、要件管理DBアプリに組み込むAIエージェントの設計を定義する。コーディングエージェント（Claude Code等）への連携は6章で扱い、本章ではアプリ内で動作する「登録支援」「影響調査」「品質チェック」等のAI機能を対象とする。
+本章では、要件管理DBアプリに組み込むAIエージェントの設計を定義する。アプリ内で動作する「登録支援」「影響調査」「品質チェック」等のAI機能を対象とする。
 
-### 5章と6章の責務境界
+**→ 詳細設計: [@docs/prd/sect05_ai-agent-architecture.md](/docs/prd/sect05_ai-agent-architecture.md)**
+
+### 本章の概要
+
+- **5.1 設計思想**: 単一Agent・複数Tool構成、登録方式の併存
+- **5.2 アーキテクチャ**: Mastraベースの統合Agent設計
+- **5.3 Tool一覧**: 登録支援、分析・検証、ユーティリティTool群
+- **5.4 Tool定義詳細**: bt_draft、system_draft、impact_analysis等の実装
+- **5.5 コンテキスト注入**: チャットセッション開始時の自動注入
+- **5.6 チャットUIの設計**: 画面構成、クイックアクション、草案プレビュー
+- **5.7 草案確定フロー**: 単一/一括生成の確定、品質チェック
+- **5.8 設計決定ログ**: AI判断の記録・追跡
+- **5.9 エラーハンドリング**: Tool失敗時、曖昧入力時の対応
+- **5.10 UXと少人数開発への効果**: 設計の目指す効果と共通原則
+
+---
+
+## 6. コーディングエージェント連携設計
+
+本章では、要件管理DBアプリが保持するコンテキスト（PR→BT→BR→SF→SR→AC→DD）を活用し、コーディングエージェントによる自動改修を安全かつ再現可能に実行するための連携設計を定義する。
+
+**→ 詳細設計: [@docs/prd/sect06_coding-agent-integration.md](/docs/prd/sect06_coding-agent-integration.md)**
+
+### 本章の概要
+
+- **6.1 目的とスコープ**: アプリ側とエージェント側の責務分担
+- **6.2 アーキテクチャ方針**: 実行制御と表示の分離、永続化
+- **6.3 コーディングエージェント基盤の選択**: SDK型基盤の採用理由
+- **6.4 ジョブ種別**: 影響調査ジョブと改修ジョブの分離
+- **6.5 影響調査ジョブの入出力定義**: InvestigationRequest/Resultの構造
+- **6.6 allow_paths自動決定ロジック**: 影響ファイルからの自動生成ルール
+- **6.7 影響範囲レビューAI**: 閾値超過時の絞り込み提案
+- **6.8 改修指示パッケージ設計**: ModificationPackageの構造
+- **6.9 ジョブ実行モデル**: 状態管理と冪等性
+- **6.10 HITL設計**: 人間の介入ポイント
+- **6.11 Hooks設計（ガードレール）**: 決定論的制約
+- **6.12 通信設計**: HTTP API + イベントストリーム
+- **6.13 エラーハンドリングとエスカレーション**: 失敗パターンと対応
+- **6.14 セキュリティ**: サンドボックス化、認証認可
+- **6.15 プロジェクト設定**: 影響調査・レビューの挙動設定
+- **6.16 実装ロードマップ**: Phase 1〜3の計画
+- **6.17 決定事項サマリ**: 設計判断のまとめ
+- **6.18 用語**: 本章で使用する用語定義
+- **6.19 コーディングエージェントからのフィードバック**: SuggestionFromAgent、同期チェック
+
+---
+
+## 7. エクスポート仕様（Claude Code連携）
+
+本章は、本ツールの正本をClaude Codeが参照できる形式で出力する仕様を定義する。
+
+### 本章の概要
+
+- **7.1 出力ファイル構成**: `docs/requirements/` 以下のディレクトリ構造
+- **7.2 プロダクト要件ファイルフォーマット**: `product-requirement.yml`
+- **7.3 業務タスクファイルフォーマット**: `business/{業務分類ID}/{業務タスクID}.md`
+- **7.4 システム機能ファイルフォーマット**: `system/{システム領域ID}/{システム機能ID}.md`
+- **7.5 概念辞書フォーマット**: `concept-dictionary.yml`
+- **7.6 リンク・根拠データフォーマット**: `graph/requirements-links.json`
+- **7.7 INDEX.md（ルーティング表）**: Claude Codeが最初に読むべきファイル
+- **7.8 Claude Code Skill連携**: `.claude/skills/` へのSKILL.md配置
+
+### 実装ファイル
+
+> **✅ エクスポート機能実装済み** (2026-02-06)
+
+- `lib/export/requirements-export.ts` - エクスポートロジック
+- `app/api/export/requirements/route.ts` - API Route
+
+### エクスポート形式
+
+| 形式 | 説明 |
+|------|------|
+| **business** | 業務要件のエクスポート（Markdown形式） |
+| **requirements** | システム要件のエクスポート（Markdown形式） |
+| **system** | システム機能・設計書のエクスポート（Markdown形式） |
+| **graph** | 要件間リンクのエクスポート（JSON形式） |
+
+※ ZIP形式で一括ダウンロードも対応
+
+---
+
+## 8. 技術アーキテクチャ
+
+本章では、要件管理DBアプリの技術的な構成を定義する。5章で設計したアプリ内AI、6章で設計したコーディングエージェント連携を含めた全体像を示し、各層の技術選定と責務を明確にする。
+
+**→ 詳細設計: [@docs/prd/sect08_technical-architecture.md](/docs/prd/sect08_technical-architecture.md)**
+
+### 本章の概要
+
+- **8.1 アーキテクチャ全体像**: 3層構成（アプリケーション/AI/連携層）
+- **8.2 技術選定**: Next.js、Supabase、Mastra、Claude Agent SDK等
+- **8.3 アプリケーション層**: フロントエンド/バックエンド構成、DB設計
+- **8.4 アプリ内AI層**: Mastra Agent配置、Tool実装パターン、セッション管理
+- **8.5 コーディングエージェント連携層**: Agent Runner、MCP Server、ジョブ管理
+- **8.6 セキュリティ**: 認証・認可、権限モデル、データ保護
+- **8.7 コスト管理**: コスト発生ポイント、最適化方針
+
+---
+
+## 9. 画面構成と利用フロー
 
 本PRDでは、AI機能を2つの層に分けて設計している。
 
@@ -2277,1520 +2424,6 @@ Agent: どの要件のテストを生成しますか？
 
 ---
 
-## 6. コーディングエージェント連携設計
-
-本章では、要件管理DBアプリが保持するコンテキスト（PR→BT→BR→SF→SR→AC→DD）を活用し、コーディングエージェントによる自動改修を安全かつ再現可能に実行するための連携設計を定義する。
-
-### 6.1 目的とスコープ
-
-要件管理DBアプリ側は「影響調査ジョブの投入」「改修指示パッケージの生成」「実行ジョブの管理」「進捗と結果の可視化」を担い、コーディングエージェント側は「影響調査」「改修」「テスト」「PR作成」を担う。
-
-| 対象                       | 役割                                                         |
-| -------------------------- | ------------------------------------------------------------ |
-| 要件管理DBアプリ           | InvestigationRequest/ModificationPackage生成、チャットUI/タスクUI、結果受信、履歴保管 |
-| ジョブAPI / タスク管理     | タスク作成（冪等）、状態/イベント永続化、イベント配信（SSE/WebSocket） |
-| コーディングエージェント Worker | 影響調査、改修実行、テスト、PR作成（サンドボックス内でジョブ単位に起動） |
-
-### 6.2 アーキテクチャ方針
-
-実行制御と表示（リアルタイム進捗）を分離し、ジョブの状態とイベントは必ず永続化する。
-
-- 実行はジョブ（task\_id）単位で管理し、状態とイベントは永続ストアを正とする
-- Workerは「少なくとも一回」起動されうる前提で冪等に動く
-- クライアントは切断/再接続しても、イベントを復元できる
-
-想定する分離構成（例）：
-
-```
-┌──────────────────────────────────────────────┐
-│ 要件管理DBアプリ（UI）                         │
-│ - 要件閲覧/編集                                │
-│ - チャットUI / タスクUI                        │
-└───────────────────────┬──────────────────────┘
-                        │ HTTPS
-                        ▼
-┌──────────────────────────────────────────────┐
-│ ジョブAPI / タスク管理                         │
-│ - タスク作成（冪等）                            │
-│ - 状態/イベント永続化                           │
-│ - イベント配信（SSE/WebSocket）                 │
-└───────────────────────┬──────────────────────┘
-                        │ 起動トリガ（キュー等）
-                        ▼
-┌──────────────────────────────────────────────┐
-│ コーディングエージェント Worker（エフェメラル）   │
-│ - Agent SDK + オーケストレーション               │
-│ - サンドボックス化されたワークスペース            │
-└──────────────────────────────────────────────┘
-```
-
-### 6.3 コーディングエージェント基盤の選択
-
-本番運用（ジョブ制御、権限制御、サンドボックス、Hooks等）を前提に、プログラマティックに制御可能なSDK型の基盤を採用する。
-
-- CLI型の完成品は、ターミナル対話のUXには優れるが、アプリ組み込みとジョブ管理には不向き
-- SDK型は、ジョブ制御・検証・権限・ログの統合がしやすい
-
-### 6.4 ジョブ種別
-
-コーディングエージェントへの依頼は、以下の2種類のジョブに分かれる。
-
-| ジョブ種別 | 目的 | 入力 | 出力 | スコープ制約 |
-|-----------|------|------|------|-------------|
-| 影響調査ジョブ | 変更要求に対する影響範囲の特定 | InvestigationRequest | InvestigationResult | 探索のみ（コード変更なし） |
-| 改修ジョブ | 確定した影響範囲に対する実装変更 | ModificationPackage | PR作成 | allow\_pathsで制限 |
-
-### 6.5 影響調査ジョブの入出力定義
-
-#### InvestigationRequest（アプリ → エージェント）
-
-```typescript
-interface InvestigationRequest {
-  // 識別子
-  investigation_id: string;
-  cr_id: string;
-  project_id: string;
-  repository_url: string;
-  base_branch: string;
-
-  // 探索起点（トップダウンで特定したentry_point群）
-  entry_points: {
-    dd_id: string;
-    sf_id: string;
-    entry_point: string;           // ファイルパス
-    investigation_hint?: string;   // 「この機能のどこを見るべきか」のヒント
-  }[];
-
-  // 探索制約
-  exploration: {
-    max_depth: number;             // 依存グラフの探索深さ上限（推奨: 5）
-    include_patterns: string[];    // 探索対象パターン（例: ["src/**/*.ts", "src/**/*.tsx"]）
-    exclude_patterns: string[];    // 除外パターン（例: ["node_modules/**", "**/*.test.ts"]）
-    follow_dynamic_imports: boolean; // 動的importも追跡するか
-  };
-
-  // 変更要求の文脈（エージェントが影響判断に使う）
-  change_context: {
-    summary: string;               // 変更要求の概要
-    affected_concepts: string[];   // 関連する概念辞書ID（任意）
-    expected_change_types: ('logic' | 'data' | 'api' | 'ui' | 'config')[];
-  };
-
-  // 参照可能な正本（MCP経由でも取得可能だが、主要なものは同梱）
-  requirements_context: {
-    product_requirement: ProductRequirement;  // PR（tech_stack_profile含む）
-    business_requirements: {
-      br_id: string;
-      goal: string;
-      constraints: string[];
-    }[];
-    system_requirements: {
-      sr_id: string;
-      sf_id: string;
-      description: string;
-      type: 'functional' | 'non-functional' | 'exception' | 'data';
-    }[];
-    acceptance_criteria: {
-      ac_id: string;
-      sr_id: string;
-      scenario: string;
-      given: string;
-      when: string;
-      then: string;
-    }[];
-  };
-
-  // 出力設定
-  output: {
-    include_file_snippets: boolean;  // 影響箇所のコードスニペットを含めるか
-    max_files_per_category: number;  // カテゴリごとの最大ファイル数（爆発防止）
-    confidence_threshold: number;    // この閾値未満のconfidenceは除外（0.0-1.0）
-  };
-}
-```
-
-#### InvestigationResult（エージェント → アプリ）
-
-```typescript
-interface InvestigationResult {
-  // 識別子
-  investigation_id: string;
-  cr_id: string;
-  status: 'completed' | 'partial' | 'failed';
-  completed_at: string;            // ISO 8601
-
-  // 探索メタデータ
-  exploration_metadata: {
-    total_files_scanned: number;
-    total_dependencies_found: number;
-    max_depth_reached: number;
-    truncated: boolean;            // max_files_per_categoryで切られたか
-    truncation_reason?: string;
-  };
-
-  // 影響ファイル一覧（allow_pathsの素材）
-  affected_files: AffectedFile[];
-
-  // 正本との突合結果
-  requirements_mapping: RequirementMapping[];
-
-  // 新規発見（正本に登録されていないが影響がありそうなもの）
-  discoveries: Discovery[];
-
-  // 疑義候補（自動でsuspect=trueにすべきリンク）
-  suspect_candidates: SuspectCandidate[];
-
-  // エージェントの所見（人間向けサマリ）
-  summary: {
-    high_impact_areas: string[];   // 特に注意すべき領域
-    risk_assessment: string;       // リスクの総合評価
-    recommended_actions: string[]; // 推奨アクション
-  };
-}
-
-interface AffectedFile {
-  file_path: string;
-  impact_type: 'direct' | 'indirect';
-  depth: number;                   // entry_pointからの距離
-  confidence: number;              // 0.0-1.0
-  change_likelihood: 'high' | 'medium' | 'low';
-  reason: string;                  // なぜ影響があると判断したか
-  
-  // 依存関係の詳細
-  dependency_chain: string[];      // entry_pointからこのファイルまでのパス
-  dependency_type: 'import' | 'type' | 'runtime' | 'config';
-  
-  // コードスニペット（output.include_file_snippets=trueの場合）
-  snippets?: {
-    line_start: number;
-    line_end: number;
-    content: string;
-    relevance: string;             // このスニペットが関連する理由
-  }[];
-}
-
-interface RequirementMapping {
-  file_path: string;
-  mapped_to: {
-    dd_id?: string;         // 既存のDDにマッピングできた場合
-    sf_id?: string;
-    sr_ids?: string[];
-  };
-  mapping_confidence: number;
-  mapping_basis: string;           // マッピングの根拠
-}
-
-interface Discovery {
-  discovery_type: 'unmapped_entry_point' | 'shared_module' | 'unexpected_dependency' | 'circular_dependency';
-  file_path: string;
-  description: string;
-  recommendation: string;          // 正本への登録推奨等
-  severity: 'info' | 'warning' | 'critical';
-}
-
-interface SuspectCandidate {
-  link_id?: string;                // 既存リンクがある場合
-  source_id: string;
-  target_id: string;
-  relation_type: string;
-  suspect_reason: string;
-  suggested_severity: 'high' | 'medium' | 'low';
-  evidence: {
-    code_reference?: string;       // 根拠となるコード箇所
-    requirement_reference?: string;
-  };
-}
-```
-
-### 6.6 allow\_paths自動決定ロジック
-
-InvestigationResult.affected\_files から allow\_paths を自動生成するルールを定義する。
-
-#### 決定フロー
-
-```
-InvestigationResult.affected_files
-    ↓ フィルタリング
-allow_paths候補
-    ↓ 閾値チェック（50ファイル超？）
-    ↓ Yes → 影響範囲レビューAI（6.7）
-    ↓ No → そのまま採用
-allow_paths確定
-    ↓
-ModificationPackage.execution.allow_paths
-```
-
-#### 自動決定ルール
-
-```typescript
-interface AllowPathsDecisionRule {
-  // 基本ルール：affected_filesから自動生成
-  base_rule: {
-    include_direct_impacts: true;      // impact_type='direct'は常に含める
-    include_indirect_impacts: true;    // impact_type='indirect'も含める
-    confidence_threshold: 0.3;         // これ以上のconfidenceのみ
-    max_depth: 5;                      // entry_pointからの距離上限
-  };
-
-  // 共通処理の扱い
-  shared_module_rule: {
-    auto_include: true;                // 依存分析で出てきたら自動で含める
-    notify_on_include: true;           // 含めた場合は人間に通知
-    require_confirmation_if_count_exceeds: 10; // 共通処理が10ファイル超えたら確認要求
-  };
-
-  // 安全弁
-  safety_limits: {
-    max_total_files: 50;               // allow_pathsの最大ファイル数
-    max_directories: 10;               // allow_pathsの最大ディレクトリ数
-    escalate_if_exceeds: true;         // 超過したら影響範囲レビューAIに回す
-  };
-}
-```
-
-#### 共通処理ディレクトリの定義
-
-プロジェクト設定で以下を定義する。これに該当するファイルは「共通処理」として扱い、通知・確認の対象となる。
-
-```typescript
-shared_module_patterns: string[];  // 例: ["src/utils/**", "src/libs/**", "src/shared/**", "src/common/**"]
-```
-
-### 6.7 影響範囲レビューAI
-
-allow\_paths候補が閾値（デフォルト50ファイル）を超えた場合、影響範囲レビューAIが起動し、絞り込み提案を行う。
-
-#### ImpactReviewRequest（アプリ → 影響範囲レビューAI）
-
-```typescript
-interface ImpactReviewRequest {
-  investigation_id: string;
-  cr_id: string;
-
-  // レビュー対象
-  allow_paths_candidate: string[];
-  affected_files: AffectedFile[];  // InvestigationResultから
-
-  // 変更要求の文脈
-  change_context: {
-    summary: string;
-    primary_intent: string;        // 変更の主目的
-    out_of_scope: string[];        // 明示的にスコープ外としたいもの
-  };
-
-  // レビュー方針
-  review_policy: {
-    aggressiveness: 'conservative' | 'moderate' | 'aggressive';
-    // conservative: 疑わしきは含める（安全重視）
-    // moderate: バランス（デフォルト）
-    // aggressive: 積極的に絞る（コスト重視）
-    
-    prioritize_by: 'confidence' | 'depth' | 'change_likelihood';
-    target_file_count?: number;    // 目標ファイル数（aggressiveの場合に有効）
-  };
-}
-```
-
-#### ImpactReviewResult（影響範囲レビューAI → アプリ）
-
-```typescript
-interface ImpactReviewResult {
-  investigation_id: string;
-  cr_id: string;
-
-  // 絞り込み結果
-  recommended_allow_paths: string[];
-  
-  // 除外提案
-  exclusion_proposals: {
-    file_path: string;
-    exclusion_reason: string;
-    confidence: number;            // 除外しても問題ない確信度
-    risk_if_excluded: string;      // 除外した場合のリスク
-    decision: 'exclude' | 'include' | 'human_review';
-  }[];
-
-  // カテゴリ別サマリ
-  category_summary: {
-    category: 'core_logic' | 'shared_module' | 'ui_component' | 'api_layer' | 'config' | 'test';
-    file_count: number;
-    included_count: number;
-    excluded_count: number;
-    rationale: string;
-  }[];
-
-  // 残存リスク
-  residual_risks: {
-    risk_type: 'missed_dependency' | 'shared_module_side_effect' | 'indirect_impact';
-    description: string;
-    severity: 'high' | 'medium' | 'low';
-    mitigation: string;            // リスク軽減策
-  }[];
-
-  // 人間への確認事項
-  human_review_items: {
-    file_path: string;
-    question: string;              // 「このファイルは変更対象に含めるべきですか？」
-    context: string;               // 判断材料
-    default_recommendation: 'include' | 'exclude';
-  }[];
-}
-```
-
-#### レビューロジックの方針
-
-```typescript
-interface ImpactReviewLogic {
-  // 除外判定の基準
-  exclusion_criteria: {
-    // 自動除外（human_review不要）
-    auto_exclude: {
-      test_files: true;                    // *.test.ts, *.spec.ts
-      type_definition_only: true;          // 型定義のみのファイル（*.d.ts）
-      config_if_no_schema_change: true;    // スキーマ変更がない設定ファイル
-      depth_exceeds: 7;                    // 依存距離が7を超えるもの
-      confidence_below: 0.2;               // confidence 0.2未満
-    };
-
-    // 条件付き除外（human_review推奨）
-    conditional_exclude: {
-      shared_module_if_only_type_dependency: true;  // 型依存のみの共通処理
-      indirect_impact_if_no_data_flow: true;        // データフローがない間接影響
-      ui_component_if_no_prop_change: true;         // props変更がないUIコンポーネント
-    };
-  };
-
-  // 包含判定の基準
-  inclusion_criteria: {
-    // 必ず含める
-    must_include: {
-      direct_entry_point: true;            // 起点のentry_point
-      direct_import_of_entry_point: true;  // entry_pointが直接importしているもの
-      data_model_change: true;             // データモデル（型、スキーマ）の変更
-      api_contract_change: true;           // API契約の変更
-    };
-
-    // 優先的に含める
-    prefer_include: {
-      business_logic_files: true;          // ビジネスロジックを含むファイル
-      state_management: true;              // 状態管理（store, context）
-      validation_logic: true;              // バリデーションロジック
-    };
-  };
-
-  // 爆発抑制のヒューリスティクス
-  explosion_control: {
-    // 同一ディレクトリから大量に出てきた場合
-    same_directory_threshold: 10;          // 同一ディレクトリから10ファイル超
-    same_directory_action: 'collapse_to_pattern' | 'human_review' | 'sample';
-    
-    // 共通処理への依存が多すぎる場合
-    shared_module_threshold: 15;
-    shared_module_action: 'warn_and_include' | 'human_review' | 'exclude_low_confidence';
-  };
-}
-```
-
-### 6.8 改修指示パッケージ設計
-
-要件管理DBアプリが生成し、コーディングエージェントに渡す「改修指示パッケージ」を定義する。目的は、(1) 意図の伝達、(2) スコープの決定論的制約、(3) トレーサビリティの担保である。
-
-```typescript
-interface ModificationPackage {
-  // 識別子（冪等キー）
-  task_id: string;
-  cr_id: string;                      // 変更要求ID
-  project_id: string;
-  repository_url: string;
-  base_branch: string;
-
-  // 実行ポリシー
-  execution: {
-    working_branch: string;          // 例: "agent/{task_id}"
-    allow_paths: string[];           // 変更を許可するパス（スコープ強制）
-    deny_paths?: string[];           // 明示的に禁止するパス
-    max_runtime_sec: number;
-    idempotency_key: string;         // 原則 task_id と同値
-  };
-
-  // 要件コンテキスト（トレーサビリティ）
-  product_requirement: ProductRequirement;  // PR全体（tech_stack_profile含む）
-  business_task: string;
-  business_requirements: string[];
-  system_functions: string[];
-  system_requirements: string[];
-  acceptance_criteria: string[];
-
-  // 影響調査・レビューの根拠（トレーサビリティ）
-  investigation_refs: {
-    investigation_id: string;
-    investigation_result_summary: string;
-    impact_review_id?: string;           // 影響範囲レビューを実施した場合
-    impact_review_result_summary?: string;
-  };
-
-  // DD（対象となる設計情報）
-  implementation_units: {
-    dd_id: string;
-    type: 'screen' | 'api' | 'batch' | 'external_if';
-    name: string;
-    entry_point: string;
-    design_details: Record<string, unknown>;  // api_definition, data_model等
-  }[];
-
-  // 改修内容
-  modification_summary: string;
-  modification_details: string;
-  targets: {
-    dd_id: string;           // 対象のDD
-    entry_point: string;            // エントリポイントファイルパス
-    description: string;
-    related_requirements: string[]; // SR/AC ID
-  }[];
-
-  // 制約・ガイドライン
-  constraints: string[];
-  prohibitions: string[];
-  coding_guidelines: string;
-  test_commands: string[];
-
-  // 残存リスク（PRレビュー時の参考）
-  residual_risks?: {
-    risk_type: string;
-    description: string;
-    severity: 'high' | 'medium' | 'low';
-    mitigation: string;
-  }[];
-
-  // 除外されたファイル（明示的な記録）
-  excluded_from_scope?: {
-    file_path: string;
-    exclusion_reason: string;
-    excluded_by: 'auto_rule' | 'ai_review' | 'human_decision';
-  }[];
-}
-```
-
-運用上の原則：
-
-- system\_prompt（または同等の指示）は「意図の伝達」に限定し、「スコープ制限の強制」は allow\_paths/deny\_paths 等の決定論的制約で担保する
-- 変更対象（targets）はDD（impl\_unit\_id）とリンクし、Change PlanやImpact Reportの自動生成に流用する
-- investigation\_refs を通じて「どの時点の調査結果に基づいてスコープを決めたか」を再現可能にする
-- product\_requirement を含めることで、エージェントがPRのtech_stack_profileやcoding_conventionsを参照できる
-
-### 6.9 ジョブ実行モデル
-
-実行はジョブ（task\_id）として管理し、状態遷移とイベントを永続化する。
-
-- CREATED → RUNNING → SUCCEEDED / FAILED / NEEDS\_REVIEW
-- Worker二重起動が起きても「二重コミット」にならないように、idempotency\_key と状態遷移の整合（CAS等）で無害化する
-
-### 6.10 HITL（Human-in-the-Loop）設計
-
-人間の介入ポイントは「判断」ではなく「検証結果の承認」に寄せる。
-
-| フェーズ               | 処理主体               | 人間の関与           |
-| ---------------------- | ---------------------- | -------------------- |
-| 影響調査ジョブ投入     | 要件管理DBアプリ       | なし（自動）         |
-| 影響調査実行           | コーディングエージェント | なし（自動）         |
-| 影響範囲レビュー       | 影響範囲レビューAI     | human\_review\_itemsの確認（閾値超過時） |
-| 改修指示パッケージ生成 | 要件管理DBアプリ       | 改修内容の確認・承認（任意） |
-| 改修実行               | コーディングエージェント | なし（自動）         |
-| テスト/静的解析/ビルド | コーディングエージェント | なし（自動）         |
-| PR作成                 | コーディングエージェント | なし（自動）         |
-| マージ承認             | 人間                   | 必須                 |
-| 検証失敗時             | エスカレーション       | 必須（例外対応）     |
-
-マージ承認の負荷を下げるため、PR作成時に以下を必須成果物として添付する。
-
-| 成果物                         | 目的                                   |
-| ------------------------------ | -------------------------------------- |
-| Change Plan（変更計画）        | 何をどう変えたかをDD IDと紐付けて列挙 |
-| Impact Report（影響調査）      | 依存・影響範囲・リスクを列挙（自動生成） |
-| Verification Summary（検証要約） | テスト/静的解析/ビルドの結果を集約     |
-| Residual Risks（残存リスク）   | 影響範囲レビューで検出されたリスク     |
-
-### 6.11 Hooks設計（ガードレール）
-
-Hooksは「決定論的なガードレール」として使用し、ワークフロー制御（テスト実行等）には使用しない。
-
-- Bashは許可コマンド集合（allowlist）に一致する場合のみ実行
-- ファイル編集は allow\_paths に含まれる場合のみ許可
-- deny\_paths と機密ファイルは常に禁止
-
-テスト実行はオーケストレーション層（アプリケーションコード）で制御する。
-
-### 6.12 通信設計
-
-実行制御はHTTPのジョブAPIを主軸とし、進捗表示のためにイベントストリームを用意する。
-
-```
-POST   /api/tasks                  # タスク作成（冪等）
-GET    /api/tasks/{task_id}        # 状態参照
-GET    /api/tasks/{task_id}/events # イベント取得（SSE or pagination）
-POST   /api/tasks/{task_id}/retry  # リトライ指示（将来拡張）
-```
-
-- WebSocket/SSEは「イベント配信」に限定し、状態の正は永続ストアに置く
-- クライアントは last\_event\_id を指定して欠損分を復元できる
-
-### 6.13 エラーハンドリングとエスカレーション
-
-| 失敗パターン   | 検知方法                          | 対応           |
-| -------------- | --------------------------------- | -------------- |
-| 影響調査失敗   | Workerの実行結果                  | エスカレーション |
-| 改修実行失敗   | Workerの実行結果                  | エスカレーション |
-| テスト失敗     | 終了コード・出力解析              | エスカレーション |
-| 静的解析エラー | Lint/型チェックの終了コード       | エスカレーション |
-| ビルド失敗     | ビルドコマンドの終了コード        | エスカレーション |
-| スコープ外変更 | allow\_paths と実際のdiff比較     | エスカレーション |
-| タイムアウト   | max\_runtime\_sec 到達            | エスカレーション |
-| 二重実行       | idempotency\_key / 状態遷移整合   | 無害化（片方をNOOP） |
-
-失敗時は TaskStatus.NEEDS\_REVIEW に更新し、要件管理DBアプリ側のチャットUIにレビュー要求として表示する。
-
-### 6.14 セキュリティ
-
-- サンドボックス化：ワークスペース外へのアクセス禁止、リソース制限、実行時間制限
-- ネットワーク制限：許可ドメインのみ接続可能（egress allowlist）
-- 認証・認可：サービス間はOIDC/JWT等で認証し、GitHub連携はGitHub App（最小権限・短命トークン）で運用する
-- Secret管理：LLM APIキー等はSecret Manager等で管理し、Personal Access Tokenの運用は避ける
-
-### 6.15 プロジェクト設定
-
-影響調査・allow\_paths決定・影響範囲レビューの挙動をプロジェクト単位で設定する。
-
-```typescript
-interface ProjectInvestigationSettings {
-  // 探索設定
-  exploration: {
-    default_max_depth: number;           // デフォルト: 5
-    default_include_patterns: string[];
-    default_exclude_patterns: string[];
-  };
-
-  // allow_paths決定ルール
-  allow_paths_rule: AllowPathsDecisionRule;
-
-  // 影響範囲レビュー設定
-  impact_review: {
-    auto_trigger_threshold: number;      // この数を超えたら自動でレビュー起動（デフォルト: 50）
-    default_aggressiveness: 'conservative' | 'moderate' | 'aggressive';
-    require_human_confirmation: boolean; // human_review_itemsを必須にするか
-  };
-
-  // 共通処理ディレクトリの定義
-  shared_module_patterns: string[];      // 例: ["src/utils/**", "src/libs/**", "src/shared/**"]
-}
-```
-
-### 6.16 実装ロードマップ
-
-| Phase           | 主な内容                                                                                                                               |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Phase 1: MVP    | InvestigationRequest/Result、改修指示パッケージ生成、タスク管理（状態/イベント永続化、冪等POST）、Worker実行、スコープ外変更検知、基本Hooks、テスト実行・PR作成、イベント配信（SSEまたはポーリング） |
-| Phase 2: 品質向上 | 影響範囲レビューAI、チャットUI統合、影響範囲チェック精度向上（依存解析導入）、エスカレーションフロー整備、監査ログ/メトリクス収集                           |
-| Phase 3: 拡張   | 対話的改修（追加指示）、サブエージェント分離、分析→計画→再実行の自動リトライ、WebSocket配信高度化                                       |
-
-### 6.17 決定事項サマリ
-
-| 論点         | 決定                                        | 理由                             |
-| ------------ | ------------------------------------------- | -------------------------------- |
-| ジョブ種別   | 影響調査ジョブと改修ジョブを分離            | 役割と制約が異なるため明確に分ける |
-| allow\_paths決定 | 依存分析で出たファイルは自動で含める + 閾値超過時はレビューAI | 安全性とコストのバランス |
-| 実行モデル   | ジョブ（永続状態）+ エフェメラル実行        | 切断・再実行・冪等を前提化       |
-| HITL設計     | マージ承認のみ人間、他は自動（閾値超過時のレビュー除く） | 判断のブレを排除しつつ責任分界を明確化 |
-| Hooksの用途  | ガードレール（allowlist + パス制約）に限定  | ワークフロー制御はアプリ層で行う |
-| 通信方式     | HTTP（ジョブAPI）+ イベント配信（SSE/WebSocket） | 実行制御と表示を分離して堅牢化   |
-| GitHub 認証  | GitHub App（最小権限・短命トークン）        | 運用事故を下げる                 |
-
-### 6.18 用語
-
-| 用語               | 定義                                                           |
-| ------------------ | -------------------------------------------------------------- |
-| InvestigationRequest | 影響調査ジョブの入力。探索起点、探索制約、変更要求の文脈を含む |
-| InvestigationResult | 影響調査ジョブの出力。影響ファイル一覧、正本との突合結果、疑義候補を含む |
-| 改修指示パッケージ | 改修ジョブの入力。改修に必要な全コンテキストを含む構造化データ |
-| 影響範囲レビューAI | allow\_paths候補が爆発した場合に絞り込みを行うAIエージェント |
-| オーケストレーション層 | コーディングエージェントの実行フロー（改修→検証→PR作成）を制御するアプリケーションコード |
-| エスカレーション   | 自動処理が失敗した場合に人間の介入を要求するプロセス           |
-| ジョブ（task）     | 実行単位。状態とイベントを永続化し、冪等性を担保する           |
-
-### 6.19 コーディングエージェントからのフィードバック
-
-コーディングエージェントは「指示された範囲を高精度に実装する」存在だが、実装中に設計への改善提案や不整合の検出を行うことがある。このフィードバックを受け取る仕組みを定義する。
-
-#### SuggestionFromAgent
-
-コーディングエージェントから要件管理DBアプリに送られる改善提案のデータモデル。
-
-| フィールド | 必須 | 説明 |
-|-----------|------|------|
-| suggestion_id | ○ | 提案の一意識別子 |
-| type | ○ | 提案の分類（design_improvement / implementation_observation / inconsistency_detected） |
-| title | ○ | 提案のタイトル |
-| description | ○ | 提案の詳細 |
-| affected_items | - | 影響を受けるDD ID、SR ID等 |
-| rationale | ○ | 根拠（why、evidence） |
-| recommended_action | ○ | 推奨アクション（update_spec / refactor_code / create_ticket / information_only） |
-| priority | ○ | 優先度（critical / high / medium / low） |
-| status | ○ | ステータス（pending / approved / rejected / deferred） |
-
-#### SyncCheckRequest / SyncCheckResult
-
-ユーザーがオンデマンドで「コードと正本の同期性をチェックして」と依頼した際に使用する。
-
-SyncCheckRequest:
-
-| フィールド | 必須 | 説明 |
-|-----------|------|------|
-| check_id | ○ | チェックの一意識別子 |
-| targets | ○ | チェック対象のDD（dd_id、entry_point、spec） |
-| focus_areas | - | チェック観点（structural / implementation / semantic） |
-
-SyncCheckResult:
-
-| フィールド | 必須 | 説明 |
-|-----------|------|------|
-| check_id | ○ | 対応するリクエストのID |
-| summary | ○ | チェック結果のサマリー |
-| results | ○ | 各対象の同期状態（synced / out_of_sync）と詳細 |
-| recommendations | - | 不一致箇所に対する推奨アクション |
-
-#### 運用フロー
-
-1. コーディングエージェントが改修実行中に改善点を発見
-2. SuggestionFromAgentを生成し、要件管理DBアプリに送信
-3. Mastra Agentがreceive_suggestion Toolで受け取り、一時保存
-4. チャットUIに通知を表示（「N件の提案が届いています」）
-5. ユーザーはMastra Agentに相談しながら採否を判断
-6. 採用する場合は正本を更新、却下する場合は理由を記録
-
-同期チェックは、ユーザーがチャットで「同期チェック」を依頼した場合にのみ実行される（常時監視はしない）。
-
----
-
-## 7. エクスポート仕様（Claude Code連携）
-
-本章は、本ツールの正本をClaude Codeが参照できる形式で出力する仕様を定義する。
-
-### 7.1 出力ファイル構成
-
-```
-docs/requirements/
-  INDEX.md                           - ルーティング表（全体の目次）
-  product-requirement.yml            - プロダクト要件（PR）
-  concept-dictionary.yml             - 概念辞書
-
-  business/                          # 業務側の正本
-    {業務分類ID}/
-      _index.md                      # 業務分類の概要
-      {業務タスクID}.md              # 業務タスク＋業務要件
-
-  system/                            # システム側の正本
-    {システム領域ID}/
-      _index.md                      # システム領域の概要
-      {システム機能ID}.md            # システム機能＋システム要件＋DD
-
-  graph/
-    requirements-links.json          # 業務要件↔システム要件のリンク（根拠データ含む）
-
-  VERSION.md                         - エクスポート時点の版情報
-```
-
-ディレクトリ構成の意図：
-
-| ディレクトリ | 内容 | Claude Codeの利用シーン |
-|-------------|------|------------------------|
-| `product-requirement.yml` | プロダクト要件（PR） | tech_stack_profile、coding_conventionsを参照して実装方針を決める |
-| `business/` | 業務タスク・業務要件 | 「なぜこの変更が必要か」の業務文脈を理解する |
-| `system/` | システム機能・システム要件・DD | 「どのファイルを修正すべきか」を特定する |
-| `graph/` | 要件間のリンクと根拠 | 影響範囲の波及を辿る |
-
-### 7.2 プロダクト要件ファイルフォーマット
-
-`product-requirement.yml`
-
-```yaml
-pr_id: PR-001
-
-target_users: |
-  中小企業の経理担当者。会計ソフトの基本操作は理解している。
-  月次決算、請求書発行、入金消込を日常業務として行う。
-
-experience_goals: |
-  - 請求書発行から入金消込までの一連の流れをストレスなく完了できる
-  - 月次決算の締め作業を半日以内に完了できる
-  - 取引先ごとの債権状況を一目で把握できる
-
-quality_goals: |
-  - 応答時間：主要操作は3秒以内（P95）
-  - 可用性：99.5%（月間ダウンタイム3.6時間以内）
-  - セキュリティ：SOC2 Type II準拠
-
-design_system: |
-  - カラー：プライマリ#3B82F6、セカンダリ#10B981、エラー#EF4444
-  - タイポグラフィ：本文14px/1.6、見出しはInter
-  - コンポーネント：shadcn/uiベース
-
-ux_guidelines: |
-  - 操作結果は即座にフィードバック（トースト通知）
-  - 破壊的操作は確認ダイアログ必須
-  - エラーメッセージは原因と対処法を明示
-
-tech_stack_profile:
-  policy:
-    unspecified_fields: agent_decides
-  frontend:
-    framework: Next.js
-    language: TypeScript
-    styling: Tailwind
-    ui_library: shadcn/ui
-  backend:
-    runtime: Node.js
-    framework: Hono
-  database:
-    provider: Supabase
-  auth:
-    provider: BetterAuth
-  constraints:
-    must_use:
-      - Supabase Row Level Security
-      - Zod
-    must_not_use:
-      - jQuery
-      - Moment.js
-    notes: |
-      モノレポ（Turborepo）で管理。
-      パッケージマネージャはpnpm。
-
-coding_conventions:
-  naming:
-    files: kebab-case
-    components: PascalCase
-    functions: camelCase
-  directory_structure:
-    pattern: feature-based
-  testing:
-    unit_test_pattern: "*.test.ts"
-    coverage_target: 80%
-    test_runner: vitest
-```
-
-### 7.3 業務タスクファイルフォーマット
-
-`business/{業務分類ID}/{業務タスクID}.md`
-
-```yaml
----
-id: BT-BIL-001
-title: 請求書発行
-business_domain_id: BD-BIL
-business_domain_name: 請求
----
-
-## 概要
-
-請求書を発行し、顧客へ送付するまでの業務フロー。
-
-## 業務要件
-
-### BR-BIL-001: 請求書をPDFで出力できる
-
-#### 関連システム要件
-- [SR-BIL-001](../../system/SD-BIL/SF-BIL-010.md#sr-bil-001)
-- [SR-BIL-002](../../system/SD-BIL/SF-BIL-010.md#sr-bil-002)
-
-#### 関連概念
-- TAX_INVOICE_JP
-```
-
-### 7.4 システム機能ファイルフォーマット
-
-`system/{システム領域ID}/{システム機能ID}.md`
-
-```yaml
----
-id: SF-BIL-010
-title: 請求書出力バッチ
-system_domain_id: SD-BIL
-system_domain_name: SD請求
----
-
-## 概要
-
-請求書PDFを生成するバッチ処理。月次締め後に実行される。
-
-## DD
-
-### DD-BIL-010-01: 請求書PDF生成ジョブ
-
-- type: batch
-- entry_point: /jobs/invoice-pdf-batch.ts
-- responsibility: PDF生成、税計算、登録番号出力
-
-### IU-BIL-010-02: 請求書発行画面
-
-- type: screen
-- entry_point: /app/billing/invoice/page.tsx
-- responsibility: 発行指示、一覧表示
-
-## システム要件
-
-### SR-BIL-001: 請求書PDFに登録番号と税率別合計を出力
-
-#### 受入基準
-- 登録番号が帳票右上に印字されていること
-- 税率ごとの合計金額が明細の下に表示されること
-
-#### 関連業務要件
-- [BR-BIL-001](../../business/BD-BIL/BT-BIL-001.md#br-bil-001)
-
-#### 関連概念
-- TAX_INVOICE_JP
-```
-
-### 7.5 概念辞書フォーマット
-
-`concept-dictionary.yml`
-
-```yaml
-TAX_INVOICE_JP:
-  name: 適格請求書
-  synonyms: [インボイス, 登録番号, 税率ごとの対価]
-  system_domains: [SD-BIL, SD-FI]
-  must_read:
-    - system/SD-BIL/SF-BIL-010.md
-    - system/SD-FI/SF-FI-020.md
-```
-
-### 7.6 リンク・根拠データフォーマット
-
-`graph/requirements-links.json`
-
-要件間のリンクと疑義状態を一元管理する。4.4で定義した suspect 状態もこのファイルで管理し、UI・API・エージェント参照の唯一の根拠とする。
-
-```json
-{
-  "links": [
-    {
-      "link_id": "LNK-001",
-      "source": "BR-BIL-001",
-      "source_type": "business_requirement",
-      "target": "SR-BIL-001",
-      "target_type": "system_requirement",
-      "relation_type": "realizes",
-      "evidence": {
-        "matched_concepts": ["TAX_INVOICE_JP"],
-        "reason": "請求書PDF出力の業務要件を実現するためのシステム要件"
-      },
-      "last_confirmed": "2025-01-17T12:00:00Z",
-      "suspect": false,
-      "suspect_severity": null,
-      "suspect_reason": null,
-      "evidence_refs": []
-    },
-    {
-      "link_id": "LNK-002",
-      "source": "SR-BIL-001",
-      "source_type": "system_requirement",
-      "target": "SR-FI-003",
-      "target_type": "system_requirement",
-      "relation_type": "depends_on",
-      "evidence": {
-        "matched_concepts": ["TAX_INVOICE_JP"],
-        "source_field": "summary",
-        "source_span": "消費税調整仕訳",
-        "reason": "SD請求でインボイス対応するとFI税務仕訳にも影響"
-      },
-      "last_confirmed": "2025-01-17T12:00:00Z",
-      "suspect": true,
-      "suspect_severity": "medium",
-      "suspect_reason": "SR-FI-003の税率計算ロジックが改訂された",
-      "evidence_refs": ["investigation_id:INV-2025-001", "commit:abc123"]
-    }
-  ]
-}
-```
-
-リンクフィールド定義：
-
-| フィールド | 必須 | 説明 |
-|-----------|------|------|
-| link\_id | ○ | リンクの一意識別子 |
-| source | ○ | 参照元のID |
-| source\_type | ○ | 参照元の種別（business\_requirement / system\_requirement / system\_function / impl\_unit\_sd） |
-| target | ○ | 参照先のID |
-| target\_type | ○ | 参照先の種別 |
-| relation\_type | ○ | リンクの種別（realizes / depends\_on / derives\_from / conflicts\_with） |
-| evidence | ○ | リンクの根拠（matched\_concepts、reason等） |
-| last\_confirmed | ○ | 最終確認日時 |
-| suspect | ○ | 疑義があるか（true = レビュー待ち） |
-| suspect\_severity | - | 疑義の重大度（high / medium / low）。suspect=true の場合のみ設定 |
-| suspect\_reason | - | 疑義の理由。suspect=true の場合のみ設定 |
-| evidence\_refs | - | 疑義や確認の根拠を指す参照の配列 |
-
-relation\_type の定義（4.4で確定した最小セット）：
-
-| type | 意味 |
-|------|------|
-| realizes | 業務要件をシステム要件が実現する |
-| depends\_on | 前提として依存する |
-| derives\_from | 派生・詳細化する |
-| conflicts\_with | 矛盾する可能性がある |
-
-### 7.7 INDEX.md（ルーティング表）
-
-Claude Codeが最初に読むべきファイル。全体構成と参照方法を示す。
-
-```markdown
-# 要件正本 INDEX
-
-## 構成
-
-- `product-requirement.yml` - プロダクト要件（技術スタック、コーディング規約）
-- `business/` - 業務タスク・業務要件（なぜこの機能が必要か）
-- `system/` - システム機能・システム要件・DD（どう実装されているか）
-- `graph/requirements-links.json` - 要件間のリンクと根拠
-- `concept-dictionary.yml` - 用語辞書（同義語・影響範囲）
-
-## 参照手順
-
-1. まず `product-requirement.yml` を読み、技術スタックとコーディング規約を確認
-2. 変更要求の内容から、関連する概念を`concept-dictionary.yml`で検索
-3. 概念の`must_read`に記載されたシステム機能ファイルを読む
-4. システム機能ファイルのDDから`entry_point`を特定
-5. 必要に応じて`graph/requirements-links.json`で波及影響を確認
-
-## 業務分類一覧
-
-| ID | 名称 | ファイル |
-|----|------|---------|
-| BD-BIL | 請求 | [business/BD-BIL/_index.md](business/BD-BIL/_index.md) |
-
-## システム領域一覧
-
-| ID | 名称 | ファイル |
-|----|------|---------|
-| SD-BIL | SD請求 | [system/SD-BIL/_index.md](system/SD-BIL/_index.md) |
-```
-
-### 7.8 Claude Code Skill連携
-
-Claude Codeの`.claude/skills/`にSKILL.mdを配置し、「まずproduct-requirement.ymlを読み、次にINDEX.mdを読み、概念辞書でヒットしたmust_readを読む」手順を提案する。
-
-```markdown
-# 要件正本参照スキル
-
-## 概要
-このプロジェクトには構造化された要件正本があります。変更を行う前に必ず参照してください。
-
-## 参照手順
-1. `docs/requirements/product-requirement.yml` を読み、技術スタックとコーディング規約を確認
-2. `docs/requirements/INDEX.md` を読む
-3. 変更内容に関連する概念を `concept-dictionary.yml` で検索
-4. 概念の `must_read` に記載されたファイルを読む
-5. システム機能ファイルのDDから `entry_point` を確認
-6. 受入基準を確認し、何を満たせばOKか理解する
-
-## 注意
-- 実装時は `product-requirement.yml` の `tech_stack_profile` と `coding_conventions` に従う
-- 影響範囲が不明な場合は `graph/requirements-links.json` で波及を確認
-- 受入基準を満たさない変更は行わない
-```
-
----
-
-
-## 8. 技術アーキテクチャ
-
-本章では、要件管理DBアプリの技術的な構成を定義する。5章で設計したアプリ内AI、6章で設計したコーディングエージェント連携を含めた全体像を示し、各層の技術選定と責務を明確にする。
-
----
-
-### 8.1 アーキテクチャ全体像
-
-要件管理DBアプリは、3つの層で構成される。
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                        要件管理DBシステム全体像                          │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                         │
-│  ┌───────────────────────────────────────────────────────────────────┐  │
-│  │ ① アプリケーション層                                              │  │
-│  │    正本の管理UI、レビューUI、エクスポート                          │  │
-│  │    [Next.js + Supabase]                                           │  │
-│  └───────────────────────────────────────────────────────────────────┘  │
-│                                    │                                    │
-│                                    │ API呼び出し                        │
-│                                    ▼                                    │
-│  ┌───────────────────────────────────────────────────────────────────┐  │
-│  │ ② アプリ内AI層                                                    │  │
-│  │    登録支援、影響調査、品質チェック（チャットUI経由）               │  │
-│  │    [Mastra Agent + Tool群]（5章参照）                              │  │
-│  └───────────────────────────────────────────────────────────────────┘  │
-│                                    │                                    │
-│                                    │ ジョブ投入 / 結果受信              │
-│                                    ▼                                    │
-│  ┌───────────────────────────────────────────────────────────────────┐  │
-│  │ ③ コーディングエージェント連携層                                   │  │
-│  │    コード解析、影響調査、改修実行                                   │  │
-│  │    [Claude Agent SDK + MCP Server]（6章参照）                      │  │
-│  └───────────────────────────────────────────────────────────────────┘  │
-│                                                                         │
-└─────────────────────────────────────────────────────────────────────────┘
-```
-
-各層の責務：
-
-| 層 | 責務 | 主な機能 |
-|----|------|---------|
-| アプリケーション層 | 正本の永続化、UI提供、エクスポート | CRUD画面、レビューUI、疑義リンク受信箱、Claude Code連携ファイル出力 |
-| アプリ内AI層 | 登録支援、品質チェック、影響分析（正本ベース） | チャットUI、草案生成、Criticチェック、トップダウン分析 |
-| コーディングエージェント連携層 | コード解析、影響調査（コードベース）、改修実行 | InvestigationRequest処理、ModificationPackage処理、PR作成 |
-
-この3層構成により、「正本の管理」「AIによる支援」「コーディングエージェントとの連携」を明確に分離し、各層を独立して進化させられる。
-
----
-
-### 8.2 技術選定
-
-### 選定一覧
-
-| コンポーネント | 技術 | 選定理由 |
-|---------------|------|---------|
-| フロントエンド | Next.js 16 (App Router) | PRで指定された技術スタック |
-| UIライブラリ | shadcn/ui + Tailwind CSS 4 | PRで指定、コンポーネント豊富 |
-| バックエンド | Next.js API Routes (Route Handler) | App Router標準、別途バックエンド不要 |
-| データベース | Supabase (PostgreSQL) | RLS、リアルタイム、Auth統合 |
-| ベクトル検索 | pgvector | 概念辞書の類似検索、Supabase統合 |
-| アプリ内AI | Mastra 1.x | Agent/Tool/Memory統合、5章で設計 |
-| LLM（Agent本体） | Claude (Anthropic API) | 高精度の会話制御・ツール判断 |
-| LLM（ツール内生成） | OpenAI / Z.AI（プロジェクト別設定） | コスト効率の高い大量テキスト生成 |
-| コーディングエージェント | Claude Agent SDK | 6章で設計、MCP対応（Phase 5以降） |
-| 認証 | Supabase Auth | Supabase RLS統合、Phase 6で実装予定 |
-| ホスティング | Vercel | Next.js最適化、Edge Functions |
-
-### 選定の背景
-
-フロントエンドとバックエンドはPR（3.1参照）のtech_stack_profileで定義されたスタックに従う。本ツール自体が「PRに従って開発する」実践例となる。
-
-バックエンドは当初Hono (Supabase Edge Functions)を検討したが、Next.js App RouterのRoute Handlerが十分に成熟しており、別途バックエンドフレームワークを立てる必要がないため、Next.js API Routesに一本化した。
-
-アプリ内AIにMastraを採用する理由は5章で説明した通り、「単一Agent + 複数Tool」の構成を自然に実装でき、コンテキスト管理とワークフロー定義が容易なため。
-
-LLMはAgent本体とツール内生成の二層構造を採用する。Agent本体（会話制御・ツール判断）にはClaudeを使用し、ツール内の大量テキスト生成にはOpenAI/Z.AIを使用する。プロジェクト単位でLLMプロバイダー・モデル・temperature等を設定可能（`resolveProjectLlmRuntimeSettings`）。
-
-認証は当初BetterAuthを検討したが、Supabase AuthがRLSと統合されており、要件管理ツールの用途に十分なため、Supabase Authに変更した。
-
-コーディングエージェントにClaude Agent SDKを採用する理由は6章で説明した通り、MCP対応によりアプリの正本に直接アクセスでき、サブエージェント機能で複雑なタスクを分解できるため。
-
----
-
-### 8.3 アプリケーション層
-
-### フロントエンド構成
-
-```
-/app
-  /product-requirement    # PR編集
-  /business               # 業務領域・BT・BR管理
-  /system                 # システム領域・SF・SR・DD管理
-  /ideas                  # 概念辞書管理
-  /tickets                # CR・影響調査・疑義リンク管理
-  /dashboard              # ヘルススコア・疑義リンクダッシュボード
-  /links                  # 要件間リンク可視化
-  /export                 # データエクスポート
-  /baseline               # ベースラインデータ
-  /chat                   # AIチャットUI（Mastra Agent）
-  /settings               # プロジェクト設定
-  /projects               # プロジェクト一覧
-```
-
-UIはshadcn/uiをベースに、以下のパターンで構成する。
-
-| パターン | 用途 | コンポーネント例 |
-|---------|------|----------------|
-| 一覧画面 | BD/SD/CR等の一覧表示 | DataTable, Card |
-| 詳細画面 | 要件の詳細表示・編集 | Form, Tabs, Sheet |
-| チャット画面 | アプリ内AIとの対話 | Chat UI（カスタム） |
-| レビュー画面 | 草案の確認・編集 | Diff View, Accordion |
-
-### バックエンド構成
-
-APIはNext.js App RouterのRoute Handler（`app/api/`配下の`route.ts`）で提供する。
-
-| エンドポイント群 | 責務 |
-|-----------------|------|
-| /api/chat | Mastra Agentとのチャット（SSEストリーミング） |
-| /api/drafts/commit | 草案の正本登録 |
-| /api/concepts | 概念辞書CRUD |
-| /api/export/business | 業務系データエクスポート |
-| /api/export/requirements | 要件エクスポート（ZIP） |
-| /api/export/system | システム系データエクスポート |
-| /api/tickets/[id]/investigate | 影響調査実行 |
-| /api/business/tasks/reorder | 業務タスク並び替え |
-
-### データベース設計
-
-主要テーブル：
-
-| テーブル | 内容 |
-|---------|------|
-| projects | プロジェクト |
-| product_requirements | PR（プロジェクトごとに1件） |
-| business_domains | 業務領域（BD） |
-| business_tasks | 業務タスク（BT） |
-| business_requirements | 業務要件（BR） |
-| system_domains | システム領域（SD） |
-| system_functions | システム機能（SF） |
-| system_requirements | システム要件（SR） |
-| acceptance_criteria | 受入基準（AC） |
-| design_documents | DD（Design Document） |
-| concepts | 概念辞書 |
-| requirement_links | 要件間リンク（疑義管理含む） |
-| change_requests | 変更要求（CR） |
-| investigation_results | 影響調査結果 |
-| impact_scopes | 変更影響範囲 |
-
-Row Level Security（RLS）でプロジェクト単位のアクセス制御を行う。
-
----
-
-### 8.4 アプリ内AI層
-
-5章で設計した統合Agent（Mastra）の技術的な配置を定義する。
-
-### 配置構成
-
-```
-┌────────────────────────────────────────────────────────────────┐
-│ Next.js アプリケーション                                        │
-│                                                                │
-│  ┌──────────────┐      ┌──────────────────────────────────┐   │
-│  │ チャットUI    │ ───▶ │ /api/agent/chat                  │   │
-│  │ (React)      │      │ (API Route)                      │   │
-│  └──────────────┘      └──────────────┬───────────────────┘   │
-│                                       │                       │
-│                                       ▼                       │
-│                        ┌──────────────────────────────────┐   │
-│                        │ Mastra Agent                     │   │
-│                        │ (サーバーサイドで実行)            │   │
-│                        │                                  │   │
-│                        │  ┌────────────────────────────┐  │   │
-│                        │  │ Tool群                     │  │   │
-│                        │  │ - bt_draft                 │  │   │
-│                        │  │ - br_draft                 │  │   │
-│                        │  │ - system_draft             │  │   │
-│                        │  │ - impact_analysis          │  │   │
-│                        │  │ - critic_check             │  │   │
-│                        │  │ - ...                      │  │   │
-│                        │  └────────────────────────────┘  │   │
-│                        └──────────────┬───────────────────┘   │
-│                                       │                       │
-│                                       ▼                       │
-│                        ┌──────────────────────────────────┐   │
-│                        │ Supabase (正本DB)                │   │
-│                        └──────────────────────────────────┘   │
-│                                                                │
-└────────────────────────────────────────────────────────────────┘
-```
-
-### Mastra Agent の初期化
-
-```typescript
-// /lib/mastra/agents/requirements-agent.ts
-import { Agent } from '@mastra/core';
-import { tools } from '../tools';
-import { memory } from '../memory';
-import { resolveProjectLlmRuntimeSettings, resolveProjectAgentModel } from '../utils/llm-settings';
-
-export const requirementsAgent = new Agent({
-  name: 'requirements-agent',
-  instructions: `...`, // 5.2参照
-  // Agent本体のLLM: Claude（会話制御・ツール判断）
-  model: async ({ requestContext }) => {
-    const projectId = requestContext?.get('projectId');
-    const settings = await resolveProjectLlmRuntimeSettings(projectId);
-    // Z.AIプロバイダーの場合はOpenAI互換API経由
-    if (settings.provider === 'zai') {
-      return { id: `openai/${settings.model}`, url: settings.baseUrl, apiKey: getZaiApiKey() };
-    }
-    return resolveProjectAgentModel(projectId);
-  },
-  tools,
-  memory, // LibSQLStore + LibSQLVector
-});
-```
-
-> **補足**: ツール内の草案生成（bt_draft, system_draft等）では `callOpenAI()` ヘルパー関数を使用し、Agent本体とは別のLLMモデルを呼び出す。これによりAgent本体は高品質な会話制御に、ツール内生成はコスト効率の高いモデルに、と使い分けが可能。
-
-### Tool群の実装パターン
-
-各Toolは以下のパターンで実装する。
-
-```typescript
-// /lib/mastra/tools/bt-draft.ts
-import { createTool } from '@mastra/core';
-import { z } from 'zod';
-import { supabase } from '@/lib/supabase';
-
-export const btDraftTool = createTool({
-  id: 'bt_draft',
-  description: '業務タスク（BT）の草案を生成する',
-  inputSchema: z.object({
-    naturalLanguageInput: z.string(),
-    bdId: z.string(),
-  }),
-  execute: async ({ naturalLanguageInput, bdId }, { context }) => {
-    // 1. 正本からコンテキスト取得
-    const pr = await supabase.from('product_requirements').select('*').single();
-    const existingBTs = await supabase.from('business_tasks').select('*').eq('bd_id', bdId);
-    
-    // 2. LLMで草案生成（Mastraの内部LLM呼び出し）
-    // ...
-    
-    // 3. 草案を返却（DBには保存しない）
-    return { draft, uncertainties };
-  },
-});
-```
-
-### セッション管理
-
-チャットセッションはMastraのMemory機能で管理し、以下のコンテキストを保持する。
-
-| コンテキスト | 保持期間 | 用途 |
-|-------------|---------|------|
-| PR | セッション開始時に注入 | 技術スタック、コーディング規約の参照 |
-| 現在位置 | セッション中更新 | 親要件の自動設定 |
-| 未確定草案 | セッション終了まで | 連続作業の文脈維持 |
-| 会話履歴 | セッション終了まで | 対話の継続 |
-
----
-
-### 8.5 コーディングエージェント連携層
-
-6章で設計したコーディングエージェント連携の技術的な配置を定義する。
-
-### 配置構成
-
-```
-┌────────────────────────────────────────────────────────────────────┐
-│ 要件管理DBアプリ                                                   │
-│                                                                    │
-│  ┌──────────────────┐      ┌──────────────────────────────────┐   │
-│  │ CR詳細画面        │ ───▶ │ /api/jobs/investigation          │   │
-│  │ (影響調査ボタン)  │      │ (ジョブ投入API)                   │   │
-│  └──────────────────┘      └──────────────┬───────────────────┘   │
-│                                           │                       │
-└───────────────────────────────────────────┼───────────────────────┘
-                                            │ ジョブ投入
-                                            ▼
-┌────────────────────────────────────────────────────────────────────┐
-│ Agent Runner (Cloud Run)                                           │
-│                                                                    │
-│  ┌──────────────────────────────────────────────────────────────┐  │
-│  │ Claude Agent SDK                                             │  │
-│  │                                                              │  │
-│  │  ┌────────────────────────────────────────────────────────┐  │  │
-│  │  │ MCP Client                                             │  │  │
-│  │  │ - 正本API (MCP Server) への接続                        │  │  │
-│  │  │ - 対象リポジトリへのアクセス                            │  │  │
-│  │  └────────────────────────────────────────────────────────┘  │  │
-│  │                                                              │  │
-│  │  ┌────────────────────────────────────────────────────────┐  │  │
-│  │  │ ジョブ実行                                             │  │  │
-│  │  │ - InvestigationRequest → InvestigationResult           │  │  │
-│  │  │ - ModificationPackage → 実装 → PR作成                  │  │  │
-│  │  └────────────────────────────────────────────────────────┘  │  │
-│  └──────────────────────────────────────────────────────────────┘  │
-│                                                                    │
-└────────────────────────────────────────────────────────────────────┘
-                                            │
-                                            │ MCP Protocol
-                                            ▼
-┌────────────────────────────────────────────────────────────────────┐
-│ MCP Server (要件管理DBアプリ内)                                    │
-│                                                                    │
-│  提供ツール:                                                       │
-│  - get_product_requirement                                         │
-│  - search_requirements                                             │
-│  - get_requirement                                                 │
-│  - get_system_function                                             │
-│  - get_links                                                       │
-│  - submit_investigation_result                                     │
-│                                                                    │
-└────────────────────────────────────────────────────────────────────┘
-```
-
-### MCP Server の実装
-
-MCP Serverは、コーディングエージェントが正本にアクセスするためのインターフェースを提供する。
-
-```typescript
-// /lib/mcp/server.ts
-import { MCPServer, Tool } from '@modelcontextprotocol/sdk';
-
-const tools: Tool[] = [
-  {
-    name: 'get_product_requirement',
-    description: 'プロダクト要件（PR）を取得',
-    inputSchema: { type: 'object', properties: {} },
-    handler: async () => {
-      const pr = await supabase.from('product_requirements').select('*').single();
-      return pr;
-    },
-  },
-  {
-    name: 'search_requirements',
-    description: '要件を検索',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        query: { type: 'string' },
-        type: { type: 'string', enum: ['business', 'system'] },
-      },
-      required: ['query'],
-    },
-    handler: async ({ query, type }) => {
-      // ベクトル検索 + 全文検索
-      // ...
-    },
-  },
-  // ... 他のツール
-];
-
-export const mcpServer = new MCPServer({ tools });
-```
-
-### ジョブ管理
-
-ジョブは以下の状態を持つ。
-
-```
-pending → running → completed
-                 → failed
-                 → cancelled
-```
-
-ジョブの状態と結果はSupabaseに永続化し、UIからリアルタイムで監視できる。
-
----
-
-### 8.6 セキュリティ
-
-### 認証・認可
-
-| 対象 | 方式 | 説明 |
-|------|------|------|
-| ユーザー認証 | Supabase Auth | メール/パスワード、OAuth（GitHub等）。Phase 6で実装予定 |
-| API認証（アプリ内） | セッションベース | Supabase Authのセッション |
-| API認証（MCP Server） | APIキー | プロジェクトごとに発行 |
-| DB認可 | RLS | プロジェクト単位のアクセス制御 |
-
-### 権限モデル
-
-組織→プロジェクト→ユーザーの3層構造で権限を管理する。
-
-```
-組織（Organization）
-  └── プロジェクト（Project）
-        └── メンバー（User + Role）
-```
-
-ロール定義：
-
-| ロール | 説明 | 権限 |
-|--------|------|------|
-| owner | 組織オーナー | 組織設定、プロジェクト作成・削除、メンバー管理、全操作 |
-| admin | プロジェクト管理者 | プロジェクト設定、メンバー招待、全要件の編集・削除 |
-| editor | 編集者 | 要件の作成・編集、CR起票、影響調査実行 |
-| viewer | 閲覧者 | 要件の閲覧のみ、編集不可 |
-
-操作別の権限マトリクス：
-
-| 操作 | owner | admin | editor | viewer |
-|------|:-----:|:-----:|:------:|:------:|
-| 組織設定 | ○ | - | - | - |
-| プロジェクト作成・削除 | ○ | - | - | - |
-| プロジェクト設定 | ○ | ○ | - | - |
-| メンバー管理 | ○ | ○ | - | - |
-| 要件の閲覧 | ○ | ○ | ○ | ○ |
-| 要件の作成・編集 | ○ | ○ | ○ | - |
-| 要件の削除 | ○ | ○ | - | - |
-| CR起票・影響調査 | ○ | ○ | ○ | - |
-| 改修指示パッケージ生成 | ○ | ○ | ○ | - |
-| エクスポート | ○ | ○ | ○ | ○ |
-
-MVPスコープ：MVPではowner/editorの2ロールで開始し、admin/viewerは将来拡張とする。
-
-### データ保護
-
-| 観点 | 対策 |
-|------|------|
-| 通信の暗号化 | HTTPS必須 |
-| 保存時の暗号化 | Supabaseのデフォルト暗号化 |
-| 機密情報の分離 | APIキー等はVault（将来拡張） |
-
-### コーディングエージェントへのデータ送信
-
-コーディングエージェントに送信される正本データは、以下のルールで制御する。
-
-| ルール | 説明 |
-|--------|------|
-| 送信範囲の可視化 | UIで「どの正本がエージェントに送られるか」を表示 |
-| 機密フラグ（将来） | 機密性の高い要件には「送信不可」フラグを設定可能 |
-| ログ記録 | エージェントへの送信内容を監査ログに記録 |
-
----
-
-### 8.7 コスト管理
-
-### コスト発生ポイント
-
-| コンポーネント | 課金単位 | 主なコスト要因 |
-|---------------|---------|---------------|
-| Anthropic API（Agent本体） | トークン | 会話制御、ツール判断 |
-| OpenAI / Z.AI API（ツール内生成） | トークン | 草案生成、品質チェック |
-| Anthropic API（Agent SDK経由） | トークン | 影響調査、改修実行（Phase 5以降） |
-| Supabase | ストレージ、リクエスト | 正本保存、API呼び出し |
-| Vercel | 関数実行時間 | API処理 |
-
-### トークン消費の目安
-
-| 操作 | 想定トークン | 備考 |
-|------|-------------|------|
-| BT草案生成 | 1,000〜3,000 | 入力の長さに依存 |
-| SF/SR/AC一括生成 | 3,000〜8,000 | BR数に依存 |
-| 品質チェック | 1,000〜3,000 | チェック対象数に依存 |
-| 影響調査（コード解析） | 5,000〜15,000 | リポジトリ規模に依存 |
-| 改修実行（1ファイル） | 5,000〜20,000 | 変更内容に依存 |
-
-### コスト最適化の方針
-
-| 方針 | 効果 |
-|------|------|
-| 段階的な深掘り | 最初は浅い分析、必要に応じて深掘り |
-| 正本の充実 | 正本が充実するほどコード分析の範囲を絞れる |
-| キャッシュ活用 | 同一セッション内の重複クエリをキャッシュ |
-| モデル使い分け | 簡単なタスクはHaiku、複雑なタスクはSonnet |
-
-### 予算管理（将来拡張）
-
-- プロジェクトごとの月額上限設定
-- 上限到達時の警告・制限
-- 使用量ダッシュボード
-
----
-
-## 9. 画面構成と利用フロー
-
-本章では、要件管理DBアプリの画面構成と、想定する利用フローを定義する。8章が「どう作るか」を定義したのに対し、本章は「どう使うか」を定義する。
-
----
-
 ### 9.1 画面一覧
 
 ### サイドメニュー構成
@@ -3808,8 +2441,10 @@ MVPスコープ：MVPではowner/editorの2ロールで開始し、admin/viewer�
 | 分析・運用 | 変更要求一覧 | CR、影響調査、疑義リンクの管理 | 一覧、起票、調査、レビュー |
 | 分析・運用 | 要件リンク | requirement_linksの一覧・疑義リンクの管理 | 一覧、フィルタ |
 | 分析・運用 | ベースライン履歴 | ベースラインスナップショットの管理 | 一覧、閲覧 |
+| 分析・運用 | ER図 | ドメインモデルのER図静的表示 |
 | 分析・運用 | エクスポート | 要件ドキュメントのファイル出力 | 業務/要件/システム別出力 |
 | 設定 | 設定 | プロジェクト設定、LLM設定、通知設定 | 設定変更 |
+| 設定 | ER図設計 | ER図表示機能の段階的発展計画（`docs/design/er-diagram-feature-plan.md`参照） |
 
 ※プロジェクト切り替えはサイドバー下部のProjectSwitcherコンポーネントで提供。
 
@@ -3848,6 +2483,8 @@ Next.js App Router の `(with-sidebar)` Route Groupで構成。
 │   ├── create/                    # CR起票
 │   └── [id]/                      # CR詳細
 │       └── edit/                  # CR編集
+├── schema/                        # スキーマ表示
+│   └── er/                        # ER図（ドメインモデル）
 ├── links/                         # 要件リンク一覧
 ├── baseline/                      # ベースライン履歴
 ├── export/                        # エクスポート
@@ -4380,8 +3017,102 @@ BT/BR/SRの登録・編集時に、AIが本文から概念候補を抽出し、�
 | タイミング | 動作 |
 |-----------|------|
 | 新規登録時 | 保存前にリアルタイムで提案 |
-| 編集時 | 変更差分に対して提案 |
+| 編集時 | 変化差分に対して提案 |
 | AI生成時 | 草案と同時に概念候補を抽出・提案 |
+
+### ER図表示画面（/schema/er）
+
+プロジェクト全体のドメインモデルをER図として一覧表示する画面。model型の設計書（`type='model'`）からMermaid ER図を自動生成する。
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│ ER図（ドメインモデル）                                           │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ┌─────────────────────────────────────────────────────────────┐   │
+│  │ ER図表示エリア                                      │   │
+│  │                                                             │   │
+│  │ Entity1 ||--o{ Entity2 : "has"                             │   │
+│  │ Entity2 {                                                    │   │
+│  │   UUID id PK                                                 │   │
+│  │   string name                                                 │   │
+│  │ }                                                            │   │
+│  │                                                             │   │
+│  └─────────────────────────────────────────────────────────────┘   │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+#### データソース
+- `design_documents` テーブル（`type='model'`）
+- `lib/utils/design-documents/model-to-mermaid.ts` でMermaid ER図へ変換
+
+#### コンポーネント
+- `app/(with-sidebar)/schema/er/page.tsx` - メインページ
+- `components/schema/SchemaViewer.tsx` - ER図ビューア（ズーム・パン対応）
+- `components/schema/er/MermaidRenderer.tsx` - Mermaid描画
+
+#### Phase 1実装内容（2026-02-09完了）
+- 静的ER図表示（Mermaid.js使用）
+- model型DDからの自動変換
+- エンティティ間の関連表示（1:1, 1:N, N:1, N:M）
+
+#### 今後の拡張計画
+- Phase 2: ズーム・パン機能（react-zoom-pan-pinch）
+- Phase 3: エンティティクリックで詳細表示
+- Phase 4: システム領域単位でのフィルタリング
+
+詳細は `docs/design/er-diagram-feature-plan.md` を参照。
+
+---
+
+### シーケンス図表示画面（/schema/sequence）
+
+システム機能（SF）の処理フローをシーケンス図として可視化する画面。SFに属するDD間の呼び出し関係と各DDの副作用（sideEffects）をMermaidシーケンス図として自動生成する。
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│ シーケンス図（処理フロー）                                       │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ┌─────────────────────────────────────────────────────────────┐   │
+│  │ シーケンス図表示エリア                              │   │
+│  │                                                             │   │
+│  │ User->>DD1: 請求書発行指示                                   │   │
+│  │ DD1->>DD2: PDF生成要求                                      │   │
+│  │ DD2-->>DD1: PDF生成完了                                     │   │
+│  │ DD1->>DB: INSERT invoices                                   │   │
+│  │ DD1->>EventBus: イベント発行 (invoice.created)              │   │
+│  │                                                             │   │
+│  └─────────────────────────────────────────────────────────────┘   │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+#### データソース
+- `design_documents` テーブル（SFに属する全DD）
+- `requirement_links` テーブル（DD間依存 `link_type='dd_calls'`）
+- `lib/utils/design-documents/sideeffects-to-mermaid.ts` でMermaidシーケンス図へ変換
+
+#### コンポーネント
+- `app/(with-sidebar)/schema/sequence/page.tsx` - メインページ
+- `components/schema/SchemaViewer.tsx` - シーケンス図ビューア（ズーム・パン対応）
+- `components/schema/MermaidRenderer.tsx` - Mermaid描画（共通）
+
+#### Phase 1実装内容（2026-02-11完了）
+- 静的シーケンス図表示（Mermaid.js使用）
+- DD間の呼び出し関係可視化（同期/非同期）
+- sideEffects に基づく参加者自動生成（DB/EventBus/FileSystem/ExternalSystem）
+
+#### Phase 2実装内容（2026-02-11完了）
+- ズーム・パン機能（react-zoom-pan-pinch）
+- ER図と共通の `SchemaViewer` コンポーネントを使用
+
+#### 今後の拡張計画
+- Phase 3: DDクリックで詳細表示（モーダル）
+- Phase 4: システム領域単位でのフィルタリング
+
+詳細は `docs/design/sequence-diagram-feature-plan.md` を参照。
 
 ---
 
@@ -4714,6 +3445,9 @@ Mastra Agentを統合し、チャットUIと草案生成機能を実装する。
 
 DDの入出力定義をテキスト自由記述から構造化Zodスキーマに移行する。`docs/control_plane.md` に準拠。
 
+> **✅ 実装完了** (2026-02-11)
+> 全8スキーマ、9エディタ、13ビューア、7テスト、互換性レイヤーを実装完了。
+
 詳細なチェックリストは `docs/checklists/active/2026-02-05-structured-io-schema.md` を正本とする。
 
 - [x] 4.5-1. フィールド定義スキーマ（`lib/domain/schemas/fields.ts`）
@@ -4722,25 +3456,107 @@ DDの入出力定義をテキスト自由記述から構造化Zodスキーマに
 - [x] 4.5-4. 例外スキーマ（`lib/domain/schemas/exceptions.ts`）
 - [x] 4.5-5. 非機能要件スキーマ（`lib/domain/schemas/non-functional.ts`）
 - [x] 4.5-6. DD統合スキーマ（`lib/domain/schemas/design-document-structured.ts`）
-- [x] 4.5-7. スキーマ単体テスト
-- [ ] 4.5-8. UI/フォーム更新（FieldEditor、タイプ別フォーム、統合セクション）
-- [ ] 4.5-9. データ移行・互換性レイヤー
-- [ ] 4.5-10. DBスキーマ変更（structured_input/output JSONBカラム）
+- [x] 4.5-7. スキーマ単体テスト（7ファイル）
+- [x] 4.5-8. UI/フォーム更新（9エディタ、13ビューア）
+- [x] 4.5-9. データ移行・互換性レイヤー
+- [x] 4.5-10. DBスキーマ変更
+
+#### 実装済みファイル一覧
+
+**スキーマ定義（8ファイル）:**
+- `lib/domain/schemas/design-document-structured.ts`
+- `lib/domain/schemas/fields.ts`
+- `lib/domain/schemas/io-schemas.ts`
+- `lib/domain/schemas/side-effects.ts`
+- `lib/domain/schemas/core-logic.ts`
+- `lib/domain/schemas/exceptions.ts`
+- `lib/domain/schemas/non-functional.ts`
+- `lib/domain/schemas/model-detail.ts`
+
+**エディタ（9ファイル）:**
+- `components/forms/design-document/editors/StructuredSpecEditor.tsx`
+- `components/forms/design-document/editors/FieldEditor.tsx`
+- `components/forms/design-document/editors/InputSchemaEditor.tsx`
+- `components/forms/design-document/editors/OutputSchemaEditor.tsx`
+- `components/forms/design-document/editors/SideEffectsEditor.tsx`
+- `components/forms/design-document/editors/CoreLogicEditor.tsx`
+- `components/forms/design-document/editors/ExceptionsEditor.tsx`
+- `components/forms/design-document/editors/NonFunctionalEditor.tsx`
+- `components/forms/design-document/editors/ModelEntityEditor.tsx`
+
+**ビューア（13ファイル）:**
+- `components/system-domains/structured-spec-viewer/index.tsx`
+- `components/system-domains/structured-spec-viewer/FieldsViewer.tsx`
+- `components/system-domains/structured-spec-viewer/InputSchemaViewer.tsx`
+- `components/system-domains/structured-spec-viewer/OutputSchemaViewer.tsx`
+- `components/system-domains/structured-spec-viewer/CoreLogicViewer.tsx`
+- `components/system-domains/structured-spec-viewer/SideEffectsViewer.tsx`
+- `components/system-domains/structured-spec-viewer/ExceptionsViewer.tsx`
+- `components/system-domains/structured-spec-viewer/NonFunctionalViewer.tsx`
+- `components/system-domains/structured-spec-viewer/ModelDetailViewer.tsx`
+- `components/system-domains/structured-spec-viewer/EntryPointsViewer.tsx`
+- `components/system-domains/structured-spec-viewer/field-group-helper.tsx`
+- `components/system-domains/structured-spec-viewer/schema-type-guards.tsx`
+- `components/system-domains/structured-spec-viewer/constants.tsx`
+
+**テスト（7ファイル）:**
+- `tests/unit/schemas/fields.test.ts`
+- `tests/unit/schemas/design-document-structured.test.ts`
+- `tests/unit/schemas/io-schemas.test.ts`
+- `tests/unit/schemas/side-effects.test.ts`
+- `tests/unit/schemas/core-logic.test.ts`
+- `tests/unit/schemas/exceptions.test.ts`
+- `tests/unit/schemas/non-functional.test.ts`
+
+**互換性レイヤー:**
+- `lib/utils/design-documents/structured-compat.ts`
 
 ### Phase 5: 変更管理と連携
 
 変更要求、影響調査、コーディングエージェント連携を実装する。
+
+> **主要機能は実装済み** (2026-02-06〜2026-02-11)
 
 - [x] 5-1. DBスキーマ追加（change_requests, investigation_results, impact_scopes）
 - [x] 5-2. 変更要求（CR）一覧・起票・編集画面（/tickets）
 - [x] 5-3. impact_analysis Tool 実装（トップダウン分析: CR → BR → SF → SR → AC）
 - [x] 5-4. 疑義リンク管理（suspect状態の設定・解消UI）
 - [x] 5-5. 疑義リンクダッシュボード（SuspectLinksCard）
-- [ ] 5-6. CR詳細画面（影響調査結果表示、疑義リンク一覧）— 部分実装済み
+- [x] 5-6. CR詳細画面（影響調査結果表示、疑義リンク一覧）
 - [x] 5-7. エクスポート機能（business/requirements/system の3形式、ZIP出力）
-- [ ] 5-8. MCP Server 実装（get_product_requirement, search_requirements等）
-- [ ] 5-9. 改修指示パッケージ生成機能
-- [ ] 5-10. 設計決定ログ記録機能
+
+#### 実装済みファイル一覧
+
+**DBスキーマ:**
+- `supabase/migrations/20260206090000_phase5_investigation_results.sql`
+
+**CRUD:**
+- `lib/data/investigation-results.ts`
+
+**Tools:**
+- `lib/mastra/tools/impact-analysis.ts`
+- `lib/mastra/tools/get-product-requirement.ts`
+
+**Export:**
+- `lib/export/requirements-export.ts`
+- `app/api/export/requirements/route.ts`
+
+**API:**
+- `app/api/tickets/[id]/investigate/route.ts`
+
+**UI:**
+- `app/(with-sidebar)/suspect-inbox/page.tsx`
+- `components/suspect-link-action-bar.tsx`
+- `components/suspect-link-card.tsx`
+- `components/ticket-investigation-result-card.tsx`
+- `components/ticket-suspect-links-card.tsx`
+- `components/investigate-button.tsx`
+- `components/ticket-investigation-section.tsx`
+
+#### 未実装項目（将来実装予定）
+- 5-8. MCP Server 実装 - Phase 6以降で検討
+- 5-9. 改修指示パッケージ生成機能 - Phase 6以降で検討
+- 5-10. 設計決定ログ記録機能 - Phase 6以降で検討
 
 ### Phase 6: 認証・セキュリティ（MVP後）
 

@@ -22,7 +22,6 @@ export function toBusinessRequirementInput(
 		owner: requirement.owner.trim(),
 		conceptIds: requirement.conceptIds,
 		srfIds: requirement.srfIds,
-		systemDomainIds: requirement.systemDomainIds,
 		impacts: [], // 影響領域は廃止
 		sortOrder,
 	};
@@ -42,7 +41,7 @@ export function fromBusinessRequirement(
 		owner: br.owner,
 		conceptIds: br.conceptIds,
 		srfIds: br.srfIds,
-		systemDomainIds: br.systemDomainIds ?? [],
+		systemDomainIds: [], // BRはシステム領域を持たない
 		acceptanceCriteria: br.acceptanceCriteria,
 		acceptanceCriteriaJson: br.acceptanceCriteriaJson,
 		category: undefined,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,6 +27,7 @@ interface FieldEditorProps {
   fields: Field[];
   onChange: (fields: Field[]) => void;
   compactPreview?: boolean;
+  fieldContext?: "screen-input" | "api-input" | "batch-input" | "job-input";
 }
 
 const createEmptyField = (): Field => ({
@@ -37,6 +38,35 @@ const createEmptyField = (): Field => ({
   constraints: {},
 });
 
+const FIELD_ELEMENT_TYPES: NonNullable<Field["elementType"]>[] = [
+  "input",
+  "display",
+  "checkbox",
+  "radio",
+  "select",
+  "button",
+  "file",
+];
+
+const FIELD_LOCATIONS: NonNullable<Field["location"]>[] = ["query", "body"];
+const FIELD_CATEGORIES: NonNullable<Field["category"]>[] = ["config", "data"];
+
+const normalizeField = (value: unknown): Field => {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return createEmptyField();
+  }
+
+  const candidate = value as Partial<Field>;
+  return {
+    ...createEmptyField(),
+    ...candidate,
+    constraints:
+      candidate.constraints && typeof candidate.constraints === "object"
+        ? candidate.constraints
+        : {},
+  };
+};
+
 export function FieldEditor({
   label,
   labelTooltip,
@@ -44,19 +74,20 @@ export function FieldEditor({
   fields,
   onChange,
   compactPreview = false,
+  fieldContext,
 }: FieldEditorProps) {
   const [selectedFieldIndex, setSelectedFieldIndex] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (!compactPreview) return;
-    setSelectedFieldIndex((prev) => {
-      if (prev === null) return null;
-      return prev < fields.length ? prev : null;
-    });
-  }, [compactPreview, fields.length]);
+  const normalizedFields = useMemo(
+    () => (Array.isArray(fields) ? fields : []).map((field) => normalizeField(field)),
+    [fields]
+  );
+  const effectiveSelectedFieldIndex =
+    selectedFieldIndex !== null && selectedFieldIndex < normalizedFields.length
+      ? selectedFieldIndex
+      : null;
 
   const handleFieldChange = (index: number, partial: Partial<Field>) => {
-    const updated = [...fields];
+    const updated = [...normalizedFields];
     updated[index] = { ...updated[index], ...partial };
     onChange(updated);
   };
@@ -65,19 +96,19 @@ export function FieldEditor({
     index: number,
     partial: NonNullable<Field["constraints"]>
   ) => {
-    const current = fields[index].constraints ?? {};
+    const current = normalizedFields[index].constraints ?? {};
     handleFieldChange(index, { constraints: { ...current, ...partial } });
   };
 
   const addField = () => {
-    const nextFields = [...fields, createEmptyField()];
+    const nextFields = [...normalizedFields, createEmptyField()];
     onChange(nextFields);
     if (compactPreview) {
       setSelectedFieldIndex(nextFields.length - 1);
     }
   };
   const removeField = (index: number) => {
-    onChange(fields.filter((_, i) => i !== index));
+    onChange(normalizedFields.filter((_, i) => i !== index));
     if (compactPreview) {
       setSelectedFieldIndex((prev) => {
         if (prev === null) return null;
@@ -87,13 +118,23 @@ export function FieldEditor({
       });
     }
   };
-  const compactNames = fields.map((field, index) => field.name || `項目${index + 1}`);
+  const compactNames = useMemo(
+    () => normalizedFields.map((field, index) => field.name || `項目${index + 1}`),
+    [normalizedFields]
+  );
   const visibleFieldIndices = compactPreview
-    ? selectedFieldIndex === null
+    ? effectiveSelectedFieldIndex === null
       ? []
-      : [selectedFieldIndex]
-    : fields.map((_, index) => index);
-  const shouldRenderEditor = !compactPreview || fields.length === 0 || selectedFieldIndex !== null;
+      : [effectiveSelectedFieldIndex]
+    : normalizedFields.map((_, index) => index);
+  const shouldRenderEditor =
+    !compactPreview || normalizedFields.length === 0 || effectiveSelectedFieldIndex !== null;
+  const showElementType = fieldContext === "screen-input";
+  const showLocation = fieldContext === "api-input";
+  const showCategory = fieldContext === "batch-input" || fieldContext === "job-input";
+  const fieldRowColumns = showElementType || showLocation || showCategory
+    ? "grid-cols-[1fr_1.4fr_1fr_1.2fr_1fr_0.8fr_0.8fr_1fr]"
+    : "grid-cols-[1fr_1.4fr_1fr_1fr_0.8fr_0.8fr_1fr]";
 
   return (
     <div className="space-y-3">
@@ -125,9 +166,9 @@ export function FieldEditor({
         <div className="w-full rounded-md border border-dashed px-3 py-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="text-xs text-muted-foreground">
-              {fields.length > 0 ? `${fields.length}項目` : "項目なし"}
+              {normalizedFields.length > 0 ? `${normalizedFields.length}項目` : "項目なし"}
             </span>
-            {selectedFieldIndex !== null ? (
+            {effectiveSelectedFieldIndex !== null ? (
               <button
                 type="button"
                 onClick={() => setSelectedFieldIndex(null)}
@@ -150,7 +191,7 @@ export function FieldEditor({
                   }
                   className={cn(
                     "inline-block rounded-full px-2 py-1 text-xs transition-colors",
-                    selectedFieldIndex === index
+                    effectiveSelectedFieldIndex === index
                       ? "bg-slate-900 text-white"
                       : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                   )}
@@ -167,15 +208,15 @@ export function FieldEditor({
 
       {shouldRenderEditor && (
         <>
-          {fields.length === 0 && (
+          {normalizedFields.length === 0 && (
             <p className="text-sm text-muted-foreground">まだフィールドがありません。</p>
           )}
           <div className="space-y-4">
             {visibleFieldIndices.map((index) => {
-              const field = fields[index];
+              const field = normalizedFields[index];
               return (
               <div key={index} className="rounded-md border p-3 space-y-3">
-                <div className="grid grid-cols-[12%_12%_12%_1fr_auto_auto] gap-3 items-end">
+                <div className={`grid ${fieldRowColumns} gap-3 items-end`}>
                   <div className="space-y-1">
                     <Label className="text-xs">名前</Label>
                     <Input
@@ -212,34 +253,101 @@ export function FieldEditor({
                       </SelectContent>
                     </Select>
                   </div>
+                  {showElementType && (
+                    <div className="space-y-1">
+                      <Label className="text-xs">UI要素</Label>
+                      <Select
+                        value={field.elementType ?? "none"}
+                        onValueChange={(value) =>
+                          handleFieldChange(index, {
+                            elementType: value === "none" ? undefined : (value as Field["elementType"]),
+                          })
+                        }
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">未指定</SelectItem>
+                          {FIELD_ELEMENT_TYPES.map((item) => (
+                            <SelectItem key={item} value={item}>
+                              {item}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  {showLocation && (
+                    <div className="space-y-1">
+                      <Label className="text-xs">配置</Label>
+                      <Select
+                        value={field.location ?? "none"}
+                        onValueChange={(value) =>
+                          handleFieldChange(index, {
+                            location: value === "none" ? undefined : (value as Field["location"]),
+                          })
+                        }
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">未指定</SelectItem>
+                          {FIELD_LOCATIONS.map((item) => (
+                            <SelectItem key={item} value={item}>
+                              {item}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  {showCategory && (
+                    <div className="space-y-1">
+                      <Label className="text-xs">カテゴリ</Label>
+                      <Select
+                        value={field.category ?? "none"}
+                        onValueChange={(value) =>
+                          handleFieldChange(index, {
+                            category: value === "none" ? undefined : (value as Field["category"]),
+                          })
+                        }
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">未指定</SelectItem>
+                          {FIELD_CATEGORIES.map((item) => (
+                            <SelectItem key={item} value={item}>
+                              {item}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                   <div className="space-y-1">
-                    <Label className="text-xs">説明</Label>
-                    <Input
-                      value={field.description ?? ""}
-                      onChange={(e) => handleFieldChange(index, { description: e.target.value })}
-                      placeholder="例: 顧客ID"
-                    />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      checked={field.required ?? true}
-                      onCheckedChange={(checked) =>
-                        handleFieldChange(index, { required: checked })
+                    <Label className="text-xs">フォーマット（任意）</Label>
+                    <Select
+                      value={field.constraints?.format}
+                      onValueChange={(value) =>
+                        handleConstraintChange(index, {
+                          format: value as "email" | "date" | "uuid",
+                        })
                       }
-                    />
-                    <span className="text-xs text-muted-foreground">必須</span>
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="選択してください" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="email">email</SelectItem>
+                        <SelectItem value="date">date</SelectItem>
+                        <SelectItem value="uuid">uuid</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeField(index)}
-                    title="削除"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                <div className="grid grid-cols-[15%_15%_55%_1fr] gap-3">
                   <div className="space-y-1">
                     <Label className="text-xs">最小値</Label>
                     <Input
@@ -272,26 +380,35 @@ export function FieldEditor({
                       placeholder="^C[0-9]{6}$"
                     />
                   </div>
+                </div>
+
+                <div className="grid grid-cols-[1fr_auto_auto] gap-3 items-end">
                   <div className="space-y-1">
-                    <Label className="text-xs">フォーマット（任意）</Label>
-                    <Select
-                      value={field.constraints?.format}
-                      onValueChange={(value) =>
-                        handleConstraintChange(index, {
-                          format: value as "email" | "date" | "uuid",
-                        })
-                      }
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="選択してください" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="email">email</SelectItem>
-                        <SelectItem value="date">date</SelectItem>
-                        <SelectItem value="uuid">uuid</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label className="text-xs">説明</Label>
+                    <Input
+                      value={field.description ?? ""}
+                      onChange={(e) => handleFieldChange(index, { description: e.target.value })}
+                      placeholder="例: 顧客ID"
+                    />
                   </div>
+                  <div className="flex items-center gap-2 pb-2">
+                    <Switch
+                      checked={field.required ?? true}
+                      onCheckedChange={(checked) =>
+                        handleFieldChange(index, { required: checked })
+                      }
+                    />
+                    <span className="text-xs text-muted-foreground">必須</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeField(index)}
+                    title="削除"
+                    className="mb-1"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
 
                 {field.type === "enum" && (

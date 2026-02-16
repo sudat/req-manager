@@ -16,16 +16,16 @@ const createIssue = (
 });
 
 /**
- * 業務要件にシステム要件が紐づいている
+ * 業務要件にシステム機能が紐づいている
  */
-export const calculateBusinessRequirementWithSystemRequirementsIssue = (
+export const calculateBusinessRequirementWithSystemFunctionsIssue = (
 	businessRequirements: BusinessRequirementHealthInput[]
 ): HealthScoreIssue => {
 	return createIssue(
-		"business_requirements_with_system_requirements",
-		"業務要件にシステム要件が紐づいている",
+		"business_requirements_with_system_functions",
+		"業務要件にシステム機能が紐づいている",
 		"high",
-		businessRequirements.filter((req) => req.relatedSystemRequirementIds.length > 0).length,
+		businessRequirements.filter((req) => req.relatedSystemFunctionIds.length > 0).length,
 		businessRequirements.length
 	);
 };

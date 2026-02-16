@@ -1,7 +1,9 @@
 import { supabase } from "@/lib/supabase/client";
-import type { DesignDocument, DdType } from "@/lib/domain";
+import type { DesignDocument, DdType, DdCallerDraft, DdCallerLink } from "@/lib/domain";
 import { normalizeEntryPoints } from "@/lib/data/structured";
 import { createCrudOperations, failIfMissingConfig } from "./crud-factory";
+import { listDdCallersByTargetIds } from "./requirement-links";
+import { isRecord } from "@/lib/utils/type-guards";
 
 export type DesignDocumentInput = {
   id: string;
@@ -31,9 +33,6 @@ type DesignDocumentRow = {
   created_at: string;
   updated_at: string;
 };
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
 
 const normalizeDdType = (value: unknown): DdType => {
   if (typeof value === "string" && value.length > 0) {
@@ -90,6 +89,15 @@ export const createDesignDocument = crud.create;
 export const updateDesignDocument = crud.update;
 export const deleteDesignDocument = crud.delete;
 
+// DdCallerLink を DdCallerDraft に変換
+const toDdCallerDraft = (link: DdCallerLink, nameByDdId: Map<string, string>): DdCallerDraft => ({
+  callerType: link.callerType,
+  callerSfId: undefined, // DdCallerLinkにはSF IDがないため、別途取得が必要
+  callerDdId: link.callerDdId,
+  callerName: link.callerDdId ? nameByDdId.get(link.callerDdId) : undefined,
+  callType: link.callType,
+});
+
 // 特殊メソッド（個別実装）
 export const listDesignDocumentsBySrfId = async (srfId: string, projectId?: string) => {
   const configError = failIfMissingConfig();
@@ -107,7 +115,52 @@ export const listDesignDocumentsBySrfId = async (srfId: string, projectId?: stri
 
   const { data, error } = await query;
   if (error) return { data: null, error: error.message };
-  return { data: (data as DesignDocumentRow[]).map(toDesignDocument), error: null };
+  
+  const documents = (data as DesignDocumentRow[]).map(toDesignDocument);
+  
+  // 呼び出し元を取得してマージ
+  if (documents.length > 0) {
+    const ddIds = documents.map(d => d.id);
+    const callersResult = await listDdCallersByTargetIds(ddIds, projectId);
+    
+    if (callersResult.data) {
+      // 呼び出し元DDの名称を取得
+      const callerDdIds = callersResult.data
+        .filter(link => link.callerType === "system" && link.callerDdId)
+        .map(link => link.callerDdId!);
+      
+      const uniqueCallerDdIds = [...new Set(callerDdIds)];
+      const nameByDdId = new Map<string, string>();
+      
+      if (uniqueCallerDdIds.length > 0) {
+        const { data: ddData } = await supabase
+          .from("design_documents")
+          .select("id, name")
+          .in("id", uniqueCallerDdIds);
+        
+        if (ddData) {
+          for (const dd of ddData) {
+            nameByDdId.set(dd.id, dd.name);
+          }
+        }
+      }
+      
+      // DD IDごとにグループ化
+      const callersByDdId = new Map<string, DdCallerDraft[]>();
+      for (const link of callersResult.data) {
+        const draft = toDdCallerDraft(link, nameByDdId);
+        const existing = callersByDdId.get(link.targetDdId) || [];
+        callersByDdId.set(link.targetDdId, [...existing, draft]);
+      }
+      
+      // 各ドキュメントにcallersを追加
+      for (const doc of documents) {
+        doc.callers = callersByDdId.get(doc.id);
+      }
+    }
+  }
+  
+  return { data: documents, error: null };
 };
 
 export const createDesignDocuments = async (inputs: DesignDocumentCreateInput[]) => {

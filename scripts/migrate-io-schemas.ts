@@ -54,13 +54,13 @@ const pickPattern = (text: string): string | undefined => {
 };
 
 const parseRange = (text: string): { min?: number; max?: number } => {
-  const match = text.match(/(\\d+)\\s*[-〜~]\\s*(\\d+)/);
+  const match = text.match(/(\d+)\s*[-〜~]\s*(\d+)/);
   if (!match) return {};
   return { min: Number(match[1]), max: Number(match[2]) };
 };
 
 const parseDigits = (text: string): { min?: number; max?: number } => {
-  const match = text.match(/(\\d+)桁/);
+  const match = text.match(/(\d+)桁/);
   if (!match) return {};
   const value = Number(match[1]);
   return { min: value, max: value };
@@ -107,7 +107,7 @@ const parseField = (segment: string): Field | null => {
   const format = detectFormat(detailPart);
   if (format) constraints.format = format as any;
 
-  const enumMatch = detailPart.match(/\\[(.+?)\\]/);
+  const enumMatch = detailPart.match(/\[(.+?)\]/);
   if (enumMatch) {
     constraints.enum = enumMatch[1]
       .split(/[,、]/)
@@ -144,23 +144,24 @@ const buildStructuredForType = (
       const structuredInput: ApiInput = {
         method: "POST",
         path: "",
-        query: [],
-        body: inputFields,
+        fields: inputFields.map((f) => ({ ...f, location: "body" as const })),
       };
       const structuredOutput: ApiOutput = {
         success: { status: 200, fields: outputFields },
         error: [],
+        fields: [],
       };
       return { structuredInput, structuredOutput };
     }
     case "screen": {
       const structuredInput: ScreenInput = {
         trigger: "click",
-        elements: inputFields,
+        fields: inputFields.map((f) => ({ ...f, elementType: "input" as const })),
       };
       const structuredOutput: ScreenOutput = {
         transition: "",
         messages: outputText ? [outputText] : [],
+        fields: [],
       };
       return { structuredInput, structuredOutput };
     }
@@ -168,7 +169,7 @@ const buildStructuredForType = (
       const structuredInput: BatchInput = {
         schedule: "",
         source: "",
-        parameters: inputFields,
+        fields: inputFields.map((f) => ({ ...f, category: "config" as const })),
       };
       const structuredOutput: BatchOutput = {
         summary: {
@@ -178,17 +179,19 @@ const buildStructuredForType = (
           status: "completed",
         },
         nextBatch: "",
+        fields: [],
       };
       return { structuredInput, structuredOutput };
     }
     case "job": {
       const structuredInput: JobInput = {
         event: "",
-        payload: inputFields,
+        fields: inputFields.map((f) => ({ ...f, category: "data" as const })),
       };
       const structuredOutput: JobOutput = {
         result: outputText ?? "",
         nextEvent: "",
+        fields: [],
       };
       return { structuredInput, structuredOutput };
     }
@@ -201,10 +204,9 @@ interface SystemFunctionRow {
   deliverables: Deliverable[] | null;
 }
 
-const args = new Set(process.argv.slice(2));
-const shouldApply = args.has("--apply");
+const args = process.argv.slice(2);
+const shouldApply = args.includes("--apply");
 const reportPath = args
-  .values()
   .find((value) => value.startsWith("--report="))
   ?.split("=")[1];
 
@@ -229,11 +231,16 @@ async function main() {
     return;
   }
 
-  const report: Record<string, unknown> = {
+  const report: {
+    total: number;
+    updated: number;
+    skipped: number;
+    manual: string[];
+  } = {
     total: rows.length,
     updated: 0,
     skipped: 0,
-    manual: [] as string[],
+    manual: [],
   };
 
   for (const row of rows as SystemFunctionRow[]) {
@@ -244,7 +251,7 @@ async function main() {
       if (!func) return deliverable;
       if (func.structuredInput || func.structuredOutput) return deliverable;
       if (!isIoType(deliverable.type)) {
-        (report.manual as string[]).push(`${row.id}:${deliverable.name} (type=${deliverable.type})`);
+        report.manual.push(`${row.id}:${deliverable.name} (type=${deliverable.type})`);
         return deliverable;
       }
       const structured = buildStructuredForType(
@@ -253,7 +260,7 @@ async function main() {
         func.output
       );
       if (!structured) {
-        (report.manual as string[]).push(`${row.id}:${deliverable.name} (parse-failed)`);
+        report.manual.push(`${row.id}:${deliverable.name} (parse-failed)`);
         return deliverable;
       }
       updated = true;

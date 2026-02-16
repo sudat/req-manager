@@ -25,7 +25,6 @@ export const brDraftTool = createTool({
       code: z.string(),
       name: z.string(),
       summary: z.string(),
-      businessContext: z.string(),
       processSteps: z.array(z.object({
         when: z.string(),
         who: z.string(),
@@ -77,7 +76,7 @@ export const brDraftTool = createTool({
 
       const { data: bt } = await supabase
         .from('business_tasks')
-        .select('id, name, summary, business_context, process_steps, input, output, business_area, project_id')
+        .select('id, name, summary, process_steps, input, output, business_area, project_id')
         .eq('id', btId)
         .single();
 
@@ -86,7 +85,6 @@ export const brDraftTool = createTool({
             id: bt.id,
             name: bt.name,
             summary: bt.summary,
-            business_context: bt.business_context,
             process_steps: bt.process_steps,
             input: bt.input,
             output: bt.output,
@@ -116,7 +114,6 @@ export const brDraftTool = createTool({
         id: btId,
         name: btName ?? btId,
         summary: '',
-        business_context: '',
         process_steps: [],
         input: [],
         output: [],
@@ -250,7 +247,6 @@ ${naturalLanguageInput}
         code: btRecord.id,
         name: btRecord.name ?? btId,
         summary: btRecord.summary ?? '',
-        businessContext: btRecord.business_context ?? '',
         processSteps: normalizeProcessSteps(btRecord.process_steps),
         input: normalizeInputOutput(btRecord.input),
         output: normalizeInputOutput(btRecord.output),

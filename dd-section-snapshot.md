@@ -1,0 +1,356 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - button "サイドバーを閉じる" [ref=e4]:
+        - img
+      - heading "要件管理ツール" [level=2] [ref=e6]
+      - navigation [ref=e7]:
+        - list [ref=e8]:
+          - listitem [ref=e9]:
+            - link "ダッシュボード" [ref=e10] [cursor=pointer]:
+              - /url: /dashboard
+              - img [ref=e11]
+              - generic [ref=e16]: ダッシュボード
+          - listitem [ref=e17]:
+            - link "プロダクト要件" [ref=e18] [cursor=pointer]:
+              - /url: /product-requirement
+              - img [ref=e19]
+              - generic [ref=e22]: プロダクト要件
+          - listitem [ref=e23]:
+            - link "AIチャット" [ref=e24] [cursor=pointer]:
+              - /url: /chat
+              - img [ref=e25]
+              - generic [ref=e28]: AIチャット
+          - listitem [ref=e30]:
+            - link "業務一覧" [ref=e31] [cursor=pointer]:
+              - /url: /business
+              - img [ref=e32]
+              - generic [ref=e35]: 業務一覧
+          - listitem [ref=e36]:
+            - link "システム領域一覧" [ref=e37] [cursor=pointer]:
+              - /url: /system
+              - img [ref=e38]
+              - generic [ref=e48]: システム領域一覧
+          - listitem [ref=e49]:
+            - link "概念辞書" [ref=e50] [cursor=pointer]:
+              - /url: /ideas
+              - img [ref=e51]
+              - generic [ref=e53]: 概念辞書
+          - listitem [ref=e54]:
+            - generic [ref=e55]:
+              - generic [ref=e56]:
+                - img [ref=e57]
+                - generic [ref=e61]: スキーマ
+              - list [ref=e62]:
+                - listitem [ref=e63]:
+                  - link "ER図" [ref=e64] [cursor=pointer]:
+                    - /url: /schema/er
+                    - img [ref=e65]
+                    - generic [ref=e69]: ER図
+                - listitem [ref=e70]:
+                  - link "シーケンス図" [ref=e71] [cursor=pointer]:
+                    - /url: /schema/sequence
+                    - img [ref=e72]
+                    - generic [ref=e76]: シーケンス図
+          - listitem [ref=e78]:
+            - link "変更要求一覧" [ref=e79] [cursor=pointer]:
+              - /url: /tickets
+              - img [ref=e80]
+              - generic [ref=e83]: 変更要求一覧
+          - listitem [ref=e84]:
+            - link "要件リンク" [ref=e85] [cursor=pointer]:
+              - /url: /links
+              - img [ref=e86]
+              - generic [ref=e89]: 要件リンク
+          - listitem [ref=e90]:
+            - link "ベースライン履歴" [ref=e91] [cursor=pointer]:
+              - /url: /baseline
+              - img [ref=e92]
+              - generic [ref=e96]: ベースライン履歴
+          - listitem [ref=e97]:
+            - link "エクスポート" [ref=e98] [cursor=pointer]:
+              - /url: /export
+              - img [ref=e99]
+              - generic [ref=e102]: エクスポート
+          - listitem [ref=e104]:
+            - link "設定" [ref=e105] [cursor=pointer]:
+              - /url: /settings
+              - img [ref=e106]
+              - generic [ref=e109]: 設定
+      - button "新会計システムプロジェクト" [ref=e229]:
+        - generic [ref=e112]:
+          - img
+          - generic [ref=e113]: 新会計システムプロジェクト
+        - img
+    - main [ref=e114]:
+      - generic [ref=e231]:
+        - navigation "breadcrumb" [ref=e232]:
+          - list [ref=e233]:
+            - listitem [ref=e234]:
+              - link "システム領域一覧" [ref=e235] [cursor=pointer]:
+                - /url: /system
+            - listitem [ref=e236]:
+              - img [ref=e237]
+            - listitem [ref=e239]:
+              - link "システム機能一覧" [ref=e240] [cursor=pointer]:
+                - /url: /system/GL
+            - listitem [ref=e241]:
+              - img [ref=e242]
+            - listitem [ref=e244]:
+              - link "システム機能詳細" [disabled] [ref=e245]
+        - generic [ref=e246]:
+          - heading "システム機能詳細" [level=1] [ref=e247]
+          - link "AIで追加" [ref=e248] [cursor=pointer]:
+            - /url: /chat?screen=SF&sdId=GL&sfId=SF-GL-0002
+            - button "AIで追加" [ref=e249]:
+              - img
+              - text: AIで追加
+        - generic [ref=e250]:
+          - generic [ref=e252]:
+            - generic [ref=e253]:
+              - generic [ref=e254]:
+                - generic [ref=e255]: GL
+                - generic [ref=e256]: /
+                - generic [ref=e257]: SF-GL-0002
+              - link "編集" [ref=e258] [cursor=pointer]:
+                - /url: /system/GL/SF-GL-0002/edit/basic
+                - button "編集" [ref=e259]:
+                  - img
+                  - text: 編集
+            - heading "仕訳転記機能" [level=2] [ref=e260]
+            - generic [ref=e262]:
+              - heading "概要" [level=2] [ref=e263]
+              - paragraph [ref=e264]: 各業務プロセスから自動生成される仕訳を転記する機能
+              - heading "主な機能" [level=3] [ref=e265]
+              - list [ref=e266]:
+                - listitem [ref=e267]: 売上、買掛、決算等の各業務プロセスからの仕訳データ自動生成
+                - listitem [ref=e268]: 業務イベントと仕訳パターンを紐づけるルールテーブル管理
+                - listitem [ref=e269]: 生成された仕訳データの仕訳帳テーブルへの転記バッチ処理
+              - heading "対象" [level=3] [ref=e270]
+              - paragraph [ref=e271]: 経理担当者、システム管理者
+              - heading "関連" [level=3] [ref=e272]
+              - list [ref=e273]:
+                - listitem [ref=e274]: 関連タスク：TASK-016
+                - listitem [ref=e275]: 関連要件：SR-TASK-016-001
+            - generic [ref=e276]:
+              - generic [ref=e277]: 設計方針
+              - list [ref=e280]:
+                - listitem [ref=e281]: 仕訳転記は日次バッチで実施
+                - listitem [ref=e282]: 転記元帳は総勘定元帳と補助元帳に分離
+                - listitem [ref=e283]: 転記失敗時はロールバックしエラーログを出力
+            - generic [ref=e284]:
+              - generic [ref=e285]:
+                - img [ref=e286]
+                - generic [ref=e289]: 機能分類
+                - generic [ref=e290]: 内部
+              - generic [ref=e291]:
+                - img [ref=e292]
+                - generic [ref=e295]: ステータス
+                - generic [ref=e296]: 実装済
+          - button "システム機能ヘルススコア 良好 82 /100" [ref=e298] [cursor=pointer]:
+            - heading "システム機能ヘルススコア" [level=2] [ref=e300]
+            - generic [ref=e303]:
+              - generic [ref=e304]: 良好
+              - generic [ref=e305]: "82"
+              - generic [ref=e306]: /100
+            - img [ref=e309]
+        - generic [ref=e311]:
+          - generic [ref=e312]:
+            - generic [ref=e313]:
+              - generic [ref=e314]: 仕様
+              - generic [ref=e315]: システム要件
+            - generic [ref=e317]:
+              - generic [ref=e318]:
+                - generic [ref=e319]:
+                  - heading "システム要件" [level=2] [ref=e320]
+                  - generic [ref=e321]: "2"
+                - link "編集" [ref=e323] [cursor=pointer]:
+                  - /url: /system/GL/SF-GL-0002/edit/requirements
+                  - button "編集" [ref=e324]:
+                    - img
+                    - text: 編集
+              - generic [ref=e326]:
+                - button "SR-GL-0002-0001 機能要件 仕訳転記 SR" [ref=e329] [cursor=pointer]:
+                  - generic [ref=e330]:
+                    - generic [ref=e331]: SR-GL-0002-0001
+                    - generic [ref=e332]: 機能要件
+                    - generic [ref=e333]: 仕訳転記
+                  - generic [ref=e334]:
+                    - generic [ref=e335]: SR
+                    - img [ref=e336]
+                - button "SR-GL-0002-0002 機能要件 仕訳転記エラー通知 SR" [ref=e340] [cursor=pointer]:
+                  - generic [ref=e341]:
+                    - generic [ref=e342]: SR-GL-0002-0002
+                    - generic [ref=e343]: 機能要件
+                    - generic [ref=e344]: 仕訳転記エラー通知
+                  - generic [ref=e345]:
+                    - generic [ref=e346]: SR
+                    - img [ref=e347]
+          - generic [ref=e349]:
+            - generic [ref=e350]:
+              - generic [ref=e351]: 実装
+              - generic [ref=e352]: DD（Design Document）
+            - generic [ref=e354]:
+              - generic [ref=e355]:
+                - generic [ref=e356]:
+                  - heading "DD（Design Document）" [level=2] [ref=e357]
+                  - generic [ref=e358]: "7"
+                - link "編集" [ref=e360] [cursor=pointer]:
+                  - /url: /system/GL/SF-GL-0002/edit/design-documents
+                  - button "編集" [ref=e361]:
+                    - img
+                    - text: 編集
+              - generic [ref=e363]:
+                - button "DD-SF-GL-0002-001 バッチ 仕訳転記バッチ" [ref=e366] [cursor=pointer]:
+                  - generic [ref=e367]:
+                    - generic [ref=e368]: DD-SF-GL-0002-001
+                    - generic [ref=e369]: バッチ
+                    - generic [ref=e370]: 仕訳転記バッチ
+                  - img [ref=e372]
+                - button "DD-SF-GL-0002-002 API 仕訳転記エラー通知API" [ref=e376] [cursor=pointer]:
+                  - generic [ref=e377]:
+                    - generic [ref=e378]: DD-SF-GL-0002-002
+                    - generic [ref=e379]: API
+                    - generic [ref=e380]: 仕訳転記エラー通知API
+                  - img [ref=e382]
+                - button "DD-SF-GL-0002-003 モデル 仕訳明細テーブル" [ref=e386] [cursor=pointer]:
+                  - generic [ref=e387]:
+                    - generic [ref=e388]: DD-SF-GL-0002-003
+                    - generic [ref=e389]: モデル
+                    - generic [ref=e390]: 仕訳明細テーブル
+                  - img [ref=e392]
+                - button "DD-SF-GL-0002-010 モデル 勘定科目マスタ" [ref=e396] [cursor=pointer]:
+                  - generic [ref=e397]:
+                    - generic [ref=e398]: DD-SF-GL-0002-010
+                    - generic [ref=e399]: モデル
+                    - generic [ref=e400]: 勘定科目マスタ
+                  - img [ref=e402]
+                - button "DD-SF-GL-0002-011 モデル 補助科目マスタ" [ref=e406] [cursor=pointer]:
+                  - generic [ref=e407]:
+                    - generic [ref=e408]: DD-SF-GL-0002-011
+                    - generic [ref=e409]: モデル
+                    - generic [ref=e410]: 補助科目マスタ
+                  - img [ref=e412]
+                - button "DD-SF-GL-0002-012 ジョブ 貸借バランスバリデーション" [ref=e416] [cursor=pointer]:
+                  - generic [ref=e417]:
+                    - generic [ref=e418]: DD-SF-GL-0002-012
+                    - generic [ref=e419]: ジョブ
+                    - generic [ref=e420]: 貸借バランスバリデーション
+                  - img [ref=e422]
+                - button "DD-SF-GL-0002-020 ジョブ 外貨仕訳換算ロジック" [ref=e426] [cursor=pointer]:
+                  - generic [ref=e427]:
+                    - generic [ref=e428]: DD-SF-GL-0002-020
+                    - generic [ref=e429]: ジョブ
+                    - generic [ref=e430]: 外貨仕訳換算ロジック
+                  - img [ref=e432]
+  - button "Open Next.js Dev Tools" [ref=e225] [cursor=pointer]:
+    - img [ref=e226]
+  - alert [ref=e434]
+  - button "/agentation v2.2.0 Output Detail Standard React Components Marker Colour Purple Blue Cyan Green Yellow Orange Red Clear on copy/send Block page interactions Manage MCP & Webhooks Manage MCP & Webhooks MCP Connection MCP connection allows agents to receive and act on annotations. Learn more Webhooks Auto-Send The webhook URL will receive live annotation changes and annotation data." [ref=e435] [cursor=pointer]:
+    - img [ref=e437]
+    - generic [ref=e440]:
+      - button [ref=e442]:
+        - img [ref=e443]
+      - button [disabled] [ref=e446]:
+        - img [ref=e447]
+      - button [disabled] [ref=e455]:
+        - img [ref=e456]
+      - generic:
+        - button [disabled]:
+          - img
+      - button [disabled] [ref=e464]:
+        - img [ref=e465]
+      - button [ref=e468]:
+        - img [ref=e469]
+      - button [ref=e474]:
+        - img [ref=e475]
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - generic: /agentation
+            - generic: v2.2.0
+            - button "Switch to light mode":
+              - generic:
+                - generic:
+                  - img
+          - generic:
+            - generic:
+              - generic:
+                - text: Output Detail
+                - generic:
+                  - generic:
+                    - img
+              - button "Standard":
+                - generic: Standard
+            - generic:
+              - generic:
+                - text: React Components
+                - generic:
+                  - generic:
+                    - img
+              - generic:
+                - checkbox [checked]
+          - generic:
+            - generic: Marker Colour
+            - generic:
+              - button "Purple":
+                - generic "Purple"
+              - button "Blue":
+                - generic "Blue"
+              - button "Cyan":
+                - generic "Cyan"
+              - button "Green":
+                - generic "Green"
+              - button "Yellow":
+                - generic "Yellow"
+              - button "Orange":
+                - generic "Orange"
+              - button "Red":
+                - generic "Red"
+          - generic:
+            - generic:
+              - checkbox "Clear on copy/send"
+              - generic:
+                - text: Clear on copy/send
+                - generic:
+                  - generic:
+                    - img
+            - generic:
+              - checkbox "Block page interactions" [checked]
+              - generic:
+                - img
+              - generic: Block page interactions
+          - generic:
+            - button "Manage MCP & Webhooks":
+              - generic: Manage MCP & Webhooks
+              - generic:
+                - img
+        - generic:
+          - button "Manage MCP & Webhooks":
+            - img
+            - generic: Manage MCP & Webhooks
+          - generic:
+            - generic:
+              - generic:
+                - text: MCP Connection
+                - generic:
+                  - generic:
+                    - img
+            - paragraph:
+              - text: MCP connection allows agents to receive and act on annotations.
+              - link "Learn more":
+                - /url: https://agentation.dev/mcp
+          - generic:
+            - generic:
+              - generic:
+                - text: Webhooks
+                - generic:
+                  - generic:
+                    - img
+              - generic:
+                - generic: Auto-Send
+                - generic:
+                  - checkbox [checked] [disabled]
+            - paragraph: The webhook URL will receive live annotation changes and annotation data.
+            - textbox "Webhook URL"

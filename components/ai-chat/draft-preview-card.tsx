@@ -70,7 +70,6 @@ export function DraftPreviewCard({ draft, commitState, onCommit, onUpdateDraft }
         <DraftInfoRow label="コード" value={currentDraft.code} isEditing={isEditing} readOnly />
         <DraftInfoRow label="業務名" value={currentDraft.name} isEditing={isEditing} onChange={(v) => updateField('name', v)} />
         <DraftInfoRow label="概要" value={currentDraft.summary} isEditing={isEditing} multiline onChange={(v) => updateField('summary', v)} />
-        <DraftInfoRow label="業務コンテキスト" value={currentDraft.businessContext} isEditing={isEditing} multiline onChange={(v) => updateField('businessContext', v)} />
       </div>
 
       {/* 業務プロセス */}

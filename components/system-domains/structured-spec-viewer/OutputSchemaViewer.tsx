@@ -1,5 +1,3 @@
-"use client";
-
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import type {
@@ -12,28 +10,17 @@ import type { StructuredDesignDocumentIoType } from "@/lib/domain/schemas/design
 import { EmptyState } from "./EmptyState";
 import { FieldsViewer } from "./FieldsViewer";
 import { LabeledValue } from "./LabeledValue";
+import {
+  isApiOutputSchema,
+  isBatchOutputSchema,
+  isJobOutputSchema,
+  isScreenOutputSchema,
+} from "./schema-type-guards";
+import { renderFieldGroup } from "./field-group-helper";
 
 interface OutputSchemaViewerProps {
   outputSchema?: ApiOutput | ScreenOutput | BatchOutput | JobOutput;
   ioType: StructuredDesignDocumentIoType;
-}
-
-type StructuredOutputSchema = OutputSchemaViewerProps["outputSchema"];
-
-function isApiOutputSchema(outputSchema: StructuredOutputSchema): outputSchema is ApiOutput {
-  return Boolean(outputSchema && "success" in outputSchema);
-}
-
-function isScreenOutputSchema(outputSchema: StructuredOutputSchema): outputSchema is ScreenOutput {
-  return Boolean(outputSchema && "transition" in outputSchema);
-}
-
-function isBatchOutputSchema(outputSchema: StructuredOutputSchema): outputSchema is BatchOutput {
-  return Boolean(outputSchema && "summary" in outputSchema);
-}
-
-function isJobOutputSchema(outputSchema: StructuredOutputSchema): outputSchema is JobOutput {
-  return Boolean(outputSchema && "result" in outputSchema);
 }
 
 export function OutputSchemaViewer({
@@ -81,6 +68,7 @@ export function OutputSchemaViewer({
               ))}
             </div>
           )}
+          {renderFieldGroup("出力データ項目", outputSchema.fields)}
         </div>
       );
     }
@@ -118,6 +106,7 @@ export function OutputSchemaViewer({
               {outputSchema.displayChanges}
             </LabeledValue>
           )}
+          {renderFieldGroup("出力データ項目", outputSchema.fields)}
         </div>
       );
     }
@@ -161,6 +150,7 @@ export function OutputSchemaViewer({
           {outputSchema.nextBatch && (
             <LabeledValue label="次バッチ">{outputSchema.nextBatch}</LabeledValue>
           )}
+          {renderFieldGroup("出力データ項目", outputSchema.fields)}
         </div>
       );
     }
@@ -173,6 +163,7 @@ export function OutputSchemaViewer({
         <div className="space-y-3">
           {outputSchema.result && <LabeledValue label="処理結果">{outputSchema.result}</LabeledValue>}
           {outputSchema.nextEvent && <LabeledValue label="次イベント">{outputSchema.nextEvent}</LabeledValue>}
+          {renderFieldGroup("出力データ項目", outputSchema.fields)}
         </div>
       );
     }

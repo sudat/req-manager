@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ConceptBadgeList } from "@/components/ui/concept-badge";
 import { SelectionDialog } from "@/components/forms/SelectionDialog";
 import type { Requirement, SelectionDialogState, SelectableItem } from "@/lib/domain/forms";
 import { buildYamlIdList, parseYamlIdList } from "@/lib/utils/yaml";
@@ -72,7 +72,7 @@ export function ConceptIdsField({
 	return (
 		<div className="space-y-2">
 			<div className="flex items-center justify-between">
-				<span className="text-[12px] font-medium text-slate-500">{label}</span>
+				<span className="text-[14px] font-bold text-slate-900 border-l-4 border-primary pl-3 -ml-3">{label}</span>
 				<Button
 					type="button"
 					variant="outline"
@@ -82,28 +82,13 @@ export function ConceptIdsField({
 					追加
 				</Button>
 			</div>
-			<div className="flex flex-wrap gap-2">
-				{selectedIds.length === 0 && (
-					<span className="text-[12px] text-slate-400">未選択</span>
-				)}
-				{selectedIds.map((id) => (
-					<Badge key={id} variant="secondary" className="gap-1 text-[11px]">
-						<span className="font-mono">{id}</span>
-						{conceptMap.get(id) && (
-							<span className="text-slate-600">{conceptMap.get(id)}</span>
-						)}
-						<button
-							type="button"
-							className="ml-1 text-slate-500 hover:text-slate-900"
-							onClick={() => toggleConcept(id)}
-							aria-label={`${id} を削除`}
-						>
-							×
-						</button>
-					</Badge>
-				))}
-			</div>
 			{helperText && <p className="text-[11px] text-slate-500">{helperText}</p>}
+			<ConceptBadgeList
+				ids={selectedIds}
+				conceptMap={conceptMap}
+				onRemove={toggleConcept}
+				emptyMessage="未選択"
+			/>
 			{parsed.error && (
 				<p className="text-[12px] text-rose-600">
 					既存のYAMLに構文エラーがあります。再保存すると上書きされます。

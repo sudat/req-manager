@@ -9,7 +9,10 @@ export type TaskInput = {
   businessArea: string;
   name: string;
   summary: string;
-  businessContext: string;
+  triggerDescription: string;
+  triggerTaskIds: string[];
+  frequency: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly' | 'irregular';
+  frequencyDescription: string;
   processSteps: string;
   person: string;
   input: string;
@@ -28,7 +31,10 @@ type TaskRow = {
   business_area: string;
   name: string;
   summary: string;
-  business_context: string | null;
+  trigger_description: string | null;
+  trigger_task_ids: string[] | null;
+  frequency: string | null;
+  frequency_description: string | null;
   process_steps: unknown | null;
   person: string | null;
   input: unknown | null;
@@ -59,7 +65,10 @@ const toTask = (row: TaskRow): Task => ({
   businessArea: row.business_area,
   name: row.name,
   summary: row.summary,
-  businessContext: row.business_context ?? "",
+  triggerDescription: row.trigger_description ?? "",
+  triggerTaskIds: row.trigger_task_ids ?? [],
+  frequency: (row.frequency as Task['frequency']) ?? 'daily',
+  frequencyDescription: row.frequency_description ?? "",
   processSteps: toYamlText(row.process_steps),
   person: row.person ?? "",
   input: toYamlText(row.input),
@@ -79,7 +88,10 @@ const toTaskRow = (input: Partial<TaskInput>) => {
   if (input.businessArea !== undefined) row.business_area = input.businessArea;
   if (input.name !== undefined) row.name = input.name;
   if (input.summary !== undefined) row.summary = input.summary;
-  if (input.businessContext !== undefined) row.business_context = input.businessContext;
+  if (input.triggerDescription !== undefined) row.trigger_description = input.triggerDescription;
+  if (input.triggerTaskIds !== undefined) row.trigger_task_ids = input.triggerTaskIds;
+  if (input.frequency !== undefined) row.frequency = input.frequency;
+  if (input.frequencyDescription !== undefined) row.frequency_description = input.frequencyDescription;
   if (input.processSteps !== undefined) row.process_steps = parseYamlToJson(input.processSteps);
   if (input.person !== undefined) row.person = input.person;
   if (input.input !== undefined) row.input = parseYamlToJson(input.input);

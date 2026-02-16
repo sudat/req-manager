@@ -2,7 +2,8 @@ import { useEffect } from "react";
 import { useProject } from "@/components/project/project-context";
 import { getSystemFunctionById } from "@/lib/data/system-functions";
 import { listSystemRequirementsBySrfId } from "@/lib/data/system-requirements";
-import { listDesignDocumentsBySrfId } from "@/lib/data/design-documents";
+import { listDesignDocumentsBySrfId, listDesignDocuments } from "@/lib/data/design-documents";
+import { listDdDependenciesBySourceIds, listDdCallersByTargetIds } from "@/lib/data/requirement-links";
 import { fromSystemRequirement } from "@/lib/data/requirement-mapper";
 import { classifyDesignItems, extractTargetsFromLegacyItems } from "@/lib/data/system-design-migration";
 import { parseStructuredDetails } from "@/lib/utils/design-documents/structured-compat";
@@ -95,10 +96,15 @@ export function useSystemFunctionDataFetch(
 				}
 			}
 
-			const [{ data: sysReqs, error: sysReqError }, { data: ddUnits, error: implError }] =
+			const [
+				{ data: sysReqs, error: sysReqError },
+				{ data: ddUnits, error: implError },
+				{ data: allDds, error: allDdsError },
+			] =
 				await Promise.all([
 					listSystemRequirementsBySrfId(srfId, currentProjectId ?? undefined),
 					listDesignDocumentsBySrfId(srfId, currentProjectId ?? undefined),
+					listDesignDocuments(currentProjectId ?? undefined),
 				]);
 			if (!active) return;
 
@@ -114,6 +120,66 @@ export function useSystemFunctionDataFetch(
 			if (implError) {
 				console.error("DD読み込みエラー:", implError);
 			} else {
+				const ddIds = (ddUnits ?? []).map((unit) => unit.id);
+				const dependencyMap = new Map<string, DesignDocumentDraft["dependencies"]>();
+				const callerMap = new Map<string, DesignDocumentDraft["callers"]>();
+				const callerDdToSfIdMap = new Map<string, string>(
+					(allDds ?? []).map((dd) => [dd.id, dd.srfId])
+				);
+
+				if (allDdsError) {
+					console.error("全DD読み込みエラー:", allDdsError);
+				}
+				if (ddIds.length > 0) {
+					const { data: dependencies, error: dependencyError } =
+						await listDdDependenciesBySourceIds(ddIds, currentProjectId ?? undefined);
+					if (!active) return;
+					if (dependencyError) {
+						console.error("DD依存リンク読み込みエラー:", dependencyError);
+					} else {
+						const ddIdSet = new Set(ddIds);
+						for (const dependency of dependencies ?? []) {
+							if (!ddIdSet.has(dependency.targetDdId)) continue;
+							const current = dependencyMap.get(dependency.sourceDdId) ?? [];
+							current.push({
+								targetDdId: dependency.targetDdId,
+								callType: dependency.callType,
+								callId: dependency.callId,
+								message: dependency.message,
+								returnsLabel: dependency.returnsLabel,
+								returnSchemaRef: dependency.returnSchemaRef,
+								errorLabel: dependency.errorLabel,
+								errorSchemaRef: dependency.errorSchemaRef,
+								errorExceptionRef: dependency.errorExceptionRef,
+								ruleRef: dependency.ruleRef,
+								asyncCompletion: dependency.asyncCompletion,
+							});
+							dependencyMap.set(dependency.sourceDdId, current);
+						}
+					}
+
+					const { data: callers, error: callerError } =
+						await listDdCallersByTargetIds(ddIds, currentProjectId ?? undefined);
+					if (!active) return;
+					if (callerError) {
+						console.error("DD呼び出し元リンク読み込みエラー:", callerError);
+					} else {
+						for (const caller of callers ?? []) {
+							const current = callerMap.get(caller.targetDdId) ?? [];
+							current.push({
+								callerType: caller.callerType,
+								callerDdId: caller.callerDdId,
+								callType: caller.callType,
+								callerSfId:
+									caller.callerType === "system" && caller.callerDdId
+										? callerDdToSfIdMap.get(caller.callerDdId) ?? ""
+										: undefined,
+							});
+							callerMap.set(caller.targetDdId, current);
+						}
+					}
+				}
+
 				input.setDesignDocuments(
 					(ddUnits ?? []).map((unit) => {
 						const { structuredSpec, parseError } = parseStructuredDetails(
@@ -126,8 +192,10 @@ export function useSystemFunctionDataFetch(
 							summary: unit.summary,
 							entryPoints: unit.entryPoints ?? [],
 							designPolicy: unit.designPolicy ?? "",
+							dependencies: dependencyMap.get(unit.id) ?? [],
 							structuredSpec,
 							structuredSpecParseError: parseError,
+							callers: callerMap.get(unit.id) ?? [],
 						};
 					})
 				);

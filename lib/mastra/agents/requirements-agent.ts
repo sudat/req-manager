@@ -196,7 +196,7 @@ AI: [brDraftToolをbtId: "BT-GL-0010"で呼び出す]
 4. ユーザーに結果を報告する
 
 **重要**: contentには草案の全データを渡すこと。btの場合は以下のフィールドが必要：
-- business_area, project_id, code, name, summary, businessContext, processSteps, input, output
+- business_area, project_id, code, name, summary, processSteps, input, output
 
 ### 草案の提示形式
 ユーザーに草案を提示する際は、以下のように簡潔に伝えてください：

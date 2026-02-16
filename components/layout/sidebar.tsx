@@ -15,9 +15,13 @@ import {
 	Menu,
 	PanelLeft,
 	Settings,
+	GitPullRequest,
+	Table2,
+	ChevronRight,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
 import { ProjectSwitcher } from "@/components/project/project-switcher";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -27,6 +31,11 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "./sidebar-context";
 
@@ -38,93 +47,153 @@ type MenuItem = {
 	icon: any;
 };
 
-type MenuDivider = {
-	type: "divider";
+type MenuSubGroup = {
+	type: "subgroup";
+	key: string;
+	label: string;
+	icon: any;
+	children: MenuItem[];
 };
 
-type MenuConfig = MenuItem | MenuDivider;
+type MenuGroup = {
+	type: "group";
+	key: string;
+	label: string;
+	icon: any;
+	children: (MenuItem | MenuSubGroup)[];
+};
+
+type MenuConfig = MenuItem | MenuGroup;
 
 const menuConfig: MenuConfig[] = [
+	// グループ: メイン
 	{
-		type: "item" as const,
-		key: "dashboard",
-		label: "ダッシュボード",
-		href: "/dashboard",
+		type: "group" as const,
+		key: "main",
+		label: "メイン",
 		icon: LayoutDashboard,
+		children: [
+			{
+				type: "item" as const,
+				key: "dashboard",
+				label: "ダッシュボード",
+				href: "/dashboard",
+				icon: LayoutDashboard,
+			},
+			{
+				type: "item" as const,
+				key: "product-requirement",
+				label: "プロダクト要件",
+				href: "/product-requirement",
+				icon: FileText,
+			},
+			{
+				type: "item" as const,
+				key: "chat",
+				label: "AIチャット",
+				href: "/chat",
+				icon: Bot,
+			},
+		],
 	},
+	// グループ: 要件管理
 	{
-		type: "item" as const,
-		key: "product-requirement",
-		label: "プロダクト要件",
-		href: "/product-requirement",
-		icon: FileText,
-	},
-	{
-		type: "item" as const,
-		key: "chat",
-		label: "AIチャット",
-		href: "/chat",
-		icon: Bot,
-	},
-	{ type: "divider" as const },
-	{
-		type: "item" as const,
-		key: "business",
-		label: "業務一覧",
-		href: "/business",
+		type: "group" as const,
+		key: "requirements",
+		label: "要件管理",
 		icon: Briefcase,
+		children: [
+			{
+				type: "item" as const,
+				key: "business",
+				label: "業務一覧",
+				href: "/business",
+				icon: Briefcase,
+			},
+			{
+				type: "item" as const,
+				key: "system-domains",
+				label: "システム領域一覧",
+				href: "/system",
+				icon: Boxes,
+			},
+			{
+				type: "item" as const,
+				key: "ideas",
+				label: "概念辞書",
+				href: "/ideas",
+				icon: BookOpen,
+			},
+		],
 	},
+	// グループ: 分析・運用
 	{
-		type: "item" as const,
-		key: "system-domains",
-		label: "システム領域一覧",
-		href: "/system",
-		icon: Boxes,
-	},
-	{
-		type: "item" as const,
-		key: "ideas",
-		label: "概念辞書",
-		href: "/ideas",
-		icon: BookOpen,
-	},
-	{
-		type: "item" as const,
-		key: "schema",
-		label: "ER図",
-		href: "/schema/er",
-		icon: Database,
-	},
-	{ type: "divider" as const },
-	{
-		type: "item" as const,
-		key: "tickets",
-		label: "変更要求一覧",
-		href: "/tickets",
+		type: "group" as const,
+		key: "analysis",
+		label: "分析・運用",
 		icon: ListChecks,
+		children: [
+			{
+				type: "subgroup" as const,
+				key: "change-management",
+				label: "変更管理",
+				icon: GitPullRequest,
+				children: [
+					{
+						type: "item" as const,
+						key: "tickets",
+						label: "変更要求一覧",
+						href: "/tickets",
+						icon: ListChecks,
+					},
+					{
+						type: "item" as const,
+						key: "baseline",
+						label: "ベースライン履歴",
+						href: "/baseline",
+						icon: History,
+					},
+					{
+						type: "item" as const,
+						key: "links",
+						label: "要件リンク",
+						href: "/links",
+						icon: Link2,
+					},
+				],
+			},
+			{
+				type: "subgroup" as const,
+				key: "schema",
+				label: "スキーマ",
+				icon: Table2,
+				children: [
+					{
+						type: "item" as const,
+						key: "schema-er",
+						label: "ER図",
+						href: "/schema/er",
+						icon: Database,
+					},
+					{
+						type: "item" as const,
+						key: "schema-sequence",
+						label: "シーケンス図",
+						href: "/schema/sequence",
+						icon: Database,
+					},
+				],
+			},
+			{
+				type: "item" as const,
+				key: "export",
+				label: "エクスポート",
+				href: "/export",
+				icon: Download,
+			},
+		],
 	},
-	{
-		type: "item" as const,
-		key: "links",
-		label: "要件リンク",
-		href: "/links",
-		icon: Link2,
-	},
-	{
-		type: "item" as const,
-		key: "baseline",
-		label: "ベースライン履歴",
-		href: "/baseline",
-		icon: History,
-	},
-	{
-		type: "item" as const,
-		key: "export",
-		label: "エクスポート",
-		href: "/export",
-		icon: Download,
-	},
-	{ type: "divider" as const },
+	// 設定はグループなしでフラット
 	{
 		type: "item" as const,
 		key: "settings",
@@ -138,6 +207,12 @@ export function Sidebar() {
 	const { isCollapsed, isMobileOpen, setIsMobileOpen, toggleCollapsed } =
 		useSidebar();
 	const pathname = usePathname();
+	const [openPopoverKey, setOpenPopoverKey] = useState<string | null>(null);
+
+	// ページ遷移時にPopoverを閉じる
+	useEffect(() => {
+		setOpenPopoverKey(null);
+	}, [pathname]);
 
 	const isActive = (href: string) => {
 		if (href === "/dashboard") {
@@ -162,15 +237,105 @@ export function Sidebar() {
 			<nav className="flex-1 py-2">
 				<ul className="space-y-0">
 					{menuConfig.map((item, index) => {
-						if (item.type === "divider") {
+						if (item.type === "group") {
+							const GroupIcon = item.icon;
+							const isGroupActive = item.children.some(child => 
+								child.type === "item" ? isActive(child.href) : child.children.some(grandChild => isActive(grandChild.href))
+							);
 							return (
-								<div
-									key={`divider-${index}`}
-									className="mx-5 my-2 h-px bg-slate-200"
-									aria-hidden="true"
-								/>
+								<li key={item.key}>
+									<div className="px-5 py-2">
+										<div className={cn(
+											"flex items-center gap-3 text-sm font-medium",
+											isGroupActive ? "text-brand-700" : "text-slate-700"
+										)}>
+											<GroupIcon className="h-5 w-5" />
+											<span>{item.label}</span>
+										</div>
+										<ul className="mt-1 ml-8 space-y-0 border-l-2 border-slate-200 pl-3">
+											{item.children.map((child) => {
+												if (child.type === "subgroup") {
+													const SubGroupIcon = child.icon;
+													const isSubGroupActive = child.children.some(grandChild => isActive(grandChild.href));
+													return (
+																	<li key={child.key}>
+																		<Popover open={openPopoverKey === child.key} onOpenChange={(open) => setOpenPopoverKey(open ? child.key : null)}>
+																			<PopoverTrigger asChild>
+																				<button
+																					type="button"
+																					className={cn(
+																						"w-full flex items-center justify-between gap-2 py-2 text-sm transition hover:text-slate-900 cursor-pointer",
+																						isSubGroupActive
+																							? "text-brand-700 font-semibold"
+																							: "text-slate-600",
+																					)}
+																				>
+																					<span className="flex items-center gap-2">
+																						<SubGroupIcon className="h-4 w-4" />
+																						<span>{child.label}</span>
+																					</span>
+																					<ChevronRight className="h-3 w-3" />
+																				</button>
+																			</PopoverTrigger>
+																			<PopoverContent side="right" align="start" className="w-56 p-2">
+																	<div className="text-xs font-medium text-slate-500 mb-2 px-2">{child.label}</div>
+																	<ul className="space-y-1">
+																		{child.children.map((grandChild) => {
+																			const grandChildActive = isActive(grandChild.href);
+																			const GrandChildIcon = grandChild.icon;
+																			return (
+																				<li key={grandChild.key}>
+																					<Link
+																						href={grandChild.href}
+																						onClick={handleLinkClick}
+																						className={cn(
+																							"flex items-center gap-2 px-2 py-1.5 text-sm rounded-md transition",
+																							grandChildActive
+																								? "bg-brand-50 text-brand-700 font-medium"
+																								: "text-slate-600 hover:bg-slate-100",
+																						)}
+																					>
+																						<GrandChildIcon className="h-4 w-4" />
+																						<span>{grandChild.label}</span>
+																					</Link>
+																				</li>
+																			);
+																		})}
+																	</ul>
+																</PopoverContent>
+															</Popover>
+														</li>
+													);
+												}
+												
+												// MenuItem
+													const menuItem = child as MenuItem;
+													const childActive = isActive(menuItem.href);
+													const ChildIcon = menuItem.icon;
+													return (
+														<li key={menuItem.key}>
+															<Link
+																href={menuItem.href}
+																onClick={handleLinkClick}
+																className={cn(
+																	"flex items-center gap-2 py-2 text-sm transition hover:text-slate-900",
+																	childActive
+																		? "text-brand-700 font-semibold"
+																		: "text-slate-600",
+																)}
+															>
+																<ChildIcon className="h-4 w-4" />
+																<span>{menuItem.label}</span>
+															</Link>
+														</li>
+													);
+											})}
+										</ul>
+									</div>
+								</li>
 							);
 						}
+
 						// MenuItem
 						const active = isActive(item.href);
 						const Icon = item.icon;
@@ -180,10 +345,10 @@ export function Sidebar() {
 									href={item.href}
 									onClick={handleLinkClick}
 									className={cn(
-										"flex items-center gap-3 px-5 py-3 text-sm transition hover:bg-slate-100 hover:text-slate-900",
+										"flex items-center gap-3 px-5 py-3 text-sm transition",
 										active
-											? "bg-brand-50 text-brand-700 font-semibold"
-											: "text-slate-600",
+											? "bg-brand-50 text-brand-700 font-semibold border-l-4 border-brand-600"
+											: "text-slate-600 hover:bg-slate-100",
 									)}
 								>
 									<Icon className="h-5 w-5" />
@@ -263,60 +428,190 @@ export function Sidebar() {
 								isCollapsed && "space-y-1.5",
 							)}
 						>
-							{menuConfig.map((item, index) => {
-								if (item.type === "divider") {
-									return (
-										<div
-											key={`divider-${index}`}
-											className={cn(
-												"mx-5 my-2 h-px bg-slate-200",
-												isCollapsed && "mx-3 my-1",
-											)}
-											aria-hidden="true"
-										/>
-									);
-								}
-								// MenuItem
-								const active = isActive(item.href);
-								const Icon = item.icon;
-								const linkContent = (
-									<Link
-										href={item.href}
-										className={cn(
-											"flex items-center gap-3 px-5 py-3 text-sm transition hover:bg-slate-100 hover:text-slate-900",
-											isCollapsed && "justify-center px-0 py-2.5",
-											active
-												? "bg-brand-50 text-brand-700 font-semibold"
-												: "text-slate-600",
-										)}
-									>
-										<Icon className="h-5 w-5 shrink-0" />
-										<span
-											className={cn(
-												"transition-opacity duration-300",
-												isCollapsed && "sr-only",
-											)}
-										>
-											{item.label}
-										</span>
-									</Link>
-								);
+						{menuConfig.map((item, index) => {
+							if (item.type === "group") {
+								// 折りたたみ時は子要素・孫要素をフラットに表示
+								if (isCollapsed) {
+									// すべての子孫要素をフラットに展開
+									const flattenedItems: MenuItem[] = [];
+									item.children.forEach((child) => {
+										if (child.type === "subgroup") {
+											flattenedItems.push(...child.children);
+										} else {
+											flattenedItems.push(child);
+										}
+									});
+									
+									return flattenedItems.map((flattedItem) => {
+										const active = isActive(flattedItem.href);
+										const Icon = flattedItem.icon;
+										const linkContent = (
+											<Link
+												href={flattedItem.href}
+												className={cn(
+													"flex items-center gap-3 px-5 py-3 text-sm transition hover:bg-slate-100 hover:text-slate-900",
+													"justify-center px-0 py-2.5",
+													active
+														? "bg-brand-50 text-brand-700 font-semibold"
+														: "text-slate-600",
+												)}
+											>
+												<Icon className="h-5 w-5 shrink-0" />
+												<span className="sr-only">{flattedItem.label}</span>
+											</Link>
+										);
 
+										return (
+											<li key={flattedItem.key}>
+												<Tooltip>
+													<TooltipTrigger asChild>{linkContent}</TooltipTrigger>
+													<TooltipContent side="right">
+														{flattedItem.label}
+													</TooltipContent>
+												</Tooltip>
+											</li>
+										);
+									});
+								}
+								
+								// 展開時はグループ表示
+								const GroupIcon = item.icon;
+								const isGroupActive = item.children.some(child => 
+									child.type === "item" ? isActive(child.href) : child.children.some(grandChild => isActive(grandChild.href))
+								);
 								return (
 									<li key={item.key}>
-										{isCollapsed ? (
-											<Tooltip>
-												<TooltipTrigger asChild>{linkContent}</TooltipTrigger>
-												<TooltipContent side="right">
-													{item.label}
-												</TooltipContent>
-											</Tooltip>
-										) : (
-											linkContent
-										)}
-									</li>
+										<div className="px-5 py-2">
+											<div className={cn(
+												"flex items-center gap-3 text-sm font-medium",
+												isGroupActive ? "text-brand-700" : "text-slate-700"
+											)}>
+												<GroupIcon className="h-5 w-5" />
+												<span>{item.label}</span>
+											</div>
+											<ul className="mt-1 ml-8 space-y-0 border-l-2 border-slate-200 pl-3">
+												{item.children.map((child) => {
+													if (child.type === "subgroup") {
+														const SubGroupIcon = child.icon;
+														const isSubGroupActive = child.children.some(grandChild => isActive(grandChild.href));
+														return (
+																																														<li key={child.key}>
+																																															<Popover open={openPopoverKey === child.key} onOpenChange={(open) => setOpenPopoverKey(open ? child.key : null)}>
+																																																<PopoverTrigger asChild>
+																																																	<button
+																																																		type="button"
+																																																		className={cn(
+																																																			"w-full flex items-center justify-between gap-2 py-2 text-sm transition hover:text-slate-900 cursor-pointer",
+																																																			isSubGroupActive
+																																																				? "text-brand-700 font-semibold"
+																																																				: "text-slate-600",
+																																																		)}
+																																																		>
+																																																			<span className="flex items-center gap-2">
+																																																				<SubGroupIcon className="h-4 w-4" />
+																																																				<span>{child.label}</span>
+																																																			</span>
+																																																			<ChevronRight className="h-3 w-3" />
+																																																		</button>
+																																																	</PopoverTrigger>
+																																																<PopoverContent side="right" align="start" className="w-56 p-2">
+																		<div className="text-xs font-medium text-slate-500 mb-2 px-2">{child.label}</div>
+																		<ul className="space-y-1">
+																			{child.children.map((grandChild) => {
+																				const grandChildActive = isActive(grandChild.href);
+																				const GrandChildIcon = grandChild.icon;
+																				return (
+																					<li key={grandChild.key}>
+																						<Link
+																							href={grandChild.href}
+																							className={cn(
+																								"flex items-center gap-2 px-2 py-1.5 text-sm rounded-md transition",
+																								grandChildActive
+																									? "bg-brand-50 text-brand-700 font-medium"
+																									: "text-slate-600 hover:bg-slate-100",
+																							)}
+																						>
+																							<GrandChildIcon className="h-4 w-4" />
+																							<span>{grandChild.label}</span>
+																						</Link>
+																					</li>
+																				);
+																			})}
+																		</ul>
+																	</PopoverContent>
+																</Popover>
+															</li>
+														);
+												}
+												
+												// MenuItem
+												const menuItem = child as MenuItem;
+												const childActive = isActive(menuItem.href);
+												const ChildIcon = menuItem.icon;
+												return (
+													<li key={menuItem.key}>
+														<Link
+															href={menuItem.href}
+															className={cn(
+																"flex items-center gap-2 py-2 text-sm transition hover:text-slate-900",
+																childActive
+																	? "text-brand-700 font-semibold"
+																	: "text-slate-600",
+															)}
+														>
+															<ChildIcon className="h-4 w-4" />
+															<span>{menuItem.label}</span>
+														</Link>
+													</li>
+												);
+											})}
+										</ul>
+									</div>
+								</li>
 								);
-							})}
+							}
+							
+							// MenuItem
+							const active = isActive(item.href);
+							const Icon = item.icon;
+							const linkContent = (
+								<Link
+									href={item.href}
+									className={cn(
+										"flex items-center gap-3 px-5 py-3 text-sm transition",
+										isCollapsed && "justify-center px-0 py-2.5",
+										active
+											? "bg-brand-50 text-brand-700 font-semibold border-l-4 border-brand-600"
+											: "text-slate-600 hover:bg-slate-100",
+									)}
+								>
+									<Icon className="h-5 w-5 shrink-0" />
+									<span
+										className={cn(
+											"transition-opacity duration-300",
+											isCollapsed && "sr-only",
+										)}
+									>
+										{item.label}
+									</span>
+								</Link>
+							);
+
+							return (
+								<li key={item.key}>
+									{isCollapsed ? (
+										<Tooltip>
+											<TooltipTrigger asChild>{linkContent}</TooltipTrigger>
+											<TooltipContent side="right">
+												{item.label}
+											</TooltipContent>
+										</Tooltip>
+									) : (
+										linkContent
+									)}
+								</li>
+							);
+						})}
 						</ul>
 					</TooltipProvider>
 				</nav>

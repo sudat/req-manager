@@ -11,6 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 
 type SystemFunctionBasicInfoFormProps = {
 	nextId: string;
@@ -62,29 +63,44 @@ export function SystemFunctionBasicInfoForm({
 				/>
 			</div>
 
-			<div className="space-y-2">
+		<div className="space-y-2">
+			<div className="flex items-center justify-between">
 				<Label>
 					機能概要<span className="text-rose-500">*</span>
 				</Label>
-				<Textarea
-					value={summary}
-					onChange={(event) => onSummaryChange(event.target.value)}
-					placeholder="機能概要を入力"
-					className="min-h-[120px]"
-					required
-				/>
+				<Badge
+					variant="outline"
+					className="text-[10px] px-1.5 py-0 h-5 border-blue-200 bg-blue-50 text-blue-700"
+				>
+					Markdown
+				</Badge>
 			</div>
+			<Textarea
+				value={summary}
+				onChange={(event) => onSummaryChange(event.target.value)}
+				placeholder="機能概要を入力"
+				className="min-h-[120px]"
+				required
+			/>
+		</div>
 
-			<div className="space-y-2">
+		<div className="space-y-2">
+			<div className="flex items-center justify-between">
 				<Label>設計方針</Label>
-				<Textarea
-					value={designPolicy}
-					onChange={(event) => onDesignPolicyChange(event.target.value)}
-					placeholder="複数のDDにまたがる設計方針を入力"
-					className="min-h-[120px]"
-				/>
-				<p className="text-xs text-slate-500">Markdownで記載できます</p>
+				<Badge
+					variant="outline"
+					className="text-[10px] px-1.5 py-0 h-5 border-blue-200 bg-blue-50 text-blue-700"
+				>
+					Markdown
+				</Badge>
 			</div>
+			<Textarea
+				value={designPolicy}
+				onChange={(event) => onDesignPolicyChange(event.target.value)}
+				placeholder="複数のDDにまたがる設計方針を入力"
+				className="min-h-[120px]"
+			/>
+		</div>
 
 			<div className="grid gap-4 md:grid-cols-2">
 				<div className="space-y-2">

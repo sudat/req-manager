@@ -1,4 +1,5 @@
 const NON_AREA_CHARS = /[^A-Z0-9_]/g;
+const HYPHEN_CHARS = /-/g;
 
 const pad = (value: string | number, length: number) =>
   String(value).padStart(length, "0");
@@ -26,6 +27,14 @@ export type SfIdParts = {
 
 export const normalizeAreaCode = (value: string): string => {
   return value.toUpperCase().replace(NON_AREA_CHARS, "");
+};
+
+export const normalizeBusinessAreaInput = (value: string): string => {
+  return value
+    .toUpperCase()
+    .replace(/\s+/g, "")
+    .replace(HYPHEN_CHARS, "_")
+    .replace(NON_AREA_CHARS, "");
 };
 
 export const parseBtId = (id: string): BtIdParts | null => {

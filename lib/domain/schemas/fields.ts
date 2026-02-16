@@ -41,6 +41,26 @@ export const constraintsSchema = z
     "フィールドの値制約定義。型に応じて適用される制約が異なる（数値は範囲、文字列は長さとフォーマット、配列は要素数等）"
   );
 
+export const fieldLocationSchema = z.enum(["query", "body"]).describe(
+  "API用: フィールドの配置場所。'query'はURLクエリパラメータ、'body'はリクエストボディ"
+);
+
+export const fieldCategorySchema = z.enum(["config", "data"]).describe(
+  "Batch/Job用: フィールドのカテゴリ。'config'は設定/パラメータ、'data'は実際の処理対象データ"
+);
+
+export const fieldElementTypeSchema = z.enum([
+  "input",
+  "display",
+  "checkbox",
+  "radio",
+  "select",
+  "button",
+  "file",
+]).describe(
+  "画面用: UI要素の種類。inputは入力系UI、displayは表示専用（入力不可）、checkboxはチェックボックス、radioはラジオボタン、selectはプルダウン、buttonはボタン、fileはファイル選択"
+);
+
 export const fieldSchema = z.object({
   name: z
     .string()
@@ -68,6 +88,15 @@ export const fieldSchema = z.object({
       "フィールドの説明や用途。AIによるドキュメント生成や実装時に、このフィールドの目的を理解するためのヒントとして使用される（例: 'ユーザーのメールアドレス。ログインIDとしても使用'）"
     ),
   constraints: constraintsSchema,
+  location: fieldLocationSchema.optional().describe(
+    "API用（オプション）: フィールドの配置場所。'query'はURLクエリパラメータ、'body'はリクエストボディ"
+  ),
+  category: fieldCategorySchema.optional().describe(
+    "Batch/Job用（オプション）: フィールドのカテゴリ。'config'は設定/パラメータ、'data'は実際の処理対象データ"
+  ),
+  elementType: fieldElementTypeSchema.optional().describe(
+    "画面用（オプション）: UI要素の種類"
+  ),
 }).describe(
   "データフィールド定義。APIの入出力、画面要素、データモデル等のデータ構造を構成する各フィールドを定義"
 );
@@ -75,5 +104,8 @@ export const fieldSchema = z.object({
 export const fieldArraySchema = z.array(fieldSchema);
 
 export type FieldType = z.infer<typeof fieldTypeEnum>;
+export type FieldLocation = z.infer<typeof fieldLocationSchema>;
+export type FieldCategory = z.infer<typeof fieldCategorySchema>;
+export type FieldElementType = z.infer<typeof fieldElementTypeSchema>;
 export type FieldConstraints = z.infer<typeof constraintsSchema>;
 export type Field = z.infer<typeof fieldSchema>;

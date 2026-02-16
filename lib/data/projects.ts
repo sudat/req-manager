@@ -69,9 +69,26 @@ export const getProjectById = async (id: string) => {
   return projectCrud.getById(id);
 };
 
-// createProjectはprojectIdを必要としないので、ダミーのprojectIdを渡す
+// createProjectはprojectsテーブル専用の実装（project_idカラムを付与しない）
 export const createProject = async (input: ProjectInput) => {
-  return projectCrud.create({ ...input, projectId: "" });
+  const configError = getSupabaseConfigError();
+  if (configError) return { data: null, error: configError };
+
+  const now = new Date().toISOString();
+  const payload = {
+    ...toProjectRow(input),
+    created_at: now,
+    updated_at: now,
+  };
+
+  const { data, error } = await supabase
+    .from("projects")
+    .insert(payload)
+    .select("*")
+    .single();
+
+  if (error) return { data: null, error: error.message };
+  return { data: toProject(data as ProjectRow), error: null };
 };
 
 export const updateProject = async (id: string, input: Partial<ProjectInput>) => {

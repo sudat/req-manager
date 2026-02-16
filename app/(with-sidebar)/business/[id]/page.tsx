@@ -9,7 +9,7 @@ import { useBusinessByKey } from "@/hooks/use-business-by-key";
 
 export default function BusinessTasksPage({ params }: { params: Promise<{ id: string }> }) {
 	const { id: businessKey } = use(params);
-	const { businessArea: resolvedArea, loading: businessLoading } = useBusinessByKey(businessKey);
+	const { businessArea: resolvedArea, loading: businessLoading, error: businessError } = useBusinessByKey(businessKey);
 	// undefined を渡すことで、Hook 側で「まだ取得中」として扱われる（エラーにならない）
 	const { tasks, loading, error, deleteTask, clearError } = useBusinessTasks(resolvedArea ?? undefined);
 
@@ -19,7 +19,7 @@ export default function BusinessTasksPage({ params }: { params: Promise<{ id: st
 		<ResourceListPage
 			items={tasks}
 			loading={loading || businessLoading}
-			error={error}
+			error={error || businessError}
 			config={config}
 			onDelete={deleteTask}
 			onClearError={clearError}

@@ -17,6 +17,15 @@ const badgeVariants = cva(
           "border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
         outline:
           "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
+        // コアロジックタイプ別（彩度・濃度を揃えた色）
+        validate:
+          "border-rose-200 bg-rose-100 text-rose-700 [a&]:hover:bg-rose-200",
+        read:
+          "border-emerald-200 bg-emerald-100 text-emerald-700 [a&]:hover:bg-emerald-200",
+        derive:
+          "border-amber-200 bg-amber-100 text-amber-700 [a&]:hover:bg-amber-200",
+        decide:
+          "border-violet-200 bg-violet-100 text-violet-700 [a&]:hover:bg-violet-200",
       },
     },
     defaultVariants: {
@@ -44,3 +53,4 @@ function Badge({
 }
 
 export { Badge, badgeVariants }
+export type { VariantProps }

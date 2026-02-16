@@ -128,7 +128,6 @@ ${bd.area} - ${bd.name}
 {
   "name": "業務タスク名（簡潔に、50文字以内）",
   "summary": "業務概要（1-2文、200文字以内）",
-  "businessContext": "なぜこの業務が必要か、ビジネス上の背景（300文字以内）",
   "processSteps": [
     \{ "when": "月初", "who": "経理担当", "action": "データを集計する" \},
     \{ "when": "月中", "who": "上司", "action": "内容をレビューする" \},
@@ -151,7 +150,6 @@ ${bd.area} - ${bd.name}
 【生成ルール】
 - nameは業務の本質を表す簡潔な名前にする
 - summaryは「〜する業務」という形式で記述
-- businessContextはビジネス価値・背景を記述
 - processStepsは「いつ・だれが・何を」の構造で時系列で列挙（3-7ステップ程度）
 - inputは「名称」と「ソース（取得元）」の構造で列挙
 - outputは「名称」と「ソース（出力先）」の構造で列挙
@@ -167,7 +165,6 @@ ${bd.area} - ${bd.name}
       const llmResponse = await callOpenAI<{
         name?: string;
         summary?: string;
-        businessContext?: string;
         processSteps?: Array<{ when: string; who: string; action: string }>;
         input?: Array<{ name: string; source: string }>;
         output?: Array<{ name: string; source: string }>;
@@ -192,7 +189,6 @@ ${bd.area} - ${bd.name}
       const hasMeaningfulContent = Boolean(
         (typeof llmContent.name === 'string' && llmContent.name.trim().length > 0) ||
         (typeof llmContent.summary === 'string' && llmContent.summary.trim().length > 0) ||
-        (typeof llmContent.businessContext === 'string' && llmContent.businessContext.trim().length > 0) ||
         (Array.isArray(llmContent.processSteps) && llmContent.processSteps.length > 0) ||
         (Array.isArray(llmContent.input) && llmContent.input.length > 0) ||
         (Array.isArray(llmContent.output) && llmContent.output.length > 0)
@@ -206,7 +202,6 @@ ${bd.area} - ${bd.name}
         code: newCode,
         name: llmContent.name || naturalLanguageInput.split('\n')[0].substring(0, 50),
         summary: llmContent.summary || naturalLanguageInput.substring(0, 200),
-        businessContext: llmContent.businessContext || '',
         processSteps: llmContent.processSteps || [],
         input: llmContent.input || [],
         output: llmContent.output || [],
@@ -225,7 +220,6 @@ ${bd.area} - ${bd.name}
 【業務タスク情報】
 名称: ${btDraft.name}
 概要: ${btDraft.summary}
-業務コンテキスト: ${btDraft.businessContext}
 
 【プロセス】
 ${btDraft.processSteps.map((s: { when: string; who: string; action: string }) => `- ${s.when}: ${s.who}が${s.action}`).join('\n')}

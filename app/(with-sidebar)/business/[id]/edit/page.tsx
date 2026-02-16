@@ -12,8 +12,9 @@ import { Card } from "@/components/ui/card";
 import { getBusinessByKey, updateBusiness } from "@/lib/data/businesses";
 import { useProject } from "@/components/project/project-context";
 import type { Business } from "@/lib/domain";
+import { normalizeBusinessAreaInput } from "@/lib/utils/id-rules";
 
-const areaPattern = /^[A-Z_-]+$/;
+const areaPattern = /^[A-Z0-9_]+$/;
 
 export default function BusinessEditPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: businessKey } = use(params);
@@ -29,14 +30,15 @@ export default function BusinessEditPage({ params }: { params: Promise<{ id: str
 
   useEffect(() => {
     if (projectLoading) return;
-    if (!currentProjectId) {
-      setError("プロジェクトが選択されていません");
-      setBusiness(null);
-      setLoading(false);
-      return;
-    }
     let active = true;
     const fetchData = async () => {
+      if (!currentProjectId) {
+        if (!active) return;
+        setError("プロジェクトが選択されていません");
+        setBusiness(null);
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       const { data, error: fetchError } = await getBusinessByKey(businessKey, currentProjectId);
       if (!active) return;
@@ -48,13 +50,13 @@ export default function BusinessEditPage({ params }: { params: Promise<{ id: str
         setBusiness(data ?? null);
         if (data) {
           setName(data.name);
-          setArea(data.area ?? "");
+          setArea(normalizeBusinessAreaInput(data.area ?? ""));
           setSummary(data.summary);
         }
       }
       setLoading(false);
     };
-    fetchData();
+    void fetchData();
     return () => {
       active = false;
     };
@@ -66,12 +68,14 @@ export default function BusinessEditPage({ params }: { params: Promise<{ id: str
     }
   }, [business?.area, businessKey, router]);
 
-  const isAreaValid = useMemo(() => areaPattern.test(area.trim()), [area]);
+  const normalizedArea = useMemo(() => normalizeBusinessAreaInput(area), [area]);
+  const isAreaValid = useMemo(() => areaPattern.test(normalizedArea), [normalizedArea]);
   const canSubmit = useMemo(() => name.trim().length > 0 && isAreaValid, [name, isAreaValid]);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     if (!canSubmit) return;
+    const sanitizedArea = normalizeBusinessAreaInput(area);
     setSaving(true);
     if (projectLoading || !currentProjectId) {
       setError("プロジェクトが選択されていません");
@@ -85,7 +89,7 @@ export default function BusinessEditPage({ params }: { params: Promise<{ id: str
     }
     const { error: saveError } = await updateBusiness(businessKey, {
       name: name.trim(),
-      area: area.trim(),
+      area: sanitizedArea,
       summary: summary.trim(),
     }, currentProjectId);
     setSaving(false);
@@ -154,12 +158,12 @@ export default function BusinessEditPage({ params }: { params: Promise<{ id: str
                 </Label>
                 <Input
                   value={area}
-                  onChange={(event) => setArea(event.target.value.toUpperCase().replace(/\s+/g, ""))}
-                  placeholder="例: AR"
+                  onChange={(event) => setArea(normalizeBusinessAreaInput(event.target.value))}
+                  placeholder="例: AR_01"
                   required
                 />
                 {!isAreaValid && area.trim().length > 0 && (
-                  <p className="text-xs text-rose-600">英字と記号（-、_）のみ入力できます</p>
+                  <p className="text-xs text-rose-600">英大文字・数字・_のみ入力できます</p>
                 )}
               </div>
 

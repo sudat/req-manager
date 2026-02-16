@@ -14,8 +14,10 @@ import type { DesignDocumentDraft } from "@/components/forms/design-document-lis
 import type { SystemRequirementCard } from "@/app/(with-sidebar)/system/[id]/create/types";
 import {
 	createRequirementLinks,
+	syncDdDependenciesForSrf,
 	type RequirementLinkCreateInput,
 } from "@/lib/data/requirement-links";
+import type { DdDependencyLink } from "@/lib/domain/dd-dependency";
 
 type CreateSystemFunctionInput = {
 	nextId: string;
@@ -118,6 +120,37 @@ export async function createSystemFunctionWithRelations(
 		if (implError) {
 			return { error: implError };
 		}
+	}
+
+	const validDdIds = designDocuments.map((dd) => dd.id);
+	const dependencyUniqueKeys = new Set<string>();
+	const ddDependencies: DdDependencyLink[] = [];
+	const validDdIdSet = new Set(validDdIds);
+
+	for (const sourceDd of designDocuments) {
+		for (const dependency of sourceDd.dependencies ?? []) {
+			if (!validDdIdSet.has(dependency.targetDdId)) continue;
+			if (sourceDd.id === dependency.targetDdId) continue;
+
+			const key = `${sourceDd.id}:${dependency.targetDdId}:${dependency.callType}`;
+			if (dependencyUniqueKeys.has(key)) continue;
+			dependencyUniqueKeys.add(key);
+			ddDependencies.push({
+				sourceDdId: sourceDd.id,
+				targetDdId: dependency.targetDdId,
+				callType: dependency.callType,
+			});
+		}
+	}
+
+	const { error: dependencySyncError } = await syncDdDependenciesForSrf({
+		projectId,
+		sourceDdIdsToReset: validDdIds,
+		validDdIds,
+		dependencies: ddDependencies,
+	});
+	if (dependencySyncError) {
+		return { error: `DD依存リンク同期エラー: ${dependencySyncError}` };
 	}
 
 	// 5. requirement_linksにSR↔BRリンクを作成

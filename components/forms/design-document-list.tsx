@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode } from "react";
+import { useCallback, useMemo, type ReactNode } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,7 @@ import { DesignDocumentCard } from "@/components/forms/design-document/DesignDoc
 import { nextSequentialId } from "@/lib/data/id";
 import type { EntryPoint, DdType } from "@/lib/domain";
 import { createEmptyStructuredDesignDocumentSpec, type StructuredDesignDocumentSpec } from "@/lib/domain/schemas/design-document-structured";
+import type { DdDependencyDraft, DdCallerDraft } from "@/lib/domain/dd-dependency";
 
 export type DesignDocumentDraft = {
 	id: string;
@@ -17,6 +18,8 @@ export type DesignDocumentDraft = {
 	summary: string;
 	entryPoints: EntryPoint[];
 	designPolicy: string;
+	dependencies: DdDependencyDraft[];
+	callers: DdCallerDraft[];
 	structuredSpec?: StructuredDesignDocumentSpec;
 	structuredSpecParseError?: string;
 };
@@ -26,15 +29,25 @@ type DesignDocumentListProps = {
 	items: DesignDocumentDraft[];
 	onChange: (items: DesignDocumentDraft[]) => void;
 	modelDDs?: DesignDocumentDraft[];
+	allDDs?: DesignDocumentDraft[];
+	allSFs?: { id: string; title: string; domainName?: string }[];
 };
+
+const EMPTY_SYSTEM_FUNCTIONS: { id: string; title: string; domainName?: string }[] = [];
 
 export function DesignDocumentList({
 	srfId,
 	items,
 	onChange,
 	modelDDs,
+	allDDs,
+	allSFs,
 }: DesignDocumentListProps): ReactNode {
-	const handleAdd = () => {
+	const resolvedAllDDs = useMemo(() => allDDs ?? items, [allDDs, items]);
+	const resolvedModelDDs = useMemo(() => modelDDs ?? items, [modelDDs, items]);
+	const resolvedAllSFs = useMemo(() => allSFs ?? EMPTY_SYSTEM_FUNCTIONS, [allSFs]);
+
+	const handleAdd = useCallback(() => {
 		const prefix = `DD-${srfId}-`;
 		const nextId = nextSequentialId(prefix, items.map((item) => item.id));
 		onChange([
@@ -46,25 +59,35 @@ export function DesignDocumentList({
 				summary: "",
 				entryPoints: [],
 				designPolicy: "",
+				dependencies: [],
+				callers: [],
 				structuredSpec: createEmptyStructuredDesignDocumentSpec("screen"),
 				structuredSpecParseError: undefined,
 			},
 		]);
-	};
+	}, [items, onChange, srfId]);
 
-	const handleUpdate = (index: number, patch: Partial<DesignDocumentDraft>) => {
-		const next = [...items];
-		next[index] = { ...next[index], ...patch };
-		onChange(next);
-	};
+	const handleUpdate = useCallback(
+		(itemId: string, patch: Partial<DesignDocumentDraft>) => {
+			onChange(
+				items.map((item) =>
+					item.id === itemId ? { ...item, ...patch } : item
+				)
+			);
+		},
+		[items, onChange]
+	);
 
-	const handleDelete = (index: number) => {
-		onChange(items.filter((_, i) => i !== index));
-	};
+	const handleDelete = useCallback(
+		(itemId: string) => {
+			onChange(items.filter((item) => item.id !== itemId));
+		},
+		[items, onChange]
+	);
 
 	return (
 		<Card>
-			<CardContent className="pt-6">
+			<CardContent className="py-4">
 				{/* Header */}
 				<div className="flex items-center justify-between pb-2 border-b border-slate-100">
 					<div className="flex items-center gap-2">
@@ -91,14 +114,16 @@ export function DesignDocumentList({
 						items.map((item, index) => (
 							<div key={item.id}>
 								{index > 0 && (
-									<div className="border-t-2 border-slate-300 my-8" />
+									<div className="border-t-2 border-slate-300 my-2" />
 								)}
-							<DesignDocumentCard
-								item={item}
-								onUpdate={(patch) => handleUpdate(index, patch)}
-								onDelete={() => handleDelete(index)}
-								modelDDs={modelDDs || items}
-							/>
+								<DesignDocumentCard
+									item={item}
+									onUpdate={handleUpdate}
+									onDelete={handleDelete}
+									allDDs={resolvedAllDDs}
+									modelDDs={resolvedModelDDs}
+									allSFs={resolvedAllSFs}
+								/>
 							</div>
 						))
 					)}

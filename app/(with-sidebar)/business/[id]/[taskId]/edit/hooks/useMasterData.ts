@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useProject } from "@/components/project/project-context";
+import type { Task } from "@/lib/domain";
 
 export type MasterDataItem = { id: string; name: string };
 
@@ -9,9 +10,11 @@ type UseMasterDataResult = {
 	concepts: MasterDataItem[];
 	systemFunctions: MasterDataItem[];
 	systemDomains: MasterDataItem[];
+	tasks: Task[];
 	conceptMap: Map<string, string>;
 	systemFunctionMap: Map<string, string>;
 	systemDomainMap: Map<string, string>;
+	taskMap: Map<string, string>;
 	optionsError: string | null;
 	isLoading: boolean;
 };
@@ -23,6 +26,7 @@ export function useMasterData(): UseMasterDataResult {
 	const [concepts, setConcepts] = useState<MasterDataItem[]>([]);
 	const [systemFunctions, setSystemFunctions] = useState<MasterDataItem[]>([]);
 	const [systemDomains, setSystemDomains] = useState<MasterDataItem[]>([]);
+	const [tasks, setTasks] = useState<Task[]>([]);
 	const [optionsError, setOptionsError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const { currentProjectId, loading: projectLoading } = useProject();
@@ -36,15 +40,16 @@ export function useMasterData(): UseMasterDataResult {
 					setOptionsError("プロジェクトが選択されていません");
 					return;
 				}
-				const [conceptResult, srfResult, domainResult] = await Promise.all([
+				const [conceptResult, srfResult, domainResult, tasksResult] = await Promise.all([
 					import("@/lib/data/concepts").then((m) => m.listConcepts(currentProjectId)),
 					import("@/lib/data/system-functions").then((m) => m.listSystemFunctions(currentProjectId)),
 					import("@/lib/data/system-domains").then((m) => m.listSystemDomains(currentProjectId)),
+					import("@/lib/data/tasks").then((m) => m.listTasks(currentProjectId)),
 				]);
 
 				if (!active) return;
 
-				const fetchError = conceptResult.error ?? srfResult.error ?? domainResult.error;
+				const fetchError = conceptResult.error ?? srfResult.error ?? domainResult.error ?? tasksResult.error;
 				if (fetchError) {
 					setOptionsError(fetchError);
 					return;
@@ -60,6 +65,7 @@ export function useMasterData(): UseMasterDataResult {
 				setSystemDomains(
 					(domainResult.data ?? []).map((d) => ({ id: d.id, name: d.name }))
 				);
+				setTasks(tasksResult.data ?? []);
 				setOptionsError(null);
 			} catch (e) {
 				if (active) {
@@ -88,14 +94,20 @@ export function useMasterData(): UseMasterDataResult {
 		() => new Map(systemDomains.map((d) => [d.id, d.name])),
 		[systemDomains]
 	);
+	const taskMap = useMemo(
+		() => new Map(tasks.map((t) => [t.id, t.name])),
+		[tasks]
+	);
 
 	return {
 		concepts,
 		systemFunctions,
 		systemDomains,
+		tasks,
 		conceptMap,
 		systemFunctionMap,
 		systemDomainMap,
+		taskMap,
 		optionsError,
 		isLoading,
 	};

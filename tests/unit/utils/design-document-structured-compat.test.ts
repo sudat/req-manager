@@ -16,10 +16,28 @@ describe("design-document structured compat", () => {
   });
 
   it("returns parse error for invalid details", () => {
-    const parsed = parseStructuredDetails({ ioType: "api", inputFields: "invalid" });
+    const parsed = parseStructuredDetails({ ioType: "invalid_io_type" });
 
     expect(parsed.structuredSpec).toBeUndefined();
     expect(parsed.parseError).toBeDefined();
+  });
+
+  it("normalizes legacy screen trigger value", () => {
+    const parsed = parseStructuredDetails({
+      ioType: "screen",
+      version: "1",
+      inputSchema: {
+        trigger: "user_action",
+        action: "請求書発行指示",
+        targetElement: "発行ボタン",
+      },
+    });
+
+    expect(parsed.parseError).toBeUndefined();
+    expect(parsed.structuredSpec?.inputSchema).toBeDefined();
+    if (parsed.structuredSpec?.inputSchema && "trigger" in parsed.structuredSpec.inputSchema) {
+      expect(parsed.structuredSpec.inputSchema.trigger).toBe("click");
+    }
   });
 
   it("composes structured details", () => {
@@ -34,6 +52,30 @@ describe("design-document structured compat", () => {
     expect(details).toEqual({});
   });
 
+  it("auto assigns sideEffect ids when missing", () => {
+    const spec = createStructuredSpecFromDdType("api");
+    spec.sideEffects = {
+      description: "副作用あり",
+      dbOperations: [
+        {
+          table: "invoices",
+          operation: "insert",
+        },
+      ],
+      events: [
+        {
+          eventType: "invoice.created",
+          destination: "topic",
+          payload: [],
+        },
+      ],
+    };
+
+    const details = composeStructuredDetails(spec) as any;
+    expect(details.sideEffects.dbOperations[0].id).toBe("db_1");
+    expect(details.sideEffects.events[0].id).toBe("event_1");
+  });
+
   it("parses spec with coreLogic", () => {
     const spec = createStructuredSpecFromDdType("api");
     spec.coreLogic = {
@@ -41,7 +83,7 @@ describe("design-document structured compat", () => {
       rules: [
         {
           name: "validation_rule",
-          type: "validation",
+          type: "validate",
           description: "入力値を検証",
         },
       ],
@@ -60,7 +102,7 @@ describe("design-document structured compat", () => {
       rules: [
         {
           name: "test_rule",
-          type: "calculation",
+          type: "derive",
           description: "計算ルール",
         },
       ],
@@ -139,7 +181,7 @@ describe("design-document structured compat", () => {
 
     expect(synced.ioType).toBe("model");
     expect(synced.typeDetail?.ioType).toBe("model");
-    if (synced.typeDetail?.ioType === "model") {
+    if (synced.typeDetail?.ioType === "model" && synced.typeDetail.attributes) {
       expect(synced.typeDetail.entityName).toBe("User");
       expect(synced.typeDetail.attributes).toHaveLength(2);
       expect(synced.typeDetail.attributes[0].name).toBe("id");

@@ -6,6 +6,8 @@ import mermaid from "mermaid";
 interface MermaidRendererProps {
   code: string;
   className?: string;
+  onParticipantClick?: (alias: string) => void;
+  ddMapping?: Record<string, string>;
 }
 
 /**
@@ -13,8 +15,15 @@ interface MermaidRendererProps {
  *
  * @param code - Mermaidのコード文字列（erDiagram, flowchart等）
  * @param className - コンテナに適用するCSSクラス
+ * @param onParticipantClick - 参加者クリック時のコールバック
+ * @param ddMapping - エイリアス→DD-IDのマッピング（DDのみクリック可能にするため）
  */
-export function MermaidRenderer({ code, className = "" }: MermaidRendererProps) {
+export function MermaidRenderer({
+  code,
+  className = "",
+  onParticipantClick,
+  ddMapping,
+}: MermaidRendererProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -54,6 +63,29 @@ export function MermaidRenderer({ code, className = "" }: MermaidRendererProps) 
         if (containerRef.current) {
           containerRef.current.innerHTML = svg;
         }
+
+        // クリックイベントを追加（DD参加者のみ）
+        if (onParticipantClick && ddMapping) {
+          const svgElement = containerRef.current?.querySelector("svg");
+          if (!svgElement) return;
+
+          // Mermaidシーケンス図の参加者要素を取得
+          const participantElements = svgElement.querySelectorAll(".actor, .entity");
+
+          participantElements.forEach((element) => {
+            const textContent = element.textContent;
+            if (!textContent) return;
+
+            // ddMappingに含まれるエイリアスのみクリック可能にする
+            if (ddMapping[textContent]) {
+              (element as HTMLElement).style.cursor = "pointer";
+
+              element.addEventListener("click", () => {
+                onParticipantClick(textContent);
+              });
+            }
+          });
+        }
       } catch (err) {
         console.error("Mermaid rendering error:", err);
         setError(
@@ -65,7 +97,7 @@ export function MermaidRenderer({ code, className = "" }: MermaidRendererProps) 
     };
 
     renderDiagram();
-  }, [code, isInitialized]);
+  }, [code, isInitialized, onParticipantClick, ddMapping]);
 
   if (error) {
     return (

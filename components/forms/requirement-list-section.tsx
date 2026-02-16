@@ -35,8 +35,8 @@ export function RequirementListSection({
 	onOpenDialog,
 }: RequirementListSectionProps): React.ReactElement {
 	return (
-		<Card className="rounded-md border border-slate-200">
-			<CardContent className="p-3 space-y-3">
+		<Card>
+			<CardContent className="py-4">
 				{/* セクションヘッダー */}
 				<div className="flex items-center justify-between pb-2 border-b border-slate-100">
 					<div className="flex items-center gap-2">
@@ -66,9 +66,9 @@ export function RequirementListSection({
 					<div className="space-y-0">
 						{requirements.map((req, index) => (
 							<div key={req.id}>
-								{index > 0 && (
-									<div className="border-t-2 border-slate-300 my-8" />
-								)}
+						{index > 0 && (
+										<div className="border-t-2 border-slate-300 my-2" />
+									)}
 								<RequirementCard
 									requirement={req}
 									conceptMap={conceptMap}

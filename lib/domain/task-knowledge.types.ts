@@ -5,7 +5,10 @@ export type TaskKnowledge = {
 	taskId: string;
 	taskName: string;
 	taskSummary: string;
-	businessContext: string;
+	triggerDescription: string;
+	triggerTaskIds: string[];
+	frequency: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly' | 'irregular';
+	frequencyDescription: string;
 	processSteps: string;
 	input: string;
 	output: string;

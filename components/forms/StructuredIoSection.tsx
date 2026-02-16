@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -25,34 +25,13 @@ import { BatchIoForm } from "./BatchIoForm";
 import { JobIoForm } from "./JobIoForm";
 
 type IoType = "api" | "screen" | "batch" | "job";
+type IoFormMode = "input" | "output";
+type IoDraft = { input: StructuredInput; output: StructuredOutput };
 
 interface StructuredIoSectionProps {
   content: FunctionDesignContent;
   onChange: (next: FunctionDesignContent) => void;
 }
-
-const defaultStructuredInput: Record<IoType, StructuredInput> = {
-  api: { method: "POST", path: "", query: [], body: [] },
-  screen: {
-    trigger: "click",
-    action: "",
-    targetElement: "",
-    precondition: "",
-    elements: [],
-  },
-  batch: { schedule: "", source: "", parameters: [] },
-  job: { event: "", payload: [] },
-};
-
-const defaultStructuredOutput: Record<IoType, StructuredOutput> = {
-  api: { success: { status: 200, fields: [] }, error: [] },
-  screen: { transition: "", messages: [], behavior: "", displayChanges: "" },
-  batch: {
-    summary: { processedCount: 0, successCount: 0, errorCount: 0, status: "completed" },
-    nextBatch: "",
-  },
-  job: { result: "", nextEvent: "" },
-};
 
 const normalizeIoType = (value?: string): IoType => {
   if (value === "api" || value === "screen" || value === "batch" || value === "job") {
@@ -61,31 +40,79 @@ const normalizeIoType = (value?: string): IoType => {
   return "api";
 };
 
+const createDefaultStructuredInput = (ioType: IoType): StructuredInput => {
+  switch (ioType) {
+    case "api":
+      return { method: "POST", path: "", fields: [], query: [], body: [], dataFields: [] };
+    case "screen":
+      return {
+        trigger: "click",
+        action: "",
+        targetElement: "",
+        precondition: "",
+        fields: [],
+        elements: [],
+        dataFields: [],
+      };
+    case "batch":
+      return { schedule: "", source: "", fields: [], parameters: [], dataFields: [] };
+    case "job":
+      return { event: "", fields: [], payload: [], dataFields: [] };
+  }
+};
+
+const createDefaultStructuredOutput = (ioType: IoType): StructuredOutput => {
+  switch (ioType) {
+    case "api":
+      return { success: { status: 200, fields: [] }, error: [], fields: [], dataFields: [] };
+    case "screen":
+      return {
+        transition: "",
+        messages: [],
+        behavior: "",
+        displayChanges: "",
+        fields: [],
+        dataFields: [],
+      };
+    case "batch":
+      return {
+        summary: { processedCount: 0, successCount: 0, errorCount: 0, status: "completed" },
+        nextBatch: "",
+        fields: [],
+        dataFields: [],
+      };
+    case "job":
+      return { result: "", nextEvent: "", fields: [], dataFields: [] };
+  }
+};
+
+const createDefaultIoDraft = (ioType: IoType): IoDraft => ({
+  input: createDefaultStructuredInput(ioType),
+  output: createDefaultStructuredOutput(ioType),
+});
+
+const createInitialDrafts = (): Record<IoType, IoDraft> => ({
+  api: createDefaultIoDraft("api"),
+  screen: createDefaultIoDraft("screen"),
+  batch: createDefaultIoDraft("batch"),
+  job: createDefaultIoDraft("job"),
+});
+
 export function StructuredIoSection({ content, onChange }: StructuredIoSectionProps) {
   const ioType = normalizeIoType(content.ioType);
-  const draftsRef = useRef<Record<IoType, { input: StructuredInput; output: StructuredOutput }>>({
-    api: { input: defaultStructuredInput.api, output: defaultStructuredOutput.api },
-    screen: { input: defaultStructuredInput.screen, output: defaultStructuredOutput.screen },
-    batch: { input: defaultStructuredInput.batch, output: defaultStructuredOutput.batch },
-    job: { input: defaultStructuredInput.job, output: defaultStructuredOutput.job },
-  });
-
-  useEffect(() => {
-    if (content.structuredInput && content.structuredOutput) {
-      draftsRef.current[ioType] = {
-        input: content.structuredInput,
-        output: content.structuredOutput,
-      };
-    }
-  }, [content.structuredInput, content.structuredOutput, ioType]);
+  const [drafts, setDrafts] = useState<Record<IoType, IoDraft>>(createInitialDrafts);
 
   const handleTypeChange = (nextType: IoType) => {
-    const current = draftsRef.current[ioType];
-    draftsRef.current[ioType] = {
-      input: content.structuredInput ?? current.input,
-      output: content.structuredOutput ?? current.output,
+    const updatedDrafts: Record<IoType, IoDraft> = {
+      ...drafts,
+      [ioType]: {
+        input: content.structuredInput ?? drafts[ioType].input,
+        output: content.structuredOutput ?? drafts[ioType].output,
+      },
     };
-    const nextDraft = draftsRef.current[nextType];
+    setDrafts(updatedDrafts);
+
+    const nextDraft = updatedDrafts[nextType];
     onChange({
       ...content,
       ioType: nextType,
@@ -95,17 +122,75 @@ export function StructuredIoSection({ content, onChange }: StructuredIoSectionPr
   };
 
   const handleInputChange = (input: StructuredInput) => {
-    draftsRef.current[ioType].input = input;
+    setDrafts((prev) => ({
+      ...prev,
+      [ioType]: {
+        ...prev[ioType],
+        input,
+      },
+    }));
     onChange({ ...content, structuredInput: input });
   };
 
   const handleOutputChange = (output: StructuredOutput) => {
-    draftsRef.current[ioType].output = output;
+    setDrafts((prev) => ({
+      ...prev,
+      [ioType]: {
+        ...prev[ioType],
+        output,
+      },
+    }));
     onChange({ ...content, structuredOutput: output });
   };
 
-  const input = (content.structuredInput ?? draftsRef.current[ioType].input) as StructuredInput;
-  const output = (content.structuredOutput ?? draftsRef.current[ioType].output) as StructuredOutput;
+  const activeDraft = drafts[ioType];
+  const input = (content.structuredInput ?? activeDraft.input) as StructuredInput;
+  const output = (content.structuredOutput ?? activeDraft.output) as StructuredOutput;
+
+  const renderIoForm = (mode: IoFormMode) => {
+    switch (ioType) {
+      case "api":
+        return (
+          <ApiIoForm
+            input={input as ApiInput}
+            output={output as ApiOutput}
+            onInputChange={(next) => handleInputChange(next)}
+            onOutputChange={(next) => handleOutputChange(next)}
+            mode={mode}
+          />
+        );
+      case "screen":
+        return (
+          <ScreenIoForm
+            input={input as ScreenInput}
+            output={output as ScreenOutput}
+            onInputChange={(next) => handleInputChange(next)}
+            onOutputChange={(next) => handleOutputChange(next)}
+            mode={mode}
+          />
+        );
+      case "batch":
+        return (
+          <BatchIoForm
+            input={input as BatchInput}
+            output={output as BatchOutput}
+            onInputChange={(next) => handleInputChange(next)}
+            onOutputChange={(next) => handleOutputChange(next)}
+            mode={mode}
+          />
+        );
+      case "job":
+        return (
+          <JobIoForm
+            input={input as JobInput}
+            output={output as JobOutput}
+            onInputChange={(next) => handleInputChange(next)}
+            onOutputChange={(next) => handleOutputChange(next)}
+            mode={mode}
+          />
+        );
+    }
+  };
 
   return (
     <div className="space-y-4 rounded-lg border p-4">
@@ -137,80 +222,10 @@ export function StructuredIoSection({ content, onChange }: StructuredIoSectionPr
           <TabsTrigger value="output">出力</TabsTrigger>
         </TabsList>
         <TabsContent value="input" className="pt-4">
-          {ioType === "api" && (
-            <ApiIoForm
-              input={input as ApiInput}
-              output={output as ApiOutput}
-              onInputChange={(next) => handleInputChange(next)}
-              onOutputChange={(next) => handleOutputChange(next)}
-              mode="input"
-            />
-          )}
-          {ioType === "screen" && (
-            <ScreenIoForm
-              input={input as ScreenInput}
-              output={output as ScreenOutput}
-              onInputChange={(next) => handleInputChange(next)}
-              onOutputChange={(next) => handleOutputChange(next)}
-              mode="input"
-            />
-          )}
-          {ioType === "batch" && (
-            <BatchIoForm
-              input={input as BatchInput}
-              output={output as BatchOutput}
-              onInputChange={(next) => handleInputChange(next)}
-              onOutputChange={(next) => handleOutputChange(next)}
-              mode="input"
-            />
-          )}
-          {ioType === "job" && (
-            <JobIoForm
-              input={input as JobInput}
-              output={output as JobOutput}
-              onInputChange={(next) => handleInputChange(next)}
-              onOutputChange={(next) => handleOutputChange(next)}
-              mode="input"
-            />
-          )}
+          {renderIoForm("input")}
         </TabsContent>
         <TabsContent value="output" className="pt-4">
-          {ioType === "api" && (
-            <ApiIoForm
-              input={input as ApiInput}
-              output={output as ApiOutput}
-              onInputChange={(next) => handleInputChange(next)}
-              onOutputChange={(next) => handleOutputChange(next)}
-              mode="output"
-            />
-          )}
-          {ioType === "screen" && (
-            <ScreenIoForm
-              input={input as ScreenInput}
-              output={output as ScreenOutput}
-              onInputChange={(next) => handleInputChange(next)}
-              onOutputChange={(next) => handleOutputChange(next)}
-              mode="output"
-            />
-          )}
-          {ioType === "batch" && (
-            <BatchIoForm
-              input={input as BatchInput}
-              output={output as BatchOutput}
-              onInputChange={(next) => handleInputChange(next)}
-              onOutputChange={(next) => handleOutputChange(next)}
-              mode="output"
-            />
-          )}
-          {ioType === "job" && (
-            <JobIoForm
-              input={input as JobInput}
-              output={output as JobOutput}
-              onInputChange={(next) => handleInputChange(next)}
-              onOutputChange={(next) => handleOutputChange(next)}
-              mode="output"
-            />
-          )}
+          {renderIoForm("output")}
         </TabsContent>
       </Tabs>
 

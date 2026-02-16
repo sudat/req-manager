@@ -1,0 +1,22 @@
+[    4037ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/schema/sequence:0
+[   21079ms] ReferenceError: menuItem is not defined
+    at http://localhost:3000/_next/static/chunks/_e7e8a8f8._.js:2065:112
+    at Array.some (<anonymous>)
+    at http://localhost:3000/_next/static/chunks/_e7e8a8f8._.js:2065:65
+    at Array.map (<anonymous>)
+    at Sidebar (http://localhost:3000/_next/static/chunks/_e7e8a8f8._.js:2062:42)
+    at Object.react_stack_bottom_frame (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:14826:24)
+    at renderWithHooks (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:4651:24)
+    at updateFunctionComponent (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:6112:21)
+    at beginWork (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:6687:639)
+    at runWithFiberInDEV (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:965:74)
+    at performUnitOfWork (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9562:97)
+    at workLoopSync (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9456:40)
+    at renderRootSync (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9440:13)
+    at performWorkOnRoot (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9105:47)
+    at performWorkOnRootViaSchedulerTask (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:10230:9)
+    at MessagePort.performWorkUntilDeadline (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_a0e4c7b4._.js:2647:64)
+[   45077ms] AbortError: signal is aborted without reason
+    at http://localhost:3000/_next/static/chunks/node_modules_%40supabase_auth-js_dist_module_e6c70351._.js:1680:29
+[   45333ms] AbortError: signal is aborted without reason
+    at http://localhost:3000/_next/static/chunks/node_modules_%40supabase_auth-js_dist_module_e6c70351._.js:1680:29

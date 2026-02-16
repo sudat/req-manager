@@ -19,7 +19,6 @@ type TaskFormProps = {
   businessName: string | null;
   taskName: string;
   taskSummary: string;
-  businessContext: string;
   processSteps: string;
   input: string;
   output: string;
@@ -31,7 +30,6 @@ type TaskFormProps = {
   saving: boolean;
   onTaskNameChange: (value: string) => void;
   onTaskSummaryChange: (value: string) => void;
-  onBusinessContextChange: (value: string) => void;
   onProcessStepsChange: (value: string) => void;
   onInputChange: (value: string) => void;
   onOutputChange: (value: string) => void;
@@ -46,7 +44,6 @@ export function TaskForm({
   businessName,
   taskName,
   taskSummary,
-  businessContext,
   processSteps,
   input,
   output,
@@ -58,7 +55,6 @@ export function TaskForm({
   saving,
   onTaskNameChange,
   onTaskSummaryChange,
-  onBusinessContextChange,
   onProcessStepsChange,
   onInputChange,
   onOutputChange,
@@ -98,15 +94,7 @@ export function TaskForm({
           onChange={onTaskSummaryChange}
           placeholder="この業務タスクで何をするのかを入力してください"
           minHeight="min-h-[100px]"
-        />
-
-        <LabeledTextarea
-          label="業務コンテキスト"
-          required
-          value={businessContext}
-          onChange={onBusinessContextChange}
-          placeholder="実施組織・ロール、タイミング・頻度、前後の業務、業務ルールなど"
-          minHeight="min-h-[120px]"
+          showMarkdownBadge
         />
 
         <ProcessStepsField

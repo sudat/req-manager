@@ -53,7 +53,7 @@ export function useBasicInfoForm(srfId: string, systemDomainId: string, projectI
 	}, [srfId, projectId]);
 
 	// 保存処理
-	const handleSave = async () => {
+	const handleSave = async (onSuccess?: () => void) => {
 		if (!existingSrf) return;
 
 		setSaving(true);
@@ -77,7 +77,10 @@ export function useBasicInfoForm(srfId: string, systemDomainId: string, projectI
 			return;
 		}
 
-		// 成功時は詳細画面へ遷移
+		// 成功時コールバック
+		onSuccess?.();
+
+		// 詳細画面へ遷移
 		router.push(`/system/${systemDomainId}/${srfId}`);
 	};
 

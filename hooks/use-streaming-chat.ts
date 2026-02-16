@@ -1,7 +1,15 @@
-import { useState, useCallback } from 'react';
-import type { ChatMessage, ChatProgressStep, ChatLocation } from '@/components/ai-chat/types';
-import type { ReasoningEffort } from '@/lib/mastra/reasoning-effort';
-import type { ConceptCandidate } from '@/components/ai-chat/concept-suggestion';
+import { useState, useCallback } from "react";
+import type {
+  BrDraft,
+  ChatLocation,
+  ChatMessage,
+  ChatProgressStep,
+  DdDraft,
+  SrDraft,
+  SfDraft,
+} from "@/components/ai-chat/types";
+import type { ReasoningEffort } from "@/lib/mastra/reasoning-effort";
+import type { ConceptCandidate } from "@/components/ai-chat/concept-suggestion";
 
 type UseStreamingChatOptions = {
   threadId: string;
@@ -18,6 +26,21 @@ type UseStreamingChatReturn = {
   isLoading: boolean;
   sendMessage: (content: string) => Promise<void | (() => void)>;
 };
+
+type DraftType = "bt" | "br" | "sf" | "sr" | "dd";
+type StreamEventPayload = {
+  event?: string;
+  content?: string;
+  error?: boolean;
+  message?: string;
+  step?: ChatProgressStep;
+  draftType?: string;
+  draft?: unknown;
+  candidates?: unknown;
+};
+
+const REQUEST_TIMEOUT_MS = 180_000;
+const CHUNK_TIMEOUT_MS = 30_000;
 
 const upsertProgressStep = (
   steps: ChatProgressStep[] | undefined,
@@ -46,7 +69,9 @@ const upsertDraftByCode = <T extends { code?: string; id?: string }>(
 ) => {
   const nextDrafts = drafts ? [...drafts] : [];
   const incomingKey = incoming.code ?? incoming.id ?? "";
-  const existingIndex = nextDrafts.findIndex((draft) => (draft.code ?? draft.id) === incomingKey);
+  const existingIndex = nextDrafts.findIndex(
+    (draft) => (draft.code ?? draft.id) === incomingKey
+  );
 
   if (existingIndex >= 0) {
     nextDrafts[existingIndex] = {
@@ -60,13 +85,106 @@ const upsertDraftByCode = <T extends { code?: string; id?: string }>(
   return nextDrafts;
 };
 
+const upsertMessage = (
+  setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>,
+  messageId: string,
+  updater: (message: ChatMessage) => ChatMessage
+) => {
+  setMessages((prev) =>
+    prev.map((message) => (message.id === messageId ? updater(message) : message))
+  );
+};
+
+const appendMessage = (
+  setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>,
+  message: ChatMessage
+) => {
+  setMessages((prev) => [...prev, message]);
+};
+
+const isJsonSyntaxError = (error: unknown) =>
+  error instanceof SyntaxError ||
+  (error instanceof Error && error.message.includes("JSON"));
+
+const isAbortError = (error: unknown) =>
+  error instanceof DOMException && error.name === "AbortError";
+
+const normalizeDraftType = (value: string | undefined): DraftType =>
+  value === "br" || value === "sf" || value === "sr" || value === "dd" || value === "bt"
+    ? value
+    : "bt";
+
+const toSseEvents = (buffer: string): { completeEvents: string[]; remaining: string } => {
+  const split = buffer.split("\n\n");
+  return {
+    completeEvents: split.slice(0, -1),
+    remaining: split[split.length - 1] ?? "",
+  };
+};
+
+const extractDataLines = (eventBlock: string): string[] =>
+  eventBlock
+    .split("\n")
+    .filter((line) => line.startsWith("data: "))
+    .map((line) => line.slice(6).trim());
+
+const applyDraftUpdate = (
+  assistantMessage: ChatMessage,
+  draftType: DraftType,
+  draft: unknown
+) => {
+  switch (draftType) {
+    case "br": {
+      const nextDraft = draft as BrDraft;
+      assistantMessage.brDraft = nextDraft;
+      assistantMessage.brDrafts = upsertDraftByCode(assistantMessage.brDrafts, nextDraft);
+      return;
+    }
+    case "sf": {
+      assistantMessage.sfDraft = draft as SfDraft;
+      return;
+    }
+    case "sr": {
+      const nextDraft = draft as SrDraft;
+      assistantMessage.srDraft = nextDraft;
+      assistantMessage.srDrafts = upsertDraftByCode(assistantMessage.srDrafts, nextDraft);
+      return;
+    }
+    case "dd": {
+      const nextDraft = draft as DdDraft;
+      assistantMessage.ddDraft = nextDraft;
+      assistantMessage.ddDrafts = upsertDraftByCode(assistantMessage.ddDrafts, nextDraft);
+      return;
+    }
+    case "bt":
+    default: {
+      assistantMessage.btDraft = draft as ChatMessage["btDraft"];
+      return;
+    }
+  }
+};
+
+const syncAssistantMessage = (
+  setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>,
+  assistantMessage: ChatMessage
+) => {
+  upsertMessage(setMessages, assistantMessage.id, () => ({ ...assistantMessage }));
+};
+
 /**
  * ストリーミングチャットフック
  *
  * チャットメッセージの送信とストリーミングレスポンスの処理を担当する。
  */
 export function useStreamingChat(options: UseStreamingChatOptions): UseStreamingChatReturn {
-  const { threadId, resourceId, location, projectId, reasoningEffort, onConceptCandidates } = options;
+  const {
+    threadId,
+    resourceId,
+    location,
+    projectId,
+    reasoningEffort,
+    onConceptCandidates,
+  } = options;
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -75,50 +193,42 @@ export function useStreamingChat(options: UseStreamingChatOptions): UseStreaming
    */
   const sendMessage = useCallback(
     async (content: string) => {
-      // AbortControllerを作成（クリーンアップ用）
       const abortController = new AbortController();
       let aborted = false;
 
       onConceptCandidates?.([]);
 
-      // ユーザーメッセージを追加
       const userMessage: ChatMessage = {
         id: `user-${Date.now()}`,
-        role: 'user',
+        role: "user",
         content,
         timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, userMessage]);
+      appendMessage(setMessages, userMessage);
       setIsLoading(true);
 
-      // アシスタントメッセージの初期値（finallyブロックでアクセスするため）
-      let assistantMessage: ChatMessage = {
+      const assistantMessage: ChatMessage = {
         id: `assistant-${Date.now()}`,
-        role: 'assistant',
-        content: '',
+        role: "assistant",
+        content: "",
         timestamp: new Date(),
         isStreaming: true,
         progressSteps: [],
       };
 
-      // タイムアウト処理（180秒）
       const timeoutId = setTimeout(() => {
         if (!aborted) {
-          console.warn('[Chat] Request timeout - forcing loading state to false');
+          console.warn("[Chat] Request timeout - forcing loading state to false");
           aborted = true;
           abortController.abort();
         }
-      }, 180000);
+      }, REQUEST_TIMEOUT_MS);
 
       try {
-        console.log('[Chat] Starting message send');
-        console.log('[Chat] ThreadId:', threadId, 'ResourceId:', resourceId);
-
-        // APIリクエスト
-        const response = await fetch('/api/chat', {
-          method: 'POST',
+        const response = await fetch("/api/chat", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
             message: content,
@@ -133,248 +243,130 @@ export function useStreamingChat(options: UseStreamingChatOptions): UseStreaming
         });
 
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'メッセージの送信に失敗しました');
+          const errorData = (await response.json()) as { error?: string };
+          throw new Error(errorData.error || "メッセージの送信に失敗しました");
         }
 
-        // ストリーミングレスポンスを処理
         const reader = response.body?.getReader();
         if (!reader) {
-          throw new Error('ストリーミングレスポンスが取得できませんでした');
+          throw new Error("ストリーミングレスポンスが取得できませんでした");
         }
 
         const decoder = new TextDecoder();
+        appendMessage(setMessages, assistantMessage);
 
-        // アシスタントメッセージを追加
-        setMessages((prev) => [...prev, assistantMessage]);
-
-        // チャンクタイムアウト検出用
         let lastChunkTime = Date.now();
-        const CHUNK_TIMEOUT = 30000; // 30秒間チャンクがない場合は終了とみなす
-
-        // SSEイベントのバッファ（チャンク境界をまたぐデータを保持）
-        let buffer = '';
+        let buffer = "";
 
         while (!aborted) {
           const { done, value } = await reader.read();
-          if (done) break;
-
-          if (value) {
-            lastChunkTime = Date.now(); // チャンク受信時刻を更新
-            console.log('[Chat] Chunk received, length:', value.byteLength);
-          }
-
-          // バッファにデコードされたチャンクを追加
-          buffer += decoder.decode(value, { stream: true });
-
-          // \n\n で区切られたイベントを処理
-          const events = buffer.split('\n\n');
-          // 最後の不完全なイベントをバッファに残す
-          buffer = events.pop() || '';
-
-          for (const event of events) {
-            const lines = event.split('\n');
-            for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                const jsonStr = line.slice(6).trim();
-
-                // [DONE] マーカーでストリーミング終了
-                if (jsonStr === '[DONE]') {
-                  console.log('[Chat] [DONE] marker received');
-                  aborted = true;
-                  break;
-                }
-
-                try {
-                  const data = JSON.parse(jsonStr);
-
-                  // エラーデータの検出
-                  if (data.error) {
-                    throw new Error(data.message || 'ストリーミングエラーが発生しました');
-                  }
-
-                  if (data.event === 'heartbeat') {
-                    continue;
-                  }
-
-                  if (data.event === 'progress' && data.step) {
-                    const step = data.step as ChatProgressStep;
-                    assistantMessage.progressSteps = upsertProgressStep(
-                      assistantMessage.progressSteps,
-                      step
-                    );
-                    setMessages((prev) =>
-                      prev.map((msg) =>
-                        msg.id === assistantMessage.id
-                          ? { ...msg, progressSteps: assistantMessage.progressSteps }
-                          : msg
-                      )
-                    );
-                    continue;
-                  }
-
-                  if (data.event === 'draft' && data.draft) {
-                    console.log('[Chat] Received draft event:', data.draft.code, 'draftType:', data.draftType);
-                    if (data.draftType === 'br') {
-                      assistantMessage.brDraft = data.draft;
-                      assistantMessage.brDrafts = upsertDraftByCode(
-                        assistantMessage.brDrafts,
-                        data.draft
-                      );
-                      setMessages((prev) =>
-                        prev.map((msg) =>
-                          msg.id === assistantMessage.id
-                            ? {
-                                ...msg,
-                                brDraft: assistantMessage.brDraft,
-                                brDrafts: assistantMessage.brDrafts,
-                              }
-                            : msg
-                        )
-                      );
-                    } else if (data.draftType === 'sf') {
-                      assistantMessage.sfDraft = data.draft;
-                      setMessages((prev) =>
-                        prev.map((msg) =>
-                          msg.id === assistantMessage.id
-                            ? { ...msg, sfDraft: assistantMessage.sfDraft }
-                            : msg
-                        )
-                      );
-                    } else if (data.draftType === 'sr') {
-                      assistantMessage.srDraft = data.draft;
-                      assistantMessage.srDrafts = upsertDraftByCode(
-                        assistantMessage.srDrafts,
-                        data.draft
-                      );
-                      setMessages((prev) =>
-                        prev.map((msg) =>
-                          msg.id === assistantMessage.id
-                            ? {
-                                ...msg,
-                                srDraft: assistantMessage.srDraft,
-                                srDrafts: assistantMessage.srDrafts,
-                              }
-                            : msg
-                        )
-                      );
-                    } else if (data.draftType === 'dd') {
-                      assistantMessage.ddDraft = data.draft;
-                      assistantMessage.ddDrafts = upsertDraftByCode(
-                        assistantMessage.ddDrafts,
-                        data.draft
-                      );
-                      setMessages((prev) =>
-                        prev.map((msg) =>
-                          msg.id === assistantMessage.id
-                            ? {
-                                ...msg,
-                                ddDraft: assistantMessage.ddDraft,
-                                ddDrafts: assistantMessage.ddDrafts,
-                              }
-                            : msg
-                        )
-                      );
-                    } else {
-                      // draftType が 'bt' か未定義の場合は BT として扱う（後方互換）
-                      assistantMessage.btDraft = data.draft;
-                      setMessages((prev) =>
-                        prev.map((msg) =>
-                          msg.id === assistantMessage.id
-                            ? { ...msg, btDraft: assistantMessage.btDraft }
-                            : msg
-                        )
-                      );
-                    }
-                    console.log('[Chat] Updated message with draft:', assistantMessage.id);
-                    continue;
-                  }
-
-                  if (data.event === 'concept_candidates' && data.candidates) {
-                    const candidates = Array.isArray(data.candidates)
-                      ? (data.candidates as ConceptCandidate[])
-                      : [];
-                    onConceptCandidates?.(candidates);
-                    continue;
-                  }
-
-                  if (data.content) {
-                    assistantMessage.content += data.content;
-                    setMessages((prev) =>
-                      prev.map((msg) =>
-                        msg.id === assistantMessage.id
-                          ? { ...msg, content: assistantMessage.content }
-                          : msg
-                      )
-                    );
-                  }
-                } catch (e: any) {
-                  // JSONパースエラーは無視（不完全なチャンクの場合）
-                  if (e.message && !e.message.includes('JSON')) {
-                    throw e;
-                  }
-                }
-              }
-            }
-            if (aborted) break;
-          }
-
-          // タイムアウトチェック
-          if (Date.now() - lastChunkTime > CHUNK_TIMEOUT) {
-            console.warn('[Chat] No chunk received for 30 seconds - assuming stream ended');
-            aborted = true;
+          if (done) {
             break;
           }
 
-          if (aborted) break;
+          if (value) {
+            lastChunkTime = Date.now();
+            buffer += decoder.decode(value, { stream: true });
+          }
+
+          const { completeEvents, remaining } = toSseEvents(buffer);
+          buffer = remaining;
+
+          for (const eventBlock of completeEvents) {
+            for (const payloadText of extractDataLines(eventBlock)) {
+              if (payloadText === "[DONE]") {
+                aborted = true;
+                break;
+              }
+
+              try {
+                const payload = JSON.parse(payloadText) as StreamEventPayload;
+
+                if (payload.error) {
+                  throw new Error(payload.message || "ストリーミングエラーが発生しました");
+                }
+
+                if (payload.event === "heartbeat") {
+                  continue;
+                }
+
+                if (payload.event === "progress" && payload.step) {
+                  assistantMessage.progressSteps = upsertProgressStep(
+                    assistantMessage.progressSteps,
+                    payload.step
+                  );
+                  syncAssistantMessage(setMessages, assistantMessage);
+                  continue;
+                }
+
+                if (payload.event === "draft" && payload.draft) {
+                  const draftType = normalizeDraftType(payload.draftType);
+                  applyDraftUpdate(assistantMessage, draftType, payload.draft);
+                  syncAssistantMessage(setMessages, assistantMessage);
+                  continue;
+                }
+
+                if (payload.event === "concept_candidates") {
+                  const candidates = Array.isArray(payload.candidates)
+                    ? (payload.candidates as ConceptCandidate[])
+                    : [];
+                  onConceptCandidates?.(candidates);
+                  continue;
+                }
+
+                if (payload.content) {
+                  assistantMessage.content += payload.content;
+                  syncAssistantMessage(setMessages, assistantMessage);
+                }
+              } catch (error) {
+                if (!isJsonSyntaxError(error)) {
+                  throw error;
+                }
+              }
+            }
+
+            if (aborted) {
+              break;
+            }
+          }
+
+          if (Date.now() - lastChunkTime > CHUNK_TIMEOUT_MS) {
+            console.warn("[Chat] No chunk received for 30 seconds - assuming stream ended");
+            aborted = true;
+            break;
+          }
         }
-
-      } catch (error: any) {
-        // アボートされた場合はエラーを無視
-        if (error.name === 'AbortError') {
-          console.log('[Chat] Request aborted');
-
-          // タイムアウトの場合はエラーメッセージを表示
+      } catch (error) {
+        if (isAbortError(error)) {
           if (aborted) {
-            const errorMessage: ChatMessage = {
+            appendMessage(setMessages, {
               id: `timeout-${Date.now()}`,
-              role: 'system',
-              content: 'リクエストがタイムアウトしました（180秒）。ネットワーク接続を確認してください。',
+              role: "system",
+              content:
+                "リクエストがタイムアウトしました（180秒）。ネットワーク接続を確認してください。",
               timestamp: new Date(),
-            };
-            setMessages((prev) => [...prev, errorMessage]);
+            });
           }
           return;
         }
 
-        console.error('[Chat] Stream error:', error);
-
-        // エラーメッセージを追加
-        const errorMessage: ChatMessage = {
+        const errorMessage =
+          error instanceof Error ? error.message : "不明なエラーが発生しました";
+        appendMessage(setMessages, {
           id: `error-${Date.now()}`,
-          role: 'system',
-          content: `エラーが発生しました: ${error.message}`,
+          role: "system",
+          content: `エラーが発生しました: ${errorMessage}`,
           timestamp: new Date(),
-        };
-        setMessages((prev) => [...prev, errorMessage]);
+        });
       } finally {
         clearTimeout(timeoutId);
-        // 常にローディング状態を解除する（[DONE]受信時も含む）
         setIsLoading(false);
-
-        // isStreamingフラグを解除
-        if (assistantMessage) {
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === assistantMessage.id
-                ? { ...msg, isStreaming: false }
-                : msg
-            )
-          );
-        }
+        upsertMessage(setMessages, assistantMessage.id, (message) => ({
+          ...message,
+          isStreaming: false,
+        }));
       }
 
-      // クリーンアップ関数を返す
       return () => {
         aborted = true;
         abortController.abort();

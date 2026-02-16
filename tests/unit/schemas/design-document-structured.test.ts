@@ -29,12 +29,12 @@ describe("structuredDesignDocumentSpecSchema", () => {
         rules: [
           {
             name: "stock_check",
-            type: "validation",
+            type: "validate",
             description: "在庫数が注文数以上であることを確認",
           },
           {
             name: "price_calculation",
-            type: "calculation",
+            type: "derive",
             description: "合計金額を計算",
             formula: "合計金額 = 単価 × 数量",
           },
@@ -46,7 +46,7 @@ describe("structuredDesignDocumentSpecSchema", () => {
     expect(parsed.coreLogic.summary).toBe("受注処理のコアロジック");
     expect(parsed.coreLogic.rules).toHaveLength(2);
     expect(parsed.coreLogic.rules[0].name).toBe("stock_check");
-    expect(parsed.coreLogic.rules[1].type).toBe("calculation");
+    expect(parsed.coreLogic.rules[1].type).toBe("derive");
   });
 
   it("parses model typeDetail with entity definition", () => {
@@ -83,6 +83,12 @@ describe("structuredDesignDocumentSpecSchema", () => {
             target: "Order",
             type: "1:N",
             description: "ユーザーは複数の注文を持つ",
+            columnMappings: [
+              {
+                source: "id",
+                target: "userId",
+              },
+            ],
           },
         ],
         stateTransitions: [
@@ -110,12 +116,289 @@ describe("structuredDesignDocumentSpecSchema", () => {
     }
   });
 
+  it("rejects model when entityName is missing", () => {
+    const result = structuredDesignDocumentSpecSchema.safeParse({
+      ioType: "model",
+      typeDetail: {
+        ioType: "model",
+        attributes: [
+          { name: "id", type: "UUID", primaryKey: true },
+        ],
+      },
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects non N:M relationship without columnMappings", () => {
+    const result = structuredDesignDocumentSpecSchema.safeParse({
+      ioType: "model",
+      typeDetail: {
+        ioType: "model",
+        entityName: "Invoice",
+        attributes: [
+          { name: "id", type: "UUID", primaryKey: true },
+          { name: "customerId", type: "UUID" },
+        ],
+        relationships: [
+          {
+            target: "Customer",
+            type: "N:1",
+          },
+        ],
+      },
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects relationship mapping source that does not exist in attributes", () => {
+    const result = structuredDesignDocumentSpecSchema.safeParse({
+      ioType: "model",
+      typeDetail: {
+        ioType: "model",
+        entityName: "Invoice",
+        attributes: [
+          { name: "id", type: "UUID", primaryKey: true },
+          { name: "customerId", type: "UUID" },
+        ],
+        relationships: [
+          {
+            target: "Customer",
+            type: "N:1",
+            columnMappings: [
+              { source: "missingColumn", target: "id" },
+            ],
+          },
+        ],
+      },
+    });
+
+    expect(result.success).toBe(false);
+  });
+
   it("rejects mismatched ioType and typeDetail.ioType", () => {
     const result = structuredDesignDocumentSpecSchema.safeParse({
       ioType: "api",
       typeDetail: { ioType: "screen", route: "/x" },
       inputFields: [],
       outputFields: [],
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects unknown sideEffects.ruleRef", () => {
+    const result = structuredDesignDocumentSpecSchema.safeParse({
+      ioType: "api",
+      coreLogic: {
+        rules: [
+          {
+            name: "known_rule",
+            type: "validate",
+            description: "既知ルール",
+          },
+        ],
+      },
+      sideEffects: {
+        description: "副作用あり",
+        dbOperations: [
+          {
+            table: "orders",
+            operation: "insert",
+            ruleRef: "unknown_rule",
+          },
+        ],
+      },
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("parses version=2 guided sequence with valid effect_ref", () => {
+    const result = structuredDesignDocumentSpecSchema.safeParse({
+      version: "2",
+      ioType: "api",
+      sideEffects: {
+        description: "副作用あり",
+        dbOperations: [
+          {
+            id: "save_invoice",
+            table: "invoices",
+            operation: "insert",
+          },
+        ],
+      },
+      sequence: {
+        mode: "guided",
+        steps: [
+          {
+            kind: "effect_ref",
+            ref: "db:save_invoice",
+          },
+        ],
+      },
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects sequence on version=1", () => {
+    const result = structuredDesignDocumentSpecSchema.safeParse({
+      version: "1",
+      ioType: "api",
+      sideEffects: {
+        description: "副作用あり",
+      },
+      sequence: {
+        mode: "guided",
+        steps: [
+          {
+            kind: "note",
+            text: "step",
+          },
+        ],
+      },
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects unknown effect_ref", () => {
+    const result = structuredDesignDocumentSpecSchema.safeParse({
+      version: "2",
+      ioType: "api",
+      sideEffects: {
+        description: "副作用あり",
+        dbOperations: [
+          {
+            id: "save_invoice",
+            table: "invoices",
+            operation: "insert",
+          },
+        ],
+      },
+      sequence: {
+        mode: "guided",
+        steps: [
+          {
+            kind: "effect_ref",
+            ref: "db:unknown_id",
+          },
+        ],
+      },
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("parses preconditionViolations when exceptionIndex is valid", () => {
+    const result = structuredDesignDocumentSpecSchema.safeParse({
+      ioType: "screen",
+      coreLogic: {
+        rules: [
+          {
+            name: "validate_input",
+            type: "validate",
+            description: "入力チェック",
+            preconditions: ["請求対象が1件以上選択されている"],
+            preconditionViolations: [{ preconditionIndex: 0, exceptionIndex: 0 }],
+          },
+        ],
+      },
+      exceptions: [
+        {
+          type: "validation",
+          condition: "請求対象が選択されていない",
+          errorCode: "INVOICE_TARGET_REQUIRED",
+          message: "請求対象を選択してください",
+          recovery: "none",
+        },
+      ],
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects preconditionViolations when exceptionIndex is out of range", () => {
+    const result = structuredDesignDocumentSpecSchema.safeParse({
+      ioType: "screen",
+      coreLogic: {
+        rules: [
+          {
+            name: "validate_input",
+            type: "validate",
+            description: "入力チェック",
+            preconditions: ["請求対象が1件以上選択されている"],
+            preconditionViolations: [{ preconditionIndex: 0, exceptionIndex: 1 }],
+          },
+        ],
+      },
+      exceptions: [
+        {
+          type: "validation",
+          condition: "請求対象が選択されていない",
+          errorCode: "INVOICE_TARGET_REQUIRED",
+          message: "請求対象を選択してください",
+          recovery: "none",
+        },
+      ],
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts sideEffects.response.errorExceptionRef when exception exists", () => {
+    const result = structuredDesignDocumentSpecSchema.safeParse({
+      ioType: "api",
+      sideEffects: {
+        description: "副作用あり",
+        externalApiCalls: [
+          {
+            endpoint: "https://api.example.com/v1/notify",
+            method: "POST",
+            response: {
+              errorLabel: "通知失敗",
+              errorExceptionRef: "NOTIFY_FAILED",
+            },
+          },
+        ],
+      },
+      exceptions: [
+        {
+          type: "external",
+          condition: "通知APIが失敗",
+          errorCode: "NOTIFY_FAILED",
+          message: "通知に失敗しました",
+          recovery: "retry_with_backoff",
+        },
+      ],
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects sequence.call.errorExceptionRef when exception is missing", () => {
+    const result = structuredDesignDocumentSpecSchema.safeParse({
+      version: "2",
+      ioType: "api",
+      sideEffects: {
+        description: "副作用なし",
+      },
+      sequence: {
+        mode: "guided",
+        steps: [
+          {
+            kind: "call",
+            id: "call_1",
+            targetDdId: "DD-SF-AR-0001-002",
+            callType: "sync",
+            errorLabel: "呼び出し失敗",
+            errorExceptionRef: "MISSING_EXCEPTION",
+          },
+        ],
+      },
+      exceptions: [],
     });
 
     expect(result.success).toBe(false);

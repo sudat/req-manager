@@ -88,7 +88,7 @@ export function StructuredAcceptanceCriteriaInput({
 
 	return (
 		<div className={cn("space-y-2", className)}>
-			<Label className="text-[12px] font-medium text-slate-700">
+			<Label className="text-[14px] font-bold text-slate-900 border-l-4 border-primary pl-3 -ml-3">
 				受入基準(GWT)
 			</Label>
 			<div className="space-y-3 bg-slate-50/30 rounded-md p-3">

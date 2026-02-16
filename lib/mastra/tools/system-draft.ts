@@ -139,8 +139,8 @@ export const systemDraftTool = createTool({
         .eq('project_id', resolvedProjectId)
         .limit(1);
 
-      let systemDomainId = existingSDs?.[0]?.id;
-      let sdId = existingSDs?.[0]?.id || 'SD-001';
+      const systemDomainId = existingSDs?.[0]?.id;
+      const sdId = existingSDs?.[0]?.id || 'SD-001';
 
       if (!systemDomainId) {
         throw new Error('システム領域が存在しません。先にSDを作成してください。');

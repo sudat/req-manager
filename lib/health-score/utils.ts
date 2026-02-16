@@ -1,4 +1,4 @@
-import type { BusinessRequirementHealthInput, SystemRequirementHealthInput } from "./index";
+import type { BusinessRequirementHealthInput } from "./index";
 
 export const buildBusinessRequirementsForHealth = (
 	businessRequirements: Array<{
@@ -8,17 +8,19 @@ export const buildBusinessRequirementsForHealth = (
 		conceptIds: string[];
 		impacts: string[];
 		acceptanceCriteriaJson: BusinessRequirementHealthInput["acceptanceCriteriaJson"];
+		taskId: string;
 	}>,
-	systemRequirements: Array<Pick<SystemRequirementHealthInput, "id" | "businessRequirementIds">>
+	systemFunctions: Array<{ id: string; relatedTaskIds: string[] }>
 ): BusinessRequirementHealthInput[] => {
-	const brToSrMap = new Map<string, string[]>();
-	for (const sr of systemRequirements) {
-		for (const brId of sr.businessRequirementIds) {
-			const list = brToSrMap.get(brId);
+	// タスクIDからシステム機能IDへのマップを構築
+	const taskToSfMap = new Map<string, string[]>();
+	for (const sf of systemFunctions) {
+		for (const taskId of sf.relatedTaskIds) {
+			const list = taskToSfMap.get(taskId);
 			if (list) {
-				list.push(sr.id);
+				list.push(sf.id);
 			} else {
-				brToSrMap.set(brId, [sr.id]);
+				taskToSfMap.set(taskId, [sf.id]);
 			}
 		}
 	}
@@ -29,7 +31,7 @@ export const buildBusinessRequirementsForHealth = (
 		summary: br.summary,
 		conceptIds: br.conceptIds,
 		impacts: br.impacts,
-		relatedSystemRequirementIds: brToSrMap.get(br.id) ?? [],
+		relatedSystemFunctionIds: taskToSfMap.get(br.taskId) ?? [],
 		acceptanceCriteriaJson: br.acceptanceCriteriaJson,
 	}));
 };

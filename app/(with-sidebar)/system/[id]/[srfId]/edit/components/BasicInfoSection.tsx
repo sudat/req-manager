@@ -3,7 +3,6 @@
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
 	Select,
@@ -50,59 +49,62 @@ export function BasicInfoSection({
 	onDesignPolicyChange,
 }: BasicInfoSectionProps) {
 	return (
-		<Card className="rounded-md border border-slate-200/60 bg-white">
-			<CardContent className="p-6">
-				<h2 className="text-[20px] font-semibold text-slate-900 mb-4">
+		<div className="space-y-4">
+			<div className="border-l-4 border-brand-600 pl-3 mb-8">
+				<h2 className="text-[18px] font-semibold text-slate-900">
 					基本情報
 				</h2>
-				<div className="grid gap-4 md:grid-cols-2">
-					<div className="space-y-2">
-						<Label>システム機能ID</Label>
-						<Input value={systemFunctionId} disabled />
-						<p className="text-xs text-slate-500">IDは変更できません</p>
-					</div>
-
-					<div className="space-y-2">
-						<Label>
-							機能分類<span className="text-rose-500">*</span>
-						</Label>
-						<Select
-							value={category}
-							onValueChange={(value) => onCategoryChange(value as SrfCategory)}
-						>
-							<SelectTrigger>
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="screen">画面（screen）</SelectItem>
-								<SelectItem value="internal">内部処理（internal）</SelectItem>
-								<SelectItem value="interface">
-									インターフェース（interface）
-								</SelectItem>
-							</SelectContent>
-						</Select>
-					</div>
-
-					<div className="space-y-2">
-						<Label>
-							ステータス<span className="text-rose-500">*</span>
-						</Label>
-						<Select
-							value={status}
-							onValueChange={(value) => onStatusChange(value as SrfStatus)}
-						>
-							<SelectTrigger>
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="not_implemented">未実装</SelectItem>
-								<SelectItem value="implementing">実装中</SelectItem>
-								<SelectItem value="testing">テスト中</SelectItem>
-								<SelectItem value="implemented">実装済</SelectItem>
-							</SelectContent>
-						</Select>
-					</div>
+			</div>
+			
+			{/* IDは全幅 */}
+			<div className="space-y-2">
+				<Label>システム機能ID</Label>
+				<Input value={systemFunctionId} disabled />
+			</div>
+			
+			{/* 分類とステータスは2カラム */}
+			<div className="grid gap-4 md:grid-cols-2">
+				<div className="space-y-2">
+					<Label>
+						機能分類<span className="text-rose-500">*</span>
+					</Label>
+					<Select
+						value={category}
+						onValueChange={(value) => onCategoryChange(value as SrfCategory)}
+					>
+						<SelectTrigger>
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="screen">画面（screen）</SelectItem>
+							<SelectItem value="internal">内部処理（internal）</SelectItem>
+							<SelectItem value="interface">
+								インターフェース（interface）
+							</SelectItem>
+						</SelectContent>
+					</Select>
 				</div>
+
+				<div className="space-y-2">
+					<Label>
+						ステータス<span className="text-rose-500">*</span>
+					</Label>
+					<Select
+						value={status}
+						onValueChange={(value) => onStatusChange(value as SrfStatus)}
+					>
+						<SelectTrigger>
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="not_implemented">未実装</SelectItem>
+							<SelectItem value="implementing">実装中</SelectItem>
+							<SelectItem value="testing">テスト中</SelectItem>
+							<SelectItem value="implemented">実装済</SelectItem>
+						</SelectContent>
+					</Select>
+				</div>
+			</div>
 
 				<div className="mt-4 space-y-2">
 					<Label>
@@ -152,7 +154,6 @@ export function BasicInfoSection({
 						className="min-h-[120px]"
 					/>
 				</div>
-			</CardContent>
-		</Card>
+		</div>
 	);
 }

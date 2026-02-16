@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useProject } from "./project-context"
 import { createProject } from "@/lib/data/projects"
+import { toast } from "sonner"
 import {
   Dialog,
   DialogContent,
@@ -46,6 +47,12 @@ export function ProjectCreateDialog({ open, onOpenChange }: ProjectCreateDialogP
       setSubmitting(false)
       return
     }
+
+    // トースト通知を先に表示（ページ更新前に表示させる）
+    toast.success("プロジェクトを作成しました。続けてPR設定をしてください。")
+
+    // トーストが見えるように少し待機してからページを更新
+    await new Promise<void>((resolve) => setTimeout(resolve, 100))
 
     // プロジェクト一覧を更新
     await refreshProjects()

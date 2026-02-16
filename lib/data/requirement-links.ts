@@ -1,8 +1,24 @@
 import { supabase } from "@/lib/supabase/client";
 import { failIfMissingConfig, executeListQuery } from "./crud-factory";
 import type { RequirementLink, RequirementLinkNodeType } from "@/lib/domain";
+import {
+  DD_DEPENDENCY_CALL_TYPES,
+  DD_DEPENDENCY_CALL_TYPE_LABELS,
+  type DdDependencyCallType,
+  type DdDependencyLink,
+  type DdCallerLink,
+} from "@/lib/domain/dd-dependency";
 
-export type RequirementLinkType = "derived_from";
+export type RequirementLinkType =
+  | "derived_from"
+  | "called_by_user"
+  | DdDependencyCallType;
+
+const DD_DEPENDENCY_CALL_TYPE_SET = new Set<string>(DD_DEPENDENCY_CALL_TYPES);
+
+export const isDdDependencyLinkType = (
+  linkType: string
+): linkType is DdDependencyCallType => DD_DEPENDENCY_CALL_TYPE_SET.has(linkType);
 
 /**
  * リンク種別の論理名定義
@@ -10,6 +26,9 @@ export type RequirementLinkType = "derived_from";
 export const getRequirementLinkTypeLabel = (linkType: RequirementLinkType): string => {
 	const labels: Record<RequirementLinkType, string> = {
 		derived_from: "BR→SR派生",
+    calls_sync: DD_DEPENDENCY_CALL_TYPE_LABELS.calls_sync,
+    calls_async: DD_DEPENDENCY_CALL_TYPE_LABELS.calls_async,
+    called_by_user: "ユーザー起動",
 	};
 	return labels[linkType] ?? linkType;
 };
@@ -20,6 +39,7 @@ export type RequirementLinkInput = {
   targetType: RequirementLinkNodeType;
   targetId: string;
   linkType: string;
+  metadata?: Record<string, unknown> | null;
   suspect?: boolean;
   suspectReason?: string | null;
 };
@@ -36,10 +56,16 @@ type RequirementLinkRow = {
   target_type: string;
   target_id: string;
   link_type: string;
+  metadata: unknown | null;
   suspect: boolean | null;
   suspect_reason: string | null;
   created_at: string;
   updated_at: string;
+};
+
+const normalizeMetadata = (value: unknown): Record<string, unknown> | null => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return value as Record<string, unknown>;
 };
 
 const normalizeNodeType = (value: unknown): RequirementLinkNodeType => {
@@ -55,6 +81,7 @@ const toRequirementLink = (row: RequirementLinkRow): RequirementLink => ({
   targetType: normalizeNodeType(row.target_type),
   targetId: row.target_id,
   linkType: row.link_type,
+  metadata: normalizeMetadata(row.metadata),
   suspect: row.suspect ?? false,
   suspectReason: row.suspect_reason,
   createdAt: row.created_at,
@@ -67,6 +94,7 @@ const toRequirementLinkRowBase = (input: RequirementLinkInput) => ({
   target_type: input.targetType,
   target_id: input.targetId,
   link_type: input.linkType,
+  metadata: input.metadata ?? null,
   suspect: input.suspect ?? false,
   suspect_reason: input.suspectReason ?? null,
 });
@@ -78,6 +106,7 @@ const toRequirementLinkRowPartial = (input: Partial<RequirementLinkInput>) => {
   if (input.targetType !== undefined) row.target_type = input.targetType;
   if (input.targetId !== undefined) row.target_id = input.targetId;
   if (input.linkType !== undefined) row.link_type = input.linkType;
+  if (input.metadata !== undefined) row.metadata = input.metadata;
   if (input.suspect !== undefined) row.suspect = input.suspect;
   if (input.suspectReason !== undefined) row.suspect_reason = input.suspectReason;
   return row;
@@ -132,6 +161,119 @@ export const listRequirementLinksBySourceIds = async (
     projectId,
     toRequirementLink
   );
+};
+
+export const listDdDependenciesBySourceIds = async (
+  sourceDdIds: string[],
+  projectId?: string
+): Promise<{ data: DdDependencyLink[] | null; error: string | null }> => {
+  const result = await listRequirementLinksBySourceIds("dd", sourceDdIds, projectId);
+  if (result.error || !result.data) {
+    return { data: null, error: result.error ?? "DD依存リンクの取得に失敗しました" };
+  }
+
+  const data = result.data
+    .filter(
+      (link) =>
+        link.targetType === "dd" && isDdDependencyLinkType(link.linkType)
+    )
+    .map((link) => {
+      const metadata = link.metadata ?? {};
+      const asyncCompletionRaw =
+        typeof metadata.asyncCompletion === "object" &&
+        metadata.asyncCompletion !== null &&
+        !Array.isArray(metadata.asyncCompletion)
+          ? (metadata.asyncCompletion as Record<string, unknown>)
+          : undefined;
+
+      return {
+        sourceDdId: link.sourceId,
+        targetDdId: link.targetId,
+        callType: link.linkType as DdDependencyCallType,
+        callId:
+          typeof metadata.callId === "string" && metadata.callId.length > 0
+            ? metadata.callId
+            : undefined,
+        message:
+          typeof metadata.message === "string" && metadata.message.length > 0
+            ? metadata.message
+            : undefined,
+        returnsLabel:
+          typeof metadata.returnsLabel === "string" &&
+          metadata.returnsLabel.length > 0
+            ? metadata.returnsLabel
+            : undefined,
+        returnSchemaRef:
+          typeof metadata.returnSchemaRef === "string" &&
+          metadata.returnSchemaRef.length > 0
+            ? metadata.returnSchemaRef
+            : undefined,
+        errorLabel:
+          typeof metadata.errorLabel === "string" &&
+          metadata.errorLabel.length > 0
+            ? metadata.errorLabel
+            : undefined,
+        errorSchemaRef:
+          typeof metadata.errorSchemaRef === "string" &&
+          metadata.errorSchemaRef.length > 0
+            ? metadata.errorSchemaRef
+            : undefined,
+        errorExceptionRef:
+          typeof metadata.errorExceptionRef === "string" &&
+          metadata.errorExceptionRef.length > 0
+            ? metadata.errorExceptionRef
+            : undefined,
+        ruleRef:
+          typeof metadata.ruleRef === "string" && metadata.ruleRef.length > 0
+            ? metadata.ruleRef
+            : undefined,
+        asyncCompletion: asyncCompletionRaw
+          ? {
+              callbackToDdId:
+                typeof asyncCompletionRaw.callbackToDdId === "string" &&
+                asyncCompletionRaw.callbackToDdId.length > 0
+                  ? asyncCompletionRaw.callbackToDdId
+                  : undefined,
+              message:
+                typeof asyncCompletionRaw.message === "string" &&
+                asyncCompletionRaw.message.length > 0
+                  ? asyncCompletionRaw.message
+                  : undefined,
+              timeoutMs:
+                typeof asyncCompletionRaw.timeoutMs === "number"
+                  ? asyncCompletionRaw.timeoutMs
+                  : undefined,
+              successLabel:
+                typeof asyncCompletionRaw.successLabel === "string" &&
+                asyncCompletionRaw.successLabel.length > 0
+                  ? asyncCompletionRaw.successLabel
+                  : undefined,
+              successSchemaRef:
+                typeof asyncCompletionRaw.successSchemaRef === "string" &&
+                asyncCompletionRaw.successSchemaRef.length > 0
+                  ? asyncCompletionRaw.successSchemaRef
+                  : undefined,
+              errorLabel:
+                typeof asyncCompletionRaw.errorLabel === "string" &&
+                asyncCompletionRaw.errorLabel.length > 0
+                  ? asyncCompletionRaw.errorLabel
+                  : undefined,
+              errorSchemaRef:
+                typeof asyncCompletionRaw.errorSchemaRef === "string" &&
+                asyncCompletionRaw.errorSchemaRef.length > 0
+                  ? asyncCompletionRaw.errorSchemaRef
+                  : undefined,
+              errorExceptionRef:
+                typeof asyncCompletionRaw.errorExceptionRef === "string" &&
+                asyncCompletionRaw.errorExceptionRef.length > 0
+                  ? asyncCompletionRaw.errorExceptionRef
+                  : undefined,
+            }
+          : undefined,
+      };
+    });
+
+  return { data, error: null };
 };
 
 export const listRequirementLinksByTarget = async (
@@ -299,6 +441,75 @@ export const deleteRequirementLinksBySourceIds = async (
   return { data: true, error: null };
 };
 
+export const syncDdDependenciesForSrf = async (params: {
+  projectId: string;
+  sourceDdIdsToReset: string[];
+  validDdIds: string[];
+  dependencies: DdDependencyLink[];
+}): Promise<{ data: true | null; error: string | null }> => {
+  const { projectId, sourceDdIdsToReset, validDdIds, dependencies } = params;
+
+  const sourceIds = Array.from(new Set(sourceDdIdsToReset));
+  const validDdIdSet = new Set(validDdIds);
+
+  for (const callType of DD_DEPENDENCY_CALL_TYPES) {
+    const { error } = await deleteRequirementLinksBySourceIds(
+      "dd",
+      sourceIds,
+      projectId,
+      callType
+    );
+    if (error) {
+      return { data: null, error };
+    }
+  }
+
+  const uniqueMap = new Map<string, DdDependencyLink>();
+  for (const dependency of dependencies) {
+    if (!isDdDependencyLinkType(dependency.callType)) continue;
+    if (!validDdIdSet.has(dependency.sourceDdId)) continue;
+    if (!validDdIdSet.has(dependency.targetDdId)) continue;
+    if (dependency.sourceDdId === dependency.targetDdId) continue;
+
+    const key = `${dependency.sourceDdId}:${dependency.targetDdId}:${dependency.callType}:${dependency.callId ?? ""}`;
+    if (!uniqueMap.has(key)) {
+      uniqueMap.set(key, dependency);
+    }
+  }
+
+  const createInputs = Array.from(uniqueMap.values()).map((dependency) => ({
+    projectId,
+    sourceType: "dd" as const,
+    sourceId: dependency.sourceDdId,
+    targetType: "dd" as const,
+    targetId: dependency.targetDdId,
+    linkType: dependency.callType,
+    metadata: {
+      callId: dependency.callId ?? null,
+      message: dependency.message ?? null,
+      returnsLabel: dependency.returnsLabel ?? null,
+      returnSchemaRef: dependency.returnSchemaRef ?? null,
+      errorLabel: dependency.errorLabel ?? null,
+      errorSchemaRef: dependency.errorSchemaRef ?? null,
+      errorExceptionRef: dependency.errorExceptionRef ?? null,
+      ruleRef: dependency.ruleRef ?? null,
+      asyncCompletion: dependency.asyncCompletion ?? null,
+    },
+    suspect: false,
+  }));
+
+  if (createInputs.length === 0) {
+    return { data: true, error: null };
+  }
+
+  const { error: createError } = await createRequirementLinks(createInputs);
+  if (createError) {
+    return { data: null, error: createError };
+  }
+
+  return { data: true, error: null };
+};
+
 export const deleteRequirementLinksByTarget = async (
   targetType: RequirementLinkNodeType,
   targetId: string,
@@ -424,4 +635,157 @@ export const listSuspectLinks = async (
   }
 
   return (data as RequirementLinkRow[]).map(toRequirementLink);
+};
+
+// ========================================
+// 呼び出し元（受信方向）の管理
+// ========================================
+
+/**
+ * 指定されたDD IDsに対する呼び出し元リンクを取得する
+ * @param targetDdIds - 呼び出される側のDD IDs
+ * @param projectId - プロジェクトID
+ * @returns 呼び出し元リンクの配列
+ */
+export const listDdCallersByTargetIds = async (
+  targetDdIds: string[],
+  projectId?: string
+): Promise<{ data: DdCallerLink[] | null; error: string | null }> => {
+  if (targetDdIds.length === 0) return { data: [], error: null };
+
+  const result = await executeListQuery<RequirementLinkRow, ReturnType<typeof toRequirementLink>>(
+    () => supabase
+      .from("requirement_links")
+      .select("*")
+      .eq("target_type", "dd")
+      .in("target_id", targetDdIds)
+      .in("link_type", ["called_by_user", ...DD_DEPENDENCY_CALL_TYPES])
+      .order("created_at", { ascending: true }),
+    projectId,
+    toRequirementLink
+  );
+
+  if (result.error || !result.data) {
+    return { data: null, error: result.error ?? "呼び出し元リンクの取得に失敗しました" };
+  }
+
+  // link_type から callerType を判定して DdCallerLink に変換
+  const data: DdCallerLink[] = [];
+  for (const link of result.data) {
+    if (link.linkType === "called_by_user") {
+      data.push({
+        targetDdId: link.targetId,
+        callerType: "user",
+      });
+      continue;
+    }
+
+    if (isDdDependencyLinkType(link.linkType)) {
+      // calls_sync / calls_async は「呼び出す側→呼び出される側」の関係
+      // ここでは逆方向（呼び出される側から見た呼び出し元）を扱っているため、
+      // source が caller、target が被呼び出し側になる
+      data.push({
+        targetDdId: link.targetId,
+        callerType: "system",
+        callerDdId: link.sourceId,
+        callType: link.linkType,
+      });
+    }
+  }
+
+  return { data, error: null };
+};
+
+/**
+ * SF配下の全DDに対する呼び出し元リンクを同期する
+ * @param params.projectId - プロジェクトID
+ * @param params.targetDdIdsToReset - リセット対象のDD IDs
+ * @param params.validDdIds - 有効なDD IDsのセット（参照整合性チェック用）
+ * @param params.callers - 新しい呼び出し元リンクの配列
+ * @returns 成功時は { data: true, error: null }
+ */
+export const syncDdCallersForSrf = async (params: {
+  projectId: string;
+  targetDdIdsToReset: string[];
+  validDdIds: string[];
+  callers: DdCallerLink[];
+}): Promise<{ data: true | null; error: string | null }> => {
+  const { projectId, targetDdIdsToReset, validDdIds, callers } = params;
+
+  const targetIds = Array.from(new Set(targetDdIdsToReset));
+  const validDdIdSet = new Set(validDdIds);
+
+  // 1. 既存の呼び出し元リンクを削除（called_by_user, calls_sync, calls_async）
+  const linkTypesToDelete = ["called_by_user", ...DD_DEPENDENCY_CALL_TYPES];
+  for (const linkType of linkTypesToDelete) {
+    const configError = failIfMissingConfig();
+    if (configError) return configError;
+
+    const { error } = await supabase
+      .from("requirement_links")
+      .delete()
+      .eq("project_id", projectId)
+      .eq("target_type", "dd")
+      .in("target_id", targetIds)
+      .eq("link_type", linkType);
+
+    if (error) {
+      return { data: null, error: error.message };
+    }
+  }
+
+  // 2. 新しい呼び出し元リンクを作成
+  const uniqueMap = new Map<string, RequirementLinkCreateInput>();
+  for (const caller of callers) {
+    // targetDdId の存在チェック
+    if (!validDdIdSet.has(caller.targetDdId)) continue;
+
+    if (caller.callerType === "user") {
+      // ユーザー起動の場合
+      const key = `user:${caller.targetDdId}`;
+      if (!uniqueMap.has(key)) {
+        uniqueMap.set(key, {
+          projectId,
+          sourceType: "dd", // 便宜上 dd としておく（sourceIdは空）
+          sourceId: "",
+          targetType: "dd",
+          targetId: caller.targetDdId,
+          linkType: "called_by_user",
+          suspect: false,
+        });
+      }
+    } else if (caller.callerType === "system") {
+      // システム起動の場合
+      if (!caller.callerDdId || !caller.callType) continue;
+      if (!validDdIdSet.has(caller.callerDdId)) continue;
+      if (!isDdDependencyLinkType(caller.callType)) continue;
+      if (caller.callerDdId === caller.targetDdId) continue; // 自己参照を除外
+
+      const key = `${caller.callerDdId}:${caller.targetDdId}:${caller.callType}`;
+      if (!uniqueMap.has(key)) {
+        uniqueMap.set(key, {
+          projectId,
+          sourceType: "dd",
+          sourceId: caller.callerDdId,
+          targetType: "dd",
+          targetId: caller.targetDdId,
+          linkType: caller.callType,
+          suspect: false,
+        });
+      }
+    }
+  }
+
+  const createInputs = Array.from(uniqueMap.values());
+
+  if (createInputs.length === 0) {
+    return { data: true, error: null };
+  }
+
+  const { error: createError } = await createRequirementLinks(createInputs);
+  if (createError) {
+    return { data: null, error: createError };
+  }
+
+  return { data: true, error: null };
 };

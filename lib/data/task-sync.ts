@@ -211,7 +211,10 @@ export async function syncSystemRequirements(
  * @param taskId タスクID
  * @param taskName タスク名
  * @param taskSummary タスク概要
- * @param businessContext 業務コンテキスト
+ * @param triggerDescription 業務開始トリガー説明
+ * @param triggerTaskIds 業務開始トリガー業務タスクID配列
+ * @param frequency 業務頻度
+ * @param frequencyDescription 業務頻度詳細
  * @param processSteps タスク内の流れ（YAML）
  * @param person 担当者
  * @param input インプット
@@ -223,7 +226,10 @@ export async function syncTaskBasicInfo(
 	taskId: string,
 	taskName: string,
 	taskSummary: string,
-	businessContext: string,
+	triggerDescription: string,
+	triggerTaskIds: string[],
+	frequency: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly' | 'irregular',
+	frequencyDescription: string,
 	processSteps: string,
 	person: string,
 	input: string,
@@ -243,7 +249,10 @@ export async function syncTaskBasicInfo(
 			businessArea: existingTask.businessArea, // 既存値を維持
 			name: taskName,
 			summary: taskSummary,
-			businessContext,
+			triggerDescription,
+			triggerTaskIds,
+			frequency,
+			frequencyDescription,
 			processSteps,
 			person,
 			input,

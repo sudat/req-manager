@@ -1,180 +1,200 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import Link from "next/link";
 import { ChevronDown } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
+import { useState } from "react";
 import { MarkdownRenderer } from "@/components/markdown/markdown-renderer";
+import { Badge } from "@/components/ui/badge";
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { parseYamlIdList } from "@/lib/utils/yaml";
+import { ConceptBadge } from "@/components/ui/concept-badge";
+import { FieldLabel } from "@/components/ui/field-label";
+import { IdNameBadge } from "@/components/ui/id-name-badge";
 import type { BusinessRequirement } from "@/lib/data/business-requirements";
+import { cn } from "@/lib/utils";
+import { parseYamlIdList } from "@/lib/utils/yaml";
 
 type BusinessRequirementCardProps = {
-  requirement: BusinessRequirement;
-  conceptMap: Map<string, string>;
-  systemFunctionMap: Map<string, string>;
-  systemFunctionDomainMap: Map<string, string | null>;
-  systemDomainMap: Map<string, string>;
-  optionsError: string | null;
-  relatedSystemRequirements: import("@/lib/data/system-requirements").SystemRequirement[];
+	requirement: BusinessRequirement;
+	conceptMap: Map<string, string>;
+	systemFunctionMap: Map<string, string>;
+	systemFunctionDomainMap: Map<string, string | null>;
+	optionsError: string | null;
+	relatedSystemRequirements: import("@/lib/data/system-requirements").SystemRequirement[];
 };
 
 export function BusinessRequirementCard({
-  requirement,
-  conceptMap,
-  systemFunctionMap,
-  systemFunctionDomainMap,
-  systemDomainMap,
-  optionsError,
-  relatedSystemRequirements,
+	requirement,
+	conceptMap,
+	systemFunctionMap,
+	systemFunctionDomainMap,
+	optionsError,
+	relatedSystemRequirements,
 }: BusinessRequirementCardProps) {
-  const [isOpen, setIsOpen] = useState(false);
+	const [isOpen, setIsOpen] = useState(false);
 
-  // 関連するシステム要件の概要を抽出
-  const relatedSystemRequirementSummaries = useMemo(() => {
-    if (requirement.srfIds.length === 0 || relatedSystemRequirements.length === 0) return [];
-    return relatedSystemRequirements
-      .filter(sr => sr.srfIds.some(srfId => requirement.srfIds.includes(srfId)))
-      .map(sr => sr.summary)
-      .filter(Boolean);
-  }, [requirement.srfIds, relatedSystemRequirements]);
+	const displayGoal = requirement.goal || requirement.summary;
+	const constraints = parseYamlIdList(requirement.constraints ?? "");
+	const constraintItems = constraints.value;
 
-  const firstSummary = relatedSystemRequirementSummaries[0] ?? "";
-  const summaryCount = relatedSystemRequirementSummaries.length;
-  const displayGoal = requirement.goal || requirement.summary;
-  const constraints = parseYamlIdList(requirement.constraints ?? "");
-  const constraintItems = constraints.value;
+	return (
+		<Collapsible id={requirement.id} open={isOpen} onOpenChange={setIsOpen}>
+			<div className="rounded-md border border-slate-200 bg-white shadow-sm">
+				<CollapsibleTrigger className="w-full flex flex-wrap items-start justify-between gap-3 px-4 py-4 hover:bg-slate-50/50 cursor-pointer transition-colors">
+					<div className="flex items-center gap-2 flex-wrap flex-1">
+						<Badge className="border-slate-200/60 bg-slate-50 text-slate-600 text-[12px] font-medium px-2.5 py-1 font-mono">
+							{requirement.id}
+						</Badge>
+						<Badge
+							variant="outline"
+							className="border-emerald-200 bg-emerald-50 text-emerald-700 text-[12px] font-medium px-2.5 py-1"
+						>
+							業務要件
+						</Badge>
+						<span className="text-[14px] font-semibold text-slate-900">
+							{requirement.title || "名称未設定"}
+						</span>
+					</div>
+					<div className="flex items-center gap-2">
+						<ChevronDown
+							className={cn(
+								"h-5 w-5 text-slate-400 transition-transform duration-200",
+								isOpen ? "rotate-180" : "",
+							)}
+						/>
+					</div>
+				</CollapsibleTrigger>
 
-  return (
-    <Collapsible
-      id={requirement.id}
-      open={isOpen}
-      onOpenChange={setIsOpen}
-      className="rounded-md border border-slate-200 bg-slate-50/50 hover:bg-white hover:border-slate-300 transition-colors p-4"
-    >
-      <CollapsibleTrigger className="flex flex-wrap items-start justify-between gap-2 w-full text-left hover:bg-slate-50/50 rounded px-2 -mx-2 py-1 transition-colors cursor-pointer">
-        <div className="flex-1">
-          <div className="font-mono text-[11px] text-slate-400">{requirement.id}</div>
-          <div className="text-[14px] font-medium text-slate-900 mt-1">{requirement.title}</div>
-          {displayGoal && (
-            <div className="mt-2">
-              <div className="text-[12px] font-medium text-slate-500">ゴール</div>
-              <div className="text-[13px] text-slate-700 mt-1">
-                <MarkdownRenderer content={displayGoal} />
-              </div>
-            </div>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] font-medium px-2.5 py-1">
-            業務要件
-          </Badge>
-          <ChevronDown strokeWidth={1} className={`h-8 w-8 text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
-        </div>
-      </CollapsibleTrigger>
+				<CollapsibleContent className="p-4 space-y-3">
+					{optionsError && (
+						<div className="text-[12px] text-rose-600">{optionsError}</div>
+					)}
 
-      <CollapsibleContent className="space-y-3">
-        {optionsError && (
-          <div className="text-[12px] text-rose-600">{optionsError}</div>
-        )}
+					{displayGoal && (
+						<div className="text-[15px] font-medium text-slate-700 leading-relaxed">
+							<MarkdownRenderer content={displayGoal} />
+						</div>
+					)}
 
-      {requirement.owner && (
-        <div className="border-t border-slate-100 pt-3 space-y-2">
-          <div className="text-[12px] font-medium text-slate-500">オーナー</div>
-          <div className="text-[13px] text-slate-700">{requirement.owner}</div>
-        </div>
-      )}
+					{requirement.owner && (
+						<div className="flex gap-4">
+							<div className="w-20 flex-shrink-0">
+								<FieldLabel>オーナー</FieldLabel>
+							</div>
+							<div className="flex-1 text-[13px] text-slate-600">
+								{requirement.owner}
+							</div>
+						</div>
+					)}
 
-      {constraintItems.length > 0 && (
-        <div className="border-t border-slate-100 pt-3 space-y-2">
-          <div className="text-[12px] font-medium text-slate-500">制約条件</div>
-          <ul className="list-disc pl-4 text-[13px] text-slate-700 space-y-1">
-            {constraintItems.map((item, index) => (
-              <li key={`${requirement.id}-constraint-${index}`}>{item}</li>
-            ))}
-          </ul>
-        </div>
-      )}
+					{constraintItems.length > 0 && (
+						<div className="flex gap-4">
+							<div className="w-20 flex-shrink-0">
+								<FieldLabel>制約条件</FieldLabel>
+							</div>
+							<div className="flex-1">
+								<ul className="list-disc pl-4 text-[13px] text-slate-600 space-y-1">
+									{constraintItems.map((item, index) => {
+										const lines = item.split("\n");
+										return (
+											<li key={`${requirement.id}-constraint-${index}`}>
+												{lines.map((line, lineIndex) => (
+													<span
+														key={`${requirement.id}-constraint-${index}-line-${lineIndex}`}
+													>
+														{line}
+														{lineIndex < lines.length - 1 && <br />}
+													</span>
+												))}
+											</li>
+										);
+									})}
+								</ul>
+							</div>
+						</div>
+					)}
 
-      {requirement.conceptIds.length > 0 && (
-        <div className="border-t border-slate-100 pt-3 space-y-2">
-          <div className="text-[12px] font-medium text-slate-500">関連概念</div>
-          <div className="flex flex-wrap gap-2">
-            {requirement.conceptIds.map((conceptId) => (
-              <Link key={conceptId} href={`/ideas/${conceptId}`}>
-                <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] hover:bg-slate-100 px-2.5 py-1">
-                  {conceptMap.get(conceptId) ?? conceptId}
-                </Badge>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
+					{requirement.conceptIds.length > 0 && (
+						<div className="flex gap-4">
+							<div className="w-20 flex-shrink-0">
+								<FieldLabel>関連概念</FieldLabel>
+							</div>
+							<div className="flex-1 flex flex-wrap gap-2">
+								{requirement.conceptIds.map((conceptId) => (
+									<ConceptBadge
+										key={conceptId}
+										id={conceptId}
+										name={conceptMap.get(conceptId)}
+										href={`/ideas/${conceptId}`}
+									/>
+								))}
+							</div>
+						</div>
+					)}
 
-      {requirement.srfIds.length > 0 && (
-        <div className="border-t border-slate-100 pt-3 space-y-2">
-          <div className="text-[12px] font-medium text-slate-500">関連システム機能</div>
-          <div className="flex flex-wrap gap-2">
-            {requirement.srfIds.map((srfId) => {
-              const srfName = systemFunctionMap.get(srfId) ?? srfId;
-              const srfDomainId = systemFunctionDomainMap.get(srfId);
-              return (
-                <Link key={srfId} href={srfDomainId ? `/system/${srfDomainId}/${srfId}` : "/system"}>
-                  <Badge
-                    variant="outline"
-                    className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] hover:bg-slate-100 max-w-[200px] truncate px-2.5 py-1"
-                    title={
-                      summaryCount > 1
-                        ? `${firstSummary}\n\n（他${summaryCount - 1}件の要件があります）`
-                        : firstSummary || srfName || undefined
-                    }
-                  >
-                    {srfName}
-                  </Badge>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      )}
+					{requirement.srfIds.length > 0 && (
+						<div className="flex gap-4">
+							<div className="w-20 flex-shrink-0">
+								<FieldLabel>システム機能</FieldLabel>
+							</div>
+							<div className="flex-1 flex flex-wrap gap-2">
+								{requirement.srfIds.map((srfId) => {
+									const srfDomainId = systemFunctionDomainMap.get(srfId);
+									const href = srfDomainId
+										? `/system/${srfDomainId}/${srfId}`
+										: "/system";
+									return (
+										<IdNameBadge
+											key={srfId}
+											id={srfId}
+											name={systemFunctionMap.get(srfId)}
+											href={href}
+										/>
+									);
+								})}
+							</div>
+						</div>
+					)}
 
-      {requirement.systemDomainIds.length > 0 && (
-        <div className="border-t border-slate-100 pt-3 space-y-2">
-          <div className="text-[12px] font-medium text-slate-500">システム領域</div>
-          <div className="flex flex-wrap gap-2">
-            {requirement.systemDomainIds.map((domainId) => (
-              <Badge key={domainId} variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] px-2.5 py-1">
-                {systemDomainMap.get(domainId) ?? domainId}
-              </Badge>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {relatedSystemRequirements.length > 0 && (
-        <div className="border-t border-slate-100 pt-3 space-y-2">
-          <div className="text-[12px] font-medium text-slate-500">関連システム要件</div>
-          <div className="flex flex-wrap gap-2">
-            {relatedSystemRequirements.map((sr) => {
-              const srDomainId = sr.srfIds.length > 0 ? systemFunctionDomainMap.get(sr.srfIds[0]) : null;
-              const srSrfId = sr.srfIds.length > 0 ? sr.srfIds[0] : null;
-              return (
-                <Link key={sr.id} href={srDomainId && srSrfId ? `/system/${srDomainId}/${srSrfId}` : "/system"}>
-                  <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] hover:bg-slate-100 max-w-[200px] truncate px-2.5 py-1" title={sr.title ?? undefined}>
-                    {sr.title}
-                  </Badge>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      </CollapsibleContent>
-    </Collapsible>
-  );
+					{relatedSystemRequirements.length > 0 && (
+						<div className="flex gap-4">
+							<div className="w-20 flex-shrink-0">
+								<FieldLabel>システム要件</FieldLabel>
+							</div>
+							<div className="flex-1 flex flex-wrap gap-1.5">
+								{relatedSystemRequirements.map((sr) => {
+									const srDomainId =
+										sr.srfIds.length > 0
+											? systemFunctionDomainMap.get(sr.srfIds[0])
+											: null;
+									const srSrfId = sr.srfIds.length > 0 ? sr.srfIds[0] : null;
+									return (
+										<Link
+											key={sr.id}
+											href={
+												srDomainId && srSrfId
+													? `/system/${srDomainId}/${srSrfId}`
+													: "/system"
+											}
+										>
+											<Badge
+												variant="outline"
+												className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] hover:bg-slate-100 max-w-[200px] truncate"
+												title={sr.title ?? undefined}
+											>
+												{sr.title}
+											</Badge>
+										</Link>
+									);
+								})}
+							</div>
+						</div>
+					)}
+				</CollapsibleContent>
+			</div>
+		</Collapsible>
+	);
 }

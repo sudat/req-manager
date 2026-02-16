@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { ExternalLink, ChevronDown, Pencil } from "lucide-react";
+import { useState, useRef } from "react";
+import { ExternalLink, ChevronDown } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { SectionCard, EmptyState, SectionLabel } from "./section-card";
+import { FieldLabel } from "@/components/ui/field-label";
+import { EmptyState, SectionLabel } from "./section-card";
 import { useRelatedRequirements } from "@/hooks/use-related-requirements";
 import type { RelatedRequirementInfo } from "@/lib/domain";
-import { CardSkeleton } from "@/components/skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 import { AcceptanceCriteriaDisplay } from "@/components/forms/AcceptanceCriteriaDisplay";
 import {
 	Collapsible,
@@ -24,62 +24,86 @@ interface SystemRequirementsSectionProps {
 	systemDomainId?: string;
 }
 
-export function SystemRequirementsSection({ srfId, systemDomainId }: SystemRequirementsSectionProps): React.ReactNode {
+export function SystemRequirementsSection({
+	srfId,
+}: SystemRequirementsSectionProps): React.ReactNode {
 	const { data: relatedReqs, loading, error } = useRelatedRequirements(srfId);
-
-	const editButton = systemDomainId ? (
-		<Link href={`/system/${systemDomainId}/${srfId}/edit/requirements`}>
-			<Button variant="ghost" size="sm" className="h-7 gap-1.5 text-[12px]">
-				<Pencil className="h-3.5 w-3.5" />
-				編集
-			</Button>
-		</Link>
-	) : null;
 
 	if (loading) {
 		return (
-			<SectionCard title="システム要件" action={editButton}>
-				<CardSkeleton />
-			</SectionCard>
+			<div className="space-y-4">
+				{[0, 1].map((i) => (
+					<div
+						key={i}
+						className="rounded-md border border-slate-200 bg-white shadow-sm p-4"
+					>
+						<div className="flex items-center justify-between">
+							<div className="flex items-center gap-2">
+								<Skeleton className="h-6 w-20 rounded" />
+								<Skeleton className="h-5 w-16 rounded" />
+								<Skeleton className="h-5 w-48 rounded" />
+							</div>
+							<Skeleton className="h-5 w-5 rounded" />
+						</div>
+					</div>
+				))}
+			</div>
 		);
 	}
 
 	if (error) {
-		return (
-			<SectionCard title="システム要件" action={editButton}>
-				<div className="text-[13px] text-rose-600">{error}</div>
-			</SectionCard>
-		);
+		return <div className="text-[13px] text-rose-600">{error}</div>;
 	}
 
 	return (
-		<SectionCard title="システム要件" count={relatedReqs.length} action={editButton}>
+		<div className="space-y-4">
 			{relatedReqs.length === 0 ? (
 				<EmptyState message="まだ登録されていません。" />
 			) : (
 				<div className="space-y-4">
 					{relatedReqs.map((req) => (
-						<RequirementItem key={`${req.systemReqId}:${req.businessReqId || "none"}`} req={req} />
+						<RequirementItem
+							key={`${req.systemReqId}:${req.businessReqId || "none"}`}
+							req={req}
+						/>
 					))}
 				</div>
 			)}
-		</SectionCard>
+		</div>
 	);
 }
 
-function RequirementItem({ req }: { req: RelatedRequirementInfo }): React.ReactNode {
+function RequirementItem({
+	req,
+}: {
+	req: RelatedRequirementInfo;
+}): React.ReactNode {
 	const [isOpen, setIsOpen] = useState(false);
+	const scrollPosRef = useRef(0);
+
+	const handleOpenChange = (open: boolean) => {
+		if (open) {
+			scrollPosRef.current = window.scrollY;
+		}
+		setIsOpen(open);
+		requestAnimationFrame(() => {
+			window.scrollTo(0, scrollPosRef.current);
+		});
+	};
 
 	return (
-		<Collapsible open={isOpen} onOpenChange={setIsOpen}>
+		<Collapsible open={isOpen} onOpenChange={handleOpenChange}>
 			<div className="rounded-md border border-slate-200 bg-white shadow-sm">
 				<CollapsibleTrigger className="w-full flex flex-wrap items-start justify-between gap-3 px-4 py-4 hover:bg-slate-50/50 cursor-pointer transition-colors">
 					<div className="flex items-center gap-2 flex-wrap">
-						<Badge className="border-blue-200/60 bg-blue-50 text-blue-700 text-[12px] font-medium px-2.5 py-1">
+						<Badge className="border-slate-200/60 bg-slate-50 text-slate-600 text-[12px] font-medium px-2.5 py-1">
 							{req.systemReqId}
 						</Badge>
 						{req.systemReqCategory && (
-							<Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-medium">
+							<Badge
+								variant="outline"
+								className="border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-medium"
+							>
 								{getSystemRequirementCategoryLabel(req.systemReqCategory)}
 							</Badge>
 						)}
@@ -88,64 +112,74 @@ function RequirementItem({ req }: { req: RelatedRequirementInfo }): React.ReactN
 						</span>
 					</div>
 					<div className="flex items-center gap-2">
-						<span className="text-[11px] text-slate-400 uppercase tracking-wide">
-							SR
-						</span>
 						<ChevronDown
 							className={cn(
 								"h-5 w-5 text-slate-400 transition-transform duration-200",
-								isOpen ? "rotate-180" : ""
+								isOpen ? "rotate-180" : "",
 							)}
 						/>
 					</div>
 				</CollapsibleTrigger>
 
-				<CollapsibleContent className="p-5">
+				<CollapsibleContent className="p-4 space-y-3">
 					<div className="space-y-3">
 						{req.systemReqSummary && (
-							<div className="text-[13px] text-slate-600 leading-relaxed">
+							<div className="text-[15px] font-medium text-slate-700 leading-relaxed">
 								{req.systemReqSummary}
 							</div>
 						)}
 
 						{req.systemReqConcepts && req.systemReqConcepts.length > 0 && (
-							<BadgeList label="関連概念">
-								{req.systemReqConcepts.map((concept) => (
-									<Link key={concept.id} href={`/ideas/${concept.id}`}>
-										<Badge
-											variant="outline"
-											className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] hover:bg-slate-100"
-										>
-											{concept.name}
-										</Badge>
-									</Link>
-								))}
-							</BadgeList>
+							<div className="flex gap-4">
+								<div className="w-20 flex-shrink-0">
+									<FieldLabel>関連概念</FieldLabel>
+								</div>
+								<div className="flex-1 flex flex-wrap gap-1.5">
+									{req.systemReqConcepts.map((concept) => (
+										<Link key={concept.id} href={`/ideas/${concept.id}`}>
+											<Badge
+												variant="outline"
+												className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] hover:bg-slate-100"
+											>
+												{concept.name}
+											</Badge>
+										</Link>
+									))}
+								</div>
+							</div>
 						)}
 
 						{req.systemReqImpacts && req.systemReqImpacts.length > 0 && (
-							<BadgeList label="影響領域">
-								{req.systemReqImpacts.map((impact, i) => (
-									<Badge
-										key={i}
-										variant="outline"
-										className="border-slate-200 bg-slate-50 text-slate-600 text-[12px]"
-									>
-										{impact}
-									</Badge>
-								))}
-							</BadgeList>
-						)}
-
-						{req.systemReqAcceptanceCriteriaJson && req.systemReqAcceptanceCriteriaJson.length > 0 && (
-							<div className="border-t border-slate-100 pt-3 space-y-2">
-								<div className="text-[12px] font-medium text-slate-500">受入条件</div>
-								<AcceptanceCriteriaDisplay
-									items={req.systemReqAcceptanceCriteriaJson}
-									emptyMessage="未登録"
-								/>
+							<div className="flex gap-4">
+								<div className="w-20 flex-shrink-0">
+									<FieldLabel>影響領域</FieldLabel>
+								</div>
+								<div className="flex-1 flex flex-wrap gap-1.5">
+									{req.systemReqImpacts.map((impact, i) => (
+										<Badge
+											key={i}
+											variant="outline"
+											className="border-slate-200 bg-slate-50 text-slate-600 text-[12px]"
+										>
+											{impact}
+										</Badge>
+									))}
+								</div>
 							</div>
 						)}
+
+						{req.systemReqAcceptanceCriteriaJson &&
+							req.systemReqAcceptanceCriteriaJson.length > 0 && (
+								<div className="border-t border-slate-100 pt-3 space-y-2">
+									<div className="text-[12px] font-medium text-slate-500">
+										受入条件
+									</div>
+									<AcceptanceCriteriaDisplay
+										items={req.systemReqAcceptanceCriteriaJson}
+										emptyMessage="未登録"
+									/>
+								</div>
+							)}
 					</div>
 
 					<div className="mt-4">
@@ -157,7 +191,13 @@ function RequirementItem({ req }: { req: RelatedRequirementInfo }): React.ReactN
 	);
 }
 
-function BadgeList({ label, children }: { label: string; children: React.ReactNode }): React.ReactNode {
+function BadgeList({
+	label,
+	children,
+}: {
+	label: string;
+	children: React.ReactNode;
+}): React.ReactNode {
 	return (
 		<div>
 			<SectionLabel className="mb-1">{label}</SectionLabel>
@@ -166,28 +206,34 @@ function BadgeList({ label, children }: { label: string; children: React.ReactNo
 	);
 }
 
-function BusinessRequirementLink({ req }: { req: RelatedRequirementInfo }): React.ReactNode {
+function BusinessRequirementLink({
+	req,
+}: {
+	req: RelatedRequirementInfo;
+}): React.ReactNode {
 	const relatedBusinessReqs =
 		req.relatedBusinessReqs && req.relatedBusinessReqs.length > 0
 			? req.relatedBusinessReqs
 			: req.businessReqId
 				? [
-					{
-						id: req.businessReqId,
-						title: req.businessReqTitle,
-						taskId: req.taskId,
-						businessId: req.businessId,
-						businessArea: req.businessArea ?? null,
-						suspect: false,
-						suspectReason: null,
-					},
-				]
+						{
+							id: req.businessReqId,
+							title: req.businessReqTitle,
+							taskId: req.taskId,
+							businessId: req.businessId,
+							businessArea: req.businessArea ?? null,
+							suspect: false,
+							suspectReason: null,
+						},
+					]
 				: [];
 
 	if (relatedBusinessReqs.length === 0) {
 		return (
 			<div className="border-t border-slate-100 pt-3 text-[12px] text-slate-500">
-				<div className="text-[12px] font-medium text-slate-500 mb-2">関連業務要件</div>
+				<div className="text-[12px] font-medium text-slate-500 mb-2">
+					関連業務要件
+				</div>
 				関連業務要件が未設定です。
 			</div>
 		);
@@ -195,7 +241,9 @@ function BusinessRequirementLink({ req }: { req: RelatedRequirementInfo }): Reac
 
 	return (
 		<div className="border-t border-slate-100 pt-3">
-			<div className="text-[12px] font-medium text-slate-500 mb-2">関連業務要件</div>
+			<div className="text-[12px] font-medium text-slate-500 mb-2">
+				関連業務要件
+			</div>
 			<div className="space-y-1.5">
 				{relatedBusinessReqs.map((bizReq) => {
 					const businessArea = bizReq.businessArea ?? req.businessArea ?? "";
@@ -219,13 +267,18 @@ function BusinessRequirementLink({ req }: { req: RelatedRequirementInfo }): Reac
 									size="sm"
 								/>
 							)}
-							{hasLink && <ExternalLink className="h-3 w-3 text-slate-400 ml-auto" />}
+							{hasLink && (
+								<ExternalLink className="h-3 w-3 text-slate-400 ml-auto" />
+							)}
 						</div>
 					);
 
 					if (!hasLink) {
 						return (
-							<div key={bizReq.id} className="rounded px-2 py-1 text-[12px] text-slate-600">
+							<div
+								key={bizReq.id}
+								className="rounded px-2 py-1 text-[12px] text-slate-600"
+							>
 								{content}
 							</div>
 						);

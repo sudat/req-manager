@@ -3,10 +3,11 @@
 import { useRouter } from "next/navigation";
 import { useState, useMemo, useCallback, useEffect, Fragment } from "react";
 import Link from "next/link";
-import { Search, Plus, Loader2 } from "lucide-react";
+import { Search, Plus, Loader2, Trash2 } from "lucide-react";
 import { MobileHeader } from "@/components/layout/mobile-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
 	Table,
 	TableBody,
@@ -16,7 +17,6 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { TableSkeleton } from "@/components/skeleton";
-import { confirmDelete } from "@/lib/ui/confirm";
 import {
 	Breadcrumb,
 	BreadcrumbList,
@@ -28,7 +28,9 @@ import {
 import { DndContext, closestCenter, DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { SortableResourceRow } from "./sortable-resource-row";
-import type { ResourceListConfig, ActionButton, SortOrderUpdate } from "@/config/resource-lists";
+import { EmptyState } from "./empty-state";
+import { toast } from "sonner";
+import type { ResourceListConfig } from "@/config/resource-lists";
 
 type HeaderAction = {
 	label: string;
@@ -86,7 +88,6 @@ export function ResourceListPage<T extends { id: string }>({
 	items: externalItems,
 	loading: externalLoading,
 	error: externalError,
-	onClearError,
 	deleteItem,
 	onDelete,
 	headerTitle,
@@ -107,6 +108,10 @@ export function ResourceListPage<T extends { id: string }>({
 	const [isReorderMode, setIsReorderMode] = useState(false);
 	const [reorderedItems, setReorderedItems] = useState<T[]>([]);
 	const [isSaving, setIsSaving] = useState(false);
+	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+	const [itemToDelete, setItemToDelete] = useState<T | null>(null);
+	const [isDeleting, setIsDeleting] = useState(false);
+	const hasActions = Boolean(config.actions || deleteItem || onDelete);
 
 	// 外部データモード（externalItems指定時）
 	const isExternalMode = externalItems !== undefined;
@@ -162,28 +167,52 @@ export function ResourceListPage<T extends { id: string }>({
 		[config, router],
 	);
 
-	// 削除処理
-	const handleDelete = useCallback(
-		async (item: T) => {
-			// onDelete優先（externalモード用）
-			if (onDelete) {
-				const itemLabel = config.getSearchText(item).split(" ")[0];
-				if (!confirmDelete(itemLabel)) return;
-				await onDelete(item);
-				return;
-			}
-			// deleteItem（fetchDataモード用）
-			if (!deleteItem) return;
-			const itemLabel = config.getSearchText(item).split(" ")[0];
-			if (!confirmDelete(itemLabel)) return;
-			const result = await (deleteItem as (id: string) => Promise<{ data: null; error: string | null } | { data: boolean; error: null }>)(item.id);
-			if (result.error) {
-				alert(result.error);
-				return;
-			}
-			setItems((prev) => prev.filter((i) => i.id !== item.id));
+	// 削除ボタンクリック（確認ダイアログを開く）
+	const handleDeleteClick = useCallback(
+		(item: T) => {
+			setItemToDelete(item);
+			setDeleteDialogOpen(true);
 		},
-		[onDelete, deleteItem, config],
+		[],
+	);
+
+	// 削除確定処理
+	const handleDeleteConfirm = useCallback(
+		async () => {
+			if (!itemToDelete) return;
+
+			setIsDeleting(true);
+
+			try {
+				// onDelete優先（externalモード用）
+				if (onDelete) {
+					await onDelete(itemToDelete);
+				}
+				// deleteItem（fetchDataモード用）
+				else if (deleteItem) {
+					const result = await (deleteItem as (id: string) => Promise<{ data: null; error: string | null } | { data: boolean; error: null }>)(
+						itemToDelete.id,
+					);
+					if (result.error) {
+						alert(result.error);
+						setIsDeleting(false);
+						return;
+					}
+					setItems((prev) => prev.filter((i) => i.id !== itemToDelete.id));
+				}
+
+				const itemLabel = config.getSearchText(itemToDelete).split(" ")[0];
+				toast.success(`${itemLabel}を削除しました。`);
+			} catch (err) {
+				const errorMessage = err instanceof Error ? err.message : "削除に失敗しました";
+				toast.error(errorMessage);
+			} finally {
+				setIsDeleting(false);
+				setDeleteDialogOpen(false);
+				setItemToDelete(null);
+			}
+		},
+		[onDelete, deleteItem, config, itemToDelete],
 	);
 
 	// 並び替えモード開始
@@ -215,7 +244,7 @@ export function ResourceListPage<T extends { id: string }>({
 				sortOrder: index,
 			}));
 
-			const { data, error } = await config.onReorderSave(updates);
+			const { error } = await config.onReorderSave(updates);
 
 			if (error) {
 				alert(`保存に失敗しました: ${error}`);
@@ -255,9 +284,9 @@ export function ResourceListPage<T extends { id: string }>({
 			const deleteAction = (deleteItem || onDelete)
 				? [
 						{
-							icon: require("lucide-react").Trash2,
+							icon: Trash2,
 							label: "削除",
-							onClick: () => handleDelete(item),
+							onClick: () => handleDeleteClick(item),
 							variant: "outline" as const,
 						} as const,
 				  ]
@@ -271,7 +300,7 @@ export function ResourceListPage<T extends { id: string }>({
 						size="icon"
 						variant={action.variant ?? "outline"}
 						title={action.label}
-						className="h-8 w-8 rounded-md border-slate-200 hover:bg-slate-900 hover:text-white hover:border-slate-900"
+						className="h-11 w-11 rounded-md border-slate-200 hover:bg-slate-900 hover:text-white hover:border-slate-900"
 						onClick={(e) => {
 							e.stopPropagation();
 							if ("onClick" in action && action.onClick) {
@@ -279,7 +308,7 @@ export function ResourceListPage<T extends { id: string }>({
 							}
 						}}
 					>
-						<Icon className="h-4 w-4" />
+						<Icon className="h-5 w-5" />
 					</Button>
 				);
 
@@ -293,12 +322,57 @@ export function ResourceListPage<T extends { id: string }>({
 				return content;
 			});
 		},
-		[config, deleteItem, onDelete, handleDelete],
+		[config, deleteItem, onDelete, handleDeleteClick],
+	);
+
+	const renderTableHeader = useCallback(
+		(includeDragHandle: boolean) => (
+			<TableHeader>
+				<TableRow className="border-b border-slate-200">
+					{includeDragHandle && <TableHead className="w-10 px-2 py-3"></TableHead>}
+					{config.columns.map((col) => (
+						<TableHead
+							key={col.id}
+							className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3"
+						>
+							{col.header}
+						</TableHead>
+					))}
+					{hasActions && (
+						<TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">
+							操作
+						</TableHead>
+					)}
+				</TableRow>
+			</TableHeader>
+		),
+		[config, hasActions],
 	);
 
 	return (
 		<>
 			<MobileHeader />
+
+			{/* 削除確認ダイアログ */}
+			<ConfirmDialog
+				open={deleteDialogOpen}
+				onOpenChange={setDeleteDialogOpen}
+				title="削除の確認"
+				description={
+					itemToDelete && (
+						<>
+							{config.getSearchText(itemToDelete).split(" ")[0]}を削除します。よろしいですか？
+							<br />
+							この操作は取り消せません。
+						</>
+					)
+				}
+				onConfirm={handleDeleteConfirm}
+				confirmLabel="削除"
+				cancelLabel="キャンセル"
+				loading={isDeleting}
+				alert={true}
+			/>
 			<div className="flex-1 min-h-screen bg-white">
 				<div className="mx-auto max-w-[1400px] px-8 py-4">
 					{/* ヘッダーの上に表示する追加コンテンツ */}
@@ -450,20 +524,7 @@ export function ResourceListPage<T extends { id: string }>({
 						)}
 					</div>
 
-				{/* Error Display */}
-				{error && !loading && (
-					<div className="mb-4 p-3 rounded-md bg-rose-50 border border-rose-200 text-rose-700 text-sm flex justify-between items-center">
-						<span>{error}</span>
-						{onClearError && (
-							<button
-								onClick={onClearError}
-								className="text-rose-500 hover:text-rose-700 font-medium"
-							>
-								閉じる
-							</button>
-						)}
-					</div>
-				)}
+
 
 					{/* Table */}
 					<div className="rounded-md border border-slate-200 bg-white overflow-hidden">
@@ -472,24 +533,7 @@ export function ResourceListPage<T extends { id: string }>({
 							<DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
 								<SortableContext items={reorderedItems.map(t => t.id)} strategy={verticalListSortingStrategy}>
 									<Table>
-										<TableHeader>
-											<TableRow className="border-b border-slate-200">
-												<TableHead className="w-10 px-2 py-3"></TableHead>
-												{config.columns.map((col) => (
-													<TableHead
-														key={col.id}
-														className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3"
-													>
-														{col.header}
-													</TableHead>
-												))}
-												{(config.actions || deleteItem || onDelete) && (
-													<TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">
-														操作
-													</TableHead>
-												)}
-											</TableRow>
-										</TableHeader>
+										{renderTableHeader(true)}
 										<TableBody>
 											{reorderedItems.map((item) => (
 												<SortableResourceRow
@@ -507,51 +551,42 @@ export function ResourceListPage<T extends { id: string }>({
 						) : (
 							// 通常のテーブル
 							<Table>
-								<TableHeader>
-									<TableRow className="border-b border-slate-200">
-										{config.columns.map((col) => (
-											<TableHead
-												key={col.id}
-												className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3"
-											>
-												{col.header}
-											</TableHead>
-										))}
-										{(config.actions || deleteItem || onDelete) && (
-											<TableHead className="text-[11px] font-medium text-slate-500 uppercase tracking-wide px-4 py-3">
-												操作
-											</TableHead>
-										)}
+								{renderTableHeader(false)}
+							<TableBody>
+								{loading ? (
+									<TableSkeleton cols={config.columns.length + (hasActions ? 1 : 0)} rows={5} />
+								) : error || filtered.length === 0 ? (
+									<TableRow>
+										<TableCell colSpan={config.errorColSpan} className="border-0 p-0">
+											<EmptyState
+												message={error || config.emptyMessage}
+												createHref={config.createHref}
+												aiChatHref={config.aiChatHref}
+											/>
+										</TableCell>
 									</TableRow>
-								</TableHeader>
-								<TableBody>
-									{loading ? (
-										<TableSkeleton cols={config.columns.length + (config.actions || deleteItem || onDelete ? 1 : 0)} rows={5} />
-									) : error ? (
-										<TableRow>
-											<TableCell colSpan={config.errorColSpan} className="px-4 py-10 text-center text-[14px] text-rose-600">
-												{error}
-											</TableCell>
-										</TableRow>
-									) : filtered.length === 0 ? (
-										<TableRow>
-											<TableCell colSpan={config.errorColSpan} className="px-4 py-10 text-center text-[14px] text-slate-500">
-												{config.emptyMessage}
-											</TableCell>
-										</TableRow>
-									) : (
+								) : (
 										filtered.map((item) => (
 											<TableRow
 												key={item.id}
-												className="cursor-pointer border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition-colors"
+												className="cursor-pointer border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset focus-visible:z-10"
 												onClick={() => handleRowClick(item)}
+												onKeyDown={(e) => {
+													if ((e.key === 'Enter' || e.key === ' ') && config.getRowHref) {
+														e.preventDefault();
+														handleRowClick(item);
+													}
+												}}
+												tabIndex={0}
+												role="button"
+												aria-label={`${config.getSearchText(item).split(' ')[0]}の詳細を表示`}
 											>
 												{config.columns.map((col) => (
 													<TableCell key={col.id} className={col.className}>
 														{col.cell(item)}
 													</TableCell>
 												))}
-												{(config.actions || deleteItem || onDelete) && (
+												{hasActions && (
 													<TableCell className="px-4 py-3">
 														<div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
 															{renderActions(item)}

@@ -1,5 +1,3 @@
-"use client";
-
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import type {
@@ -9,51 +7,24 @@ import type {
   ScreenInput,
 } from "@/lib/domain/schemas/io-schemas";
 import type { StructuredDesignDocumentIoType } from "@/lib/domain/schemas/design-document-structured";
-import type { Field } from "@/lib/domain/schemas/fields";
 import { EmptyState } from "./EmptyState";
-import { FieldsViewer } from "./FieldsViewer";
 import { LabeledValue } from "./LabeledValue";
+import {
+  isApiInputSchema,
+  isBatchInputSchema,
+  isJobInputSchema,
+  isScreenInputSchema,
+} from "./schema-type-guards";
+import { renderFieldGroup } from "./field-group-helper";
 
 interface InputSchemaViewerProps {
   inputSchema?: ApiInput | ScreenInput | BatchInput | JobInput;
   ioType: StructuredDesignDocumentIoType;
-  elements?: Field[];
-}
-
-type StructuredInputSchema = InputSchemaViewerProps["inputSchema"];
-
-function isApiInputSchema(inputSchema: StructuredInputSchema): inputSchema is ApiInput {
-  return Boolean(inputSchema && "method" in inputSchema);
-}
-
-function isScreenInputSchema(inputSchema: StructuredInputSchema): inputSchema is ScreenInput {
-  return Boolean(inputSchema && "trigger" in inputSchema);
-}
-
-function isBatchInputSchema(inputSchema: StructuredInputSchema): inputSchema is BatchInput {
-  return Boolean(inputSchema && "schedule" in inputSchema);
-}
-
-function isJobInputSchema(inputSchema: StructuredInputSchema): inputSchema is JobInput {
-  return Boolean(inputSchema && "event" in inputSchema);
-}
-
-function renderFieldGroup(label: string, fields: Field[] | undefined): ReactNode {
-  if (!fields || fields.length === 0) {
-    return null;
-  }
-
-  return (
-    <LabeledValue label={label} labelClassName="font-medium" valueClassName="">
-      <FieldsViewer fields={fields} />
-    </LabeledValue>
-  );
 }
 
 export function InputSchemaViewer({
   inputSchema,
   ioType,
-  elements,
 }: InputSchemaViewerProps): ReactNode {
   if (!inputSchema) {
     return <EmptyState message="未設定" variant="inline" />;
@@ -74,8 +45,7 @@ export function InputSchemaViewer({
             <span className="font-mono text-sm text-slate-700">{inputSchema.path || "/"}</span>
           </div>
 
-          {renderFieldGroup("クエリパラメータ", inputSchema.query)}
-          {renderFieldGroup("リクエストボディ", inputSchema.body)}
+          {renderFieldGroup("入力フィールド", inputSchema.fields, "api-input")}
         </div>
       );
     }
@@ -104,7 +74,7 @@ export function InputSchemaViewer({
             </LabeledValue>
           )}
 
-          {renderFieldGroup("入力要素", elements)}
+          {renderFieldGroup("入力フィールド", inputSchema.fields, "screen-input")}
         </div>
       );
     }
@@ -124,7 +94,7 @@ export function InputSchemaViewer({
             </LabeledValue>
           </div>
 
-          {renderFieldGroup("パラメータ", inputSchema.parameters)}
+          {renderFieldGroup("入力フィールド", inputSchema.fields, "batch-input")}
         </div>
       );
     }
@@ -139,7 +109,7 @@ export function InputSchemaViewer({
             {inputSchema.event || "未設定"}
           </LabeledValue>
 
-          {renderFieldGroup("ペイロード", inputSchema.payload)}
+          {renderFieldGroup("入力フィールド", inputSchema.fields, "job-input")}
         </div>
       );
     }

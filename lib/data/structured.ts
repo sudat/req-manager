@@ -1,4 +1,5 @@
 import type { EntryPoint } from "@/lib/domain";
+import { isRecord } from "@/lib/utils/type-guards";
 
 /**
  * 受入条件定義（PRD v1.3 Phase 2）
@@ -13,9 +14,6 @@ export type AcceptanceCriterionJson = {
   whenText?: string;
   thenText?: string;
 };
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null;
 
 const pad3 = (n: number) => String(n).padStart(3, "0");
 

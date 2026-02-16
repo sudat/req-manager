@@ -4,6 +4,7 @@ import { use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DesignDocumentList } from "@/components/forms/design-document-list";
 import { useDesignDocumentsForm } from "../hooks/useDesignDocumentsForm";
@@ -24,6 +25,8 @@ export default function SystemFunctionEditDesignDocumentsPage({
 		designDocuments,
 		setDesignDocuments,
 		allModelDDs,
+		allDDs,
+		allSFs,
 		handleSave,
 	} = useDesignDocumentsForm(srfId, systemDomainId, DEFAULT_PROJECT_ID);
 
@@ -68,11 +71,13 @@ export default function SystemFunctionEditDesignDocumentsPage({
 					items={designDocuments}
 					onChange={setDesignDocuments}
 					modelDDs={allModelDDs}
+					allDDs={allDDs}
+					allSFs={allSFs}
 				/>
 
 				{/* Action Buttons */}
 				<div className="mt-6 flex items-center gap-3">
-					<Button onClick={handleSave} disabled={saving}>
+					<Button onClick={() => handleSave(() => toast.success("DDを保存しました"))} disabled={saving}>
 						{saving ? (
 							<>
 								<Loader2 className="h-4 w-4 animate-spin mr-2" />

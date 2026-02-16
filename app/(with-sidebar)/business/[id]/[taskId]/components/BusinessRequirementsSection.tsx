@@ -11,7 +11,6 @@ type BusinessRequirementsSectionProps = {
 	conceptMap: Map<string, string>;
 	systemFunctionMap: Map<string, string>;
 	systemFunctionDomainMap: Map<string, string | null>;
-	systemDomainMap: Map<string, string>;
 	systemRequirementsByBizReq: Map<string, SystemRequirement[]>;
 };
 
@@ -23,12 +22,10 @@ export function BusinessRequirementsSection({
 	conceptMap,
 	systemFunctionMap,
 	systemFunctionDomainMap,
-	systemDomainMap,
 	systemRequirementsByBizReq,
 }: BusinessRequirementsSectionProps) {
 	return (
 		<RequirementsSection
-			title="業務要件"
 			items={requirements}
 			loading={loading}
 			error={error}
@@ -39,7 +36,6 @@ export function BusinessRequirementsSection({
 					conceptMap={conceptMap}
 					systemFunctionMap={systemFunctionMap}
 					systemFunctionDomainMap={systemFunctionDomainMap}
-					systemDomainMap={systemDomainMap}
 					optionsError={optionsError}
 					relatedSystemRequirements={systemRequirementsByBizReq.get(req.id) ?? []}
 				/>

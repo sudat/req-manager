@@ -11,7 +11,6 @@ export type BtDraft = {
   code: string;
   name: string;
   summary: string;
-  businessContext: string;
   processSteps: { when: string; who: string; action: string }[];
   input: { name: string; source: string }[];
   output: { name: string; source: string }[];

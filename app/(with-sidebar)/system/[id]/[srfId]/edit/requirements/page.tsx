@@ -4,6 +4,7 @@ import { use, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { RequirementListSection } from "@/components/forms/requirement-list-section";
 import { SelectionDialog } from "@/components/forms/SelectionDialog";
@@ -106,7 +107,7 @@ export default function SystemFunctionEditRequirementsPage({
 				/>
 
 				<div className="mt-6 flex items-center gap-3">
-					<Button onClick={handleSave} disabled={saving}>
+					<Button onClick={() => handleSave(() => toast.success("システム要件を保存しました"))} disabled={saving}>
 						{saving ? (
 							<>
 								<Loader2 className="h-4 w-4 animate-spin mr-2" />

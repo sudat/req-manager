@@ -21,6 +21,7 @@ import { getProjectById, updateProject } from "@/lib/data/projects"
 import { useProject } from "@/components/project/project-context"
 import { normalizeGitHubUrl, validateGitHubUrl } from "@/lib/utils"
 import type { Project } from "@/lib/domain"
+import { toast } from "sonner"
 
 export default function ProjectEditPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -106,12 +107,18 @@ export default function ProjectEditPage({ params }: { params: Promise<{ id: stri
     setSaving(false)
     if (saveError) {
       setError(saveError)
+      toast.error("プロジェクトの更新に失敗しました", {
+        description: saveError,
+      })
       return
     }
 
     // プロジェクト一覧を更新
     await refreshProjects()
 
+    toast.success("プロジェクトを更新しました", {
+      duration: 5000,
+    })
     router.push("/projects")
   }
 

@@ -3,12 +3,11 @@
 import type { ReactNode } from "react";
 import { FoldableStructuredSection } from "@/components/forms/design-document/FoldableStructuredSection";
 import type { StructuredDesignDocumentSpec } from "@/lib/domain/schemas/design-document-structured";
-import type { Field } from "@/lib/domain/schemas/fields";
 import type { EntryPoint } from "@/lib/domain";
 import { CoreLogicViewer } from "./CoreLogicViewer";
+import { EmptyState } from "./EmptyState";
 import { EntryPointsViewer } from "./EntryPointsViewer";
 import { ExceptionsViewer } from "./ExceptionsViewer";
-import { FieldsViewer } from "./FieldsViewer";
 import { InputSchemaViewer } from "./InputSchemaViewer";
 import { ModelDetailViewer } from "./ModelDetailViewer";
 import { NonFunctionalViewer } from "./NonFunctionalViewer";
@@ -26,19 +25,25 @@ interface ViewerSection {
   description: string;
   titleTooltip: string;
   content: ReactNode;
+  hasContent: boolean; // Issue ① 対策: 未設定セクションの非表示化
 }
 
-function getScreenElements(spec: StructuredDesignDocumentSpec): Field[] | undefined {
-  if (spec.ioType !== "screen" || !spec.inputSchema || !("elements" in spec.inputSchema)) {
-    return undefined;
-  }
-
-  return spec.inputSchema.elements;
+/**
+ * 副作用セクションにコンテンツがあるか判定（Issue ① 対策）
+ * SideEffectsViewer L46-50 の判定ロジックと同一
+ */
+function hasSideEffectsContent(se: StructuredDesignDocumentSpec["sideEffects"]): boolean {
+  return (
+    (se.dbOperations?.length ?? 0) > 0 ||
+    (se.externalApiCalls?.length ?? 0) > 0 ||
+    (se.events?.length ?? 0) > 0 ||
+    (se.fileOutputs?.length ?? 0) > 0
+  );
 }
 
 export function StructuredSpecViewer({ spec, entryPoints }: StructuredSpecViewerProps): ReactNode {
-  const screenElements = getScreenElements(spec);
   const isModelType = spec.ioType === "model";
+
   const standardSections: ViewerSection[] = [
     {
       key: "entry-points",
@@ -47,6 +52,7 @@ export function StructuredSpecViewer({ spec, entryPoints }: StructuredSpecViewer
       titleTooltip:
         "この機能の実装が存在するコードパス（ファイルパス、クラス名、関数名など）を記述します。複数のエントリポイントがある場合はすべて列挙してください。",
       content: <EntryPointsViewer entryPoints={entryPoints} />,
+      hasContent: entryPoints.length > 0, // EntryPointsViewer L13
     },
     {
       key: "input-schema",
@@ -58,9 +64,9 @@ export function StructuredSpecViewer({ spec, entryPoints }: StructuredSpecViewer
         <InputSchemaViewer
           inputSchema={spec.inputSchema}
           ioType={spec.ioType}
-          elements={screenElements}
         />
       ),
+      hasContent: !!spec.inputSchema, // InputSchemaViewer L70
     },
     {
       key: "core-logic",
@@ -68,7 +74,8 @@ export function StructuredSpecViewer({ spec, entryPoints }: StructuredSpecViewer
       description: "入力から出力への処理ルール",
       titleTooltip:
         "入力データを出力データに変換する際に適用されるビジネスルール（検証、計算、状態遷移、判定、集約等）を記述します。",
-      content: <CoreLogicViewer coreLogic={spec.coreLogic} />,
+      content: <CoreLogicViewer coreLogic={spec.coreLogic} sideEffects={spec.sideEffects} />,
+      hasContent: (spec.coreLogic.rules?.length ?? 0) > 0, // CoreLogicViewer L30
     },
     {
       key: "output-schema",
@@ -77,22 +84,7 @@ export function StructuredSpecViewer({ spec, entryPoints }: StructuredSpecViewer
       titleTooltip:
         "処理後の振る舞いを記述します。画面なら遷移先・表示メッセージ、APIなら成功/エラーのステータスコードなどを定義してください。",
       content: <OutputSchemaViewer outputSchema={spec.outputSchema} ioType={spec.ioType} />,
-    },
-    {
-      key: "input-fields",
-      title: "入力項目（データ）",
-      description: "実際に受け取るデータ項目",
-      titleTooltip:
-        "受け取る実データの項目を記述します。1タグ=1項目として、名前・型・必須有無・説明を定義してください。",
-      content: <FieldsViewer fields={spec.inputFields} emptyMessage="未設定" />,
-    },
-    {
-      key: "output-fields",
-      title: "出力項目（データ）",
-      description: "実際に返却・表示するデータ項目",
-      titleTooltip:
-        "返却・表示する実データの項目を記述します。1タグ=1項目として、名前・型・必須有無・説明を定義してください。",
-      content: <FieldsViewer fields={spec.outputFields} emptyMessage="未設定" />,
+      hasContent: !!spec.outputSchema, // OutputSchemaViewer L56
     },
     {
       key: "side-effects",
@@ -101,6 +93,7 @@ export function StructuredSpecViewer({ spec, entryPoints }: StructuredSpecViewer
       titleTooltip:
         "この機能の実行により発生する外部への影響を記述します。DB更新、外部API呼び出し、イベント発行などを具体化してください。",
       content: <SideEffectsViewer sideEffects={spec.sideEffects} />,
+      hasContent: hasSideEffectsContent(spec.sideEffects), // SideEffectsViewer L46-50
     },
     {
       key: "exceptions",
@@ -109,6 +102,7 @@ export function StructuredSpecViewer({ spec, entryPoints }: StructuredSpecViewer
       titleTooltip:
         "想定されるエラー条件、エラーコード、HTTPステータス、ユーザー向けメッセージ、リカバリ方針を記述します。",
       content: <ExceptionsViewer exceptions={spec.exceptions} />,
+      hasContent: spec.exceptions.length > 0, // ExceptionsViewer L35
     },
     {
       key: "non-functional",
@@ -117,33 +111,46 @@ export function StructuredSpecViewer({ spec, entryPoints }: StructuredSpecViewer
       titleTooltip:
         "機能以外の品質要件を記述します。応答時間、稼働率、認証/認可など、運用上の基準を明示してください。",
       content: <NonFunctionalViewer nonFunctional={spec.nonFunctional} />,
+      hasContent: !!(
+        spec.nonFunctional.responseTimeP95 ||
+        spec.nonFunctional.uptime ||
+        spec.nonFunctional.authMethod ||
+        spec.nonFunctional.authorizationBoundary
+      ), // NonFunctionalViewer L17-21
     },
   ];
 
   return (
     <div className="space-y-3">
-      {/* モデル定義（modelタイプの場合のみ） */}
-      {isModelType && spec.typeDetail?.ioType === "model" && (
+      {/* モデル定義（modelタイプの場合のみ） — Issue ③ 対策 */}
+      {isModelType && (
         <FoldableStructuredSection
           title="エンティティ定義"
           description="論理エンティティの構造定義"
           titleTooltip="データモデルの論理構造（ER図相当）を記述します。エンティティの属性、関連、状態遷移を定義してください。"
         >
-          <ModelDetailViewer typeDetail={spec.typeDetail} />
+          {spec.typeDetail?.ioType === "model" ? (
+            <ModelDetailViewer typeDetail={spec.typeDetail} />
+          ) : (
+            <EmptyState message="エンティティ定義が未設定です" />
+          )}
         </FoldableStructuredSection>
       )}
 
+      {/* 標準セクション（未設定セクションはフィルタで非表示） — Issue ① 対策 */}
       {!isModelType &&
-        standardSections.map((section) => (
-          <FoldableStructuredSection
-            key={section.key}
-            title={section.title}
-            description={section.description}
-            titleTooltip={section.titleTooltip}
-          >
-            {section.content}
-          </FoldableStructuredSection>
-        ))}
+        standardSections
+          .filter((s) => s.hasContent)
+          .map((section) => (
+            <FoldableStructuredSection
+              key={section.key}
+              title={section.title}
+              description={section.description}
+              titleTooltip={section.titleTooltip}
+            >
+              {section.content}
+            </FoldableStructuredSection>
+          ))}
     </div>
   );
 }

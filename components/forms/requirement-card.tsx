@@ -8,6 +8,7 @@ import { YamlListField } from "./yaml-list-field";
 import { StructuredAcceptanceCriteriaInput } from "@/components/forms/StructuredAcceptanceCriteriaInput";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { ConceptBadgeList } from "@/components/ui/concept-badge";
 import {
 	Collapsible,
 	CollapsibleContent,
@@ -53,7 +54,7 @@ function SelectionField({
 }: SelectionFieldProps) {
   return (
     <div className="space-y-1.5">
-      <Label className="text-[12px] font-medium text-slate-500">{label}</Label>
+      <Label className="text-[14px] font-bold text-slate-900 border-l-4 border-primary pl-3 -ml-3">{label}</Label>
       <div className="flex flex-wrap items-center gap-2">
         <Button
           type="button"
@@ -63,20 +64,11 @@ function SelectionField({
         >
           選択
         </Button>
-        {selectedIds.length === 0 ? (
-          <span className="text-[12px] text-slate-400">未選択</span>
-        ) : (
-          selectedIds.map((id) => (
-            <Badge
-              key={id}
-              variant="outline"
-              className="border-slate-200 bg-slate-50 text-slate-600 text-[11px] max-w-[200px] truncate"
-              title={`${id}: ${nameMap.get(id) ?? id}`}
-            >
-              {id}: {nameMap.get(id) ?? id}
-            </Badge>
-          ))
-        )}
+        <ConceptBadgeList
+          ids={selectedIds}
+          conceptMap={nameMap}
+          emptyMessage="未選択"
+        />
       </div>
     </div>
   );
@@ -95,70 +87,62 @@ export function RequirementCard({
 }: RequirementCardProps) {
   const [isOpen, setIsOpen] = useState(false);
 
+  // 種別に応じたバッジの色を設定
+  const typeBadgeClass =
+    requirement.type === "業務要件"
+      ? "border-indigo-200 bg-indigo-50 text-indigo-700"
+      : "border-emerald-200 bg-emerald-50 text-emerald-700";
+
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <div className="pl-4 border-l-4 border-indigo-500 bg-slate-50/50 rounded-md p-4">
-        {/* 見出しエリア（常に表示・行全体クリック可能） */}
-        <CollapsibleTrigger className="w-full cursor-pointer">
-          <div className="flex items-center gap-3 text-left">
-            <ChevronDown
-              className={cn(
-                "h-5 w-5 text-slate-500 transition-transform shrink-0",
-                isOpen && "rotate-180"
-              )}
-            />
-
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <span className="font-mono text-sm text-slate-500 shrink-0">
-                {requirement.id}
-              </span>
-              <span className="text-base font-medium text-slate-900 truncate">
-                {requirement.title}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2 shrink-0">
-              {requirement.type === "システム要件" && requirement.category && (
+      <div className="py-2 pl-8 pr-2 border-l-4 border-slate-200 bg-slate-50/50 rounded-md">
+        <div className="flex items-center gap-3">
+          <CollapsibleTrigger className="flex-1 cursor-pointer">
+            <div className="flex items-center gap-3 text-left">
+              <ChevronDown
+                className={cn(
+                  "h-5 w-5 text-slate-500 transition-transform shrink-0",
+                  isOpen && "rotate-180"
+                )}
+              />
+              <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
+                {/* IDバッジ - グレー系 */}
+                <Badge className="border-slate-200/60 bg-slate-50 text-slate-600 text-[12px] font-medium px-2.5 py-1 font-mono shrink-0">
+                  {requirement.id}
+                </Badge>
+                {/* 種別バッジ */}
                 <Badge
                   variant="outline"
-                  className="border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-medium"
+                  className={`${typeBadgeClass} text-[12px] font-medium px-2.5 py-1 shrink-0`}
                 >
-                  {getSystemRequirementCategoryLabel(requirement.category)}
+                  {requirement.type}
                 </Badge>
-              )}
-
-              <Badge
-                variant="outline"
-                className="border-indigo-200 bg-indigo-50 text-indigo-700 text-xs font-medium"
-              >
-                {requirement.type}
-              </Badge>
+                {/* タイトル */}
+                <span className="text-[14px] font-semibold text-slate-900 truncate">
+                  {requirement.title}
+                </span>
+              </div>
             </div>
-          </div>
-        </CollapsibleTrigger>
-
-        {/* 削除ボタン（展開時のみ表示） */}
-        {isOpen && (
-          <div className="flex justify-end mt-2">
-            <Button
-              variant="outline"
-              size="icon"
-              title="削除"
-              className="h-8 w-8 rounded-md border-slate-200 hover:bg-slate-900 hover:text-white hover:border-slate-900"
-              onClick={(e) => {
-                e.stopPropagation();
-                onRemove();
-              }}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
+          </CollapsibleTrigger>
+          <Button
+            variant="ghost"
+            size="icon"
+            title="削除"
+            aria-label={`${requirement.title || "要件"} を削除`}
+            className="h-8 w-8 rounded-md hover:bg-rose-100 hover:text-rose-600 shrink-0"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove();
+            }}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
 
         {/* 展開可能なコンテンツ */}
-        <CollapsibleContent className="mt-4 space-y-3">
-          <div className="space-y-1.5">
-            <Label className="text-[12px] font-medium text-slate-500">タイトル</Label>
+        <CollapsibleContent className="mt-4 space-y-8">
+           <div className="space-y-1.5">
+            <Label className="text-[14px] font-bold text-slate-900 border-l-4 border-primary pl-3 -ml-3">タイトル</Label>
             <Input
               value={requirement.title}
               onChange={(e) => onUpdate({ title: e.target.value })}
@@ -169,7 +153,7 @@ export function RequirementCard({
           {requirement.type === "業務要件" && (
             <>
               <div className="space-y-1.5">
-                <Label className="text-[12px] font-medium text-slate-500">
+                <Label className="text-[14px] font-bold text-slate-900 border-l-4 border-primary pl-3 -ml-3">
                   ゴール
                 </Label>
                 <Textarea
@@ -185,7 +169,7 @@ export function RequirementCard({
                 itemPlaceholder="例: 計上日は出荷日基準とする"
               />
               <div className="space-y-1.5">
-                <Label className="text-[12px] font-medium text-slate-500">
+                <Label className="text-[14px] font-bold text-slate-900 border-l-4 border-primary pl-3 -ml-3">
                   オーナー
                 </Label>
                 <Input
@@ -200,7 +184,7 @@ export function RequirementCard({
 
           {requirement.type === "システム要件" && (
             <div className="space-y-1.5">
-              <Label className="text-[12px] font-medium text-slate-500">概要</Label>
+              <Label className="text-[14px] font-bold text-slate-900 border-l-4 border-primary pl-3 -ml-3">概要</Label>
               <Textarea
                 className="min-h-[90px] text-[14px]"
                 value={requirement.summary}
@@ -211,7 +195,7 @@ export function RequirementCard({
 
           {requirement.type === "システム要件" && (
             <div className="space-y-1.5">
-              <Label className="text-[12px] font-medium text-slate-500">カテゴリ</Label>
+              <Label className="text-[14px] font-bold text-slate-900 border-l-4 border-primary pl-3 -ml-3">カテゴリ</Label>
               <Select
                 value={requirement.category ?? "function"}
                 onValueChange={(value) =>
@@ -273,12 +257,14 @@ export function RequirementCard({
             />
           )}
 
-          <SelectionField
-            label="システム領域"
-            selectedIds={requirement.systemDomainIds}
-            nameMap={systemDomainMap}
-            onOpenDialog={() => onOpenDialog("domain")}
-          />
+          {requirement.type !== "業務要件" && (
+            <SelectionField
+              label="システム領域"
+              selectedIds={requirement.systemDomainIds}
+              nameMap={systemDomainMap}
+              onOpenDialog={() => onOpenDialog("domain")}
+            />
+          )}
         </CollapsibleContent>
       </div>
     </Collapsible>

@@ -1,53 +1,43 @@
 "use client";
 
-import Link from "next/link";
 import { motion } from "framer-motion";
-import { FadeIn } from "./fade-in";
+import { ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 export function CTASection() {
 	return (
-		<FadeIn>
-			<section className="text-center pb-16">
+		<section className="py-24 px-6 bg-gray-50">
+			<div className="max-w-4xl mx-auto text-center">
 				<motion.div
-					className="glass-card rounded-2xl p-12 max-w-3xl mx-auto"
-					whileHover={{
-						y: -4,
-						boxShadow: "0 20px 40px rgba(0, 0, 0, 0.3)",
-					}}
-					transition={{ duration: 0.3 }}
+					initial={{ opacity: 0, y: 20 }}
+					whileInView={{ opacity: 1, y: 0 }}
+					viewport={{ once: true }}
 				>
-					<h2 className="text-2xl md:text-3xl font-bold text-white mb-4">今すぐ始めましょう</h2>
-					<p className="text-white/60 mb-8">要件管理の効率化、一歩先へ</p>
-					<motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
+					<h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+						14日間無料で
+						<br />
+						お試しください
+					</h2>
+					<p className="text-xl text-gray-600 mb-10">
+						クレジットカード不要。今すぐ要件管理を次のレベルへ。
+					</p>
+					<div className="flex flex-col sm:flex-row items-center justify-center gap-4">
 						<Link
 							href="/dashboard"
-							className="cta-button inline-flex items-center justify-center px-10 py-4 rounded-xl text-white font-semibold text-lg"
+							className="group bg-gray-900 hover:bg-gray-800 text-white font-semibold px-8 py-4 rounded-xl transition-all duration-200 cursor-pointer flex items-center gap-2 shadow-lg shadow-gray-900/20"
 						>
-							ダッシュボードを開く
-							<motion.svg
-								className="ml-2 w-5 h-5"
-								fill="none"
-								stroke="currentColor"
-								viewBox="0 0 24 24"
-								animate={{ x: [0, 4, 0] }}
-								transition={{
-									duration: 1.5,
-									repeat: Infinity,
-									repeatType: "loop",
-									ease: "easeInOut",
-								}}
-							>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									strokeWidth={2}
-									d="M13 7l5 5m0 0l-5 5m5-5H6"
-								/>
-							</motion.svg>
+							Start for free
+							<ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
 						</Link>
-					</motion.div>
+						<button
+							type="button"
+							className="text-gray-600 hover:text-gray-900 font-medium px-8 py-4 rounded-xl border border-gray-200 hover:border-gray-300 hover:bg-white transition-all duration-200 cursor-pointer"
+						>
+							Send me a demo
+						</button>
+					</div>
 				</motion.div>
-			</section>
-		</FadeIn>
+			</div>
+		</section>
 	);
 }

@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle } from "lucide-react";
 import { structuredExceptionSchema } from "@/lib/domain/schemas/exceptions";
+import { EXCEPTION_TYPE_LABELS, RECOVERY_TYPE_LABELS } from "@/lib/domain/labels";
 import type { z } from "zod";
 import { EmptyState } from "./EmptyState";
 
@@ -12,24 +13,6 @@ type StructuredException = z.infer<typeof structuredExceptionSchema>;
 interface ExceptionsViewerProps {
   exceptions: StructuredException[];
 }
-
-const EXCEPTION_TYPE_LABELS: Record<string, string> = {
-  validation: "バリデーション",
-  state: "状態",
-  permission: "権限",
-  external: "外部",
-  timeout: "タイムアウト",
-  conflict: "競合",
-};
-
-const RECOVERY_TYPE_LABELS: Record<string, string> = {
-  none: "なし",
-  retry_immediate: "即時再試行",
-  retry_with_backoff: "バックオフ付き再試行",
-  fallback: "フォールバック",
-  manual_intervention: "手動介入",
-  circuit_breaker: "サーキットブレーカー",
-};
 
 export function ExceptionsViewer({ exceptions }: ExceptionsViewerProps): ReactNode {
   if (exceptions.length === 0) {

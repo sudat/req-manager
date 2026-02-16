@@ -7,15 +7,13 @@ import {
 } from "@/lib/data/business-requirements";
 import { listConcepts } from "@/lib/data/concepts";
 import {
-	listSystemDomains,
-	type SystemDomain,
-} from "@/lib/data/system-domains";
-import { listSystemFunctions } from "@/lib/data/system-functions";
+	listSystemFunctions,
+} from "@/lib/data/system-functions";
 import {
 	listSystemRequirementsByTaskId,
 	type SystemRequirement,
 } from "@/lib/data/system-requirements";
-import { getTaskById } from "@/lib/data/tasks";
+import { getTaskById, listTasks } from "@/lib/data/tasks";
 import { useProject } from "@/components/project/project-context";
 import type {
 	Concept,
@@ -48,7 +46,8 @@ type UseTaskDetailReturn = {
 	conceptMap: Map<string, string>;
 	systemFunctionMap: Map<string, string>;
 	systemFunctionDomainMap: Map<string, string | null>;
-	systemDomainMap: Map<string, string>;
+	tasks: Task[];
+	taskMap: Map<string, string>;
 	systemFunctions: {
 		id: string;
 		name: string;
@@ -132,7 +131,7 @@ export function useTaskDetail({
 	const [optionsLoading, setOptionsLoading] = useState(true);
 	const [concepts, setConcepts] = useState<Concept[]>([]);
 	const [systemFunctions, setSystemFunctions] = useState<SystemFunction[]>([]);
-	const [systemDomains, setSystemDomains] = useState<SystemDomain[]>([]);
+	const [tasks, setTasks] = useState<Task[]>([]);
 	const optionsActiveRef = useRef(true);
 
 	// オプションデータの取得はPromise.allパターンのため、独自のuseEffectを使用
@@ -145,15 +144,15 @@ export function useTaskDetail({
 				setOptionsLoading(false);
 				return;
 			}
-			const [conceptResult, srfResult, domainResult] = await Promise.all([
+			const [conceptResult, srfResult, tasksResult] = await Promise.all([
 				listConcepts(currentProjectId),
 				listSystemFunctions(currentProjectId),
-				listSystemDomains(currentProjectId),
+				listTasks(currentProjectId),
 			]);
 			if (!optionsActiveRef.current) return;
 
 			const fetchError =
-				conceptResult.error ?? srfResult.error ?? domainResult.error;
+				conceptResult.error ?? srfResult.error ?? tasksResult.error;
 			if (fetchError) {
 				setOptionsError(fetchError);
 				setOptionsLoading(false);
@@ -162,7 +161,7 @@ export function useTaskDetail({
 
 			setConcepts(conceptResult.data ?? []);
 			setSystemFunctions(srfResult.data ?? []);
-			setSystemDomains(domainResult.data ?? []);
+			setTasks(tasksResult.data ?? []);
 			setOptionsError(null);
 			setOptionsLoading(false);
 		}
@@ -202,9 +201,9 @@ export function useTaskDetail({
 		[systemFunctions],
 	);
 
-	const systemDomainMap = useMemo(
-		() => new Map(systemDomains.map((domain) => [domain.id, domain.name])),
-		[systemDomains],
+	const taskMap = useMemo(
+		() => new Map(tasks.map((t) => [t.id, t.name])),
+		[tasks],
 	);
 
 	return {
@@ -224,7 +223,8 @@ export function useTaskDetail({
 		conceptMap,
 		systemFunctionMap,
 		systemFunctionDomainMap,
-		systemDomainMap,
+		tasks,
+		taskMap,
 		systemFunctions: systemFunctionOptions,
 		systemFunctionsFull: systemFunctions,
 	};

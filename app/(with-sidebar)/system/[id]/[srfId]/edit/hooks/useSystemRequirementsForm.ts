@@ -112,7 +112,7 @@ export function useSystemRequirementsForm(
 	}, []);
 
 	// 保存処理
-	const handleSave = async () => {
+	const handleSave = async (onSuccess?: () => void) => {
 		if (!existingSrf) return;
 
 		setSaving(true);
@@ -132,7 +132,10 @@ export function useSystemRequirementsForm(
 			return;
 		}
 
-		// 成功時は詳細画面へ遷移
+		// 成功時コールバック
+		onSuccess?.();
+
+		// 詳細画面へ遷移
 		router.push(`/system/${systemDomainId}/${srfId}`);
 	};
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Sparkles } from "lucide-react";
+import { Pencil, Sparkles, SearchX, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import { HealthScoreCard } from "@/components/health-score/health-score-card";
@@ -62,25 +62,89 @@ function LoadingState(): React.ReactNode {
 
 interface NotFoundStateProps {
 	domainId: string;
+	srfId: string;
 	error: string | null;
 }
 
 function NotFoundState({
 	domainId,
+	srfId,
 	error,
 }: NotFoundStateProps): React.ReactNode {
 	return (
 		<PageLayout>
-			<div className="text-center py-20">
-				<h1 className="text-[32px] font-semibold tracking-tight text-slate-900 mb-4">
-					システム機能が見つかりません
+			{/* パンくずリスト */}
+			<Breadcrumb className="mb-4">
+				<BreadcrumbList>
+					<BreadcrumbItem>
+						<BreadcrumbLink asChild>
+							<Link href="/system">システム領域一覧</Link>
+						</BreadcrumbLink>
+					</BreadcrumbItem>
+					<BreadcrumbSeparator />
+					<BreadcrumbItem>
+						<BreadcrumbLink asChild>
+							<Link href={`/system/${domainId}`}>システム機能一覧</Link>
+						</BreadcrumbLink>
+					</BreadcrumbItem>
+					<BreadcrumbSeparator />
+					<BreadcrumbItem>
+						<BreadcrumbPage className="font-semibold text-slate-900">システム機能詳細</BreadcrumbPage>
+					</BreadcrumbItem>
+				</BreadcrumbList>
+			</Breadcrumb>
+
+			{/* タイトルとAIボタン */}
+			<div className="flex items-center justify-between mb-6">
+				<h1 className="text-[32px] font-semibold tracking-tight text-slate-900">
+					システム機能詳細
 				</h1>
-				{error && <p className="text-sm text-rose-600 mb-4">{error}</p>}
-				<Link href={`/system/${domainId}`}>
-					<Button className="bg-slate-900 hover:bg-slate-800">
-						システム機能一覧に戻る
-					</Button>
-				</Link>
+				<div className="flex gap-2">
+					<Link href={`/chat?screen=SF&sdId=${domainId}&sfId=${srfId}`}>
+						<Button className="h-8 gap-2 text-[14px] bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white">
+							<Sparkles className="h-4 w-4" />
+							AIで追加
+						</Button>
+					</Link>
+					<Link href={`/system/${domainId}/${srfId}/edit/requirements`}>
+						<Button variant="ghost" size="sm" className="h-7 gap-1.5 text-[12px] hover:bg-slate-100 transition-colors">
+							<Pencil className="h-3.5 w-3.5" />
+							編集
+						</Button>
+					</Link>
+				</div>
+			</div>
+
+			<div className="flex flex-col items-center justify-center py-16 px-4">
+				<div className="bg-slate-100 rounded-full p-6 mb-6">
+					<SearchX className="h-12 w-12 text-slate-400" />
+				</div>
+				<h2 className="text-xl font-semibold text-slate-900 mb-2">
+					システム機能が見つかりません
+				</h2>
+				<p className="text-sm text-slate-500 text-center max-w-md mb-2">
+					指定されたシステム機能「<span className="font-mono text-slate-700">{srfId}</span>」は存在しないか、削除された可能性があります。
+				</p>
+				{error && <p className="text-sm text-rose-600 mb-2">{error}</p>}
+				<div className="flex items-center gap-2 text-xs text-slate-400 mb-8">
+					<span className="font-mono bg-slate-100 px-2 py-1 rounded">{domainId}</span>
+					<span>/</span>
+					<span className="font-mono bg-slate-100 px-2 py-1 rounded">{srfId}</span>
+				</div>
+				<div className="flex gap-3">
+					<Link href={`/system/${domainId}`}>
+						<Button variant="outline" className="gap-2">
+							<ArrowLeft className="h-4 w-4" />
+							一覧に戻る
+						</Button>
+					</Link>
+					<Link href={`/chat?screen=SF&sdId=${domainId}&sfId=${srfId}`}>
+						<Button className="gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white">
+							<Sparkles className="h-4 w-4" />
+							AIで新規作成
+						</Button>
+					</Link>
+				</div>
 			</div>
 		</PageLayout>
 	);
@@ -190,7 +254,7 @@ export default function SystemFunctionDetailPage({
 
 			const businessRequirementsForHealth = buildBusinessRequirementsForHealth(
 				businessReqResult.data ?? [],
-				systemReqs
+				[currentSrf]
 			);
 
 			const summary = buildHealthScoreSummary({
@@ -250,7 +314,7 @@ export default function SystemFunctionDetailPage({
 	}
 
 	if (!srf) {
-		return <NotFoundState domainId={id} error={error} />;
+		return <NotFoundState domainId={id} srfId={srfId} error={error} />;
 	}
 
 	return (
@@ -271,7 +335,7 @@ export default function SystemFunctionDetailPage({
 					</BreadcrumbItem>
 					<BreadcrumbSeparator />
 					<BreadcrumbItem>
-						<BreadcrumbPage>システム機能詳細</BreadcrumbPage>
+						<BreadcrumbPage className="font-semibold text-slate-900">システム機能詳細</BreadcrumbPage>
 					</BreadcrumbItem>
 				</BreadcrumbList>
 			</Breadcrumb>
@@ -304,24 +368,30 @@ export default function SystemFunctionDetailPage({
 
 			<div className="mt-6 space-y-6">
 				<section className="space-y-4">
-					<div>
-						<div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
-							仕様
-						</div>
-						<div className="text-[14px] font-medium text-slate-700">
+					<div className="flex items-center justify-between border-l-4 border-brand-600 pl-3">
+						<h2 className="text-[18px] font-semibold text-slate-900">
 							システム要件
-						</div>
+						</h2>
+						<Link href={`/system/${id}/${srfId}/edit/requirements`}>
+							<Button variant="ghost" size="sm" className="h-7 gap-1.5 text-[12px] hover:bg-slate-100 transition-colors">
+								<Pencil className="h-3.5 w-3.5" />
+								編集
+							</Button>
+						</Link>
 					</div>
-					<SystemRequirementsSection srfId={srf.id} systemDomainId={id} />
+					<SystemRequirementsSection srfId={srf.id} />
 				</section>
 				<section className="space-y-4">
-					<div>
-						<div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
-							実装
-						</div>
-						<div className="text-[14px] font-medium text-slate-700">
+					<div className="flex items-center justify-between border-l-4 border-brand-600 pl-3">
+						<h2 className="text-[18px] font-semibold text-slate-900">
 							DD（Design Document）
-						</div>
+						</h2>
+						<Link href={`/system/${id}/${srfId}/edit/design-documents`}>
+							<Button variant="ghost" size="sm" className="h-7 gap-1.5 text-[12px] hover:bg-slate-100 transition-colors">
+								<Pencil className="h-3.5 w-3.5" />
+								編集
+							</Button>
+						</Link>
 					</div>
 					<DesignDocumentSection
 						items={designDocuments}

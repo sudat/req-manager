@@ -15,7 +15,6 @@ const btContentSchema = z.object({
   code: z.string(),
   name: z.string(),
   summary: z.string().optional(),
-  businessContext: z.string().optional(),
   processSteps: z.array(z.object({
     when: z.string(),
     who: z.string(),
@@ -270,7 +269,6 @@ export const commitDraftTool = createTool({
             id: v.code,
             name: v.name,
             summary: v.summary ?? null,
-            business_context: v.businessContext ?? null,
             process_steps: v.processSteps ?? null,
             input: v.input ?? null,
             output: v.output ?? null,

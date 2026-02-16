@@ -4,6 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { useProject } from "@/components/project/project-context"
 import { deleteProject } from "@/lib/data/projects"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Edit, Trash2, FolderKanban, ArrowLeft, AlertTriangle } from "lucide-react"
@@ -17,7 +18,7 @@ import {
 } from "@/components/ui/dialog"
 
 export default function ProjectsPage() {
-  const { projects, currentProjectId, refreshProjects, loading, error: projectsError } = useProject()
+  const { projects, currentProjectId, setCurrentProjectId, refreshProjects, loading, error: projectsError } = useProject()
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -40,6 +41,9 @@ export default function ProjectsPage() {
     if (deleteError) {
       setError(deleteError)
       setDeleting(false)
+      toast.error("プロジェクトの削除に失敗しました", {
+        description: deleteError,
+      })
       return
     }
 
@@ -49,6 +53,9 @@ export default function ProjectsPage() {
     setDeleting(false)
     setDeleteDialogOpen(false)
     setProjectToDelete(null)
+    toast.success("プロジェクトを削除しました", {
+      duration: 5000,
+    })
   }
 
   const canDelete = (projectId: string) => {
@@ -63,6 +70,11 @@ export default function ProjectsPage() {
     if (projectId === currentProjectId) return "現在選択中のプロジェクトは削除できません"
     if (projects.length <= 1) return "最後のプロジェクトは削除できません"
     return undefined
+  }
+
+  const handleSelectProject = (projectId: string) => {
+    if (projectId === currentProjectId) return
+    setCurrentProjectId(projectId)
   }
 
   return (
@@ -113,15 +125,28 @@ export default function ProjectsPage() {
             {projects.map((project) => {
               const isDeletable = canDelete(project.id)
               const deleteTooltip = getDeleteTooltip(project.id)
+              const isSelected = project.id === currentProjectId
 
               return (
-                <Card key={project.id} className="p-6 hover:shadow-md transition-shadow">
+                <Card
+                  key={project.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleSelectProject(project.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault()
+                      handleSelectProject(project.id)
+                    }
+                  }}
+                  className={`p-6 transition-shadow ${isSelected ? "ring-2 ring-blue-300 bg-blue-50/30" : "hover:shadow-md cursor-pointer"}`}
+                >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <FolderKanban className="h-5 w-5 text-slate-500" />
                       <h3 className="text-lg font-semibold text-slate-900">{project.name}</h3>
                     </div>
-                    {project.id === currentProjectId && (
+                    {isSelected && (
                       <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded">
                         選択中
                       </span>
@@ -138,7 +163,11 @@ export default function ProjectsPage() {
                   </div>
 
                   <div className="flex gap-2">
-                    <Link href={`/projects/${project.id}/edit`} className="flex-1">
+                    <Link
+                      href={`/projects/${project.id}/edit`}
+                      className="flex-1"
+                      onClick={(event) => event.stopPropagation()}
+                    >
                       <Button variant="outline" size="sm" className="w-full">
                         <Edit className="h-4 w-4 mr-1" />
                         編集
@@ -147,7 +176,10 @@ export default function ProjectsPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleDeleteClick(project.id)}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        handleDeleteClick(project.id)
+                      }}
                       disabled={!isDeletable}
                       title={deleteTooltip}
                       className="flex-1 text-rose-600 hover:text-rose-700 hover:bg-rose-50 disabled:opacity-50 disabled:cursor-not-allowed"

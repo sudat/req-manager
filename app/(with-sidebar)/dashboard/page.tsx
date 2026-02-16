@@ -76,7 +76,7 @@ export default function DashboardPage() {
 
 			const businessRequirementsForHealth = buildBusinessRequirementsForHealth(
 				businessResult.data ?? [],
-				systemResult.data ?? []
+				functionResult.data ?? []
 			);
 
 			const summary = buildHealthScoreSummary({

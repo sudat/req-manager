@@ -27,10 +27,10 @@ export function useBusinessByKey(businessKey: string | null | undefined): UseBus
       return;
     }
 
-    // null/undefined は「まだ取得中」として扱う（loading状態を維持）
+    // null/undefined は「業務領域キーが指定されていない」としてエラー表示
     if (businessKey === null || businessKey === undefined) {
-      setLoading(true);
-      setError(null);
+      setLoading(false);
+      setError("業務領域キーが指定されていません");
       setBusiness(null);
       return;
     }

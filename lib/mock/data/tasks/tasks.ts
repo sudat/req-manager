@@ -7,7 +7,16 @@ const LEGACY_BUSINESS_ID_TO_AREA: Record<string, string> = {
   "BIZ-003": "GL",
 };
 
-type LegacyTask = Omit<Task, "businessArea"> & { businessId: string };
+type LegacyTask = Omit<
+  Task,
+  "businessArea" | "triggerDescription" | "triggerTaskIds" | "frequency" | "frequencyDescription"
+> & {
+  businessId: string;
+  triggerDescription?: string;
+  triggerTaskIds?: string[];
+  frequency?: Task["frequency"];
+  frequencyDescription?: string;
+};
 
 const legacyTasks: LegacyTask[] = [
   // AR領域（6件）
@@ -16,7 +25,6 @@ const legacyTasks: LegacyTask[] = [
     businessId: "BIZ-001",
     name: "与信管理",
     summary: "顧客の与信枠を設定・管理し、限度超過時はアラート発報と出荷保留を行う",
-    businessContext: "顧客別の与信枠を適切に管理し、貸倒リスクを最小化することで、安定した売上回収を実現する。新規取引開始時や定期的な見直しを通じて、取引拡大とリスク管理のバランスを維持する。",
     processSteps: buildYamlProcessSteps([
       { when: "新規顧客登録時", who: "与信担当", action: "与信枠を設定する" },
       { when: "定期見直し時", who: "与信担当", action: "与信枠を再評価する" },
@@ -48,7 +56,6 @@ const legacyTasks: LegacyTask[] = [
     businessId: "BIZ-001",
     name: "売掛計上",
     summary: "売上伝票から売掛金を計上し、債権台帳へ登録して財務諸表の正確性を確保する",
-    businessContext: "売上発生を正確かつタイムリーに記録し、債権台帳を維持することで、財務諸表の正確性と債権管理の基礎データを確保する。",
     processSteps: buildYamlProcessSteps([
       { when: "売上発生時", who: "営業担当", action: "売上伝票を作成する" },
       { when: "伝票承認時", who: "営業マネージャー", action: "売上伝票を承認する" },
@@ -77,7 +84,6 @@ const legacyTasks: LegacyTask[] = [
     businessId: "BIZ-001",
     name: "請求書発行",
     summary: "請求対象を抽出し、電子請求書と紙請求書を使い分けて生成・発行する",
-    businessContext: "適格請求書保存法対応および電子請求書推進により、顧客ニーズに応じた請求書発行を行い、回収サイトの短縮と経理効率化を実現する。",
     processSteps: buildYamlProcessSteps([
       { when: "毎月締め日翌営業日", who: "経理担当", action: "請求対象を抽出する" },
       { when: "抽出後", who: "経理担当", action: "請求書を生成する" },
@@ -109,7 +115,6 @@ const legacyTasks: LegacyTask[] = [
     businessId: "BIZ-001",
     name: "入金消込",
     summary: "入金データを取り込み、請求データと自動突合して消込処理を行う",
-    businessContext: "入金データの自動取り込みと突合処理により、消込業務の効率化と未消込残高の早期発見を実現し、キャッシュフロー管理の精度を向上させる。",
     processSteps: buildYamlProcessSteps([
       { when: "入金データ受取時", who: "システム", action: "入金データを取り込む" },
       { when: "取り込み後", who: "システム", action: "請求データと自動突合する" },
@@ -140,7 +145,6 @@ const legacyTasks: LegacyTask[] = [
     businessId: "BIZ-001",
     name: "債権管理",
     summary: "未回収債権を把握し、督促活動と与信枠見直しでリスクを最小化する",
-    businessContext: "未回収債権の常時把握と、延滞予防のための早期対応（督促・与信見直し）により、貸倒損失の抑制と資金繰りの安定化を図る。",
     processSteps: buildYamlProcessSteps([
       { when: "毎週", who: "システム", action: "未回収債権を抽出する" },
       { when: "抽出後", who: "回収担当", action: "督促状を作成する" },
@@ -172,7 +176,6 @@ const legacyTasks: LegacyTask[] = [
     businessId: "BIZ-001",
     name: "債権回収",
     summary: "延滞債権に対し、段階的な回収活動を展開して回収状況を管理する",
-    businessContext: "延滞債権に対する段階的な回収活動（電話・訪問・法的措置）を通じて、債権回収率の最大化と貸倒損失の最小化を実現する。",
     processSteps: buildYamlProcessSteps([
       { when: "延滞発生時", who: "回収担当", action: "回収活動を開始する" },
       { when: "電話連絡時", who: "回収担当", action: "支払い催促を行う" },
@@ -204,7 +207,6 @@ const legacyTasks: LegacyTask[] = [
     businessId: "BIZ-002",
     name: "仕入請求受領",
     summary: "仕入先請求書を受領登録し、発注・納品データと突合して内容確認を行う",
-    businessContext: "仕入先請求書と発注・納品データの突合により、支払いの妥当性を確認し、過払いや二重払いを防止するとともに、購買プロセスの透明性を確保する。",
     processSteps: buildYamlProcessSteps([
       { when: "請求書受領時", who: "購買担当", action: "請求書を受領登録する" },
       { when: "登録後", who: "システム", action: "受注・納品データと突合する" },
@@ -234,7 +236,6 @@ const legacyTasks: LegacyTask[] = [
     businessId: "BIZ-002",
     name: "買掛計上",
     summary: "仕入伝票から買掛金を計上し、債務台帳へ登録して支払管理に活用する",
-    businessContext: "仕入取引を正確に記録し、債務台帳を維持することで、財務諸表の正確性と支払管理の基礎データを確保する。",
     processSteps: buildYamlProcessSteps([
       { when: "仕入伝票作成時", who: "購買担当", action: "仕入伝票を作成する" },
       { when: "承認時", who: "購買マネージャー", action: "仕入伝票を承認する" },
@@ -263,7 +264,6 @@ const legacyTasks: LegacyTask[] = [
     businessId: "BIZ-002",
     name: "支払依頼",
     summary: "支払対象を抽出し、支払期日や条件に基づき支払依頼データを作成する",
-    businessContext: "支払期日管理と条件に基づいた支払依頼データ作成により、支払漏れの防止と仕入先との信頼関係維持を図る。",
     processSteps: buildYamlProcessSteps([
       { when: "支払予定日前", who: "システム", action: "支払対象を抽出する" },
       { when: "抽出後", who: "購買担当", action: "支払依頼データを作成する" },
@@ -293,7 +293,6 @@ const legacyTasks: LegacyTask[] = [
     businessId: "BIZ-002",
     name: "支払承認",
     summary: "支払依頼をレビューし、承認権限に基づいて支払実行可否を判断する",
-    businessContext: "支払依頼のレビューと承認プロセスにより、不正支払の防止と支払コントロールを強化し、ガバナンス体制を確立する。",
     processSteps: buildYamlProcessSteps([
       { when: "支払依頼受領時", who: "管理者", action: "支払依頼をレビューする" },
       { when: "承認時", who: "管理者", action: "支払実行を承認する" },
@@ -322,7 +321,6 @@ const legacyTasks: LegacyTask[] = [
     businessId: "BIZ-002",
     name: "支払実行",
     summary: "承認済支払データを銀行インターフェース経由で送信し、支払を実行する",
-    businessContext: "銀行インターフェースを通じた支払実行により、手作業削減とヒューマンエラー防止を実現し、支払業務の効率化を図る。",
     processSteps: buildYamlProcessSteps([
       { when: "支払実行日", who: "経理担当", action: "支払データを銀行へ送信する" },
       { when: "送信後", who: "銀行システム", action: "支払処理を実行する" },
@@ -351,7 +349,6 @@ const legacyTasks: LegacyTask[] = [
     businessId: "BIZ-002",
     name: "手形管理",
     summary: "支払手形の発行承認・台帳管理を行い、期日管理と決済処理を実施する",
-    businessContext: "支払手形の発行・期日管理・決済処理を一元管理し、手形決済リスクの適切な管理と期日通りの決済を実現する。",
     processSteps: buildYamlProcessSteps([
       { when: "手形発行依頼時", who: "経理担当", action: "手形発行依頼を作成する" },
       { when: "承認後", who: "経理担当", action: "手形を発行する" },
@@ -382,7 +379,6 @@ const legacyTasks: LegacyTask[] = [
     businessId: "BIZ-002",
     name: "仕入先支払",
     summary: "仕入先への支払予定を策定し、資金繰りを考慮して支払実行と管理を行う",
-    businessContext: "支払予定の策定と資金繰りを考慮した支払実行により、キャッシュフローの最適化と仕入先との良好な関係維持を両立させる。",
     processSteps: buildYamlProcessSteps([
       { when: "毎週", who: "経理担当", action: "支払予定を確認する" },
       { when: "支払実行日", who: "経理担当", action: "支払データを作成する" },
@@ -413,7 +409,6 @@ const legacyTasks: LegacyTask[] = [
     businessId: "BIZ-002",
     name: "買掛残高確認",
     summary: "仕入先別の買掛残高を確認し、請求書と照合して支払計画を策定する",
-    businessContext: "仕入先別の買掛残高定期的確認と支払計画策定により、資金織りの精度向上と支払遅延リスクの低減を図る。",
     processSteps: buildYamlProcessSteps([
       { when: "毎月", who: "経理担当", action: "買掛残高を集計する" },
       { when: "集計後", who: "経理担当", action: "仕入先別残高を確認する" },
@@ -443,7 +438,6 @@ const legacyTasks: LegacyTask[] = [
     businessId: "BIZ-003",
     name: "手動仕訳計上",
     summary: "経理担当者が手動で仕訳データを入力し、バリデーション後に仕訳帳へ登録する",
-    businessContext: "経理担当者による証憑に基づく手動仕訳入力と承認プロセスを通じて、自動仕訳対象外の取引も正確に記録し、会計記録の完全性を確保する。",
     processSteps: buildYamlProcessSteps([
       { when: "証憑受領時", who: "経理担当", action: "証憑内容を確認する" },
       { when: "確認後", who: "経理担当", action: "振替伝票を作成する" },
@@ -473,7 +467,6 @@ const legacyTasks: LegacyTask[] = [
     businessId: "BIZ-003",
     name: "仕訳転記",
     summary: "各業務プロセスから自動生成される仕訳を、妥当性チェック後に転記する",
-    businessContext: "各業務プロセスから自動生成される仕訳の妥当性チェックと転記により、手作業削減と転記ミスの防止を実現し、会計処理の効率化を図る。",
     processSteps: buildYamlProcessSteps([
       { when: "業務データ更新時", who: "システム", action: "自動仕訳を生成する" },
       { when: "生成後", who: "システム", action: "仕訳の妥当性をチェックする" },
@@ -503,7 +496,6 @@ const legacyTasks: LegacyTask[] = [
     businessId: "BIZ-003",
     name: "総勘定元帳作成",
     summary: "仕訳データを勘定科目別に集計し、総勘定元帳を作成して管理帳票を出力する",
-    businessContext: "仕訳データの勘定科目別集計と総勘定元帳作成により、財務状況の把握と管理帳票出力の基礎データを提供する。",
     processSteps: buildYamlProcessSteps([
       { when: "毎日", who: "システム", action: "仕訳データを集計する" },
       { when: "集計後", who: "システム", action: "勘定科目別に累計する" },
@@ -530,7 +522,6 @@ const legacyTasks: LegacyTask[] = [
     businessId: "BIZ-003",
     name: "試算表作成",
     summary: "総勘定元帳から試算表を作成し、貸借整合を確認して財務諸表の基礎データとする",
-    businessContext: "総勘定元帳から試算表を作成し、貸借整合を確認することで、財務諸表作成の前提データの正確性を保証する。",
     processSteps: buildYamlProcessSteps([
       { when: "毎月末", who: "経理担当", action: "試算表作成を開始する" },
       { when: "開始後", who: "システム", action: "総勘定元帳から集計する" },
@@ -559,7 +550,6 @@ const legacyTasks: LegacyTask[] = [
     businessId: "BIZ-003",
     name: "財務諸表作成",
     summary: "試算表をもとにB/S、P/Lを作成する",
-    businessContext: "試算表に基づき、会計基準に従った貸借対照表と損益計算書を作成し、経営判断のための財務情報を提供する。",
     processSteps: buildYamlProcessSteps([
       { when: "毎月末", who: "経理担当", action: "財務諸表作成を開始する" },
       { when: "開始後", who: "システム", action: "試算表から集計する" },
@@ -588,7 +578,6 @@ const legacyTasks: LegacyTask[] = [
     businessId: "BIZ-003",
     name: "決算整理",
     summary: "決算時に減価償却・引当金などの整理仕訳を計上し、決算資料を体系的に作成する",
-    businessContext: "決算時に減価償却・引当金などの整理仕訳を計上し、決算資料を体系的に作成することで、適正な期間損益計算と開示を実現する。",
     processSteps: buildYamlProcessSteps([
       { when: "決算開始時", who: "経理担当", action: "決算整理資料を収集する" },
       { when: "収集後", who: "経理担当", action: "整理仕訳を作成する" },
@@ -618,7 +607,6 @@ const legacyTasks: LegacyTask[] = [
     businessId: "BIZ-003",
     name: "固定資産管理",
     summary: "固定資産の取得・償却・廃棄を管理し、固定資産台帳で物理的状況と照合する",
-    businessContext: "固定資産の取得・償却・廃棄を管理し、固定資産台帳と物理的状況を照合することで、資産管理の正確性と償却計算の適正化を図る。",
     processSteps: buildYamlProcessSteps([
       { when: "固定資産取得時", who: "経理担当", action: "固定資産を登録する" },
       { when: "毎月", who: "システム", action: "減価償却費を計算する" },
@@ -648,7 +636,6 @@ const legacyTasks: LegacyTask[] = [
     businessId: "BIZ-003",
     name: "税申告",
     summary: "消費税・法人税等の税額計算を行い、税申告資料を作成して申告・納付を行う",
-    businessContext: "消費税・法人税等の税額計算と申告書作成により、税務コンプライアンスを遵守し、適正な申告・納付を実現する。",
     processSteps: buildYamlProcessSteps([
       { when: "決算完了後", who: "税務担当", action: "税申告資料を収集する" },
       { when: "収集後", who: "税務担当", action: "税額計算を行う" },
@@ -678,7 +665,6 @@ const legacyTasks: LegacyTask[] = [
     businessId: "BIZ-003",
     name: "IFRS調整",
     summary: "日本基準とIFRSの会計処理差異を管理し、IFRS財務諸表を作成する",
-    businessContext: "日本基準とIFRSの会計処理差異を管理し、IFRS財務諸表を作成することで、グローバル投資家向けの財務情報開示を実現する。",
     processSteps: buildYamlProcessSteps([
       { when: "決算時", who: "経理担当", action: "IFRS調整資料を収集する" },
       { when: "収集後", who: "経理担当", action: "日本基準とIFRSの差異を分析する" },
@@ -705,10 +691,23 @@ const legacyTasks: LegacyTask[] = [
   },
 ];
 
-export const tasks: Task[] = legacyTasks.map(({ businessId, ...rest }) => ({
-  ...rest,
-  businessArea: LEGACY_BUSINESS_ID_TO_AREA[businessId] ?? businessId,
-}));
+export const tasks: Task[] = legacyTasks.map(
+  ({
+    businessId,
+    triggerDescription,
+    triggerTaskIds,
+    frequency,
+    frequencyDescription,
+    ...rest
+  }) => ({
+    ...rest,
+    businessArea: LEGACY_BUSINESS_ID_TO_AREA[businessId] ?? businessId,
+    triggerDescription: triggerDescription ?? "",
+    triggerTaskIds: triggerTaskIds ?? [],
+    frequency: frequency ?? "daily",
+    frequencyDescription: frequencyDescription ?? "",
+  })
+);
 
 export const getTaskById = (id: string): Task | undefined => {
   return tasks.find(t => t.id === id);

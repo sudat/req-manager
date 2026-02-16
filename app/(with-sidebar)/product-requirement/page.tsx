@@ -7,12 +7,12 @@ import { useProject } from "@/components/project/project-context";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ViewHeader } from "@/components/product-requirement/view-header";
-import { TargetUsersView } from "@/components/product-requirement/target-users-view";
-import { ExperienceGoalsView } from "@/components/product-requirement/experience-goals-view";
-import { QualityGoalsView } from "@/components/product-requirement/quality-goals-view";
-import { UxGuidelinesView } from "@/components/product-requirement/ux-guidelines-view";
-import { DesignSystemView } from "@/components/product-requirement/design-system-view";
-import { TechStackView } from "@/components/product-requirement/tech-stack-view";
+import { TargetUsers } from "@/components/product-requirement/target-users";
+import { ExperienceGoals } from "@/components/product-requirement/experience-goals";
+import { QualityGoals } from "@/components/product-requirement/quality-goals";
+import { UxGuidelines } from "@/components/product-requirement/ux-guidelines";
+import { DesignSystem } from "@/components/product-requirement/design-system";
+import { TechStack } from "@/components/product-requirement/tech-stack";
 import type { ProductRequirement } from "@/lib/domain";
 import { getProductRequirementByProjectId } from "@/lib/data/product-requirements";
 import { listKeyLabelMappings } from "@/lib/data/key-label-mappings";
@@ -115,26 +115,42 @@ export default function ProductRequirementPage() {
 									</TabsList>
 
 									<TabsContent value="targetUsers" className="mt-6">
-										<TargetUsersView value={productRequirement.targetUsers} />
+										<TargetUsers
+											isEditing={false}
+											value={productRequirement.targetUsers}
+										/>
 									</TabsContent>
 
 									<TabsContent value="experienceGoals" className="mt-6">
-										<ExperienceGoalsView value={productRequirement.experienceGoals} />
+										<ExperienceGoals
+											isEditing={false}
+											value={productRequirement.experienceGoals}
+										/>
 									</TabsContent>
 
 									<TabsContent value="qualityGoals" className="mt-6">
-										<QualityGoalsView value={productRequirement.qualityGoals} />
+										<QualityGoals
+											isEditing={false}
+											value={productRequirement.qualityGoals}
+										/>
 									</TabsContent>
 
 									<TabsContent value="ux" className="mt-6">
 										<div className="space-y-6">
-											<UxGuidelinesView value={productRequirement.uxGuidelines} />
-											<DesignSystemView value={productRequirement.designSystem} />
+											<UxGuidelines
+												isEditing={false}
+												value={productRequirement.uxGuidelines}
+											/>
+											<DesignSystem
+												isEditing={false}
+												value={productRequirement.designSystem}
+											/>
 										</div>
 									</TabsContent>
 
 									<TabsContent value="tech" className="mt-6">
-										<TechStackView
+										<TechStack
+											isEditing={false}
 											techStackProfile={productRequirement.techStackProfile}
 											codingConventions={productRequirement.codingConventions}
 											forbiddenChoices={productRequirement.forbiddenChoices}

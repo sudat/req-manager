@@ -8,6 +8,7 @@ type LabeledInputProps = {
 	onChange: (value: string) => void;
 	placeholder?: string;
 	className?: string;
+	helperText?: string;
 };
 
 /**
@@ -22,13 +23,15 @@ export function LabeledInput({
 	onChange,
 	placeholder,
 	className,
+	helperText,
 }: LabeledInputProps) {
 	return (
 		<div className="space-y-1.5">
-			<Label className="text-[12px] font-medium text-slate-500">
+			<Label className="text-[14px] font-bold text-slate-900 border-l-4 border-primary pl-3 -ml-3">
 				{label}
 				{required && <span className="text-rose-500">*</span>}
 			</Label>
+			{helperText && <p className="text-[12px] text-slate-500">{helperText}</p>}
 			<Input
 				value={value}
 				onChange={(e) => onChange(e.target.value)}

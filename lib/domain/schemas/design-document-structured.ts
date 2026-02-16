@@ -2,7 +2,6 @@ import { z } from "zod";
 import type { DdType } from "../enums";
 import { coreLogicSchema } from "./core-logic";
 import { structuredExceptionSchema } from "./exceptions";
-import { fieldArraySchema } from "./fields";
 import {
   apiInputSchema,
   apiOutputSchema,
@@ -28,6 +27,7 @@ import {
 } from "./model-detail";
 import { structuredNonFunctionalSchema } from "./non-functional";
 import { sideEffectSchema } from "./side-effects";
+import { sequenceSpecSchema } from "./sequence";
 
 export const structuredDesignDocumentIoTypeSchema = z
   .enum([
@@ -171,10 +171,10 @@ export type StructuredTypeDetail = z.infer<typeof typeDetailSchema>;
 export const structuredDesignDocumentSpecSchema = z
   .object({
     version: z
-      .literal("1")
+      .enum(["1", "2"])
       .default("1")
       .describe(
-        "構造化設計書スキーマのバージョン。現在は'1'固定。フォーマットの breaking change がある場合はバージョンを上げる"
+        "構造化設計書スキーマのバージョン。v1は従来の自動シーケンス生成、v2はsequence定義による手動ガイドを含む"
       ),
     ioType: structuredDesignDocumentIoTypeSchema.describe(
       "設計書のI/Oタイプ（api/screen/batch/job/external_if/model/report）。この設計書が何を表現するかを分類"
@@ -188,28 +188,18 @@ export const structuredDesignDocumentSpecSchema = z
       .union([apiInputSchema, screenInputSchema, batchInputSchema, jobInputSchema])
       .optional()
       .describe(
-        "入力スキーマ定義（構造化）。ioTypeに応じた形式（APIならmethod/path/query/body、画面ならtrigger/action/targetElement/precondition/elements等）で入力構造を定義。inputFieldsとの併用も可"
+        "入力スキーマ定義（構造化）。ioTypeに応じた形式で入力構造を定義。fieldsで入力データ項目を統一的に定義"
       ),
     outputSchema: z
       .union([apiOutputSchema, screenOutputSchema, batchOutputSchema, jobOutputSchema])
       .optional()
       .describe(
-        "出力スキーマ定義（構造化）。ioTypeに応じた形式（APIならstatus/fields/error、画面ならtransition/messages/behavior/displayChanges等）で出力構造を定義。outputFieldsとの併用も可"
-      ),
-    inputFields: fieldArraySchema
-      .default([])
-      .describe(
-        "入力フィールドリスト（フラット）。APIパラメータ、画面フォーム項目、バッチパラメータ等の入力データ構造をフィールド配列で定義。inputSchemaとの併用も可"
+        "出力スキーマ定義（構造化）。ioTypeに応じた形式で出力構造を定義。fieldsで出力データ項目を統一的に定義"
       ),
     coreLogic: coreLogicSchema
       .default({ rules: [] })
       .describe(
         "コアロジック定義。入力から出力への変換処理において適用されるビジネスルール（検証、計算、状態遷移、判定、集約等）を定義。入力スキーマと出力スキーマの間の「何をするか」を構造化して記述"
-      ),
-    outputFields: fieldArraySchema
-      .default([])
-      .describe(
-        "出力フィールドリスト（フラット）。APIレスポンス、画面表示項目、バッチ処理結果等の出力データ構造をフィールド配列で定義。outputSchemaとの併用も可"
       ),
     sideEffects: sideEffectSchema
       .default({
@@ -228,6 +218,11 @@ export const structuredDesignDocumentSpecSchema = z
       .default({})
       .describe(
         "非機能要件定義。機能要件以外の品質属性（パフォーマンス、可用性、セキュリティ等）を定義"
+      ),
+    sequence: sequenceSpecSchema
+      .optional()
+      .describe(
+        "シーケンス図の制御定義。mode=guided で call/effect_ref/fragment/ref/note の順序を明示可能"
       ),
   })
   .superRefine((value, ctx) => {
@@ -255,6 +250,236 @@ export const structuredDesignDocumentSpecSchema = z
         });
       }
     }
+
+    if (value.ioType === "model") {
+      if (!value.typeDetail || value.typeDetail.ioType !== "model") {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["typeDetail"],
+          message: "model の typeDetail を入力してください",
+        });
+      } else {
+        const entityName = value.typeDetail.entityName?.trim();
+        if (!entityName) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["typeDetail", "entityName"],
+            message: "model の entityName は必須です",
+          });
+        }
+
+        const attributeNameSet = new Set(
+          (value.typeDetail.attributes ?? [])
+            .map((attribute) => attribute.name?.trim())
+            .filter((name): name is string => Boolean(name))
+        );
+
+        for (const [relIndex, relationship] of (value.typeDetail.relationships ?? []).entries()) {
+          if (relationship.type !== "N:M") {
+            const mappings = relationship.columnMappings ?? [];
+            if (mappings.length === 0) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["typeDetail", "relationships", relIndex, "columnMappings"],
+                message: "N:M 以外の関連では columnMappings を1件以上設定してください",
+              });
+              continue;
+            }
+          }
+
+          for (const [mappingIndex, mapping] of (relationship.columnMappings ?? []).entries()) {
+            if (!attributeNameSet.has(mapping.source)) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: [
+                  "typeDetail",
+                  "relationships",
+                  relIndex,
+                  "columnMappings",
+                  mappingIndex,
+                  "source",
+                ],
+                message: `source '${mapping.source}' は attributes に存在しません`,
+              });
+            }
+          }
+        }
+      }
+    }
+
+    const ruleNames = new Set(
+      (value.coreLogic.rules ?? [])
+        .map((rule) => rule.name)
+        .filter((name) => typeof name === "string" && name.length > 0)
+    );
+
+    const validateRuleRefs = <T extends { ruleRef?: string }>(
+      items: T[] | undefined,
+      key: "dbOperations" | "externalApiCalls" | "events" | "fileOutputs"
+    ) => {
+      for (const [index, item] of (items ?? []).entries()) {
+        if (!item.ruleRef) continue;
+        if (ruleNames.has(item.ruleRef)) continue;
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["sideEffects", key, index, "ruleRef"],
+          message: `ruleRef '${item.ruleRef}' は coreLogic.rules[].name に存在しません`,
+        });
+      }
+    };
+
+    validateRuleRefs(value.sideEffects.dbOperations, "dbOperations");
+    validateRuleRefs(value.sideEffects.externalApiCalls, "externalApiCalls");
+    validateRuleRefs(value.sideEffects.events, "events");
+    validateRuleRefs(value.sideEffects.fileOutputs, "fileOutputs");
+
+    const exceptionCodeSet = new Set(
+      (value.exceptions ?? [])
+        .map((exception) => exception.errorCode?.trim())
+        .filter((code): code is string => Boolean(code))
+    );
+
+    const validateExceptionRef = (
+      exceptionRef: string | undefined,
+      path: (string | number)[]
+    ) => {
+      if (!exceptionRef) return;
+      if (exceptionCodeSet.has(exceptionRef)) return;
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path,
+        message: `errorExceptionRef '${exceptionRef}' は exceptions[].errorCode に存在しません`,
+      });
+    };
+
+    const validateSideEffectExceptionRefs = <
+      T extends {
+        response?: {
+          errorExceptionRef?: string;
+        };
+      }
+    >(
+      items: T[] | undefined,
+      key: "dbOperations" | "externalApiCalls" | "events" | "fileOutputs"
+    ) => {
+      for (const [index, item] of (items ?? []).entries()) {
+        validateExceptionRef(item.response?.errorExceptionRef, [
+          "sideEffects",
+          key,
+          index,
+          "response",
+          "errorExceptionRef",
+        ]);
+      }
+    };
+
+    validateSideEffectExceptionRefs(value.sideEffects.dbOperations, "dbOperations");
+    validateSideEffectExceptionRefs(value.sideEffects.externalApiCalls, "externalApiCalls");
+    validateSideEffectExceptionRefs(value.sideEffects.events, "events");
+    validateSideEffectExceptionRefs(value.sideEffects.fileOutputs, "fileOutputs");
+
+    const exceptionCount = value.exceptions.length;
+    for (const [ruleIndex, rule] of (value.coreLogic.rules ?? []).entries()) {
+      for (const [violationIndex, violation] of (rule.preconditionViolations ?? []).entries()) {
+        if (violation.exceptionIndex >= exceptionCount) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [
+              "coreLogic",
+              "rules",
+              ruleIndex,
+              "preconditionViolations",
+              violationIndex,
+              "exceptionIndex",
+            ],
+            message: "exceptionIndex が exceptions の範囲外です",
+          });
+        }
+      }
+    }
+
+    if (value.sequence && value.version !== "2") {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["version"],
+        message: "sequence を利用する場合は version='2' を指定してください",
+      });
+    }
+
+    const dbIds = new Set(
+      (value.sideEffects.dbOperations ?? [])
+        .map((operation) => operation.id?.trim())
+        .filter((id): id is string => Boolean(id))
+    );
+    const apiIds = new Set(
+      (value.sideEffects.externalApiCalls ?? [])
+        .map((apiCall) => apiCall.id?.trim())
+        .filter((id): id is string => Boolean(id))
+    );
+    const eventIds = new Set(
+      (value.sideEffects.events ?? [])
+        .map((event) => event.id?.trim())
+        .filter((id): id is string => Boolean(id))
+    );
+    const fileIds = new Set(
+      (value.sideEffects.fileOutputs ?? [])
+        .map((fileOutput) => fileOutput.id?.trim())
+        .filter((id): id is string => Boolean(id))
+    );
+
+    const validateEffectRef = (
+      ref: string,
+      path: (string | number)[]
+    ) => {
+      const [scope, id] = ref.split(":");
+      const valid =
+        (scope === "db" && dbIds.has(id)) ||
+        (scope === "api" && apiIds.has(id)) ||
+        (scope === "event" && eventIds.has(id)) ||
+        (scope === "file" && fileIds.has(id));
+
+      if (!valid) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path,
+          message: `effect_ref '${ref}' に対応する sideEffects ID が見つかりません`,
+        });
+      }
+    };
+
+    const validateSequenceSteps = (
+      steps: NonNullable<typeof value.sequence>["steps"],
+      basePath: (string | number)[]
+    ) => {
+      for (const [stepIndex, step] of steps.entries()) {
+        const stepPath = [...basePath, stepIndex];
+        if (step.kind === "effect_ref") {
+          validateEffectRef(step.ref, [...stepPath, "ref"]);
+          continue;
+        }
+        if (step.kind === "call") {
+          validateExceptionRef(step.errorExceptionRef, [...stepPath, "errorExceptionRef"]);
+          validateExceptionRef(step.asyncCompletion?.errorExceptionRef, [
+            ...stepPath,
+            "asyncCompletion",
+            "errorExceptionRef",
+          ]);
+          continue;
+        }
+        if (step.kind === "fragment") {
+          for (const [branchIndex, branch] of step.branches.entries()) {
+            validateSequenceSteps(
+              branch.steps,
+              [...stepPath, "branches", branchIndex, "steps"]
+            );
+          }
+        }
+      }
+    };
+
+    if (value.sequence?.mode === "guided") {
+      validateSequenceSteps(value.sequence.steps, ["sequence", "steps"]);
+    }
   })
   .describe(
     "構造化設計書スキーマ定義。システム機能の設計内容を構造化データ（JSON/YAML）で表現するためのスキーマ。I/Oタイプを含む基本情報、入出力スキーマ（inputSchema/outputSchema または inputFields/outputFields）、副作用、例外、非機能要件から構成される。AIによる設計書生成・理解・検証を前提とした構造"
@@ -268,19 +493,19 @@ const createDefaultInputByIoType = (
 ): ApiInput | ScreenInput | BatchInput | JobInput => {
   switch (ioType) {
     case "api":
-      return { method: "POST", path: "/", query: [], body: [] };
+      return { method: "POST", path: "/", fields: [] };
     case "screen":
       return {
         trigger: "click",
         action: "",
         targetElement: "",
         precondition: "",
-        elements: [],
+        fields: [],
       };
     case "batch":
-      return { schedule: "", source: "", parameters: [] };
+      return { schedule: "", source: "", fields: [] };
     case "job":
-      return { event: "", payload: [] };
+      return { event: "", fields: [] };
   }
 };
 
@@ -289,16 +514,17 @@ const createDefaultOutputByIoType = (
 ): ApiOutput | ScreenOutput | BatchOutput | JobOutput => {
   switch (ioType) {
     case "api":
-      return { success: { status: 200, fields: [] }, error: [] };
+      return { success: { status: 200, fields: [] }, error: [], fields: [] };
     case "screen":
-      return { transition: "", messages: [], behavior: "", displayChanges: "" };
+      return { transition: "", messages: [], behavior: "", displayChanges: "", fields: [] };
     case "batch":
       return {
         summary: { processedCount: 0, successCount: 0, errorCount: 0, status: "completed" },
         nextBatch: "",
+        fields: [],
       };
     case "job":
-      return { result: "", nextEvent: "" };
+      return { result: "", nextEvent: "", fields: [] };
   }
 };
 
@@ -322,9 +548,7 @@ export function createEmptyStructuredDesignDocumentSpec(
   const spec: StructuredDesignDocumentSpec = {
     version: "1",
     ioType,
-    inputFields: [],
     coreLogic: { rules: [] },
-    outputFields: [],
     sideEffects: { description: "副作用なし" },
     exceptions: [],
     nonFunctional: {},

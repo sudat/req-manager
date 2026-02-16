@@ -1,0 +1,60 @@
+[ 2638498ms] [ERROR] ./app/(with-sidebar)/business/[id]/[taskId]/page.tsx:196:6
+Parsing ecmascript source code failed
+  194 | 					/>
+  195 |
+> 196 | <div className="mt-6 space-y-6">
+      |      ^^^^^^^^^
+  197 | 					<div>
+  198 | 						<HealthScoreCard
+  199 | 							title="業務タスクヘルススコア"
+
+Expected '</', got 'className'
+
+Import traces:
+  Client Component Browser:
+    ./app/(with-sidebar)/business/[id]/[taskId]/page.tsx [Client Component Browser]
+    ./app/(with-sidebar)/business/[id]/[taskId]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./app/(with-sidebar)/business/[id]/[taskId]/page.tsx [Client Component SSR]
+    ./app/(with-sidebar)/business/[id]/[taskId]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 2639330ms] [ERROR] ./app/(with-sidebar)/business/[id]/[taskId]/page.tsx:196:6
+Parsing ecmascript source code failed
+  194 | 					/>
+  195 |
+> 196 | <div className="mt-6 space-y-6">
+      |      ^^^^^^^^^
+  197 | 					<div>
+  198 | 						<HealthScoreCard
+  199 | 							title="業務タスクヘルススコア"
+
+Expected '</', got 'className'
+
+Import traces:
+  Client Component Browser:
+    ./app/(with-sidebar)/business/[id]/[taskId]/page.tsx [Client Component Browser]
+    ./app/(with-sidebar)/business/[id]/[taskId]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./app/(with-sidebar)/business/[id]/[taskId]/page.tsx [Client Component SSR]
+    ./app/(with-sidebar)/business/[id]/[taskId]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 2673305ms] [ERROR] ./app/(with-sidebar)/business/[id]/[taskId]/page.tsx:196:6
+Parsing ecmascript source code failed
+  194 | 					/>
+  195 |
+> 196 | <div className="mt-6 space-y-6">
+      |      ^^^^^^^^^
+  197 | 					<div>
+  198 | 						<HealthScoreCard
+  199 | 							title="業務タスクヘルススコア"
+
+Expected '</', got 'className'
+
+Import traces:
+  Client Component Browser:
+    ./app/(with-sidebar)/business/[id]/[taskId]/page.tsx [Client Component Browser]
+    ./app/(with-sidebar)/business/[id]/[taskId]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./app/(with-sidebar)/business/[id]/[taskId]/page.tsx [Client Component SSR]
+    ./app/(with-sidebar)/business/[id]/[taskId]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127

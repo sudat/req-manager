@@ -3,6 +3,7 @@ import type { BusinessArea, TicketStatus, TicketPriority, SrfCategory, SrfStatus
 import type { TicketRequirementReference, TicketChangeItem, TicketConceptReference, TicketVersionApplication, EntryPoint } from './value-objects';
 import type { SystemDesignItemV2 } from './schemas/system-design';
 import type { Deliverable } from './schemas/deliverable';
+import type { DdCallerDraft } from './dd-dependency';
 
 /**
  * Business（業務）
@@ -27,7 +28,10 @@ export interface Task {
   businessArea: string;    // AR (外部キー)
   name: string;            // 請求書発行
   summary: string;         // 業務概要（description）
-  businessContext: string; // 業務コンテキスト（Markdown）
+  triggerDescription: string | null; // 業務開始トリガー説明
+  triggerTaskIds: string[]; // 業務開始トリガーとなる業務タスクID配列
+  frequency: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly' | 'irregular'; // 業務頻度
+  frequencyDescription: string | null; // 業務頻度詳細
   processSteps: string;    // タスク内の流れ（YAML）
   input: string;           // インプット（YAML）
   output: string;          // アウトプット（YAML）
@@ -234,6 +238,8 @@ export interface DesignDocument {
   details: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
+  /** 呼び出し元（受信方向） */
+  callers?: DdCallerDraft[];
 }
 
 /**
@@ -258,6 +264,7 @@ export interface RequirementLink {
   targetType: RequirementLinkNodeType;
   targetId: string;
   linkType: string;
+  metadata?: Record<string, unknown> | null;
   suspect: boolean;
   suspectReason: string | null;
   createdAt: string;

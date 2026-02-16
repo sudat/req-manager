@@ -18,3 +18,6 @@ export type { TaskKnowledge } from "./task-knowledge.types";
 
 // 追加型（構造化IO）
 export * from "./types";
+
+// DD依存関係・呼び出し元
+export * from "./dd-dependency";

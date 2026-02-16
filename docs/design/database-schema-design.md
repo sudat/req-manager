@@ -221,6 +221,9 @@ erDiagram
 - ~~acceptance_criteria~~ (text[])
 - ~~acceptance_criteria_json~~ (jsonb)
 
+**削除された列**（2026-02-14削除）:
+- ~~system_domain_ids~~ (text[]) - 業務要件ではシステム領域の関連付けを廃止
+
 ---
 
 ### 3. システム要件系
@@ -629,19 +632,17 @@ erDiagram
     "rules": [
       {
         "name": "rule_name",
-        "type": "validation | calculation | state_transition | decision | aggregation",
+        "type": "validate | read | derive | decide",
         "description": "ルール説明",
-        "formula": "計算式",
+        "formulas": ["計算式"],
         "preconditions": ["前提条件1"],
-        "rounding": "切り捨て | 四捨五入 | 切り上げ",
-        "precision": "1円単位",
-        "notes": "補足"
+        "notes": ["補足"]
       }
     ]
   },
   "outputFields": [ /* inputFieldsと同じ形式 */ ],
   "sideEffects": {
-    "description": "副作用の説明",
+    "description": "保存/通知の説明",
     "dbOperations": [
       {
         "table": "users",
@@ -905,6 +906,7 @@ JSONB形式で構造化された入出力定義。
 
 | 日付 | 変更内容 |
 |------|----------|
+| 2026-02-11 | Phase 4.5完了。構造化スキーマ定義、UIエディター/ビューアー、互換性レイヤー実装 |
 | 2026-02-09 | 設計書を全面更新。全18テーブルの定義を網羅。business_domainsの複合PK変更、business_tasksのFK変更、acceptance_criteria独立、design_documents詳細追加、JSONBスキーマ詳細追加、TypeScript型対応表追加 |
 | 2026-02-07 | system_functions.deliverables、system_requirements.related_deliverable_ids削除。機能はdesign_documentsに集約 |
 | 2026-02-06 | investigation_resultsテーブル追加（Phase 5） |

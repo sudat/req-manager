@@ -55,7 +55,7 @@ export function YamlListField({
 
 	return (
 		<div className="space-y-2">
-			<Label className="text-[12px] font-medium text-slate-500">{label}</Label>
+			<Label className="text-[14px] font-bold text-slate-900 border-l-4 border-primary pl-3 -ml-3">{label}</Label>
 			<div className="space-y-2">
 				{items.map((item, index) => (
 					<div key={`${label}-${index}`} className="flex gap-2">
