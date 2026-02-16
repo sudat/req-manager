@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,11 +11,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { FoldableStructuredSection, SectionLabelWithTooltip } from "../FoldableStructuredSection";
+import { FoldableStructuredSection } from "../FoldableStructuredSection";
 import { DB_OPERATIONS, EVENT_DESTINATIONS } from "../constants";
 import { removeAtIndex, updateAtIndex } from "@/lib/utils/array-updates";
 import type { StructuredSpecEditorProps } from "./types";
 import type { SideEffectResponse } from "@/lib/domain/schemas/side-effects";
+import {
+  SideEffectResponseFields,
+  type SideEffectExceptionOption,
+} from "./shared/SideEffectResponseFields";
+import { SideEffectSectionEditor } from "./shared/SideEffectSectionEditor";
 
 interface SideEffectsEditorProps {
   spec: StructuredSpecEditorProps["spec"];
@@ -24,16 +29,6 @@ interface SideEffectsEditorProps {
 
 const EMPTY_SELECT_VALUE = "__none__";
 const FILE_OUTPUT_FORMATS = ["csv", "json", "xml", "pdf", "txt"] as const;
-
-type ExceptionOption = {
-  code: string;
-  label: string;
-};
-
-function normalizeOptionalText(value: string): string | undefined {
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : undefined;
-}
 
 function mergeResponse(
   current: SideEffectResponse | undefined,
@@ -51,75 +46,6 @@ function mergeResponse(
       next.errorExceptionRef
   );
   return hasValue ? next : undefined;
-}
-
-function ResponseFields({
-  response,
-  exceptionOptions,
-  onPatch,
-}: {
-  response: SideEffectResponse | undefined;
-  exceptionOptions: ExceptionOption[];
-  onPatch: (patch: Partial<SideEffectResponse>) => void;
-}): ReactNode {
-  return (
-    <div className="space-y-2 rounded-md border border-slate-100 bg-slate-50/70 p-2">
-      <div className="text-[11px] font-medium text-slate-600">レスポンス定義（任意）</div>
-      <div className="grid gap-2 md:grid-cols-2">
-        <Input
-          placeholder="successLabel（例: 保存完了）"
-          value={response?.successLabel ?? ""}
-          onChange={(e) => onPatch({ successLabel: normalizeOptionalText(e.target.value) })}
-        />
-        <Input
-          placeholder="successSchemaRef（例: outputSchema.success）"
-          value={response?.successSchemaRef ?? ""}
-          onChange={(e) =>
-            onPatch({ successSchemaRef: normalizeOptionalText(e.target.value) })
-          }
-        />
-      </div>
-      <div className="grid gap-2 md:grid-cols-3">
-        <Input
-          placeholder="errorLabel（例: 保存失敗）"
-          value={response?.errorLabel ?? ""}
-          onChange={(e) => onPatch({ errorLabel: normalizeOptionalText(e.target.value) })}
-        />
-        <Input
-          placeholder="errorSchemaRef（例: outputSchema.error[0]）"
-          value={response?.errorSchemaRef ?? ""}
-          onChange={(e) =>
-            onPatch({ errorSchemaRef: normalizeOptionalText(e.target.value) })
-          }
-        />
-        <Select
-          value={response?.errorExceptionRef ?? EMPTY_SELECT_VALUE}
-          onValueChange={(value) =>
-            onPatch({
-              errorExceptionRef: value === EMPTY_SELECT_VALUE ? undefined : value,
-            })
-          }
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="失敗時例外（任意）" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={EMPTY_SELECT_VALUE}>失敗時例外なし</SelectItem>
-            {exceptionOptions.map((option) => (
-              <SelectItem key={option.code} value={option.code}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      {(response?.errorLabel || response?.errorSchemaRef) && !response?.errorExceptionRef && (
-        <p className="text-xs text-amber-700">
-          errorLabel / errorSchemaRef を指定した場合は失敗時例外の選択が必要です。
-        </p>
-      )}
-    </div>
-  );
 }
 
 export function SideEffectsEditor({
@@ -149,7 +75,7 @@ export function SideEffectsEditor({
         label: `${code}: ${detail}`,
       };
     })
-    .filter((item): item is ExceptionOption => Boolean(item));
+    .filter((item): item is SideEffectExceptionOption => Boolean(item));
 
   const addDbOperation = () => {
     updateStructuredSpec((current) => ({
@@ -229,26 +155,13 @@ export function SideEffectsEditor({
         )}
       </div>
 
-      <div className="space-y-2 rounded-md border border-slate-200 p-3">
-        <div>
-          <div className="flex items-center justify-between">
-            <SectionLabelWithTooltip
-              label="副作用: DB操作"
-              tooltip="どのテーブルに、どんな操作（insert/update/delete/upsert）をするかを記述します。必要なら条件も記述してください。"
-            />
-            <Button
-              variant="default"
-              size="sm"
-              className="h-7 gap-2 text-[12px]"
-              onClick={addDbOperation}
-              disabled={!hasRuleRefOptions}
-            >
-              <Plus className="h-4 w-4" />
-              追加
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">データベースへの読み書き操作を定義します</p>
-        </div>
+      <SideEffectSectionEditor
+        label="副作用: DB操作"
+        tooltip="どのテーブルに、どんな操作（insert/update/delete/upsert）をするかを記述します。必要なら条件も記述してください。"
+        description="データベースへの読み書き操作を定義します"
+        onAdd={addDbOperation}
+        disabled={!hasRuleRefOptions}
+      >
         {(spec.sideEffects.dbOperations ?? []).map((op, index) => (
           <div key={index} className="space-y-2 rounded-md border border-slate-100 p-2">
             <div className="grid gap-2 md:grid-cols-[1fr_1fr_4fr_auto] items-center">
@@ -393,7 +306,7 @@ export function SideEffectsEditor({
                 </SelectContent>
               </Select>
             </div>
-            <ResponseFields
+            <SideEffectResponseFields
               response={op.response}
               exceptionOptions={exceptionOptions}
               onPatch={(patch) =>
@@ -418,28 +331,15 @@ export function SideEffectsEditor({
             )}
           </div>
         ))}
-      </div>
+      </SideEffectSectionEditor>
 
-      <div className="space-y-2 rounded-md border border-slate-200 p-3">
-        <div>
-          <div className="flex items-center justify-between">
-            <SectionLabelWithTooltip
-              label="副作用: 外部API"
-              tooltip="外部システムに対して呼び出すAPIのエンドポイント、HTTPメソッド、再試行方針を記述します。"
-            />
-            <Button
-              variant="default"
-              size="sm"
-              className="h-7 gap-2 text-[12px]"
-              onClick={addExternalApi}
-              disabled={!hasRuleRefOptions}
-            >
-              <Plus className="h-4 w-4" />
-              追加
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">外部システムへのAPI呼び出しを定義します</p>
-        </div>
+      <SideEffectSectionEditor
+        label="副作用: 外部API"
+        tooltip="外部システムに対して呼び出すAPIのエンドポイント、HTTPメソッド、再試行方針を記述します。"
+        description="外部システムへのAPI呼び出しを定義します"
+        onAdd={addExternalApi}
+        disabled={!hasRuleRefOptions}
+      >
         {(spec.sideEffects.externalApiCalls ?? []).map((apiCall, index) => (
           <div key={index} className="space-y-2 rounded-md border border-slate-100 p-2">
             <div className="grid gap-2 md:grid-cols-[1fr_1fr_4fr_auto] items-center">
@@ -590,7 +490,7 @@ export function SideEffectsEditor({
                 </SelectContent>
               </Select>
             </div>
-            <ResponseFields
+            <SideEffectResponseFields
               response={apiCall.response}
               exceptionOptions={exceptionOptions}
               onPatch={(patch) =>
@@ -615,28 +515,15 @@ export function SideEffectsEditor({
             )}
           </div>
         ))}
-      </div>
+      </SideEffectSectionEditor>
 
-      <div className="space-y-2 rounded-md border border-slate-200 p-3">
-        <div>
-          <div className="flex items-center justify-between">
-            <SectionLabelWithTooltip
-              label="副作用: イベント発行"
-              tooltip="発行するイベント種別、宛先（queue/topic/webhook）、必要に応じて遅延時間を記述します。"
-            />
-            <Button
-              variant="default"
-              size="sm"
-              className="h-7 gap-2 text-[12px]"
-              onClick={addEvent}
-              disabled={!hasRuleRefOptions}
-            >
-              <Plus className="h-4 w-4" />
-              追加
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">メッセージキューやトピックへのイベント発行を定義します</p>
-        </div>
+      <SideEffectSectionEditor
+        label="副作用: イベント発行"
+        tooltip="発行するイベント種別、宛先（queue/topic/webhook）、必要に応じて遅延時間を記述します。"
+        description="メッセージキューやトピックへのイベント発行を定義します"
+        onAdd={addEvent}
+        disabled={!hasRuleRefOptions}
+      >
         {(spec.sideEffects.events ?? []).map((event, index) => (
           <div key={index} className="space-y-2 rounded-md border border-slate-100 p-2">
             <div className="grid gap-2 md:grid-cols-[1fr_1fr_4fr_auto] items-center">
@@ -782,7 +669,7 @@ export function SideEffectsEditor({
                 </SelectContent>
               </Select>
             </div>
-            <ResponseFields
+            <SideEffectResponseFields
               response={event.response}
               exceptionOptions={exceptionOptions}
               onPatch={(patch) =>
@@ -807,28 +694,15 @@ export function SideEffectsEditor({
             )}
           </div>
         ))}
-      </div>
+      </SideEffectSectionEditor>
 
-      <div className="space-y-2 rounded-md border border-slate-200 p-3">
-        <div>
-          <div className="flex items-center justify-between">
-            <SectionLabelWithTooltip
-              label="副作用: ファイル出力"
-              tooltip="生成ファイルのパスと形式を定義します。CSV/JSON/PDFなどの出力仕様を記述してください。"
-            />
-            <Button
-              variant="default"
-              size="sm"
-              className="h-7 gap-2 text-[12px]"
-              onClick={addFileOutput}
-              disabled={!hasRuleRefOptions}
-            >
-              <Plus className="h-4 w-4" />
-              追加
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">ファイルシステム/ストレージへの出力を定義します</p>
-        </div>
+      <SideEffectSectionEditor
+        label="副作用: ファイル出力"
+        tooltip="生成ファイルのパスと形式を定義します。CSV/JSON/PDFなどの出力仕様を記述してください。"
+        description="ファイルシステム/ストレージへの出力を定義します"
+        onAdd={addFileOutput}
+        disabled={!hasRuleRefOptions}
+      >
         {(spec.sideEffects.fileOutputs ?? []).map((fileOutput, index) => (
           <div key={index} className="space-y-2 rounded-md border border-slate-100 p-2">
             <div className="grid gap-2 md:grid-cols-[1fr_1fr_4fr_auto] items-center">
@@ -958,7 +832,7 @@ export function SideEffectsEditor({
                 </SelectContent>
               </Select>
             </div>
-            <ResponseFields
+            <SideEffectResponseFields
               response={fileOutput.response}
               exceptionOptions={exceptionOptions}
               onPatch={(patch) =>
@@ -983,7 +857,7 @@ export function SideEffectsEditor({
             )}
           </div>
         ))}
-      </div>
+      </SideEffectSectionEditor>
     </FoldableStructuredSection>
   );
 }

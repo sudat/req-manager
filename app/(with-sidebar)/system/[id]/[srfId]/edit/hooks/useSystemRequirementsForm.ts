@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { getSystemFunctionById } from "@/lib/data/system-functions";
 import { listSystemRequirementsBySrfId } from "@/lib/data/system-requirements";
 import { fromSystemRequirement } from "@/lib/data/requirement-mapper";
@@ -8,16 +7,16 @@ import { getSrIdSpecForSystemFunction } from "@/lib/utils/id-rules";
 import { nextSequentialId } from "@/lib/utils/requirement-id";
 import type { SystemFunction } from "@/lib/domain";
 import type { Requirement } from "@/lib/domain/forms";
+import { useEditFormLifecycle } from "@/hooks/use-edit-form-lifecycle";
 
 export function useSystemRequirementsForm(
 	srfId: string,
 	systemDomainId: string,
 	projectId: string
 ) {
-	const router = useRouter();
-	const [loading, setLoading] = useState(true);
-	const [saving, setSaving] = useState(false);
-	const [error, setError] = useState<string | null>(null);
+	const { loading, saving, error, setLoading, setError, runSave } = useEditFormLifecycle(
+		`/system/${systemDomainId}/${srfId}`
+	);
 	const [existingSrf, setExistingSrf] = useState<SystemFunction | null>(null);
 
 	// フォーム状態
@@ -66,7 +65,7 @@ export function useSystemRequirementsForm(
 		return () => {
 			cancelled = true;
 		};
-	}, [srfId, projectId]);
+	}, [srfId, projectId, setError, setLoading]);
 
 	// システム要件を追加
 	const addSystemRequirement = useCallback((): void => {
@@ -113,30 +112,22 @@ export function useSystemRequirementsForm(
 
 	// 保存処理
 	const handleSave = async (onSuccess?: () => void) => {
-		if (!existingSrf) return;
+		await runSave(
+			async () => {
+				if (!existingSrf) return "システム機能が見つかりません";
 
-		setSaving(true);
-		setError(null);
+				const { error: saveError } = await saveSystemRequirements({
+					srfId,
+					existingSrf,
+					systemDomainId,
+					systemRequirements,
+					projectId,
+				});
 
-		const { error: saveError } = await saveSystemRequirements({
-			srfId,
-			existingSrf,
-			systemDomainId,
-			systemRequirements,
-			projectId,
-		});
-
-		if (saveError) {
-			setError(saveError);
-			setSaving(false);
-			return;
-		}
-
-		// 成功時コールバック
-		onSuccess?.();
-
-		// 詳細画面へ遷移
-		router.push(`/system/${systemDomainId}/${srfId}`);
+				return saveError;
+			},
+			{ onSuccess }
+		);
 	};
 
 	return {

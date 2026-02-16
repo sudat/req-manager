@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { listDesignDocumentsBySrfId, listDesignDocuments } from "@/lib/data/design-documents";
 import { listDdDependenciesBySourceIds, listDdCallersByTargetIds } from "@/lib/data/requirement-links";
 import { supabase } from "@/lib/supabase/client";
@@ -9,12 +8,12 @@ import {
 	parseStructuredDetails,
 	syncStructuredSpecToDdType,
 } from "@/lib/utils/design-documents/structured-compat";
+import { useEditFormLifecycle } from "@/hooks/use-edit-form-lifecycle";
 
 export function useDesignDocumentsForm(srfId: string, systemDomainId: string, projectId: string) {
-	const router = useRouter();
-	const [loading, setLoading] = useState(true);
-	const [saving, setSaving] = useState(false);
-	const [error, setError] = useState<string | null>(null);
+	const { loading, saving, error, setLoading, setError, runSave } = useEditFormLifecycle(
+		`/system/${systemDomainId}/${srfId}`
+	);
 
 	// フォーム状態
 	const [designDocuments, setDesignDocuments] = useState<DesignDocumentDraft[]>([]);
@@ -185,7 +184,13 @@ export function useDesignDocumentsForm(srfId: string, systemDomainId: string, pr
 			if (cancelled) return;
 
 			if (!sfError && systemFunctions) {
-				setAllSFs(systemFunctions.map((sf: any) => ({
+				const typedSystemFunctions = systemFunctions as Array<{
+					id: string;
+					title: string;
+					system_domains?: { name?: string | null } | null;
+				}>;
+
+				setAllSFs(typedSystemFunctions.map((sf) => ({
 					id: sf.id,
 					title: sf.title,
 					domainName: sf.system_domains?.name || "その他"
@@ -200,30 +205,22 @@ export function useDesignDocumentsForm(srfId: string, systemDomainId: string, pr
 		return () => {
 			cancelled = true;
 		};
-	}, [srfId, projectId]);
+	}, [srfId, projectId, setError, setLoading]);
 
 	// 保存処理
 	const handleSave = async (onSuccess?: () => void) => {
-		setSaving(true);
-		setError(null);
+		await runSave(
+			async () => {
+				const { error: saveError } = await saveDesignDocuments({
+					srfId,
+					designDocuments,
+					projectId,
+				});
 
-		const { error: saveError } = await saveDesignDocuments({
-			srfId,
-			designDocuments,
-			projectId,
-		});
-
-		if (saveError) {
-			setError(saveError);
-			setSaving(false);
-			return;
-		}
-
-		// 成功時コールバック
-		onSuccess?.();
-
-		// 詳細画面へ遷移
-		router.push(`/system/${systemDomainId}/${srfId}`);
+				return saveError;
+			},
+			{ onSuccess }
+		);
 	};
 
 	return {

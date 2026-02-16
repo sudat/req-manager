@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useCallback, useEffect } from "react";
 import { getTaskById } from "@/lib/data/tasks";
 import { listBusinessRequirementsByTaskId } from "@/lib/data/business-requirements";
 import { syncBusinessRequirements } from "@/lib/data/task-sync";
@@ -12,6 +11,7 @@ import { nextSequentialId } from "@/lib/utils/requirement-id";
 import { getBrIdSpecForTask } from "@/lib/utils/id-rules";
 import { removeFromStorage, saveToStorage } from "@/lib/utils/local-storage";
 import { markChangedFieldsSuspect } from "@/lib/data/suspect-detection";
+import { useEditFormLifecycle } from "@/hooks/use-edit-form-lifecycle";
 
 type UseBusinessRequirementsFormParams = {
 	taskId: string;
@@ -36,12 +36,10 @@ export function useBusinessRequirementsForm({
 	bizId,
 	storageKey,
 }: UseBusinessRequirementsFormParams): UseBusinessRequirementsFormResult {
-	const router = useRouter();
 	const { currentProjectId, loading: projectLoading } = useProject();
-
-	const [loading, setLoading] = useState(true);
-	const [saving, setSaving] = useState(false);
-	const [error, setError] = useState<string | null>(null);
+	const { loading, saving, error, setLoading, setError, runSave } = useEditFormLifecycle(
+		`/business/${bizId}/${taskId}`
+	);
 	const [existingTask, setExistingTask] = useState<TaskKnowledge | null>(null);
 	const [businessRequirements, setBusinessRequirements] = useState<Requirement[]>([]);
 
@@ -117,7 +115,7 @@ export function useBusinessRequirementsForm({
 		return () => {
 			active = false;
 		};
-	}, [taskId, bizId, currentProjectId, projectLoading]);
+	}, [taskId, bizId, currentProjectId, projectLoading, setError, setLoading]);
 
 	const addRequirement = useCallback((): void => {
 		const existingIds = businessRequirements.map((r) => r.id);
@@ -157,13 +155,10 @@ export function useBusinessRequirementsForm({
 
 	const handleSave = useCallback(
 		async (onSuccess?: () => void): Promise<void> => {
-			setSaving(true);
-			setError(null);
-
-			try {
+			await runSave(
+				async () => {
 				if (projectLoading || !currentProjectId) {
-					setError("プロジェクトが選択されていません");
-					return;
+						return "プロジェクトが選択されていません";
 				}
 
 				// LocalStorageにバックアップ
@@ -178,8 +173,7 @@ export function useBusinessRequirementsForm({
 				);
 
 				if (typeof result === "string") {
-					setError(result);
-					return;
+						return result;
 				}
 
 				const changedBrMap = result;
@@ -191,16 +185,12 @@ export function useBusinessRequirementsForm({
 
 				// 成功時はLocalStorageをクリア
 				removeFromStorage(storageKey);
-
-				onSuccess?.();
-				router.push(`/business/${bizId}/${taskId}`);
-			} catch (e) {
-				setError(e instanceof Error ? e.message : String(e));
-			} finally {
-				setSaving(false);
-			}
+					return null;
+				},
+				{ onSuccess }
+			);
 		},
-		[taskId, bizId, storageKey, businessRequirements, router, currentProjectId, projectLoading]
+		[taskId, storageKey, businessRequirements, currentProjectId, projectLoading, runSave]
 	);
 
 	return {

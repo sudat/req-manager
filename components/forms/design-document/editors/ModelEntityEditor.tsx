@@ -11,6 +11,11 @@ import {
   extractForeignKeyReference,
 } from "@/lib/utils/foreign-key-helpers";
 import type { StructuredSpecEditorProps } from "./types";
+import {
+  patchModelAttribute,
+  patchModelTypeDetail,
+  updateModelAttributes,
+} from "./shared/model-type-detail";
 
 interface ModelEntityEditorProps {
   spec: StructuredSpecEditorProps["spec"];
@@ -21,8 +26,10 @@ interface ModelEntityEditorProps {
 export function ModelEntityEditor({
   spec,
   updateStructuredSpec,
-  onOpenFkDialog,
+  onOpenFkDialog: _onOpenFkDialog,
 }: ModelEntityEditorProps): ReactNode {
+  void _onOpenFkDialog;
+
   if (spec.ioType !== "model") {
     return null;
   }
@@ -35,14 +42,11 @@ export function ModelEntityEditor({
               <Input
                 value={spec.typeDetail?.ioType === "model" ? spec.typeDetail.entityName ?? "" : ""}
                 onChange={(e) =>
-                  updateStructuredSpec((current) => ({
-                    ...current,
-                    typeDetail: {
-                      ioType: "model",
-                      ...( current.typeDetail?.ioType === "model" ? current.typeDetail : {}),
+                  updateStructuredSpec((current) =>
+                    patchModelTypeDetail(current, {
                       entityName: e.target.value,
-                    },
-                  }))
+                    })
+                  )
                 }
                 placeholder="例: User, Order, Product"
               />
@@ -52,14 +56,11 @@ export function ModelEntityEditor({
               <Input
                 value={spec.typeDetail?.ioType === "model" ? spec.typeDetail.entityLogicalName ?? "" : ""}
                 onChange={(e) =>
-                  updateStructuredSpec((current) => ({
-                    ...current,
-                    typeDetail: {
-                      ioType: "model",
-                      ...( current.typeDetail?.ioType === "model" ? current.typeDetail : {}),
+                  updateStructuredSpec((current) =>
+                    patchModelTypeDetail(current, {
                       entityLogicalName: e.target.value,
-                    },
-                  }))
+                    })
+                  )
                 }
                 placeholder="例: ユーザー, 注文, 商品"
               />
@@ -71,14 +72,11 @@ export function ModelEntityEditor({
             <Textarea
               value={spec.typeDetail?.ioType === "model" ? spec.typeDetail.entityDescription ?? "" : ""}
               onChange={(e) =>
-                updateStructuredSpec((current) => ({
-                  ...current,
-                  typeDetail: {
-                    ioType: "model",
-                    ...( current.typeDetail?.ioType === "model" ? current.typeDetail : {}),
+                updateStructuredSpec((current) =>
+                  patchModelTypeDetail(current, {
                     entityDescription: e.target.value,
-                  },
-                }))
+                  })
+                )
               }
               rows={2}
               placeholder="エンティティの説明"
@@ -96,17 +94,9 @@ export function ModelEntityEditor({
                     name: "",
                     type: "",
                   };
-                  updateStructuredSpec((current) => ({
-                    ...current,
-                    typeDetail: {
-                      ioType: "model",
-                      ...( current.typeDetail?.ioType === "model" ? current.typeDetail : {}),
-                      attributes: [
-                        ...((current.typeDetail?.ioType === "model" ? current.typeDetail.attributes : undefined) || []),
-                        newAttr,
-                      ],
-                    },
-                  }));
+                  updateStructuredSpec((current) =>
+                    updateModelAttributes(current, (attributes) => [...attributes, newAttr])
+                  );
                 }}
               >
                 <Plus className="mr-1 h-3 w-3" />
@@ -124,14 +114,11 @@ export function ModelEntityEditor({
                         variant="ghost"
                         size="sm"
                         onClick={() => {
-                          updateStructuredSpec((current) => ({
-                            ...current,
-                            typeDetail: {
-                              ioType: "model",
-                              ...( current.typeDetail?.ioType === "model" ? current.typeDetail : {}),
-                              attributes: (current.typeDetail?.ioType === "model" ? current.typeDetail.attributes : undefined)?.filter((_, i) => i !== attrIndex) || [],
-                            },
-                          }));
+                          updateStructuredSpec((current) =>
+                            updateModelAttributes(current, (attributes) =>
+                              attributes.filter((_, i) => i !== attrIndex)
+                            )
+                          );
                         }}
                       >
                         <Trash2 className="h-3 w-3" />
@@ -144,16 +131,11 @@ export function ModelEntityEditor({
                         <Input
                           value={attr.name}
                           onChange={(e) => {
-                            updateStructuredSpec((current) => ({
-                              ...current,
-                              typeDetail: {
-                                ioType: "model",
-                                ...( current.typeDetail?.ioType === "model" ? current.typeDetail : {}),
-                                attributes: (current.typeDetail?.ioType === "model" ? current.typeDetail.attributes : undefined)?.map((a, i) =>
-                                  i === attrIndex ? { ...a, name: e.target.value } : a
-                                ) || [],
-                              },
-                            }));
+                            updateStructuredSpec((current) =>
+                              patchModelAttribute(current, attrIndex, {
+                                name: e.target.value,
+                              })
+                            );
                           }}
                           placeholder="例: id"
                         />
@@ -164,16 +146,11 @@ export function ModelEntityEditor({
                         <Input
                           value={attr.logicalName || ""}
                           onChange={(e) => {
-                            updateStructuredSpec((current) => ({
-                              ...current,
-                              typeDetail: {
-                                ioType: "model",
-                                ...( current.typeDetail?.ioType === "model" ? current.typeDetail : {}),
-                                attributes: (current.typeDetail?.ioType === "model" ? current.typeDetail.attributes : undefined)?.map((a, i) =>
-                                  i === attrIndex ? { ...a, logicalName: e.target.value } : a
-                                ) || [],
-                              },
-                            }));
+                            updateStructuredSpec((current) =>
+                              patchModelAttribute(current, attrIndex, {
+                                logicalName: e.target.value,
+                              })
+                            );
                           }}
                           placeholder="例: ID"
                         />
@@ -184,16 +161,11 @@ export function ModelEntityEditor({
                         <select
                           value={attr.type}
                           onChange={(e) => {
-                            updateStructuredSpec((current) => ({
-                              ...current,
-                              typeDetail: {
-                                ioType: "model",
-                                ...( current.typeDetail?.ioType === "model" ? current.typeDetail : {}),
-                                attributes: (current.typeDetail?.ioType === "model" ? current.typeDetail.attributes : undefined)?.map((a, i) =>
-                                  i === attrIndex ? { ...a, type: e.target.value } : a
-                                ) || [],
-                              },
-                            }));
+                            updateStructuredSpec((current) =>
+                              patchModelAttribute(current, attrIndex, {
+                                type: e.target.value,
+                              })
+                            );
                           }}
                           className="w-full h-9 px-3 text-sm border rounded-md bg-background"
                         >
@@ -226,16 +198,18 @@ export function ModelEntityEditor({
                                 size="sm"
                                 onClick={() => {
                                   // FK参照をクリア
-                                  updateStructuredSpec((current) => ({
-                                    ...current,
-                                    typeDetail: {
-                                      ioType: "model",
-                                      ...(current.typeDetail?.ioType === "model" ? current.typeDetail : {}),
-                                      attributes: (current.typeDetail?.ioType === "model" ? current.typeDetail.attributes : undefined)?.map((a, i) =>
-                                        i === attrIndex ? { ...a, constraints: extractCheckConstraints(a.constraints) } : a
-                                      ) || [],
-                                    },
-                                  }));
+                                  updateStructuredSpec((current) =>
+                                    updateModelAttributes(current, (attributes) =>
+                                      attributes.map((attribute, index) =>
+                                        index === attrIndex
+                                          ? {
+                                              ...attribute,
+                                              constraints: extractCheckConstraints(attribute.constraints),
+                                            }
+                                          : attribute
+                                      )
+                                    )
+                                  );
                                 }}
                                 className="ml-auto h-6 text-xs"
                               >
@@ -257,16 +231,11 @@ export function ModelEntityEditor({
                               ? (fkRef ? `FK: ${fkRef.entity}.${fkRef.attribute}\n${e.target.value}` : e.target.value)
                               : (fkRef ? `FK: ${fkRef.entity}.${fkRef.attribute}` : '');
 
-                            updateStructuredSpec((current) => ({
-                              ...current,
-                              typeDetail: {
-                                ioType: "model",
-                                ...(current.typeDetail?.ioType === "model" ? current.typeDetail : {}),
-                                attributes: (current.typeDetail?.ioType === "model" ? current.typeDetail.attributes : undefined)?.map((a, i) =>
-                                  i === attrIndex ? { ...a, constraints: newConstraints } : a
-                                ) || [],
-                              },
-                            }));
+                            updateStructuredSpec((current) =>
+                              patchModelAttribute(current, attrIndex, {
+                                constraints: newConstraints,
+                              })
+                            );
                           }}
                           placeholder="例: CHECK (age >= 0)"
                         />
@@ -277,16 +246,11 @@ export function ModelEntityEditor({
                         <Input
                           value={attr.description || ""}
                           onChange={(e) => {
-                            updateStructuredSpec((current) => ({
-                              ...current,
-                              typeDetail: {
-                                ioType: "model",
-                                ...( current.typeDetail?.ioType === "model" ? current.typeDetail : {}),
-                                attributes: (current.typeDetail?.ioType === "model" ? current.typeDetail.attributes : undefined)?.map((a, i) =>
-                                  i === attrIndex ? { ...a, description: e.target.value } : a
-                                ) || [],
-                              },
-                            }));
+                            updateStructuredSpec((current) =>
+                              patchModelAttribute(current, attrIndex, {
+                                description: e.target.value,
+                              })
+                            );
                           }}
                           placeholder="例: ユーザー固有の識別子"
                         />
@@ -299,16 +263,11 @@ export function ModelEntityEditor({
                           type="checkbox"
                           checked={attr.primaryKey || false}
                           onChange={(e) => {
-                            updateStructuredSpec((current) => ({
-                              ...current,
-                              typeDetail: {
-                                ioType: "model",
-                                ...( current.typeDetail?.ioType === "model" ? current.typeDetail : {}),
-                                attributes: (current.typeDetail?.ioType === "model" ? current.typeDetail.attributes : undefined)?.map((a, i) =>
-                                  i === attrIndex ? { ...a, primaryKey: e.target.checked } : a
-                                ) || [],
-                              },
-                            }));
+                            updateStructuredSpec((current) =>
+                              patchModelAttribute(current, attrIndex, {
+                                primaryKey: e.target.checked,
+                              })
+                            );
                           }}
                           className="rounded"
                         />
@@ -320,16 +279,11 @@ export function ModelEntityEditor({
                           type="checkbox"
                           checked={attr.nullable !== undefined ? !attr.nullable : false}
                           onChange={(e) => {
-                            updateStructuredSpec((current) => ({
-                              ...current,
-                              typeDetail: {
-                                ioType: "model",
-                                ...( current.typeDetail?.ioType === "model" ? current.typeDetail : {}),
-                                attributes: (current.typeDetail?.ioType === "model" ? current.typeDetail.attributes : undefined)?.map((a, i) =>
-                                  i === attrIndex ? { ...a, nullable: !e.target.checked } : a
-                                ) || [],
-                              },
-                            }));
+                            updateStructuredSpec((current) =>
+                              patchModelAttribute(current, attrIndex, {
+                                nullable: !e.target.checked,
+                              })
+                            );
                           }}
                           className="rounded"
                         />
@@ -341,16 +295,11 @@ export function ModelEntityEditor({
                           type="checkbox"
                           checked={attr.unique || false}
                           onChange={(e) => {
-                            updateStructuredSpec((current) => ({
-                              ...current,
-                              typeDetail: {
-                                ioType: "model",
-                                ...( current.typeDetail?.ioType === "model" ? current.typeDetail : {}),
-                                attributes: (current.typeDetail?.ioType === "model" ? current.typeDetail.attributes : undefined)?.map((a, i) =>
-                                  i === attrIndex ? { ...a, unique: e.target.checked } : a
-                                ) || [],
-                              },
-                            }));
+                            updateStructuredSpec((current) =>
+                              patchModelAttribute(current, attrIndex, {
+                                unique: e.target.checked,
+                              })
+                            );
                           }}
                           className="rounded"
                         />

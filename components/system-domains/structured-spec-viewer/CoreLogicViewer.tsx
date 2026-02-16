@@ -2,6 +2,11 @@ import type { CoreLogic } from "@/lib/domain/schemas/core-logic";
 import type { SideEffect } from "@/lib/domain/schemas/side-effects";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import {
+  collectSideEffectsByRuleName,
+  countSideEffects,
+  getSideEffectKindLabel,
+} from "@/lib/utils/design-documents/side-effect-rule-link";
 import { EmptyState } from "./EmptyState";
 
 interface CoreLogicViewerProps {
@@ -22,73 +27,6 @@ const ruleTypeLabels: Record<string, string> = {
   derive: "算出",
   decide: "判定",
 };
-
-type RuleSideEffectSummary = {
-  kind: "db" | "api" | "event" | "file";
-  label: string;
-};
-
-function getSideEffectKindLabel(kind: RuleSideEffectSummary["kind"]): string {
-  const labels: Record<RuleSideEffectSummary["kind"], string> = {
-    db: "DB",
-    api: "API",
-    event: "Event",
-    file: "File",
-  };
-  return labels[kind];
-}
-
-function collectSideEffectsByRuleName(sideEffects?: SideEffect): Map<string, RuleSideEffectSummary[]> {
-  const map = new Map<string, RuleSideEffectSummary[]>();
-  if (!sideEffects) return map;
-
-  const push = (ruleRef: string | undefined, item: RuleSideEffectSummary) => {
-    const normalizedRuleRef = ruleRef?.trim();
-    if (!normalizedRuleRef) return;
-    const current = map.get(normalizedRuleRef) ?? [];
-    map.set(normalizedRuleRef, [...current, item]);
-  };
-
-  for (const operation of sideEffects.dbOperations ?? []) {
-    push(operation.ruleRef, {
-      kind: "db",
-      label: `${operation.operation.toUpperCase()} ${operation.table || "(table未設定)"}`,
-    });
-  }
-
-  for (const apiCall of sideEffects.externalApiCalls ?? []) {
-    push(apiCall.ruleRef, {
-      kind: "api",
-      label: `${apiCall.method} ${apiCall.endpoint || "(endpoint未設定)"}`,
-    });
-  }
-
-  for (const event of sideEffects.events ?? []) {
-    push(event.ruleRef, {
-      kind: "event",
-      label: `EVENT ${event.eventType || "(eventType未設定)"}`,
-    });
-  }
-
-  for (const fileOutput of sideEffects.fileOutputs ?? []) {
-    push(fileOutput.ruleRef, {
-      kind: "file",
-      label: `FILE ${fileOutput.format} ${fileOutput.path || "(path未設定)"}`,
-    });
-  }
-
-  return map;
-}
-
-function countSideEffects(sideEffects?: SideEffect): number {
-  if (!sideEffects) return 0;
-  return (
-    (sideEffects.dbOperations?.length ?? 0) +
-    (sideEffects.externalApiCalls?.length ?? 0) +
-    (sideEffects.events?.length ?? 0) +
-    (sideEffects.fileOutputs?.length ?? 0)
-  );
-}
 
 export function CoreLogicViewer({ coreLogic, sideEffects }: CoreLogicViewerProps) {
   if (!coreLogic.rules || coreLogic.rules.length === 0) {

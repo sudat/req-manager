@@ -1,13 +1,12 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { getTaskById } from "@/lib/data/tasks";
 import { syncTaskBasicInfo } from "@/lib/data/task-sync";
 import { useProject } from "@/components/project/project-context";
 import type { TaskKnowledge } from "@/lib/domain";
-import { createEmptyTaskKnowledge } from "@/lib/utils/task-knowledge";
 import { removeFromStorage, saveToStorage } from "@/lib/utils/local-storage";
+import { useEditFormLifecycle } from "@/hooks/use-edit-form-lifecycle";
 
 type UseBasicInfoFormParams = {
 	taskId: string;
@@ -49,12 +48,10 @@ export function useBasicInfoForm({
 	bizId,
 	storageKey,
 }: UseBasicInfoFormParams): UseBasicInfoFormResult {
-	const router = useRouter();
 	const { currentProjectId, loading: projectLoading } = useProject();
-
-	const [loading, setLoading] = useState(true);
-	const [saving, setSaving] = useState(false);
-	const [error, setError] = useState<string | null>(null);
+	const { loading, saving, error, setLoading, setError, runSave } = useEditFormLifecycle(
+		`/business/${bizId}/${taskId}`
+	);
 	const [existingTask, setExistingTask] = useState<TaskKnowledge | null>(null);
 
 	// フォーム状態
@@ -145,17 +142,14 @@ export function useBasicInfoForm({
 		return () => {
 			active = false;
 		};
-	}, [taskId, bizId, currentProjectId, projectLoading]);
+	}, [taskId, bizId, currentProjectId, projectLoading, setError, setLoading]);
 
 	const handleSave = useCallback(
 		async (onSuccess?: () => void): Promise<void> => {
-			setSaving(true);
-			setError(null);
-
-			try {
+			await runSave(
+				async () => {
 				if (projectLoading || !currentProjectId) {
-					setError("プロジェクトが選択されていません");
-					return;
+						return "プロジェクトが選択されていません";
 				}
 
 				// LocalStorageにバックアップ
@@ -191,24 +185,18 @@ export function useBasicInfoForm({
 				);
 
 				if (taskError) {
-					setError(taskError);
-					return;
+						return taskError;
 				}
 
 				// 成功時はLocalStorageをクリア
 				removeFromStorage(storageKey);
-
-				onSuccess?.();
-				router.push(`/business/${bizId}/${taskId}`);
-			} catch (e) {
-				setError(e instanceof Error ? e.message : String(e));
-			} finally {
-				setSaving(false);
-			}
+					return null;
+				},
+				{ onSuccess }
+			);
 		},
 		[
 			taskId,
-			bizId,
 			storageKey,
 			taskName,
 				taskSummary,
@@ -220,9 +208,9 @@ export function useBasicInfoForm({
 			input,
 			output,
 			conceptIdsYaml,
-			router,
 			currentProjectId,
 			projectLoading,
+			runSave,
 		]
 	);
 

@@ -16,6 +16,11 @@ import type { BusinessRule } from "@/lib/domain/schemas/core-logic";
 import { FoldableStructuredSection } from "../FoldableStructuredSection";
 import { BUSINESS_RULE_TYPE_LABELS, BUSINESS_RULE_TYPES } from "../constants";
 import { removeAtIndex, updateAtIndex } from "@/lib/utils/array-updates";
+import {
+  collectSideEffectsByRuleName,
+  countSideEffects,
+  getSideEffectKindLabel,
+} from "@/lib/utils/design-documents/side-effect-rule-link";
 import type { StructuredSpecEditorProps } from "./types";
 
 interface CoreLogicEditorProps {
@@ -27,11 +32,6 @@ const EMPTY_SELECT_VALUE = "__none__";
 
 type RuleSequence = NonNullable<BusinessRule["sequence"]>;
 type PreconditionViolation = NonNullable<BusinessRule["preconditionViolations"]>[number];
-type RuleSideEffectSummary = {
-  kind: "db" | "api" | "event" | "file";
-  label: string;
-};
-
 function normalizeRuleSequence(
   sequence: Partial<RuleSequence>
 ): RuleSequence | undefined {
@@ -122,71 +122,6 @@ function removePreconditionAndShiftViolations(
   };
 }
 
-function collectSideEffectsByRuleName(
-  spec: StructuredSpecEditorProps["spec"]
-): Map<string, RuleSideEffectSummary[]> {
-  const map = new Map<string, RuleSideEffectSummary[]>();
-
-  const push = (
-    ruleRef: string | undefined,
-    item: RuleSideEffectSummary
-  ) => {
-    const normalizedRuleRef = ruleRef?.trim();
-    if (!normalizedRuleRef) return;
-    const current = map.get(normalizedRuleRef) ?? [];
-    map.set(normalizedRuleRef, [...current, item]);
-  };
-
-  for (const operation of spec.sideEffects.dbOperations ?? []) {
-    push(operation.ruleRef, {
-      kind: "db",
-      label: `${operation.operation.toUpperCase()} ${operation.table || "(table未設定)"}`,
-    });
-  }
-
-  for (const apiCall of spec.sideEffects.externalApiCalls ?? []) {
-    push(apiCall.ruleRef, {
-      kind: "api",
-      label: `${apiCall.method} ${apiCall.endpoint || "(endpoint未設定)"}`,
-    });
-  }
-
-  for (const event of spec.sideEffects.events ?? []) {
-    push(event.ruleRef, {
-      kind: "event",
-      label: `EVENT ${event.eventType || "(eventType未設定)"}`,
-    });
-  }
-
-  for (const fileOutput of spec.sideEffects.fileOutputs ?? []) {
-    push(fileOutput.ruleRef, {
-      kind: "file",
-      label: `FILE ${fileOutput.format} ${fileOutput.path || "(path未設定)"}`,
-    });
-  }
-
-  return map;
-}
-
-function countSideEffects(spec: StructuredSpecEditorProps["spec"]): number {
-  return (
-    (spec.sideEffects.dbOperations?.length ?? 0) +
-    (spec.sideEffects.externalApiCalls?.length ?? 0) +
-    (spec.sideEffects.events?.length ?? 0) +
-    (spec.sideEffects.fileOutputs?.length ?? 0)
-  );
-}
-
-function getSideEffectKindLabel(kind: RuleSideEffectSummary["kind"]): string {
-  const labels: Record<RuleSideEffectSummary["kind"], string> = {
-    db: "DB",
-    api: "API",
-    event: "Event",
-    file: "File",
-  };
-  return labels[kind];
-}
-
 export function CoreLogicEditor({ spec, updateStructuredSpec }: CoreLogicEditorProps): ReactNode {
   const [openedViolationEditors, setOpenedViolationEditors] = useState<Record<string, boolean>>({});
 
@@ -210,8 +145,8 @@ export function CoreLogicEditor({ spec, updateStructuredSpec }: CoreLogicEditorP
       detail,
     };
   });
-  const sideEffectsByRuleName = collectSideEffectsByRuleName(spec);
-  const sideEffectCount = countSideEffects(spec);
+  const sideEffectsByRuleName = collectSideEffectsByRuleName(spec.sideEffects);
+  const sideEffectCount = countSideEffects(spec.sideEffects);
 
   return (
     <FoldableStructuredSection

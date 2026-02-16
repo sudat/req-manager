@@ -11,12 +11,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FoldableStructuredSection } from "../FoldableStructuredSection";
-import { removeAtIndex, updateAtIndex } from "@/lib/utils/array-updates";
+import { updateAtIndex } from "@/lib/utils/array-updates";
 import type { StructuredSpecEditorProps } from "./types";
 import type {
   SequenceAsyncCompletion,
   SequenceStep,
 } from "@/lib/domain/schemas/sequence";
+import { normalizeOptionalText } from "./shared/OptionalText";
+import {
+  appendSequenceStep,
+  patchSequenceStep,
+  removeSequenceStep,
+} from "./shared/sequence-update";
 
 type SequenceEditorProps = {
   spec: StructuredSpecEditorProps["spec"];
@@ -29,11 +35,6 @@ type SupportedStepKind = "call" | "effect_ref" | "note" | "ref";
 
 function createStepId(prefix: string): string {
   return `${prefix}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-}
-
-function normalizeOptionalText(value: string): string | undefined {
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : undefined;
 }
 
 function mergeAsyncCompletion(
@@ -140,6 +141,10 @@ export function SequenceEditor({
     }));
   };
 
+  const patchStep = (index: number, patch: Partial<SequenceStep>) => {
+    updateSequence((current) => patchSequenceStep(current, index, patch));
+  };
+
   return (
     <FoldableStructuredSection
       title="シーケンス制御（任意）"
@@ -204,10 +209,9 @@ export function SequenceEditor({
                   value={EMPTY_SELECT_VALUE}
                   onValueChange={(value) => {
                     if (value === EMPTY_SELECT_VALUE) return;
-                    updateSequence((current) => ({
-                      ...current,
-                      steps: [...current.steps, createDefaultStep(value as SupportedStepKind)],
-                    }));
+                    updateSequence((current) =>
+                      appendSequenceStep(current, createDefaultStep(value as SupportedStepKind))
+                    );
                   }}
                 >
                   <SelectTrigger className="w-[190px] h-8">
@@ -236,10 +240,7 @@ export function SequenceEditor({
                         variant="ghost"
                         size="icon"
                         onClick={() =>
-                          updateSequence((current) => ({
-                            ...current,
-                            steps: removeAtIndex(current.steps, index),
-                          }))
+                          updateSequence((current) => removeSequenceStep(current, index))
                         }
                       >
                         <Trash2 className="h-4 w-4" />
@@ -253,24 +254,14 @@ export function SequenceEditor({
                             placeholder="call id"
                             value={step.id}
                             onChange={(e) =>
-                              updateSequence((current) => ({
-                                ...current,
-                                steps: updateAtIndex(current.steps, index, {
-                                  id: e.target.value,
-                                }),
-                              }))
+                              patchStep(index, { id: e.target.value })
                             }
                           />
                           <Input
                             placeholder="target DD ID"
                             value={step.targetDdId}
                             onChange={(e) =>
-                              updateSequence((current) => ({
-                                ...current,
-                                steps: updateAtIndex(current.steps, index, {
-                                  targetDdId: e.target.value,
-                                }),
-                              }))
+                              patchStep(index, { targetDdId: e.target.value })
                             }
                           />
                           <Select
@@ -306,12 +297,9 @@ export function SequenceEditor({
                             placeholder="message（任意）"
                             value={step.message ?? ""}
                             onChange={(e) =>
-                              updateSequence((current) => ({
-                                ...current,
-                                steps: updateAtIndex(current.steps, index, {
-                                  message: normalizeOptionalText(e.target.value),
-                                }),
-                              }))
+                              patchStep(index, {
+                                message: normalizeOptionalText(e.target.value),
+                              })
                             }
                           />
                           <Input
