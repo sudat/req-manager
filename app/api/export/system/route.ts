@@ -1,15 +1,19 @@
 import { NextResponse } from "next/server";
-import { Workbook } from "exceljs";
 import { listSystemDomains } from "@/lib/data/system-domains";
 import { listSystemFunctionsByDomain } from "@/lib/data/system-functions";
 import { listSystemRequirementsBySrfId } from "@/lib/data/system-requirements";
+import {
+  buildChildrenMap,
+  buildExcelBuffer,
+  createExcelDownloadResponse,
+  createExportErrorResponse,
+} from "@/lib/export/excel-route";
 
 /**
  * システム一覧（SD→SF→SR）をExcelでエクスポート
  */
 export async function GET() {
   try {
-    // 1. 全部のSDを取得
     const { data: domains, error: domainError } = await listSystemDomains();
     if (domainError) {
       return NextResponse.json({ error: domainError }, { status: 500 });
@@ -18,29 +22,25 @@ export async function GET() {
       return NextResponse.json({ error: "No system domain data found" }, { status: 404 });
     }
 
-    // 2. SDに紐づくSFを取得
-    const functionsMap = new Map<string, Awaited<ReturnType<typeof listSystemFunctionsByDomain>>["data"]>();
+    const functionsMap = await buildChildrenMap(
+      domains,
+      (domain) => domain.id,
+      async (domain) => {
+        const { data } = await listSystemFunctionsByDomain(domain.id);
+        return data;
+      },
+    );
 
-    for (const domain of domains) {
-      const { data: functions } = await listSystemFunctionsByDomain(domain.id);
-      functionsMap.set(domain.id, functions);
-    }
+    const allFunctions = Array.from(functionsMap.values()).flat();
+    const requirementsMap = await buildChildrenMap(
+      allFunctions,
+      (func) => func.id,
+      async (func) => {
+        const { data } = await listSystemRequirementsBySrfId(func.id);
+        return data;
+      },
+    );
 
-    // 3. SFに紐づくSRを取得
-    const allSrfIds: string[] = [];
-    for (const functions of functionsMap.values()) {
-      if (functions) {
-        allSrfIds.push(...functions.map((f) => f.id));
-      }
-    }
-
-    const requirementsMap = new Map<string, Awaited<ReturnType<typeof listSystemRequirementsBySrfId>>["data"]>();
-    for (const srfId of allSrfIds) {
-      const { data: requirements } = await listSystemRequirementsBySrfId(srfId);
-      requirementsMap.set(srfId, requirements);
-    }
-
-    // 4. フラットな構造に変換
     const rows: Array<{
       domainId: string;
       domainName: string;
@@ -121,12 +121,7 @@ export async function GET() {
       }
     }
 
-    // 5. Excel生成
-    const workbook = new Workbook();
-    const worksheet = workbook.addWorksheet("システム一覧");
-
-    // ヘッダー設定
-    worksheet.columns = [
+    const buffer = await buildExcelBuffer("システム一覧", [
       { header: "システム領域ID", key: "domainId", width: 15 },
       { header: "システム領域名", key: "domainName", width: 30 },
       { header: "システム領域説明", key: "domainDescription", width: 40 },
@@ -140,40 +135,10 @@ export async function GET() {
       { header: "システム要件タイトル", key: "reqTitle", width: 30 },
       { header: "システム要件概要", key: "reqSummary", width: 40 },
       { header: "システム要件カテゴリ", key: "reqCategory", width: 15 },
-    ];
+    ], rows);
 
-    // ヘッダースタイル
-    worksheet.getRow(1).eachCell((cell) => {
-      cell.font = { bold: true, name: "Meiryo UI" };
-      cell.fill = {
-        type: "pattern",
-        pattern: "solid",
-        fgColor: { argb: "FFE0E0E0" },
-      };
-    });
-
-    // データ行追加
-    for (const row of rows) {
-      const addedRow = worksheet.addRow(row);
-      addedRow.eachCell((cell) => {
-        cell.font = { name: "Meiryo UI" };
-      });
-    }
-
-    // 6. バッファ生成してレスポンス
-    const buffer = await workbook.xlsx.writeBuffer();
-
-    return new NextResponse(buffer, {
-      headers: {
-        "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "Content-Disposition": `attachment; filename="system_export_${new Date().toISOString().split("T")[0]}.xlsx"`,
-      },
-    });
+    return createExcelDownloadResponse(buffer, "system_export");
   } catch (error) {
-    console.error("Export error:", error);
-    return NextResponse.json(
-      { error: "Failed to export system data" },
-      { status: 500 }
-    );
+    return createExportErrorResponse("Failed to export system data", error);
   }
 }

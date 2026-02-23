@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import { useProject } from "@/components/project/project-context";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
@@ -12,15 +11,9 @@ import { Eye, EyeOff } from "lucide-react";
 import { useLlmSettings } from "@/hooks/use-llm-settings";
 import { getProviderLlmDefaults } from "@/lib/data/llm-settings";
 import type { ProjectLlmSettings } from "@/lib/domain";
-
-function SectionHeader({ title, description }: { title: string; description?: string }) {
-	return (
-		<div className="mb-6">
-			<h3 className="text-[15px] font-semibold text-slate-900">{title}</h3>
-			{description && <p className="mt-1 text-[13px] text-slate-500 leading-relaxed">{description}</p>}
-		</div>
-	);
-}
+import { SectionHeader } from "@/components/settings/section-header";
+import { StatusAlert } from "@/components/settings/status-alert";
+import { SettingsActionBar } from "@/components/settings/settings-action-bar";
 
 export function LLMSettingsContent() {
 	const { currentProject } = useProject();
@@ -250,35 +243,16 @@ export function LLMSettingsContent() {
 							</div>
 						)}
 
-						{error && (
-							<div className="rounded-md border border-amber-200 bg-amber-50 p-3">
-								<p className="text-[13px] text-amber-700">{error}</p>
-							</div>
-						)}
+						{error && <StatusAlert variant="warning" message={error} />}
 
-						{success && (
-							<div className="rounded-md border border-emerald-200 bg-emerald-50 p-3">
-								<p className="text-[13px] text-emerald-700">{success}</p>
-							</div>
-						)}
+						{success && <StatusAlert variant="success" message={success} />}
 
-						<div className="flex justify-end gap-3 pt-4">
-							<Button
-								variant="outline"
-								onClick={handleReset}
-								disabled={saving}
-								className="h-8 px-6"
-							>
-								リセット
-							</Button>
-							<Button
-								onClick={handleSave}
-								disabled={saving || !currentProject?.id}
-								className="bg-slate-900 hover:bg-slate-800 h-8 px-6"
-							>
-								{saving ? "保存中..." : "保存"}
-							</Button>
-						</div>
+						<SettingsActionBar
+							saving={saving}
+							onReset={handleReset}
+							onSave={handleSave}
+							saveDisabled={!currentProject?.id}
+						/>
 					</div>
 				)}
 			</div>

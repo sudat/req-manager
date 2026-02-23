@@ -1,5 +1,5 @@
-import { redirect } from 'next/navigation';
+import { redirectToSettings } from "../redirect-to-settings";
 
 export default function NotificationRedirectPage() {
-	redirect('/settings');
+	redirectToSettings();
 }

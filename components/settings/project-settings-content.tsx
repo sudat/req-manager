@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useProject } from "@/components/project/project-context";
 import type { ProjectInvestigationSettings } from "@/lib/domain";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,26 +10,9 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { useProjectSettings } from "@/hooks/use-project-settings";
-import { ExplorationSettingsSection } from "./exploration-settings-section";
-
-function SectionHeader({
-	title,
-	description,
-}: {
-	title: string;
-	description?: string;
-}) {
-	return (
-		<div className="mb-6">
-			<h3 className="text-[15px] font-semibold text-slate-900">{title}</h3>
-			{description && (
-				<p className="mt-1 text-[13px] text-slate-500 leading-relaxed">
-					{description}
-				</p>
-			)}
-		</div>
-	);
-}
+import { SectionHeader } from "@/components/settings/section-header";
+import { StatusAlert } from "@/components/settings/status-alert";
+import { SettingsActionBar } from "@/components/settings/settings-action-bar";
 
 const parseLines = (value: string) =>
 	value
@@ -512,35 +494,17 @@ export function ProjectSettingsContent() {
 						/>
 					</div>
 
-					{error && (
-						<div className="rounded-md border border-rose-200 bg-rose-50 p-3">
-							<p className="text-[13px] text-rose-600">{error}</p>
-						</div>
-					)}
+					{error && <StatusAlert variant="error" message={error} />}
 
-					{success && (
-						<div className="rounded-md border border-emerald-200 bg-emerald-50 p-3">
-							<p className="text-[13px] text-emerald-700">{success}</p>
-						</div>
-					)}
+					{success && <StatusAlert variant="success" message={success} />}
 
-					<div className="flex justify-end gap-3 pt-2">
-						<Button
-							variant="outline"
-							onClick={handleReset}
-							disabled={saving}
-							className="h-8 px-6"
-						>
-							リセット
-						</Button>
-						<Button
-							onClick={handleSave}
-							disabled={saving || !currentProject?.id}
-							className="bg-slate-900 hover:bg-slate-800 h-8 px-6"
-						>
-							{saving ? "保存中..." : "保存"}
-						</Button>
-					</div>
+					<SettingsActionBar
+						saving={saving}
+						onReset={handleReset}
+						onSave={handleSave}
+						saveDisabled={!currentProject?.id}
+						wrapperClassName="pt-2"
+					/>
 				</div>
 			)}
 		</div>

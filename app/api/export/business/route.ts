@@ -1,15 +1,20 @@
 import { NextResponse } from "next/server";
-import { Workbook } from "exceljs";
 import { listBusinesses } from "@/lib/data/businesses";
 import { listTasksByBusinessArea } from "@/lib/data/tasks";
 import { listBusinessRequirementsByTaskIds } from "@/lib/data/business-requirements";
+import {
+  buildChildrenMap,
+  buildExcelBuffer,
+  createExcelDownloadResponse,
+  createExportErrorResponse,
+  groupByKey,
+} from "@/lib/export/excel-route";
 
 /**
  * 業務一覧（BD→BT→BR）をExcelでエクスポート
  */
 export async function GET() {
   try {
-    // 1. 全部のBDを取得
     const { data: businesses, error: bizError } = await listBusinesses();
     if (bizError) {
       return NextResponse.json({ error: bizError }, { status: 500 });
@@ -18,34 +23,22 @@ export async function GET() {
       return NextResponse.json({ error: "No business data found" }, { status: 404 });
     }
 
-    // 2. BDに紐づくBTを取得
-    const businessAreas = businesses.map((b) => b.area);
-    const tasksMap = new Map<string, Awaited<ReturnType<typeof listTasksByBusinessArea>>["data"]>();
+    const tasksMap = await buildChildrenMap(
+      businesses,
+      (business) => business.area,
+      async (business) => {
+        const { data } = await listTasksByBusinessArea(business.area);
+        return data;
+      },
+    );
 
-    for (const businessArea of businessAreas) {
-      const { data: tasks } = await listTasksByBusinessArea(businessArea);
-      tasksMap.set(businessArea, tasks);
-    }
-
-    // 3. BTに紐づくBRを取得
-    const allTaskIds: string[] = [];
-    for (const tasks of tasksMap.values()) {
-      if (tasks) {
-        allTaskIds.push(...tasks.map((t) => t.id));
-      }
-    }
+    const allTaskIds = Array.from(tasksMap.values())
+      .flat()
+      .map((task) => task.id);
 
     const { data: requirements } = await listBusinessRequirementsByTaskIds(allTaskIds);
-    const requirementsMap = new Map<string, typeof requirements>();
-    if (requirements) {
-      for (const req of requirements) {
-        const list = requirementsMap.get(req.taskId) ?? [];
-        list.push(req);
-        requirementsMap.set(req.taskId, list);
-      }
-    }
+    const requirementsMap = groupByKey(requirements, (req) => req.taskId);
 
-    // 4. フラットな構造に変換
     const rows: Array<{
       businessArea: string;
       businessName: string;
@@ -114,12 +107,7 @@ export async function GET() {
       }
     }
 
-    // 5. Excel生成
-    const workbook = new Workbook();
-    const worksheet = workbook.addWorksheet("業務一覧");
-
-    // ヘッダー設定
-    worksheet.columns = [
+    const buffer = await buildExcelBuffer("業務一覧", [
       { header: "業務領域コード", key: "businessArea", width: 15 },
       { header: "業務分類名", key: "businessName", width: 30 },
       { header: "業務タスクID", key: "taskId", width: 15 },
@@ -130,40 +118,10 @@ export async function GET() {
       { header: "業務要件目的", key: "reqGoal", width: 40 },
       { header: "業務要件制約", key: "reqConstraints", width: 40 },
       { header: "業務要件所有者", key: "reqOwner", width: 20 },
-    ];
+    ], rows);
 
-    // ヘッダースタイル
-    worksheet.getRow(1).eachCell((cell) => {
-      cell.font = { bold: true, name: "Meiryo UI" };
-      cell.fill = {
-        type: "pattern",
-        pattern: "solid",
-        fgColor: { argb: "FFE0E0E0" },
-      };
-    });
-
-    // データ行追加
-    for (const row of rows) {
-      const addedRow = worksheet.addRow(row);
-      addedRow.eachCell((cell) => {
-        cell.font = { name: "Meiryo UI" };
-      });
-    }
-
-    // 6. バッファ生成してレスポンス
-    const buffer = await workbook.xlsx.writeBuffer();
-
-    return new NextResponse(buffer, {
-      headers: {
-        "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "Content-Disposition": `attachment; filename="business_export_${new Date().toISOString().split("T")[0]}.xlsx"`,
-      },
-    });
+    return createExcelDownloadResponse(buffer, "business_export");
   } catch (error) {
-    console.error("Export error:", error);
-    return NextResponse.json(
-      { error: "Failed to export business data" },
-      { status: 500 }
-    );
+    return createExportErrorResponse("Failed to export business data", error);
   }
 }
