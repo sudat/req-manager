@@ -51,6 +51,7 @@ export function InputSchemaEditor({
           ? "エンティティ名、属性（カラム）、関連（リレーション）、状態遷移を定義してください。"
           : "操作の入口条件を記述します。画面なら操作対象・トリガー・前提条件、APIならメソッドとパスなど「どう始まるか」を書きます。"
       }
+      defaultOpen={false}
     >
       {spec.ioType === "api" && (
         <div className="grid gap-3 md:grid-cols-2">
@@ -106,18 +107,21 @@ export function InputSchemaEditor({
       )}
 
       {spec.ioType === "screen" && (
-        <div className="space-y-1">
-          <Label className="text-xs">画面URLパス（ルート）</Label>
-          <Input
-            value={spec.typeDetail?.ioType === "screen" ? spec.typeDetail.route ?? "" : ""}
-            onChange={(e) =>
-              updateStructuredSpec((current) => ({
-                ...current,
-                typeDetail: { ioType: "screen", route: e.target.value },
-              }))
-            }
-          />
-        </div>
+        <ScreenInputSection
+          inputSchema={
+            spec.inputSchema && "trigger" in spec.inputSchema
+              ? spec.inputSchema
+              : defaultScreenInput
+          }
+          route={spec.typeDetail?.ioType === "screen" ? spec.typeDetail.route ?? "" : ""}
+          onRouteChange={(route) =>
+            updateStructuredSpec((current) => ({
+              ...current,
+              typeDetail: { ioType: "screen", route },
+            }))
+          }
+          onChange={(inputSchema) => onChange({ ...spec, inputSchema })}
+        />
       )}
 
       {spec.ioType === "batch" && (
@@ -198,17 +202,6 @@ export function InputSchemaEditor({
         updateStructuredSpec={updateStructuredSpec}
         onOpenFkDialog={onOpenFkDialog}
       />
-
-      {spec.ioType === "screen" && (
-        <ScreenInputSection
-          inputSchema={
-            spec.inputSchema && "trigger" in spec.inputSchema
-              ? spec.inputSchema
-              : defaultScreenInput
-          }
-          onChange={(inputSchema) => onChange({ ...spec, inputSchema })}
-        />
-      )}
 
       {spec.ioType !== "model" && (
         <div className="mt-4">

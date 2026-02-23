@@ -46,6 +46,7 @@ export function ExceptionsEditor({ spec, updateStructuredSpec }: ExceptionsEdito
       title="例外"
       description="エラー発生時の挙動を定義します"
       titleTooltip="想定されるエラー条件、エラーコード、HTTPステータス、ユーザー向けメッセージ、リカバリ方針を記述します。"
+      defaultOpen={false}
     >
       <div className="flex items-center justify-end">
         <Button variant="default" size="sm" className="h-7 gap-2 text-[12px]" onClick={addException}>

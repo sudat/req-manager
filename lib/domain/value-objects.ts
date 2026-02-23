@@ -188,5 +188,74 @@ export interface InvestigationResult {
   updatedAt: string;
 }
 
+/**
+ * 改修指示パッケージ（PRD 6.8）
+ */
+export interface ModificationPackage {
+  taskId: string;
+  crId: string;
+  projectId: string;
+  repositoryUrl: string;
+  baseBranch: string;
+  execution: {
+    workingBranch: string;
+    allowPaths: string[];
+    denyPaths?: string[];
+    maxRuntimeSec: number;
+    idempotencyKey: string;
+  };
+  productRequirement: {
+    targetUsers: string;
+    experienceGoals: string;
+    qualityGoals: string;
+    designSystem: string;
+    uxGuidelines: string;
+    techStackProfile: string;
+    codingConventions: string | null;
+    forbiddenChoices: string | null;
+  } | null;
+  businessTask: string;
+  businessRequirements: string[];
+  systemFunctions: string[];
+  systemRequirements: string[];
+  acceptanceCriteria: string[];
+  investigationRefs: {
+    investigationId: string;
+    investigationResultSummary: string;
+    impactReviewId?: string;
+    impactReviewResultSummary?: string;
+  };
+  implementationUnits: Array<{
+    ddId: string;
+    type: "screen" | "api" | "batch" | "external_if" | "model" | "report" | "job";
+    name: string;
+    entryPoint: string;
+    designDetails: Record<string, unknown>;
+  }>;
+  modificationSummary: string;
+  modificationDetails: string;
+  targets: Array<{
+    ddId: string;
+    entryPoint: string;
+    description: string;
+    relatedRequirements: string[];
+  }>;
+  constraints: string[];
+  prohibitions: string[];
+  codingGuidelines: string;
+  testCommands: string[];
+  residualRisks?: Array<{
+    riskType: string;
+    description: string;
+    severity: "high" | "medium" | "low";
+    mitigation: string;
+  }>;
+  excludedFromScope?: Array<{
+    filePath: string;
+    exclusionReason: string;
+    excludedBy: "auto_rule" | "ai_review" | "human_decision";
+  }>;
+}
+
 // Import types used in value objects
 import type { BusinessArea } from "./enums";

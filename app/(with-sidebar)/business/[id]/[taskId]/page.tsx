@@ -126,7 +126,7 @@ export default function TaskDetailPage({ params }: PageProps) {
 		<>
 			<MobileHeader />
 			<div className="min-h-screen bg-slate-50">
-				<div className="mx-auto max-w-[1400px] px-8 py-4">
+				<div className="mx-auto max-w-[1400px] px-8 py-6">
 					{/* パンくずリスト */}
 					<Breadcrumb className="mb-4">
 						<BreadcrumbList>
@@ -148,25 +148,17 @@ export default function TaskDetailPage({ params }: PageProps) {
 						</BreadcrumbList>
 					</Breadcrumb>
 
-					{/* タイトルと編集ボタン */}
-					<div className="flex items-center justify-between mb-4">
+					{/* タイトルとAIボタン */}
+					<div className="flex items-center justify-between mb-6">
 						<h1 className="text-[32px] font-semibold tracking-tight text-slate-900">
 							業務タスク詳細
 						</h1>
-						<div className="flex gap-2">
-							<Link href={routeArea ? `/chat?screen=BT&bdId=${routeArea}&btId=${taskId}` : "/chat"}>
-								<Button className="h-8 gap-2 text-[14px] bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white">
-									<Sparkles className="h-4 w-4" />
-									AIで追加
-								</Button>
-							</Link>
-							<Link href={`/business/${routeArea}/${taskId}/edit/basic`}>
-								<Button variant="ghost" size="sm" className="h-7 gap-1.5 text-[12px] hover:bg-slate-100 transition-colors">
-									<Pencil className="h-3.5 w-3.5" />
-									編集
-								</Button>
-							</Link>
-						</div>
+						<Link href={routeArea ? `/chat?screen=BT&bdId=${routeArea}&btId=${taskId}` : "/chat"}>
+							<Button className="h-8 gap-2 text-[14px] bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white">
+								<Sparkles className="h-4 w-4" />
+								AIで追加
+							</Button>
+						</Link>
 					</div>
 
 					<TaskLoadingStatus
@@ -181,36 +173,36 @@ export default function TaskDetailPage({ params }: PageProps) {
 
 					{task !== null && (
 						<>
-						<TaskSummaryCard
-							displayBizId={displayBizId}
-							taskId={taskId}
-							displayTaskName={displayTaskName}
-							displayTaskSummary={displayTaskSummary}
-							displayTriggerDescription={displayTriggerDescription}
-							displayTriggerTaskIds={displayTriggerTaskIds}
-							displayFrequency={displayFrequency}
-							displayFrequencyDescription={displayFrequencyDescription}
-							displayProcessSteps={displayProcessSteps}
-							displayInput={displayInput}
-							displayOutput={displayOutput}
-							displayConceptIds={displayConceptIds}
-							conceptMap={conceptMap}
-							taskMap={taskMap}
-						/>
+						<div className="space-y-4">
+							<TaskSummaryCard
+								displayBizId={displayBizId}
+								taskId={taskId}
+								displayTaskName={displayTaskName}
+								displayTaskSummary={displayTaskSummary}
+								displayTriggerDescription={displayTriggerDescription}
+								displayTriggerTaskIds={displayTriggerTaskIds}
+								displayFrequency={displayFrequency}
+								displayFrequencyDescription={displayFrequencyDescription}
+								displayProcessSteps={displayProcessSteps}
+								displayInput={displayInput}
+								displayOutput={displayOutput}
+								displayConceptIds={displayConceptIds}
+								conceptMap={conceptMap}
+								taskMap={taskMap}
+								routeArea={routeArea}
+							/>
+							<HealthScoreCard
+								title="業務タスクヘルススコア"
+								summary={healthSummary}
+								loading={healthLoading}
+								error={healthError}
+								maxIssues={6}
+								showStats
+								pageType="business"
+							/>
+						</div>
 
 							<div className="mt-6 space-y-6">
-								<div>
-									<HealthScoreCard
-										title="業務タスクヘルススコア"
-										summary={healthSummary}
-										loading={healthLoading}
-										error={healthError}
-										maxIssues={6}
-										showStats
-										pageType="business"
-									/>
-								</div>
-
 								<section className="space-y-4">
 									<div className="flex items-center justify-between border-l-4 border-brand-600 pl-3">
 										<h2 className="text-[18px] font-semibold text-slate-900">

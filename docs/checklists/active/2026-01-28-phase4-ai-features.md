@@ -15,7 +15,7 @@ PRD 第11章 Phase4 のチェックリストを詳細化し、Mastra Agentを統
 ### 期待成果物
 - Mastra Agent基盤（単一Agent + 複数Tool構成）
 - コンテキスト注入機能（PR、現在位置、既存要件、概念辞書）
-- 登録支援Tool群（bt_draft, br_draft, system_draft, impl_unit_draft）
+- 登録支援Tool群（bt_draft, br_draft, system_draft, dd_draft）
 - 品質チェックTool（critic_check）
 - 概念抽出Tool（concept_extract）
 - AIチャットUI（/chat）
@@ -155,9 +155,9 @@ PRD 第11章 Phase4 のチェックリストを詳細化し、Mastra Agentを統
 **関連ファイル**: `lib/mastra/tools/impl-unit-draft.ts`
 
 #### 実装項目
-- [x] impl_unit_draft Tool実装（createTool使用）
-  - id: 'impl_unit_draft'
-  - description: '実装単位SDの草案を生成する'
+- [x] dd_draft Tool実装（createTool使用）
+  - id: 'dd_draft'
+  - description: 'DD（Design Document）の草案を生成する'
   - inputSchema: z.object({ sfId, naturalLanguageInput })
   - execute: async (inputData) の形式
     - coding_conventionsに従ったentry_point生成
@@ -165,7 +165,7 @@ PRD 第11章 Phase4 のチェックリストを詳細化し、Mastra Agentを統
     - データモデル設計案生成
 
 #### 確認項目
-- [x] SF IDから実装単位SD草案が生成される（✅ 2026-02-02 E2E確認済み）
+- [x] SF IDからDD草案が生成される（✅ 2026-02-02 E2E確認済み）
 - [x] entry_pointがcoding_conventionsに準拠（✅ 2026-02-02 E2E確認済み）
 
 ---
@@ -250,7 +250,7 @@ PRD 第11章 Phase4 のチェックリストを詳細化し、Mastra Agentを統
 
 #### 実装項目
 - [x] 草案プレビューカードコンポーネント
-  - タイプ別表示（BT/BR/SF/SR/AC/実装単位SD）
+  - タイプ別表示（BT/BR/SF/SR/AC/DD）
   - 確定/編集/やり直しボタン
 - [x] 草案状態管理（draft → committed/discarded）
   - チャットコンテナに統合完了

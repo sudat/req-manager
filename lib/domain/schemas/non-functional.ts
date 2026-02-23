@@ -29,3 +29,5 @@ export const structuredNonFunctionalSchema = z
   .describe(
     "非機能要件定義。機能要件「何をするか」に対して、品質属性「どのように」を定義。パフォーマンス、可用性、セキュリティ、拡張性、運用性等の非機能要件を記述"
   );
+
+export type StructuredNonFunctional = z.infer<typeof structuredNonFunctionalSchema>;

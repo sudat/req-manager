@@ -7,13 +7,11 @@ import { Badge } from "@/components/ui/badge";
 import { Plus } from "lucide-react";
 import { RequirementCard } from "@/components/forms/requirement-card";
 import type { Requirement, SelectionDialogType, SelectableItem } from "@/lib/domain/forms";
-import type { SystemDomain } from "@/lib/data/system-domains";
 
 type RequirementsSectionProps = {
   requirements: Requirement[];
   concepts: SelectableItem[];
   systemFunctions: SelectableItem[];
-  systemDomains: SystemDomain[];
   systemRequirements?: SelectableItem[];
   loading: boolean;
   onAddRequirement: () => void;
@@ -26,7 +24,6 @@ export function RequirementsSection({
   requirements,
   concepts,
   systemFunctions,
-  systemDomains,
   systemRequirements = [],
   loading,
   onAddRequirement,
@@ -42,11 +39,6 @@ export function RequirementsSection({
   const systemFunctionMap = useMemo(
     () => new Map(systemFunctions.map((srf) => [srf.id, srf.name])),
     [systemFunctions]
-  );
-
-  const systemDomainMap = useMemo(
-    () => new Map(systemDomains.map((d) => [d.id, d.name])),
-    [systemDomains]
   );
 
   const systemRequirementMap = useMemo(
@@ -90,7 +82,6 @@ export function RequirementsSection({
               requirement={req}
               conceptMap={conceptMap}
               systemFunctionMap={systemFunctionMap}
-              systemDomainMap={systemDomainMap}
               systemRequirementMap={systemRequirementMap}
               onUpdate={(patch) => onUpdateRequirement(req.id, patch)}
               onRemove={() => onRemoveRequirement(req.id)}

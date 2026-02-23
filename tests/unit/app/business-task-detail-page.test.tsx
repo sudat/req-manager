@@ -7,7 +7,7 @@ Object.assign(globalThis, {
   HTMLElement: window.HTMLElement,
 });
 
-import { afterEach, describe, expect, it, jest } from "bun:test";
+import { afterEach, describe, expect, it, jest, mock } from "bun:test";
 import { cleanup, render, waitFor } from "@testing-library/react";
 
 // Mocks - よりシンプルに

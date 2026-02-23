@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { DesignDocumentList } from "@/components/forms/design-document-list";
 import { useDesignDocumentsForm } from "../hooks/useDesignDocumentsForm";
 import { DEFAULT_PROJECT_ID } from "@/components/project/project-context";
@@ -58,10 +59,16 @@ export default function SystemFunctionEditDesignDocumentsPage({
 			</Link>
 
 			{/* Page Title */}
-			<div className="mb-6">
+			<div className="mb-6 flex items-center gap-2">
 				<h1 className="text-2xl font-bold text-slate-900">
 					編集: システム機能 - DD（Design Document）
 				</h1>
+				<Badge
+					variant="outline"
+					className="font-mono text-xs font-semibold border-emerald-300 bg-emerald-100 text-emerald-800 px-2 py-0.5"
+				>
+					{designDocuments.length}
+				</Badge>
 			</div>
 
 			{/* Form */}

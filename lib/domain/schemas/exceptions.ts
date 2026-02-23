@@ -90,3 +90,5 @@ export const structuredExceptionSchema = z
   .describe(
     "例外定義。設計書の実装において発生しうる例外（エラー）のパターンを定義。条件、HTTPステータス、エラーコード、メッセージ、通知方法、ログ、リカバリ戦略等を網羅的に記述"
   );
+
+export type StructuredException = z.infer<typeof structuredExceptionSchema>;

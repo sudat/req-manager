@@ -13,7 +13,7 @@ PRD 11.2 Phase2（正本管理）の詳細計画。既存実装の再利用を�
 - Phase 2: 正本管理（手動登録）
 
 ### 主要成果物
-- BD/BT/BR/SD/SF/SR/AC/実装単位SDのCRUD画面
+- BD/BT/BR/SD/SF/SR/AC/DDのCRUD画面
 - PR編集画面（基本情報/技術スタック・規約）
 - /settings プロジェクト設定（PRD 6.15）
 
@@ -87,9 +87,9 @@ PRD 11.2 Phase2（正本管理）の詳細計画。既存実装の再利用を�
 - [x] GWTテンプレート入力UI
 - [ ] 検証: ACが保存され、SRとの紐づきが正しい
 
-### 3.11 実装単位SD（2-11）
-- [x] impl_unit_sds CRUDのデータ層接続
-- [x] SF詳細内の実装単位SDフォーム追加
+### 3.11 DD（Design Document）（2-11）
+- [x] design_documents CRUDのデータ層接続
+- [x] SF詳細内のDDフォーム追加
 - [x] entry_points / design_policy / details の入力UI
 - [ ] 検証: 保存・再読込が一致
 
@@ -115,7 +115,7 @@ PRD 11.2 Phase2（正本管理）の詳細計画。既存実装の再利用を�
 
 ## 5. 完了条件（Phase2 / M2）
 - PR編集（基本情報/技術スタック）が保存できる
-- BD→BT→BR および SD→SF→SR→AC→実装単位SD が手動で登録できる
+- BD→BT→BR および SD→SF→SR→AC→DD が手動で登録できる
 - /settings にプロジェクト設定が保存できる
 
 ---
@@ -123,7 +123,7 @@ PRD 11.2 Phase2（正本管理）の詳細計画。既存実装の再利用を�
 ## 6. 検証チェック（M2 相当）
 - [ ] PRを編集し、保存できる（tech_stack_profile含む）
 - [ ] BD→BT→BRの階層を手動で作成・編集・削除できる
-- [ ] SD→SF→SR→AC→実装単位SDの階層を手動で作成・編集・削除できる
+- [ ] SD→SF→SR→AC→DDの階層を手動で作成・編集・削除できる
 - [ ] ACのGWT形式（Given-When-Then）で入力できる
 - [ ] 各画面でパンくずリストが正しく表示される
 - [x] /settings でプロジェクト設定が保存・再読込できる

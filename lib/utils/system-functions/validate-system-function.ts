@@ -3,6 +3,8 @@ import { structuredDesignDocumentSpecSchema } from "@/lib/domain/schemas/design-
 import type { EntryPoint } from "@/lib/domain";
 import type { DesignDocumentDraft } from "@/components/forms/design-document-list";
 
+export type { DesignDocumentDraft } from "@/components/forms/design-document-list";
+
 /**
  * システム機能の基本フィールドをバリデーション
  */

@@ -47,21 +47,9 @@ export function EntryPointsInlineEditor({
 
 	return (
 		<div className="space-y-2">
-			<div className="flex items-center justify-between">
-				<Label className="text-[12px] font-medium text-slate-500">
-					エントリポイント<span className="text-rose-500">*</span>
-				</Label>
-				<Button
-					type="button"
-					variant="default"
-					size="sm"
-					className="h-7 gap-2 text-[12px]"
-					onClick={addEntryPoint}
-				>
-					<Plus className="h-4 w-4" />
-					追加
-				</Button>
-			</div>
+			<Label className="text-[12px] font-medium text-slate-500">
+				エントリポイント<span className="text-rose-500">*</span>
+			</Label>
 			{entryPoints.length === 0 ? (
 				<div className="text-[13px] text-slate-500 text-center py-4">
 					エントリポイントがありません
@@ -149,6 +137,16 @@ export function EntryPointsInlineEditor({
 					})}
 				</div>
 			)}
+			<Button
+				type="button"
+				variant="default"
+				size="sm"
+				className="h-7 gap-2 text-[12px]"
+				onClick={addEntryPoint}
+			>
+				<Plus className="h-4 w-4" />
+				追加
+			</Button>
 		</div>
 	);
 }

@@ -1,5 +1,6 @@
 import { MarkdownRenderer } from "@/components/markdown/markdown-renderer";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ConceptBadgeList } from "@/components/ui/concept-badge";
 import { IdNameBadge } from "@/components/ui/id-name-badge";
@@ -16,6 +17,8 @@ import {
 	parseYamlKeySourceList,
 	parseYamlProcessSteps,
 } from "@/lib/utils/yaml";
+import Link from "next/link";
+import { Pencil } from "lucide-react";
 
 type TaskSummaryCardProps = {
 	displayBizId: string;
@@ -38,6 +41,7 @@ type TaskSummaryCardProps = {
 	displayConceptIds: string;
 	conceptMap: Map<string, string>;
 	taskMap: Map<string, string>;
+	routeArea: string;
 };
 
 export function TaskSummaryCard({
@@ -55,14 +59,23 @@ export function TaskSummaryCard({
 	displayConceptIds,
 	conceptMap,
 	taskMap,
+	routeArea,
 }: TaskSummaryCardProps) {
 	return (
 		<Card className="rounded-md border border-slate-200/60 bg-white shadow-sm hover:border-slate-300/60 transition-colors">
 			<CardContent className="p-6 space-y-3">
-				<div className="flex items-center gap-2">
-					<span className="id-label--brand">{displayBizId}</span>
-					<span className="text-slate-300">/</span>
-					<span className="id-label--brand">{taskId}</span>
+			<div className="flex items-center justify-between">
+				<div className="id-label--brand">
+					<span>{displayBizId}</span>
+					<span className="text-slate-300 mx-1">/</span>
+					<span>{taskId}</span>
+				</div>
+					<Link href={`/business/${routeArea}/${taskId}/edit/basic`}>
+						<Button variant="ghost" size="sm" className="h-7 gap-1.5 text-[12px]">
+							<Pencil className="h-3.5 w-3.5" />
+							編集
+						</Button>
+					</Link>
 				</div>
 
 				<h2 className="text-[20px] font-semibold text-slate-900 leading-tight border-b border-slate-200 pb-2">

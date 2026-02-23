@@ -31,7 +31,6 @@ type RequirementCardProps = {
   requirement: Requirement;
   conceptMap: Map<string, string>;
   systemFunctionMap: Map<string, string>;
-  systemDomainMap: Map<string, string>;
   businessRequirementMap?: Map<string, string>;
   systemRequirementMap?: Map<string, string>;
   onUpdate: (patch: Partial<Requirement>) => void;
@@ -78,7 +77,6 @@ export function RequirementCard({
   requirement,
   conceptMap,
   systemFunctionMap,
-  systemDomainMap,
   businessRequirementMap,
   systemRequirementMap,
   onUpdate,
@@ -86,6 +84,8 @@ export function RequirementCard({
   onOpenDialog,
 }: RequirementCardProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [goalFocused, setGoalFocused] = useState(false);
+  const [summaryFocused, setSummaryFocused] = useState(false);
 
   // 種別に応じたバッジの色を設定
   const typeBadgeClass =
@@ -157,9 +157,12 @@ export function RequirementCard({
                   ゴール
                 </Label>
                 <Textarea
-                  className="min-h-[90px] text-[14px]"
+                  className="field-sizing-fixed resize-none text-[14px] transition-[height]"
+                  style={{ height: goalFocused ? 72 : 32 }}
                   value={requirement.goal}
                   onChange={(e) => onUpdate({ goal: e.target.value })}
+                  onFocus={() => setGoalFocused(true)}
+                  onBlur={() => setGoalFocused(false)}
                 />
               </div>
               <YamlListField
@@ -186,9 +189,12 @@ export function RequirementCard({
             <div className="space-y-1.5">
               <Label className="text-[14px] font-bold text-slate-900 border-l-4 border-primary pl-3 -ml-3">概要</Label>
               <Textarea
-                className="min-h-[90px] text-[14px]"
+                className="field-sizing-fixed resize-none text-[14px] transition-[height]"
+                style={{ height: summaryFocused ? 72 : 32 }}
                 value={requirement.summary}
                 onChange={(e) => onUpdate({ summary: e.target.value })}
+                onFocus={() => setSummaryFocused(true)}
+                onBlur={() => setSummaryFocused(false)}
               />
             </div>
           )}
@@ -224,6 +230,15 @@ export function RequirementCard({
             />
           )}
 
+          {requirement.type === "システム要件" && businessRequirementMap && (
+            <SelectionField
+              label="業務要件"
+              selectedIds={requirement.businessRequirementIds}
+              nameMap={businessRequirementMap}
+              onOpenDialog={() => onOpenDialog("business")}
+            />
+          )}
+
           <div className="grid gap-3 md:grid-cols-2">
             <SelectionField
               label="関連概念"
@@ -239,15 +254,6 @@ export function RequirementCard({
             />
           </div>
 
-          {requirement.type === "システム要件" && businessRequirementMap && (
-            <SelectionField
-              label="業務要件"
-              selectedIds={requirement.businessRequirementIds}
-              nameMap={businessRequirementMap}
-              onOpenDialog={() => onOpenDialog("business")}
-            />
-          )}
-
           {requirement.type === "業務要件" && systemRequirementMap && (
             <SelectionField
               label="関連システム要件"
@@ -257,14 +263,6 @@ export function RequirementCard({
             />
           )}
 
-          {requirement.type !== "業務要件" && (
-            <SelectionField
-              label="システム領域"
-              selectedIds={requirement.systemDomainIds}
-              nameMap={systemDomainMap}
-              onOpenDialog={() => onOpenDialog("domain")}
-            />
-          )}
         </CollapsibleContent>
       </div>
     </Collapsible>

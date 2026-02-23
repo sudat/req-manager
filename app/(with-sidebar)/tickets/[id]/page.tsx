@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import { MobileHeader } from "@/components/layout/mobile-header";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Pencil } from "lucide-react";
+import { Pencil } from "lucide-react";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -21,6 +21,7 @@ import { TicketImpactCard } from "@/components/tickets/ticket-impact-card";
 import { AcceptanceConfirmationPanel } from "@/components/tickets/acceptance-confirmation-panel";
 import { InvestigateButton } from "@/components/tickets/investigate-button";
 import { TicketInvestigationSection } from "@/components/tickets/ticket-investigation-section";
+import { GenerateInstructionPackageButton } from "@/components/tickets/generate-instruction-package-button";
 
 const DEFAULT_PROJECT_ID = "00000000-0000-0000-0000-000000000001";
 
@@ -69,10 +70,13 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
               {changeRequest.status === "open" && (
                 <InvestigateButton changeRequestId={id} />
               )}
-              <Button className="h-8 gap-2 text-[14px] bg-slate-900 hover:bg-slate-800">
-                <CheckCircle2 className="h-4 w-4" />
-                ベースラインに反映
-              </Button>
+              <GenerateInstructionPackageButton
+                changeRequestId={id}
+                disabled={
+                  !investigationResult ||
+                  changeRequest.status === "open"
+                }
+              />
             </div>
           </div>
 

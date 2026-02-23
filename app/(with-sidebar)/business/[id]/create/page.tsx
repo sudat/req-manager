@@ -250,7 +250,6 @@ function BusinessTaskCreatePageContent({ businessKey }: BusinessTaskCreatePageCo
             requirements={requirements}
             concepts={concepts}
             systemFunctions={systemFunctions}
-            systemDomains={systemDomains}
             systemRequirements={systemRequirements}
             loading={loading}
             onAddRequirement={() => addRequirement(taskId)}

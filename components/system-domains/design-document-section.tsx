@@ -57,11 +57,11 @@ export function DesignDocumentSection({
 	}
 
 	return (
-		<div className="space-y-4">
+		<div className="space-y-3">
 			{items.length === 0 ? (
 				<EmptyState message="まだ登録されていません。" />
 			) : (
-				<div className="space-y-4">
+				<div className="space-y-3">
 					{items.map((item) => (
 						<DesignDocumentItem key={item.id} item={item} />
 					))}

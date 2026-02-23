@@ -18,6 +18,8 @@
 
 **本ツールの役割**: この「波及影響の見落とし」を防ぐ
 
+**ビジネスMVP時**: Claude Code/Codexを手動で使用、改修指示パッケージをエクスポートして手動で渡す。MCPで不明点を自己解決。
+
 ### 1.2 設計思想
 
 - 「不完全な仕様を前提とした設計」を採用
@@ -278,6 +280,17 @@ draft → investigating → reviewed → approved → completed
   residual_risks?: [...];    // 残存リスク（PRレビュー時参考）
 }
 ```
+
+### 5.6 ビジネスMVP時の運用方針
+
+**ビジネスMVP時（クライアント獲得後）：**
+- Claude Agent SDKは使用せず、開発者がClaude Code / Codexを手動で操作
+- 改修指示パッケージは要件管理DBのエクスポート機能からダウンロード
+- **推奨**: `docs/instruction-packages/{cr-id}.md` に配置し、Claude Codeで参照
+- コーディングエージェントはMCP経由で要件管理DBにアクセスし、不明点を自己解決
+
+**PMF確認後：**
+- Claude Agent SDK等を活用した改修の完全自動化を検討
 
 ---
 

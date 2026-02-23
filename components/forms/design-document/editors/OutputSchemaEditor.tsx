@@ -36,6 +36,7 @@ export function OutputSchemaEditor({ spec, onChange }: OutputSchemaEditorProps):
       title="出力スキーマ"
       description="処理結果として返す振る舞い・ステータスを定義します"
       titleTooltip="処理後の振る舞いを記述します。画面なら遷移先・表示メッセージ、APIなら成功/エラーのステータスコードなどを定義してください。"
+      defaultOpen={false}
     >
       {spec.ioType === "api" ? (
         <ApiOutputSchemaSection

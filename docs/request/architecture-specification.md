@@ -110,7 +110,32 @@ Agent SDKを使うことで、アプリ側から影響調査を起動し、結�
 | `get_links` | 要件間のリンクを取得 | `source_id: string` |
 | `submit_impact_proposal` | 影響範囲候補をアプリに送信 | `proposal: ImpactProposal` |
 
-### 6.4.2 ImpactProposal の構造
+### 6.4.2 ビジネスMVP版とPMF後の違い
+
+MCP Serverは段階的に実装する。
+
+**ビジネスMVP時（Phase 5） - 最小限機能：**
+読み取り専用ツールのみ提供。認証はシンプルなプロジェクトIDベース。
+
+| ツール名 | 優先度 | 用途 |
+|---------|--------|------|
+| `search_requirements` | Must | 要件検索 |
+| `get_requirement` | Must | 要件詳細取得 |
+| `get_system_function` | Must | システム機能取得（エントリポイント含む） |
+| `get_product_requirement` | Must | PR取得（tech_stack_profile等） |
+| `get_concept` | Should | 概念詳細取得 |
+
+**PMF確認後（Phase 6） - 完全版：**
+書き込みツール追加。本格認証（APIキー）、レート制限、監査ログを実装。
+
+| ツール名 | 優先度 | 用途 |
+|---------|--------|------|
+| `search_concepts` | Must | 概念辞書検索 |
+| `get_links` | Must | 要件間リンク取得 |
+| `list_system_functions_by_domain` | Should | システム領域内の機能一覧 |
+| `submit_impact_proposal` | Should | 影響範囲候補の送信 |
+
+### 6.4.3 ImpactProposal の構造
 
 ```typescript
 interface ImpactProposal {

@@ -1,6 +1,11 @@
-import type { ReactNode } from "react";
-import { Trash2 } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { ChevronDown, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -30,6 +35,16 @@ interface SideEffectsEditorProps {
 const EMPTY_SELECT_VALUE = "__none__";
 const FILE_OUTPUT_FORMATS = ["csv", "json", "xml", "pdf", "txt"] as const;
 
+function hasResponseDefinition(response: SideEffectResponse | undefined): boolean {
+  return Boolean(
+    response?.successLabel ||
+      response?.successSchemaRef ||
+      response?.errorLabel ||
+      response?.errorSchemaRef ||
+      response?.errorExceptionRef
+  );
+}
+
 function mergeResponse(
   current: SideEffectResponse | undefined,
   patch: Partial<SideEffectResponse>
@@ -38,20 +53,15 @@ function mergeResponse(
     ...(current ?? {}),
     ...patch,
   };
-  const hasValue = Boolean(
-    next.successLabel ||
-      next.successSchemaRef ||
-      next.errorLabel ||
-      next.errorSchemaRef ||
-      next.errorExceptionRef
-  );
-  return hasValue ? next : undefined;
+  return hasResponseDefinition(next) ? next : undefined;
 }
 
 export function SideEffectsEditor({
   spec,
   updateStructuredSpec,
 }: SideEffectsEditorProps): ReactNode {
+  const [descriptionFocused, setDescriptionFocused] = useState(false);
+
   if (spec.ioType === "model") {
     return null;
   }
@@ -134,9 +144,10 @@ export function SideEffectsEditor({
       title="副作用"
       description="DB更新・外部連携・イベント発行を定義します"
       titleTooltip="この機能の実行により発生する外部への影響を記述します。DB更新、外部API呼び出し、イベント発行などを具体化してください。"
+      defaultOpen={false}
     >
       <div className="space-y-2">
-        <Label className="text-xs">副作用（概要）</Label>
+        <Label className="text-[11px] text-slate-500">副作用（概要）</Label>
         <Textarea
           value={spec.sideEffects.description}
           onChange={(e) =>
@@ -145,8 +156,11 @@ export function SideEffectsEditor({
               sideEffects: { ...current.sideEffects, description: e.target.value },
             }))
           }
-          rows={2}
+          onFocus={() => setDescriptionFocused(true)}
+          onBlur={() => setDescriptionFocused(false)}
           placeholder="DB更新、外部API呼び出し、イベント発行など"
+          className="text-sm min-h-[32px] resize-y transition-[min-height]"
+          style={{ minHeight: descriptionFocused ? 56 : 32 }}
         />
         {!hasRuleRefOptions && (
           <p className="text-xs text-amber-700">
@@ -236,94 +250,111 @@ export function SideEffectsEditor({
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
-            <div className="grid gap-2 md:grid-cols-3">
-              <Input
-                placeholder="id（任意）"
-                value={op.id ?? ""}
-                onChange={(e) =>
-                  updateStructuredSpec((current) => ({
-                    ...current,
-                    sideEffects: {
-                      ...current.sideEffects,
-                      dbOperations: updateAtIndex(current.sideEffects.dbOperations, index, {
-                        id: e.target.value,
-                      }),
-                    },
-                  }))
-                }
-              />
-              <Select
-                value={op.ruleRef ?? EMPTY_SELECT_VALUE}
-                disabled={!hasRuleRefOptions}
-                onValueChange={(value) =>
-                  updateStructuredSpec((current) => ({
-                    ...current,
-                    sideEffects: {
-                      ...current.sideEffects,
-                      dbOperations: updateAtIndex(current.sideEffects.dbOperations, index, {
-                        ruleRef: value === EMPTY_SELECT_VALUE ? undefined : value,
-                      }),
-                    },
-                  }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="呼び出しルール（必須）" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={EMPTY_SELECT_VALUE}>未設定（保存不可）</SelectItem>
-                  {ruleRefOptions.map((ruleName) => (
-                    <SelectItem key={ruleName} value={ruleName}>
-                      {ruleName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={op.activation ?? EMPTY_SELECT_VALUE}
-                onValueChange={(value) =>
-                  updateStructuredSpec((current) => ({
-                    ...current,
-                    sideEffects: {
-                      ...current.sideEffects,
-                      dbOperations: updateAtIndex(current.sideEffects.dbOperations, index, {
-                        activation: value === EMPTY_SELECT_VALUE
-                          ? undefined
-                          : (value as "auto" | "force" | "none"),
-                      }),
-                    },
-                  }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="activation（任意）" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={EMPTY_SELECT_VALUE}>activation未指定</SelectItem>
-                  <SelectItem value="auto">auto</SelectItem>
-                  <SelectItem value="force">force</SelectItem>
-                  <SelectItem value="none">none</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <SideEffectResponseFields
-              response={op.response}
-              exceptionOptions={exceptionOptions}
-              onPatch={(patch) =>
-                updateStructuredSpec((current) => ({
-                  ...current,
-                  sideEffects: {
-                    ...current.sideEffects,
-                    dbOperations: updateAtIndex(current.sideEffects.dbOperations, index, {
-                      response: mergeResponse(
-                        (current.sideEffects.dbOperations ?? [])[index]?.response,
-                        patch
-                      ),
-                    }),
-                  },
-                }))
-              }
-            />
+            <Collapsible defaultOpen={hasResponseDefinition(op.response)}>
+              <div className="grid gap-2 md:grid-cols-[1fr_1fr_1fr_auto] md:items-end">
+                <Input
+                  placeholder="id（任意）"
+                  value={op.id ?? ""}
+                  onChange={(e) =>
+                    updateStructuredSpec((current) => ({
+                      ...current,
+                      sideEffects: {
+                        ...current.sideEffects,
+                        dbOperations: updateAtIndex(current.sideEffects.dbOperations, index, {
+                          id: e.target.value,
+                        }),
+                      },
+                    }))
+                  }
+                />
+                <Select
+                  value={op.ruleRef ?? EMPTY_SELECT_VALUE}
+                  disabled={!hasRuleRefOptions}
+                  onValueChange={(value) =>
+                    updateStructuredSpec((current) => ({
+                      ...current,
+                      sideEffects: {
+                        ...current.sideEffects,
+                        dbOperations: updateAtIndex(current.sideEffects.dbOperations, index, {
+                          ruleRef: value === EMPTY_SELECT_VALUE ? undefined : value,
+                        }),
+                      },
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="呼び出しルール（必須）" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={EMPTY_SELECT_VALUE}>未設定（保存不可）</SelectItem>
+                    {ruleRefOptions.map((ruleName) => (
+                      <SelectItem key={ruleName} value={ruleName}>
+                        {ruleName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={op.activation ?? EMPTY_SELECT_VALUE}
+                  onValueChange={(value) =>
+                    updateStructuredSpec((current) => ({
+                      ...current,
+                      sideEffects: {
+                        ...current.sideEffects,
+                        dbOperations: updateAtIndex(current.sideEffects.dbOperations, index, {
+                          activation: value === EMPTY_SELECT_VALUE
+                            ? undefined
+                            : (value as "auto" | "force" | "none"),
+                        }),
+                      },
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="activation（任意）" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={EMPTY_SELECT_VALUE}>activation未指定</SelectItem>
+                    <SelectItem value="auto">auto</SelectItem>
+                    <SelectItem value="force">force</SelectItem>
+                    <SelectItem value="none">none</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="md:justify-self-end">
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-9 gap-1.5 text-[12px] whitespace-nowrap"
+                    >
+                      レスポンス定義
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    </Button>
+                  </CollapsibleTrigger>
+                </div>
+              </div>
+              <CollapsibleContent className="pt-2">
+                <SideEffectResponseFields
+                  response={op.response}
+                  exceptionOptions={exceptionOptions}
+                  onPatch={(patch) =>
+                    updateStructuredSpec((current) => ({
+                      ...current,
+                      sideEffects: {
+                        ...current.sideEffects,
+                        dbOperations: updateAtIndex(current.sideEffects.dbOperations, index, {
+                          response: mergeResponse(
+                            (current.sideEffects.dbOperations ?? [])[index]?.response,
+                            patch
+                          ),
+                        }),
+                      },
+                    }))
+                  }
+                />
+              </CollapsibleContent>
+            </Collapsible>
             {!op.ruleRef && (
               <p className="text-xs text-red-600">
                 この副作用を呼び出すコアロジックのルールを選択してください。
@@ -420,94 +451,111 @@ export function SideEffectsEditor({
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
-            <div className="grid gap-2 md:grid-cols-3">
-              <Input
-                placeholder="id（任意）"
-                value={apiCall.id ?? ""}
-                onChange={(e) =>
-                  updateStructuredSpec((current) => ({
-                    ...current,
-                    sideEffects: {
-                      ...current.sideEffects,
-                      externalApiCalls: updateAtIndex(current.sideEffects.externalApiCalls, index, {
-                        id: e.target.value,
-                      }),
-                    },
-                  }))
-                }
-              />
-              <Select
-                value={apiCall.ruleRef ?? EMPTY_SELECT_VALUE}
-                disabled={!hasRuleRefOptions}
-                onValueChange={(value) =>
-                  updateStructuredSpec((current) => ({
-                    ...current,
-                    sideEffects: {
-                      ...current.sideEffects,
-                      externalApiCalls: updateAtIndex(current.sideEffects.externalApiCalls, index, {
-                        ruleRef: value === EMPTY_SELECT_VALUE ? undefined : value,
-                      }),
-                    },
-                  }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="呼び出しルール（必須）" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={EMPTY_SELECT_VALUE}>未設定（保存不可）</SelectItem>
-                  {ruleRefOptions.map((ruleName) => (
-                    <SelectItem key={ruleName} value={ruleName}>
-                      {ruleName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={apiCall.activation ?? EMPTY_SELECT_VALUE}
-                onValueChange={(value) =>
-                  updateStructuredSpec((current) => ({
-                    ...current,
-                    sideEffects: {
-                      ...current.sideEffects,
-                      externalApiCalls: updateAtIndex(current.sideEffects.externalApiCalls, index, {
-                        activation: value === EMPTY_SELECT_VALUE
-                          ? undefined
-                          : (value as "auto" | "force" | "none"),
-                      }),
-                    },
-                  }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="activation（任意）" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={EMPTY_SELECT_VALUE}>activation未指定</SelectItem>
-                  <SelectItem value="auto">auto</SelectItem>
-                  <SelectItem value="force">force</SelectItem>
-                  <SelectItem value="none">none</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <SideEffectResponseFields
-              response={apiCall.response}
-              exceptionOptions={exceptionOptions}
-              onPatch={(patch) =>
-                updateStructuredSpec((current) => ({
-                  ...current,
-                  sideEffects: {
-                    ...current.sideEffects,
-                    externalApiCalls: updateAtIndex(current.sideEffects.externalApiCalls, index, {
-                      response: mergeResponse(
-                        (current.sideEffects.externalApiCalls ?? [])[index]?.response,
-                        patch
-                      ),
-                    }),
-                  },
-                }))
-              }
-            />
+            <Collapsible defaultOpen={hasResponseDefinition(apiCall.response)}>
+              <div className="grid gap-2 md:grid-cols-[1fr_1fr_1fr_auto] md:items-end">
+                <Input
+                  placeholder="id（任意）"
+                  value={apiCall.id ?? ""}
+                  onChange={(e) =>
+                    updateStructuredSpec((current) => ({
+                      ...current,
+                      sideEffects: {
+                        ...current.sideEffects,
+                        externalApiCalls: updateAtIndex(current.sideEffects.externalApiCalls, index, {
+                          id: e.target.value,
+                        }),
+                      },
+                    }))
+                  }
+                />
+                <Select
+                  value={apiCall.ruleRef ?? EMPTY_SELECT_VALUE}
+                  disabled={!hasRuleRefOptions}
+                  onValueChange={(value) =>
+                    updateStructuredSpec((current) => ({
+                      ...current,
+                      sideEffects: {
+                        ...current.sideEffects,
+                        externalApiCalls: updateAtIndex(current.sideEffects.externalApiCalls, index, {
+                          ruleRef: value === EMPTY_SELECT_VALUE ? undefined : value,
+                        }),
+                      },
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="呼び出しルール（必須）" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={EMPTY_SELECT_VALUE}>未設定（保存不可）</SelectItem>
+                    {ruleRefOptions.map((ruleName) => (
+                      <SelectItem key={ruleName} value={ruleName}>
+                        {ruleName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={apiCall.activation ?? EMPTY_SELECT_VALUE}
+                  onValueChange={(value) =>
+                    updateStructuredSpec((current) => ({
+                      ...current,
+                      sideEffects: {
+                        ...current.sideEffects,
+                        externalApiCalls: updateAtIndex(current.sideEffects.externalApiCalls, index, {
+                          activation: value === EMPTY_SELECT_VALUE
+                            ? undefined
+                            : (value as "auto" | "force" | "none"),
+                        }),
+                      },
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="activation（任意）" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={EMPTY_SELECT_VALUE}>activation未指定</SelectItem>
+                    <SelectItem value="auto">auto</SelectItem>
+                    <SelectItem value="force">force</SelectItem>
+                    <SelectItem value="none">none</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="md:justify-self-end">
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-9 gap-1.5 text-[12px] whitespace-nowrap"
+                    >
+                      レスポンス定義
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    </Button>
+                  </CollapsibleTrigger>
+                </div>
+              </div>
+              <CollapsibleContent className="pt-2">
+                <SideEffectResponseFields
+                  response={apiCall.response}
+                  exceptionOptions={exceptionOptions}
+                  onPatch={(patch) =>
+                    updateStructuredSpec((current) => ({
+                      ...current,
+                      sideEffects: {
+                        ...current.sideEffects,
+                        externalApiCalls: updateAtIndex(current.sideEffects.externalApiCalls, index, {
+                          response: mergeResponse(
+                            (current.sideEffects.externalApiCalls ?? [])[index]?.response,
+                            patch
+                          ),
+                        }),
+                      },
+                    }))
+                  }
+                />
+              </CollapsibleContent>
+            </Collapsible>
             {!apiCall.ruleRef && (
               <p className="text-xs text-red-600">
                 この副作用を呼び出すコアロジックのルールを選択してください。
@@ -599,94 +647,111 @@ export function SideEffectsEditor({
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
-            <div className="grid gap-2 md:grid-cols-3">
-              <Input
-                placeholder="id（任意）"
-                value={event.id ?? ""}
-                onChange={(e) =>
-                  updateStructuredSpec((current) => ({
-                    ...current,
-                    sideEffects: {
-                      ...current.sideEffects,
-                      events: updateAtIndex(current.sideEffects.events, index, {
-                        id: e.target.value,
-                      }),
-                    },
-                  }))
-                }
-              />
-              <Select
-                value={event.ruleRef ?? EMPTY_SELECT_VALUE}
-                disabled={!hasRuleRefOptions}
-                onValueChange={(value) =>
-                  updateStructuredSpec((current) => ({
-                    ...current,
-                    sideEffects: {
-                      ...current.sideEffects,
-                      events: updateAtIndex(current.sideEffects.events, index, {
-                        ruleRef: value === EMPTY_SELECT_VALUE ? undefined : value,
-                      }),
-                    },
-                  }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="呼び出しルール（必須）" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={EMPTY_SELECT_VALUE}>未設定（保存不可）</SelectItem>
-                  {ruleRefOptions.map((ruleName) => (
-                    <SelectItem key={ruleName} value={ruleName}>
-                      {ruleName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={event.activation ?? EMPTY_SELECT_VALUE}
-                onValueChange={(value) =>
-                  updateStructuredSpec((current) => ({
-                    ...current,
-                    sideEffects: {
-                      ...current.sideEffects,
-                      events: updateAtIndex(current.sideEffects.events, index, {
-                        activation: value === EMPTY_SELECT_VALUE
-                          ? undefined
-                          : (value as "auto" | "force" | "none"),
-                      }),
-                    },
-                  }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="activation（任意）" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={EMPTY_SELECT_VALUE}>activation未指定</SelectItem>
-                  <SelectItem value="auto">auto</SelectItem>
-                  <SelectItem value="force">force</SelectItem>
-                  <SelectItem value="none">none</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <SideEffectResponseFields
-              response={event.response}
-              exceptionOptions={exceptionOptions}
-              onPatch={(patch) =>
-                updateStructuredSpec((current) => ({
-                  ...current,
-                  sideEffects: {
-                    ...current.sideEffects,
-                    events: updateAtIndex(current.sideEffects.events, index, {
-                      response: mergeResponse(
-                        (current.sideEffects.events ?? [])[index]?.response,
-                        patch
-                      ),
-                    }),
-                  },
-                }))
-              }
-            />
+            <Collapsible defaultOpen={hasResponseDefinition(event.response)}>
+              <div className="grid gap-2 md:grid-cols-[1fr_1fr_1fr_auto] md:items-end">
+                <Input
+                  placeholder="id（任意）"
+                  value={event.id ?? ""}
+                  onChange={(e) =>
+                    updateStructuredSpec((current) => ({
+                      ...current,
+                      sideEffects: {
+                        ...current.sideEffects,
+                        events: updateAtIndex(current.sideEffects.events, index, {
+                          id: e.target.value,
+                        }),
+                      },
+                    }))
+                  }
+                />
+                <Select
+                  value={event.ruleRef ?? EMPTY_SELECT_VALUE}
+                  disabled={!hasRuleRefOptions}
+                  onValueChange={(value) =>
+                    updateStructuredSpec((current) => ({
+                      ...current,
+                      sideEffects: {
+                        ...current.sideEffects,
+                        events: updateAtIndex(current.sideEffects.events, index, {
+                          ruleRef: value === EMPTY_SELECT_VALUE ? undefined : value,
+                        }),
+                      },
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="呼び出しルール（必須）" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={EMPTY_SELECT_VALUE}>未設定（保存不可）</SelectItem>
+                    {ruleRefOptions.map((ruleName) => (
+                      <SelectItem key={ruleName} value={ruleName}>
+                        {ruleName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={event.activation ?? EMPTY_SELECT_VALUE}
+                  onValueChange={(value) =>
+                    updateStructuredSpec((current) => ({
+                      ...current,
+                      sideEffects: {
+                        ...current.sideEffects,
+                        events: updateAtIndex(current.sideEffects.events, index, {
+                          activation: value === EMPTY_SELECT_VALUE
+                            ? undefined
+                            : (value as "auto" | "force" | "none"),
+                        }),
+                      },
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="activation（任意）" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={EMPTY_SELECT_VALUE}>activation未指定</SelectItem>
+                    <SelectItem value="auto">auto</SelectItem>
+                    <SelectItem value="force">force</SelectItem>
+                    <SelectItem value="none">none</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="md:justify-self-end">
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-9 gap-1.5 text-[12px] whitespace-nowrap"
+                    >
+                      レスポンス定義
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    </Button>
+                  </CollapsibleTrigger>
+                </div>
+              </div>
+              <CollapsibleContent className="pt-2">
+                <SideEffectResponseFields
+                  response={event.response}
+                  exceptionOptions={exceptionOptions}
+                  onPatch={(patch) =>
+                    updateStructuredSpec((current) => ({
+                      ...current,
+                      sideEffects: {
+                        ...current.sideEffects,
+                        events: updateAtIndex(current.sideEffects.events, index, {
+                          response: mergeResponse(
+                            (current.sideEffects.events ?? [])[index]?.response,
+                            patch
+                          ),
+                        }),
+                      },
+                    }))
+                  }
+                />
+              </CollapsibleContent>
+            </Collapsible>
             {!event.ruleRef && (
               <p className="text-xs text-red-600">
                 この副作用を呼び出すコアロジックのルールを選択してください。
@@ -777,79 +842,96 @@ export function SideEffectsEditor({
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
-            <div className="grid gap-2 md:grid-cols-2">
-              <Select
-                value={fileOutput.ruleRef ?? EMPTY_SELECT_VALUE}
-                disabled={!hasRuleRefOptions}
-                onValueChange={(value) =>
-                  updateStructuredSpec((current) => ({
-                    ...current,
-                    sideEffects: {
-                      ...current.sideEffects,
-                      fileOutputs: updateAtIndex(current.sideEffects.fileOutputs, index, {
-                        ruleRef: value === EMPTY_SELECT_VALUE ? undefined : value,
-                      }),
-                    },
-                  }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="呼び出しルール（必須）" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={EMPTY_SELECT_VALUE}>未設定（保存不可）</SelectItem>
-                  {ruleRefOptions.map((ruleName) => (
-                    <SelectItem key={ruleName} value={ruleName}>
-                      {ruleName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={fileOutput.activation ?? EMPTY_SELECT_VALUE}
-                onValueChange={(value) =>
-                  updateStructuredSpec((current) => ({
-                    ...current,
-                    sideEffects: {
-                      ...current.sideEffects,
-                      fileOutputs: updateAtIndex(current.sideEffects.fileOutputs, index, {
-                        activation: value === EMPTY_SELECT_VALUE
-                          ? undefined
-                          : (value as "auto" | "force" | "none"),
-                      }),
-                    },
-                  }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="activation（任意）" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={EMPTY_SELECT_VALUE}>activation未指定</SelectItem>
-                  <SelectItem value="auto">auto</SelectItem>
-                  <SelectItem value="force">force</SelectItem>
-                  <SelectItem value="none">none</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <SideEffectResponseFields
-              response={fileOutput.response}
-              exceptionOptions={exceptionOptions}
-              onPatch={(patch) =>
-                updateStructuredSpec((current) => ({
-                  ...current,
-                  sideEffects: {
-                    ...current.sideEffects,
-                    fileOutputs: updateAtIndex(current.sideEffects.fileOutputs, index, {
-                      response: mergeResponse(
-                        (current.sideEffects.fileOutputs ?? [])[index]?.response,
-                        patch
-                      ),
-                    }),
-                  },
-                }))
-              }
-            />
+            <Collapsible defaultOpen={hasResponseDefinition(fileOutput.response)}>
+              <div className="grid gap-2 md:grid-cols-[1fr_1fr_auto] md:items-end">
+                <Select
+                  value={fileOutput.ruleRef ?? EMPTY_SELECT_VALUE}
+                  disabled={!hasRuleRefOptions}
+                  onValueChange={(value) =>
+                    updateStructuredSpec((current) => ({
+                      ...current,
+                      sideEffects: {
+                        ...current.sideEffects,
+                        fileOutputs: updateAtIndex(current.sideEffects.fileOutputs, index, {
+                          ruleRef: value === EMPTY_SELECT_VALUE ? undefined : value,
+                        }),
+                      },
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="呼び出しルール（必須）" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={EMPTY_SELECT_VALUE}>未設定（保存不可）</SelectItem>
+                    {ruleRefOptions.map((ruleName) => (
+                      <SelectItem key={ruleName} value={ruleName}>
+                        {ruleName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={fileOutput.activation ?? EMPTY_SELECT_VALUE}
+                  onValueChange={(value) =>
+                    updateStructuredSpec((current) => ({
+                      ...current,
+                      sideEffects: {
+                        ...current.sideEffects,
+                        fileOutputs: updateAtIndex(current.sideEffects.fileOutputs, index, {
+                          activation: value === EMPTY_SELECT_VALUE
+                            ? undefined
+                            : (value as "auto" | "force" | "none"),
+                        }),
+                      },
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="activation（任意）" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={EMPTY_SELECT_VALUE}>activation未指定</SelectItem>
+                    <SelectItem value="auto">auto</SelectItem>
+                    <SelectItem value="force">force</SelectItem>
+                    <SelectItem value="none">none</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="md:justify-self-end">
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-9 gap-1.5 text-[12px] whitespace-nowrap"
+                    >
+                      レスポンス定義
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    </Button>
+                  </CollapsibleTrigger>
+                </div>
+              </div>
+              <CollapsibleContent className="pt-2">
+                <SideEffectResponseFields
+                  response={fileOutput.response}
+                  exceptionOptions={exceptionOptions}
+                  onPatch={(patch) =>
+                    updateStructuredSpec((current) => ({
+                      ...current,
+                      sideEffects: {
+                        ...current.sideEffects,
+                        fileOutputs: updateAtIndex(current.sideEffects.fileOutputs, index, {
+                          response: mergeResponse(
+                            (current.sideEffects.fileOutputs ?? [])[index]?.response,
+                            patch
+                          ),
+                        }),
+                      },
+                    }))
+                  }
+                />
+              </CollapsibleContent>
+            </Collapsible>
             {!fileOutput.ruleRef && (
               <p className="text-xs text-red-600">
                 この副作用を呼び出すコアロジックのルールを選択してください。

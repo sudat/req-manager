@@ -24,16 +24,17 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import {
-  DD_TYPE_COLORS,
   DD_TYPE_LABELS,
 } from "@/lib/domain/enums";
 import type { DdType } from "@/lib/domain";
 import type { DesignDocumentDraft } from "@/components/forms/design-document-list";
+import { EntryPointsInlineEditor } from "@/components/forms/entry-points/EntryPointsInlineEditor";
 import {
   DD_TYPES,
   MODEL_RELATIONSHIP_TYPES,
 } from "./constants";
 import { StructuredSpecEditor } from "./StructuredSpecEditor";
+import { SequenceEditor } from "./editors";
 import {
   createEmptyStructuredDesignDocumentSpec,
   ddTypeToStructuredIoType,
@@ -46,14 +47,16 @@ import type {
 import { SystemFunctionSelectionDialog } from "@/components/forms/SystemFunctionSelectionDialog";
 import { DesignDocumentSelectionDialog } from "@/components/forms/DesignDocumentSelectionDialog";
 import {
-  DD_CALLER_TYPES,
-  DD_CALLER_TYPE_LABELS,
-  DD_DEPENDENCY_CALL_TYPES,
-  DD_DEPENDENCY_CALL_TYPE_LABELS,
-  type DdCallerDraft,
-  type DdCallerType,
-  type DdDependencyCallType,
-} from "@/lib/domain/dd-dependency";
+   DD_CALLER_TYPES,
+   DD_CALLER_TYPE_LABELS,
+   DD_DEPENDENCY_CALL_TYPES,
+   DD_DEPENDENCY_CALL_TYPE_LABELS,
+   type DdCallerDraft,
+   type DdCallerType,
+   type DdDependencyCallType,
+ } from "@/lib/domain/dd-dependency";
+import { DDCardProgress } from "./DDCardProgress";
+import { RequiredBadge } from "./RequiredBadge";
 
 type DesignDocumentCardProps = {
   item: DesignDocumentDraft;
@@ -73,6 +76,11 @@ function DesignDocumentCardComponent({
   allSFs = [],
 }: DesignDocumentCardProps): ReactNode {
   const [isOpen, setIsOpen] = useState(false);
+  const [summaryFocused, setSummaryFocused] = useState(false);
+  const [designPolicyFocused, setDesignPolicyFocused] = useState(false);
+  const [callersOpen, setCallersOpen] = useState(false);
+  const [entryPointsOpen, setEntryPointsOpen] = useState(false);
+  const [sequenceOpen, setSequenceOpen] = useState(false);
   const [fkDialogOpen, setFkDialogOpen] = useState(false);
   const [fkCurrentAttrIndex, setFkCurrentAttrIndex] = useState<number | null>(null);
   const [fkSelectedModelId, setFkSelectedModelId] = useState<string | null>(null);
@@ -294,6 +302,17 @@ function DesignDocumentCardComponent({
       }));
   }, [allDDs, ddDialogOpen, editingCallerIndex, item.callers, item.id]);
 
+  const selectableSequenceDds = useMemo(() => {
+    return allDDs
+      .filter((dd) => dd.id !== item.id)
+      .map((dd) => ({
+        id: dd.id,
+        name: dd.name || "（未設定）",
+        type: dd.type,
+        summary: dd.summary || "",
+      }));
+  }, [allDDs, item.id]);
+
   const typeColor = "border-emerald-200 bg-emerald-50 text-emerald-700";
 
   const handleStructuredSpecChange = useCallback(
@@ -313,30 +332,28 @@ function DesignDocumentCardComponent({
   return (
     <>
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <div className="py-2 pl-8 pr-2 border-l-4 border-slate-200 bg-slate-50/50 rounded-md">
-          <div className="flex items-center gap-3">
+        <div className="py-2 px-3">
+          {/* ヘッダ行: トグル + ID + 種別 + 名前 + 削除 */}
+          <div className="flex items-center gap-2">
             <CollapsibleTrigger className="flex-1 cursor-pointer">
-              <div className="flex items-center gap-3 text-left">
+              <div className="flex items-center gap-2 text-left">
                 <ChevronDown
                   className={cn(
-                    "h-5 w-5 text-slate-500 transition-transform shrink-0",
+                    "h-4 w-4 text-slate-500 transition-transform shrink-0",
                     isOpen && "rotate-180"
                   )}
                 />
                 <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
-                  {/* IDバッジ - グレー系 */}
-                  <Badge className="border-slate-200/60 bg-slate-50 text-slate-600 text-[12px] font-medium px-2.5 py-1 font-mono shrink-0">
+                  <Badge className="border-slate-200/60 bg-slate-50 text-slate-600 text-[11px] font-medium px-2 py-0.5 font-mono shrink-0">
                     {item.id}
                   </Badge>
-                  {/* 種別バッジ */}
                   <Badge
                     variant="outline"
-                    className={`${typeColor} text-[12px] font-medium px-2.5 py-1 shrink-0`}
+                    className={`${typeColor} text-[11px] font-medium px-2 py-0.5 shrink-0`}
                   >
                     {DD_TYPE_LABELS[item.type]}
                   </Badge>
-                  {/* DD名 */}
-                  <span className="text-[14px] font-semibold text-slate-900 truncate">
+                  <span className="text-[13px] font-semibold text-slate-900 truncate">
                     {item.name || "名称未設定"}
                   </span>
                 </div>
@@ -347,22 +364,47 @@ function DesignDocumentCardComponent({
               size="icon"
               title="削除"
               aria-label={`${item.name || "DD"} を削除`}
-              className="h-8 w-8 rounded-md hover:bg-rose-100 hover:text-rose-600 shrink-0"
+              className="h-7 w-7 rounded-md hover:bg-rose-100 hover:text-rose-600 shrink-0"
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete();
               }}
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-3.5 w-3.5" />
             </Button>
           </div>
 
-          <CollapsibleContent className="mt-4 space-y-4">
-            <div className="grid gap-3 md:grid-cols-[2fr_1fr]">
+          {/* 閉じた状態: 概要（1行）+ 完了率 */}
+          {!isOpen && (
+            <div className="mt-1.5 pl-6 flex items-center justify-between gap-3">
+              {item.summary && (
+                <span className="text-[11px] text-slate-500 truncate flex-1">
+                  {item.summary}
+                </span>
+              )}
+              <DDCardProgress
+                name={item.name}
+                type={item.type}
+                summary={item.summary}
+                structuredSpec={item.structuredSpec}
+              />
+            </div>
+          )}
+
+          <CollapsibleContent className="mt-3 space-y-3">
+            <div
+              className={cn(
+                "grid gap-3",
+                item.type !== "model"
+                  ? "md:grid-cols-[1fr_10%_auto] md:items-end"
+                  : "md:grid-cols-[1fr_10%]"
+              )}
+            >
               <div className="space-y-1.5">
-                <Label className="text-[12px] font-medium text-slate-500">
-                  DD名<span className="text-rose-500">*</span>
-                </Label>
+                <div className="flex items-center gap-2">
+                  <Label className="text-[12px] font-medium text-slate-500">DD名</Label>
+                  <RequiredBadge />
+                </div>
                 <Input
                   value={item.name}
                   onChange={(e) => onUpdate({ name: e.target.value })}
@@ -371,9 +413,10 @@ function DesignDocumentCardComponent({
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[12px] font-medium text-slate-500">
-                  種別<span className="text-rose-500">*</span>
-                </Label>
+                <div className="flex items-center gap-2">
+                  <Label className="text-[12px] font-medium text-slate-500">種別</Label>
+                  <RequiredBadge />
+                </div>
                 <Select value={item.type} onValueChange={(value) => handleTypeChange(value as DdType)}>
                   <SelectTrigger className="w-full text-[14px]">
                     <SelectValue placeholder="種別を選択" />
@@ -387,116 +430,101 @@ function DesignDocumentCardComponent({
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <Label className="text-[12px] font-medium text-slate-500">
-                  概要<span className="text-rose-500">*</span>
-                </Label>
-                <Badge
-                  variant="outline"
-                  className="text-[10px] px-1.5 py-0 h-5 border-blue-200 bg-blue-50 text-blue-700"
-                >
-                  Markdown
-                </Badge>
-              </div>
-              <Textarea
-                value={item.summary}
-                onChange={(e) => onUpdate({ summary: e.target.value })}
-                placeholder="入出力と責務の概要を記述"
-                className="min-h-[90px] text-[14px]"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <Label className="text-[12px] font-medium text-slate-500">設計方針</Label>
-                <Badge
-                  variant="outline"
-                  className="text-[10px] px-1.5 py-0 h-5 border-blue-200 bg-blue-50 text-blue-700"
-                >
-                  Markdown
-                </Badge>
-              </div>
-              <Textarea
-                value={item.designPolicy}
-                onChange={(e) => onUpdate({ designPolicy: e.target.value })}
-                placeholder="横断的な設計方針を記述"
-                className="min-h-[90px] text-[14px]"
-              />
+              {item.type !== "model" && (
+                <div className="flex items-end justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "h-9 gap-2 text-[12px] whitespace-nowrap",
+                      callersOpen && "bg-blue-50 border-blue-200 text-blue-700"
+                    )}
+                    onClick={() => setCallersOpen((prev) => !prev)}
+                  >
+                    呼び出し元
+                    <ChevronDown
+                      className={cn("h-3.5 w-3.5 transition-transform", callersOpen && "rotate-180")}
+                    />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "h-9 gap-2 text-[12px] whitespace-nowrap",
+                      entryPointsOpen && "bg-blue-50 border-blue-200 text-blue-700"
+                    )}
+                    onClick={() => setEntryPointsOpen((prev) => !prev)}
+                  >
+                    エントリポイント
+                    <ChevronDown
+                      className={cn("h-3.5 w-3.5 transition-transform", entryPointsOpen && "rotate-180")}
+                    />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "h-9 gap-2 text-[12px] whitespace-nowrap",
+                      sequenceOpen && "bg-blue-50 border-blue-200 text-blue-700"
+                    )}
+                    onClick={() => setSequenceOpen((prev) => !prev)}
+                  >
+                    シーケンス制御
+                    <ChevronDown
+                      className={cn("h-3.5 w-3.5 transition-transform", sequenceOpen && "rotate-180")}
+                    />
+                  </Button>
+                </div>
+              )}
             </div>
 
             {/* 呼び出し元セクション（モデル以外） */}
-            {item.type !== "model" && (
-            <div className="rounded-md border border-slate-200 p-3 space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <div className="text-[13px] font-semibold text-slate-800">呼び出し元</div>
-                  <div className="text-[12px] text-slate-500">
-                    このDDを起動する主体（ユーザー or システム）を定義します
-                  </div>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const newCallers: DdCallerDraft[] = [
-                      ...(item.callers || []),
-                      { callerType: "user" },
-                    ];
-                    onUpdate({ callers: newCallers });
-                  }}
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  呼び出し元追加
-                </Button>
-              </div>
+            {item.type !== "model" && callersOpen && (
+              <div className="space-y-3">
+                {(!item.callers || item.callers.length === 0) ? (
+                  <p className="text-[12px] text-slate-400">呼び出し元は未設定です</p>
+                ) : (
+                  <div className="space-y-3">
+                    {item.callers.map((caller, index) => {
+                      const isUserCaller = caller.callerType === "user";
+                      return (
+                        <div key={index} className="border rounded-md p-3 bg-slate-50/50">
+                          <div className="flex items-center gap-3 flex-wrap">
+                            {/* 1. 種別 */}
+                            <div className={`flex items-center gap-1.5 ${isUserCaller ? "" : ""}`}>
+                              <Label className="text-[11px] text-slate-500 shrink-0">種別</Label>
+                              <Select
+                                value={caller.callerType}
+                                onValueChange={(value) => {
+                                  const newCallers = [...(item.callers || [])];
+                                  newCallers[index] = {
+                                    ...newCallers[index],
+                                    callerType: value as DdCallerType,
+                                    callerSfId: undefined,
+                                    callerDdId: undefined,
+                                  };
+                                  onUpdate({ callers: newCallers });
+                                }}
+                              >
+                                <SelectTrigger className="w-[100px] h-8 text-sm">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {DD_CALLER_TYPES.map((type) => (
+                                    <SelectItem key={type} value={type} className="text-sm">
+                                      {DD_CALLER_TYPE_LABELS[type]}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
 
-              {(!item.callers || item.callers.length === 0) ? (
-                <p className="text-[12px] text-slate-400">呼び出し元は未設定です</p>
-              ) : (
-                <div className="space-y-3">
-                  {item.callers.map((caller, index) => {
-                    const isUserCaller = caller.callerType === "user";
-                    return (
-                      <div key={index} className="border rounded-md p-3 bg-slate-50/50">
-                        {/* 1行5カラムレイアウト: 種別 | SF | DD | 呼び出し方法 | 行削除 */}
-                        <div className="grid grid-cols-[minmax(100px,1.5fr)_minmax(0,2fr)_minmax(0,2fr)_minmax(120px,1.5fr)_auto] gap-2 items-end">
-                          {/* 1. 呼び出し元種別 */}
-                          <div className="space-y-1">
-                            <Label className="text-[11px] text-slate-600">種別</Label>
-                            <Select
-                              value={caller.callerType}
-                              onValueChange={(value) => {
-                                const newCallers = [...(item.callers || [])];
-                                newCallers[index] = {
-                                  ...newCallers[index],
-                                  callerType: value as DdCallerType,
-                                  callerSfId: undefined,
-                                  callerDdId: undefined,
-                                };
-                                onUpdate({ callers: newCallers });
-                              }}
-                            >
-                              <SelectTrigger className="w-full h-8 text-sm">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {DD_CALLER_TYPES.map((type) => (
-                                  <SelectItem key={type} value={type} className="text-sm">
-                                    {DD_CALLER_TYPE_LABELS[type]}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          {/* 2. 呼び出し元SF（systemの場合のみ有効） */}
-                          <div className={`space-y-1 ${isUserCaller ? "opacity-50 pointer-events-none" : ""}`}>
-                            <Label className="text-[11px] text-slate-600">呼び出し元SF</Label>
-                            <div className="flex gap-1">
+                            {/* 2. 呼び出し元SF */}
+                            <div className={`flex items-center gap-1.5 ${isUserCaller ? "opacity-50 pointer-events-none" : ""}`}>
+                              <Label className="text-[11px] text-slate-500 shrink-0">SF</Label>
                               <Button
                                 type="button"
                                 variant="outline"
@@ -505,7 +533,7 @@ function DesignDocumentCardComponent({
                                   setEditingCallerIndex(index);
                                   setSfDialogOpen(true);
                                 }}
-                                className="flex-1 justify-start text-left h-8 px-2 text-sm min-w-0"
+                                className="justify-start text-left h-8 px-2 text-sm min-w-[120px] max-w-[200px]"
                                 disabled={isUserCaller}
                               >
                                 <span className="truncate">
@@ -513,7 +541,7 @@ function DesignDocumentCardComponent({
                                     ? getSfLabel(caller.callerSfId)
                                     : isUserCaller
                                       ? "ユーザー起動"
-                                      : "システム機能を選択"}
+                                      : "選択"}
                                 </span>
                               </Button>
                               {!isUserCaller && caller.callerSfId && (
@@ -536,12 +564,10 @@ function DesignDocumentCardComponent({
                                 </Button>
                               )}
                             </div>
-                          </div>
 
-                          {/* 3. 呼び出し元DD（systemの場合のみ有効） */}
-                          <div className={`space-y-1 ${isUserCaller ? "opacity-50 pointer-events-none" : ""}`}>
-                            <Label className="text-[11px] text-slate-600">呼び出し元DD</Label>
-                            <div className="flex gap-1">
+                            {/* 3. 呼び出し元DD */}
+                            <div className={`flex items-center gap-1.5 ${isUserCaller ? "opacity-50 pointer-events-none" : ""}`}>
+                              <Label className="text-[11px] text-slate-500 shrink-0">DD</Label>
                               <Button
                                 type="button"
                                 variant="outline"
@@ -550,7 +576,7 @@ function DesignDocumentCardComponent({
                                   setEditingCallerIndex(index);
                                   setDdDialogOpen(true);
                                 }}
-                                className="flex-1 justify-start text-left h-8 px-2 text-sm min-w-0"
+                                className="justify-start text-left h-8 px-2 text-sm min-w-[120px] max-w-[200px]"
                                 disabled={isUserCaller || !caller.callerSfId}
                               >
                                 <span className="truncate">
@@ -558,7 +584,7 @@ function DesignDocumentCardComponent({
                                     ? getDdLabel(caller.callerDdId)
                                     : isUserCaller
                                       ? "-"
-                                      : "DDを選択"}
+                                      : "選択"}
                                 </span>
                               </Button>
                               {!isUserCaller && caller.callerDdId && (
@@ -580,35 +606,33 @@ function DesignDocumentCardComponent({
                                 </Button>
                               )}
                             </div>
-                          </div>
 
-                          {/* 4. 呼び出し方法（systemの場合のみ有効） */}
-                          <div className={`space-y-1 ${isUserCaller ? "opacity-50 pointer-events-none" : ""}`}>
-                            <Label className="text-[11px] text-slate-600">呼び出し方法</Label>
-                            <Select
-                              value={caller.callType || "calls_sync"}
-                              onValueChange={(value) => {
-                                const newCallers = [...(item.callers || [])];
-                                newCallers[index] = { ...newCallers[index], callType: value as DdDependencyCallType };
-                                onUpdate({ callers: newCallers });
-                              }}
-                              disabled={isUserCaller}
-                            >
-                              <SelectTrigger className="w-full h-8 text-sm">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {DD_DEPENDENCY_CALL_TYPES.map((ct) => (
-                                  <SelectItem key={ct} value={ct} className="text-sm">
-                                    {DD_DEPENDENCY_CALL_TYPE_LABELS[ct]}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
+                            {/* 4. 呼び出し方法 */}
+                            <div className={`flex items-center gap-1.5 ${isUserCaller ? "opacity-50 pointer-events-none" : ""}`}>
+                              <Label className="text-[11px] text-slate-500 shrink-0">呼び出し</Label>
+                              <Select
+                                value={caller.callType || "calls_sync"}
+                                onValueChange={(value) => {
+                                  const newCallers = [...(item.callers || [])];
+                                  newCallers[index] = { ...newCallers[index], callType: value as DdDependencyCallType };
+                                  onUpdate({ callers: newCallers });
+                                }}
+                                disabled={isUserCaller}
+                              >
+                                <SelectTrigger className="w-[100px] h-8 text-sm">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {DD_DEPENDENCY_CALL_TYPES.map((ct) => (
+                                    <SelectItem key={ct} value={ct} className="text-sm">
+                                      {DD_DEPENDENCY_CALL_TYPE_LABELS[ct]}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
 
-                          {/* 5. 行削除ボタン */}
-                          <div className="flex items-end pb-[2px]">
+                            {/* 5. 削除 */}
                             <Button
                               variant="ghost"
                               size="icon"
@@ -617,19 +641,80 @@ function DesignDocumentCardComponent({
                                 onUpdate({ callers: newCallers });
                               }}
                               aria-label={`呼び出し元 ${index + 1} を削除`}
-                              className="h-8 w-8"
+                              className="h-8 w-8 shrink-0"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
+                )}
+                <div className="flex justify-start">
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    className="h-7 gap-2 text-[12px]"
+                    onClick={() => {
+                      const newCallers: DdCallerDraft[] = [
+                        ...(item.callers || []),
+                        { callerType: "user" },
+                      ];
+                      onUpdate({ callers: newCallers });
+                    }}
+                  >
+                    <Plus className="h-4 w-4" />
+                    追加
+                  </Button>
                 </div>
-              )}
-            </div>
+              </div>
             )}
+
+            {item.type !== "model" && entryPointsOpen && (
+              <EntryPointsInlineEditor
+                entryPoints={item.entryPoints}
+                onChange={handleEntryPointsChange}
+              />
+            )}
+
+            {item.type !== "model" && item.structuredSpec && sequenceOpen && (
+              <SequenceEditor
+                spec={item.structuredSpec}
+                updateStructuredSpec={updateStructuredSpec}
+                selectableTargetDds={selectableSequenceDds}
+              />
+            )}
+
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <Label className="text-[12px] font-medium text-slate-500">概要</Label>
+                <RequiredBadge />
+              </div>
+              <Textarea
+                value={item.summary}
+                onChange={(e) => onUpdate({ summary: e.target.value })}
+                onFocus={() => setSummaryFocused(true)}
+                onBlur={() => setSummaryFocused(false)}
+                placeholder="入出力と責務の概要を記述"
+                className="text-[14px] min-h-[32px] resize-y transition-[min-height]"
+                style={{ minHeight: summaryFocused ? 72 : 32 }}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-[12px] font-medium text-slate-500">設計方針</Label>
+              <Textarea
+                value={item.designPolicy}
+                onChange={(e) => onUpdate({ designPolicy: e.target.value })}
+                onFocus={() => setDesignPolicyFocused(true)}
+                onBlur={() => setDesignPolicyFocused(false)}
+                placeholder="横断的な設計方針を記述"
+                className="text-[14px] min-h-[32px] resize-y transition-[min-height]"
+                style={{ minHeight: designPolicyFocused ? 72 : 32 }}
+              />
+            </div>
 
             {!item.structuredSpec && (
               <div className="flex justify-end">
@@ -653,6 +738,9 @@ function DesignDocumentCardComponent({
                 <StructuredSpecEditor
                   spec={item.structuredSpec}
                   entryPoints={item.entryPoints}
+                  selectableTargetDds={selectableSequenceDds}
+                  showEntryPointsEditor={false}
+                  showSequenceEditor={false}
                   onChange={handleStructuredSpecChange}
                   onEntryPointsChange={handleEntryPointsChange}
                   updateStructuredSpec={updateStructuredSpec}

@@ -1,7 +1,7 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import { Eye, Pencil, Trash2 } from "lucide-react";
+import { Eye, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -137,11 +137,6 @@ export const businessListConfig: ResourceListConfig<Business> = {
 			label: "照会",
 			href: () => `/business/${biz.area}`,
 		},
-		{
-			icon: Pencil,
-			label: "編集",
-			href: () => `/business/${biz.area}/edit`,
-		},
 	],
 	getRowHref: (biz) => `/business/${biz.area}`,
 	getSearchText: (biz) => [biz.area, biz.name, biz.summary].join(" "),
@@ -208,11 +203,6 @@ export const systemDomainListConfig: ResourceListConfig<SystemDomain & { functio
 			icon: Eye,
 			label: "照会",
 			href: () => `/system/${domain.id}`,
-		},
-		{
-			icon: Pencil,
-			label: "編集",
-			href: () => `/system/${domain.id}/edit`,
 		},
 	],
 	getRowHref: (domain) => `/system/${domain.id}`,
@@ -310,11 +300,6 @@ export const conceptListConfig: ResourceListConfig<Concept> = {
 			icon: Eye,
 			label: "照会",
 			href: () => `/ideas/${concept.id}`,
-		},
-		{
-			icon: Pencil,
-			label: "編集",
-			href: () => `/ideas/${concept.id}/edit`,
 		},
 	],
 	getRowHref: (concept) => `/ideas/${concept.id}`,
@@ -417,11 +402,6 @@ export const createSystemFunctionListConfig = (
 			label: "照会",
 			href: () => `/system/${domainId}/${sf.id}`,
 		},
-		{
-			icon: Pencil,
-			label: "編集",
-			href: () => `/system/${domainId}/${sf.id}/edit`,
-		},
 	],
 	getRowHref: (sf) => `/system/${domainId}/${sf.id}`,
 	getSearchText: (sf) => [sf.id, sf.title, sf.summary].join(" "),
@@ -520,11 +500,6 @@ export const createBusinessTaskListConfig = (
 			icon: Eye,
 			label: "照会",
 			href: () => `/business/${businessArea}/${task.id}`,
-		},
-		{
-			icon: Pencil,
-			label: "編集",
-			href: () => `/business/${businessArea}/${task.id}/edit`,
 		},
 	],
 	getRowHref: (task) => `/business/${businessArea}/${task.id}`,

@@ -3,7 +3,7 @@
 import { memo, type ReactNode } from "react";
 import { FoldableStructuredSection } from "./FoldableStructuredSection";
 import { EntryPointsInlineEditor } from "@/components/forms/entry-points/EntryPointsInlineEditor";
-import type { EntryPoint } from "@/lib/domain";
+import type { DdType, EntryPoint } from "@/lib/domain";
 import type { StructuredDesignDocumentSpec } from "@/lib/domain/schemas/design-document-structured";
 import {
   CoreLogicEditor,
@@ -18,6 +18,9 @@ import {
 interface StructuredSpecEditorProps {
   spec: StructuredDesignDocumentSpec;
   entryPoints: EntryPoint[];
+  selectableTargetDds?: { id: string; name: string; type: DdType; summary: string }[];
+  showEntryPointsEditor?: boolean;
+  showSequenceEditor?: boolean;
   onChange: (next: StructuredDesignDocumentSpec) => void;
   onEntryPointsChange: (entryPoints: EntryPoint[]) => void;
   updateStructuredSpec: (
@@ -29,6 +32,9 @@ interface StructuredSpecEditorProps {
 function StructuredSpecEditorComponent({
   spec,
   entryPoints,
+  selectableTargetDds,
+  showEntryPointsEditor = true,
+  showSequenceEditor = true,
   onChange,
   onEntryPointsChange,
   updateStructuredSpec,
@@ -36,7 +42,7 @@ function StructuredSpecEditorComponent({
 }: StructuredSpecEditorProps): ReactNode {
   return (
     <div className="space-y-4">
-      {spec.ioType !== "model" && (
+      {spec.ioType !== "model" && showEntryPointsEditor && (
         <FoldableStructuredSection
           title="エントリポイント"
           description="処理の起点となるコード位置・コンポーネントを定義します"
@@ -59,7 +65,13 @@ function StructuredSpecEditorComponent({
       <CoreLogicEditor spec={spec} updateStructuredSpec={updateStructuredSpec} />
       <OutputSchemaEditor spec={spec} onChange={onChange} />
       <SideEffectsEditor spec={spec} updateStructuredSpec={updateStructuredSpec} />
-      <SequenceEditor spec={spec} updateStructuredSpec={updateStructuredSpec} />
+      {showSequenceEditor && (
+        <SequenceEditor
+          spec={spec}
+          updateStructuredSpec={updateStructuredSpec}
+          selectableTargetDds={selectableTargetDds}
+        />
+      )}
       <ExceptionsEditor spec={spec} updateStructuredSpec={updateStructuredSpec} />
       <NonFunctionalEditor spec={spec} updateStructuredSpec={updateStructuredSpec} />
     </div>
@@ -73,6 +85,9 @@ function areStructuredSpecEditorPropsEqual(
   return (
     prevProps.spec === nextProps.spec &&
     prevProps.entryPoints === nextProps.entryPoints &&
+    prevProps.selectableTargetDds === nextProps.selectableTargetDds &&
+    prevProps.showEntryPointsEditor === nextProps.showEntryPointsEditor &&
+    prevProps.showSequenceEditor === nextProps.showSequenceEditor &&
     prevProps.onChange === nextProps.onChange &&
     prevProps.onEntryPointsChange === nextProps.onEntryPointsChange &&
     prevProps.updateStructuredSpec === nextProps.updateStructuredSpec &&

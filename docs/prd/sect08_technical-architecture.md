@@ -325,6 +325,40 @@ export const btDraftTool = createTool({
 
 MCP Serverは、コーディングエージェントが正本にアクセスするためのインターフェースを提供する。
 
+#### 段階的実装方針
+
+**Phase 5（ビジネスMVP時）- 最小限実装：**
+読み取り専用ツールのみ実装。認証はシンプルなプロジェクトIDベース（リクエストヘッダで受け取る）。
+
+```typescript
+// Phase 5: 最小限ツールセット
+const mvpTools: Tool[] = [
+  {
+    name: 'get_product_requirement',
+    description: 'プロダクト要件（PR）を取得',
+    handler: async ({ project_id }) => { /* ... */ },
+  },
+  {
+    name: 'search_requirements',
+    description: '要件を検索（業務/システム）',
+    handler: async ({ project_id, query, type }) => { /* ... */ },
+  },
+  {
+    name: 'get_requirement',
+    description: '要件の詳細を取得',
+    handler: async ({ project_id, id }) => { /* ... */ },
+  },
+  {
+    name: 'get_system_function',
+    description: 'システム機能（エントリポイント含む）を取得',
+    handler: async ({ project_id, id }) => { /* ... */ },
+  },
+];
+```
+
+**Phase 6（PMF後）- 完全版：**
+書き込みツール追加、APIキー認証、レート制限、監査ログを実装。
+
 ```typescript
 // /lib/mcp/server.ts
 import { MCPServer, Tool } from '@modelcontextprotocol/sdk';

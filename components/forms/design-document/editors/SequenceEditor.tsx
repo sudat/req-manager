@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import { Trash2 } from "lucide-react";
+import { useMemo, useState, type ReactNode } from "react";
+import { CircleHelp, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,7 +10,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FoldableStructuredSection } from "../FoldableStructuredSection";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { DesignDocumentSelectionDialog } from "@/components/forms/DesignDocumentSelectionDialog";
+import type { DdType } from "@/lib/domain";
 import { updateAtIndex } from "@/lib/utils/array-updates";
 import type { StructuredSpecEditorProps } from "./types";
 import type {
@@ -27,6 +29,7 @@ import {
 type SequenceEditorProps = {
   spec: StructuredSpecEditorProps["spec"];
   updateStructuredSpec: StructuredSpecEditorProps["updateStructuredSpec"];
+  selectableTargetDds?: { id: string; name: string; type: DdType; summary: string }[];
 };
 
 const EMPTY_SELECT_VALUE = "__none__";
@@ -85,13 +88,30 @@ function createDefaultStep(kind: SupportedStepKind): SequenceStep {
 export function SequenceEditor({
   spec,
   updateStructuredSpec,
+  selectableTargetDds = [],
 }: SequenceEditorProps): ReactNode {
+  const sequence = spec.sequence ?? { mode: "auto" as const, steps: [] };
+  const mode = sequence.mode ?? "auto";
+  const [newStepKind, setNewStepKind] = useState<SupportedStepKind>("call");
+  const [targetDdDialogOpen, setTargetDdDialogOpen] = useState(false);
+  const [editingCallStepIndex, setEditingCallStepIndex] = useState<number | null>(null);
+
+  const targetDdLabelMap = useMemo(() => {
+    return new Map(
+      selectableTargetDds.map((dd) => [dd.id, `${dd.id} ${dd.name || "（名称未設定）"}`])
+    );
+  }, [selectableTargetDds]);
+
+  const selectedTargetDdId =
+    editingCallStepIndex !== null &&
+    sequence.steps[editingCallStepIndex] &&
+    sequence.steps[editingCallStepIndex].kind === "call"
+      ? sequence.steps[editingCallStepIndex].targetDdId || null
+      : null;
+
   if (spec.ioType === "model") {
     return null;
   }
-
-  const sequence = spec.sequence ?? { mode: "auto" as const, steps: [] };
-  const mode = sequence.mode ?? "auto";
 
   const effectRefOptions = [
     ...(spec.sideEffects.dbOperations ?? [])
@@ -145,16 +165,38 @@ export function SequenceEditor({
     updateSequence((current) => patchSequenceStep(current, index, patch));
   };
 
+  const openTargetDdDialog = (stepIndex: number) => {
+    setEditingCallStepIndex(stepIndex);
+    setTargetDdDialogOpen(true);
+  };
+
+  const closeTargetDdDialog = () => {
+    setTargetDdDialogOpen(false);
+    setEditingCallStepIndex(null);
+  };
+
   return (
-    <FoldableStructuredSection
-      title="シーケンス制御（任意）"
-      description="通常は自動生成、必要時のみ手動ステップで順序を明示します"
-      titleTooltip="迷う場合は mode=auto のままで問題ありません。複雑な順序制御が必要な時だけ guided を使ってください。"
-    >
+    <>
       <div className="space-y-3">
-        <div className="grid gap-2 md:grid-cols-2">
+        <div className="grid gap-2">
           <div className="space-y-1">
-            <Label className="text-xs">モード</Label>
+            <div className="flex items-center gap-1.5">
+              <Label className="text-xs">シーケンス制御</Label>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex h-4 w-4 items-center justify-center text-slate-500"
+                    aria-label="シーケンス制御の説明"
+                  >
+                    <CircleHelp className="h-3.5 w-3.5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[min(90vw,36rem)] whitespace-normal leading-relaxed">
+                  迷う場合は自動モードのままで問題ありません。複雑な順序制御が必要な時だけ手動モードを使ってください。
+                </TooltipContent>
+              </Tooltip>
+            </div>
             <Select
               value={mode}
               onValueChange={(value) =>
@@ -172,26 +214,10 @@ export function SequenceEditor({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="auto">auto（推奨）</SelectItem>
-                <SelectItem value="guided">guided（順序を手動指定）</SelectItem>
+                <SelectItem value="auto">自動（推奨）</SelectItem>
+                <SelectItem value="guided">手動（順序指定）</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">開始アクター（任意）</Label>
-            <Input
-              placeholder="例: 請求書発行画面"
-              value={sequence.entryActor?.label ?? ""}
-              onChange={(e) =>
-                updateSequence((current) => ({
-                  ...current,
-                  entryActor:
-                    e.target.value.trim().length === 0
-                      ? undefined
-                      : { label: e.target.value },
-                }))
-              }
-            />
           </div>
         </div>
 
@@ -201,30 +227,39 @@ export function SequenceEditor({
               <div>
                 <div className="text-xs font-semibold text-slate-700">手動ステップ</div>
                 <p className="text-xs text-muted-foreground">
-                  call / effect_ref / ref / note の順で処理を並べます
+                  呼び出し / 副作用参照 / 参照 / 注記 の順で処理を並べます
                 </p>
               </div>
               <div className="flex items-center gap-2">
                 <Select
-                  value={EMPTY_SELECT_VALUE}
-                  onValueChange={(value) => {
-                    if (value === EMPTY_SELECT_VALUE) return;
-                    updateSequence((current) =>
-                      appendSequenceStep(current, createDefaultStep(value as SupportedStepKind))
-                    );
-                  }}
+                  value={newStepKind}
+                  onValueChange={(value) =>
+                    setNewStepKind(value as SupportedStepKind)
+                  }
                 >
-                  <SelectTrigger className="w-[190px] h-8">
-                    <SelectValue placeholder="ステップ追加" />
+                  <SelectTrigger className="h-8 w-[108px] gap-1 px-2">
+                    <SelectValue placeholder="種別" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={EMPTY_SELECT_VALUE}>種別を選択</SelectItem>
-                    <SelectItem value="call">call（DD呼び出し）</SelectItem>
-                    <SelectItem value="effect_ref">effect_ref（副作用参照）</SelectItem>
-                    <SelectItem value="ref">ref（別シーケンス参照）</SelectItem>
-                    <SelectItem value="note">note（注記）</SelectItem>
+                  <SelectContent className="w-[108px] min-w-[108px]">
+                    <SelectItem value="call">呼び出し</SelectItem>
+                    <SelectItem value="effect_ref">副作用参照</SelectItem>
+                    <SelectItem value="ref">参照</SelectItem>
+                    <SelectItem value="note">注記</SelectItem>
                   </SelectContent>
                 </Select>
+                <Button
+                  type="button"
+                  variant="default"
+                  size="sm"
+                  className="h-8 px-3 text-[12px]"
+                  onClick={() =>
+                    updateSequence((current) =>
+                      appendSequenceStep(current, createDefaultStep(newStepKind))
+                    )
+                  }
+                >
+                  追加
+                </Button>
               </div>
             </div>
 
@@ -249,7 +284,7 @@ export function SequenceEditor({
 
                     {step.kind === "call" && (
                       <div className="space-y-2">
-                        <div className="grid gap-2 md:grid-cols-2">
+                        <div className="grid gap-2 md:grid-cols-[minmax(120px,1fr)_minmax(150px,1.2fr)_52px_minmax(150px,1.1fr)_minmax(150px,1.1fr)_minmax(170px,1.2fr)] md:items-center">
                           <Input
                             placeholder="call id"
                             value={step.id}
@@ -257,13 +292,28 @@ export function SequenceEditor({
                               patchStep(index, { id: e.target.value })
                             }
                           />
-                          <Input
-                            placeholder="target DD ID"
-                            value={step.targetDdId}
-                            onChange={(e) =>
-                              patchStep(index, { targetDdId: e.target.value })
-                            }
-                          />
+                          {selectableTargetDds.length > 0 ? (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => openTargetDdDialog(index)}
+                              className="justify-start text-left h-9 px-3 text-sm w-full"
+                            >
+                              <span className="truncate">
+                                {step.targetDdId
+                                  ? targetDdLabelMap.get(step.targetDdId) ?? step.targetDdId
+                                  : "target DD ID"}
+                              </span>
+                            </Button>
+                          ) : (
+                            <Input
+                              placeholder="target DD ID"
+                              value={step.targetDdId}
+                              onChange={(e) =>
+                                patchStep(index, { targetDdId: e.target.value })
+                              }
+                            />
+                          )}
                           <Select
                             value={step.callType}
                             onValueChange={(value) =>
@@ -285,12 +335,12 @@ export function SequenceEditor({
                               })
                             }
                           >
-                            <SelectTrigger>
+                            <SelectTrigger className="w-[52px] gap-1 px-2">
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="sync">sync</SelectItem>
-                              <SelectItem value="async">async</SelectItem>
+                            <SelectContent className="min-w-[52px]">
+                              <SelectItem value="sync">同期</SelectItem>
+                              <SelectItem value="async">非同</SelectItem>
                             </SelectContent>
                           </Select>
                           <Input
@@ -698,6 +748,28 @@ export function SequenceEditor({
           </div>
         )}
       </div>
-    </FoldableStructuredSection>
+
+      <DesignDocumentSelectionDialog
+        isOpen={targetDdDialogOpen}
+        onClose={closeTargetDdDialog}
+        title="呼び出し先DDを選択"
+        designDocuments={selectableTargetDds}
+        selectedId={selectedTargetDdId}
+        onSelect={(ddId) => {
+          if (editingCallStepIndex === null) return;
+          updateSequence((current) => {
+            const targetStep = current.steps[editingCallStepIndex];
+            if (!targetStep || targetStep.kind !== "call") return current;
+            return {
+              ...current,
+              steps: updateAtIndex(current.steps, editingCallStepIndex, {
+                targetDdId: ddId,
+              }),
+            };
+          });
+        }}
+        emptyMessage="選択可能なDDがありません。"
+      />
+    </>
   );
 }

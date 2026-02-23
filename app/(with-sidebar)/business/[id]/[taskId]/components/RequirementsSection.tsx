@@ -17,7 +17,7 @@ export function RequirementsSection<T extends { id: string }>({
 	renderItem,
 }: RequirementsSectionProps<T>) {
 	return (
-		<div className="space-y-4">
+		<div className="space-y-3">
 			{loading && (
 				<>
 					<CardSkeleton />

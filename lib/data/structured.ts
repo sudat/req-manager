@@ -1,6 +1,8 @@
 import type { EntryPoint } from "@/lib/domain";
 import { isRecord } from "@/lib/utils/type-guards";
 
+export type { EntryPoint } from "@/lib/domain";
+
 /**
  * 受入条件定義（PRD v1.3 Phase 2）
  * 設計原則: 受入条件の定義と確認状態を分離する
@@ -118,11 +120,14 @@ export const normalizeEntryPoints = (raw: unknown): EntryPoint[] => {
   return result;
 };
 
-type CodeRefLike = { paths?: string[] | null };
+export type CodeRefLike = {
+  paths?: Array<string | null | undefined> | null;
+};
 
 export const codeRefsToEntryPoints = (codeRefs: CodeRefLike[] | null | undefined): EntryPoint[] => {
   const paths: string[] = [];
   for (const ref of codeRefs ?? []) {
+    if (!ref) continue;
     for (const path of ref.paths ?? []) {
       if (typeof path === "string" && path.length > 0) paths.push(path);
     }
@@ -164,4 +169,3 @@ export const normalizeCodeRefs = (raw: unknown): Array<{ githubUrl?: string; pat
     })
     .filter((r): r is NonNullable<typeof r> => r !== null);
 };
-

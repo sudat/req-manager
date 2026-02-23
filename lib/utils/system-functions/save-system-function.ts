@@ -28,6 +28,8 @@ import type { SystemFunction, SrfCategory, SrfStatus } from "@/lib/domain";
 import type { DesignDocumentDraft } from "@/components/forms/design-document-list";
 import type { DdDependencyLink, DdCallerLink } from "@/lib/domain/dd-dependency";
 
+export type { DesignDocumentDraft } from "@/components/forms/design-document-list";
+
 type SaveSystemFunctionInput = {
 	srfId: string;
 	existingSrf: SystemFunction;

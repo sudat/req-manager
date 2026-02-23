@@ -202,10 +202,10 @@ export function StructuredAcceptanceCriteriaInput({
 				type="button"
 				variant="default"
 				size="sm"
-				className="w-full gap-2 text-[12px]"
+				className="h-7 gap-1.5 px-2.5 text-[11px]"
 				onClick={handleAdd}
 			>
-				<Plus className="h-4 w-4" />
+				<Plus className="h-3.5 w-3.5" />
 				条件を追加
 			</Button>
 		</div>

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { RequirementListSection } from "@/components/forms/requirement-list-section";
 import { SelectionDialog } from "@/components/forms/SelectionDialog";
 import { useBusinessRequirementsForm } from "../hooks/useBusinessRequirementsForm";
@@ -43,7 +44,6 @@ export default function TaskEditRequirementsPage({
 		systemDomains,
 		conceptMap,
 		systemFunctionMap,
-		systemDomainMap,
 	} = useMasterData();
 
 	const [dialogState, setDialogState] = useState<SelectionDialogState>(null);
@@ -96,10 +96,16 @@ export default function TaskEditRequirementsPage({
 				業務タスク詳細に戻る
 			</Link>
 
-			<div className="mb-6">
-			<h1 className="text-2xl font-bold text-slate-900">
-				編集: {existingTask.taskName} - 業務要件名
-			</h1>
+			<div className="mb-6 flex items-center gap-2">
+				<h1 className="text-2xl font-bold text-slate-900">
+					編集: {existingTask.taskName} - 業務要件
+				</h1>
+				<Badge
+					variant="outline"
+					className="font-mono text-xs font-semibold border-emerald-300 bg-emerald-100 text-emerald-800 px-2 py-0.5"
+				>
+					{businessRequirements.length}
+				</Badge>
 			</div>
 
 			<div className="max-w-[1400px]">
@@ -111,9 +117,11 @@ export default function TaskEditRequirementsPage({
 					onRemove={removeRequirement}
 					conceptMap={conceptMap}
 					systemFunctionMap={systemFunctionMap}
-					systemDomainMap={systemDomainMap}
 					businessRequirementMap={businessRequirementMap}
 					onOpenDialog={openDialog}
+					withoutCard
+					showTitle={false}
+					showCountBadge={false}
 				/>
 
 				<div className="mt-6 flex items-center gap-3">

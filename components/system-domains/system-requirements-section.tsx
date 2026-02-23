@@ -56,11 +56,11 @@ export function SystemRequirementsSection({
 	}
 
 	return (
-		<div className="space-y-4">
+		<div className="space-y-3">
 			{relatedReqs.length === 0 ? (
 				<EmptyState message="まだ登録されていません。" />
 			) : (
-				<div className="space-y-4">
+				<div className="space-y-3">
 					{relatedReqs.map((req) => (
 						<RequirementItem
 							key={`${req.systemReqId}:${req.businessReqId || "none"}`}

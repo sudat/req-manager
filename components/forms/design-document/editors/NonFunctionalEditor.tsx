@@ -30,6 +30,7 @@ export function NonFunctionalEditor({
       title="非機能要件"
       description="性能、セキュリティ、可用性などの非機能要件を定義します"
       titleTooltip="機能以外の品質要件を記述します。応答時間、稼働率、認証/認可など、運用上の基準を明示してください。"
+      defaultOpen={false}
     >
       <div className="grid gap-2 md:grid-cols-1">
         <div className="space-y-1">
