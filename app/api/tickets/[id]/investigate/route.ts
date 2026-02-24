@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { listImpactScopesByChangeRequestId } from "@/lib/data/impact-scopes";
-import { listSfIdsByBrId, listSuspectLinks } from "@/lib/data/requirement-links";
+import { listRequirementLinksBySourceIds, listSuspectLinks } from "@/lib/data/requirement-links";
 import { listSystemFunctions } from "@/lib/data/system-functions";
-import { listDesignDocumentsBySrfId } from "@/lib/data/design-documents";
+import { listDesignDocuments } from "@/lib/data/design-documents";
 import { listAcceptanceCriteriaBySystemRequirementIds } from "@/lib/data/acceptance-criteria";
 import { createInvestigationResult } from "@/lib/data/investigation-results";
 import { updateChangeRequestStatus } from "@/lib/data/change-requests";
@@ -33,13 +33,22 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
     // 2. BR → SF via realizes リンク
     const affectedSFIds = new Set<string>();
     const sfToBrIds = new Map<string, Set<string>>();
-    for (const brId of brIds) {
-      const sfIds = await listSfIdsByBrId(brId, projectId);
-      sfIds.forEach((id) => {
-        affectedSFIds.add(id);
-        if (!sfToBrIds.has(id)) sfToBrIds.set(id, new Set<string>());
-        sfToBrIds.get(id)?.add(brId);
-      });
+    if (brIds.length > 0) {
+      const { data: brLinks, error: brLinksError } = await listRequirementLinksBySourceIds(
+        "br",
+        brIds,
+        projectId
+      );
+      if (brLinksError) {
+        return NextResponse.json({ error: "BR-SFリンクの取得に失敗しました" }, { status: 500 });
+      }
+
+      for (const link of brLinks ?? []) {
+        if (link.targetType !== "sf" || link.linkType !== "realizes") continue;
+        affectedSFIds.add(link.targetId);
+        if (!sfToBrIds.has(link.targetId)) sfToBrIds.set(link.targetId, new Set<string>());
+        sfToBrIds.get(link.targetId)?.add(link.sourceId);
+      }
     }
 
     // 3. SF → SR + DD entry_points
@@ -48,8 +57,24 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
     const affectedEntryPoints: Array<{ sfId: string; path: string }> = [];
 
     if (affectedSFIds.size > 0) {
-      const { data: allSFs } = await listSystemFunctions(projectId);
+      const [{ data: allSFs, error: sfError }, { data: allDDs, error: ddError }] = await Promise.all([
+        listSystemFunctions(projectId),
+        listDesignDocuments(projectId),
+      ]);
+      if (sfError) {
+        return NextResponse.json({ error: "システム機能の取得に失敗しました" }, { status: 500 });
+      }
+      if (ddError) {
+        return NextResponse.json({ error: "設計書の取得に失敗しました" }, { status: 500 });
+      }
+
       const sfMap = new Map((allSFs ?? []).map((sf) => [sf.id, sf]));
+      const ddBySrfId = new Map<string, NonNullable<typeof allDDs>>();
+      for (const dd of allDDs ?? []) {
+        const current = ddBySrfId.get(dd.srfId) ?? [];
+        current.push(dd);
+        ddBySrfId.set(dd.srfId, current);
+      }
 
       for (const sfId of affectedSFIds) {
         const sf = sfMap.get(sfId);
@@ -60,8 +85,7 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
           srToSfIds.get(srId)?.add(sfId);
         });
 
-        const { data: dds } = await listDesignDocumentsBySrfId(sfId, projectId);
-        for (const dd of dds ?? []) {
+        for (const dd of ddBySrfId.get(sfId) ?? []) {
           for (const ep of dd.entryPoints ?? []) {
             affectedEntryPoints.push({ sfId, path: ep.path });
           }
@@ -73,10 +97,13 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
     const affectedACIds: string[] = [];
     const acToSrIds = new Map<string, Set<string>>();
     if (affectedSRIds.size > 0) {
-      const { data: acs } = await listAcceptanceCriteriaBySystemRequirementIds(
+      const { data: acs, error: acError } = await listAcceptanceCriteriaBySystemRequirementIds(
         Array.from(affectedSRIds),
         projectId
       );
+      if (acError) {
+        return NextResponse.json({ error: "受入基準の取得に失敗しました" }, { status: 500 });
+      }
       (acs ?? []).forEach((ac) => {
         affectedACIds.push(ac.id);
         if (!acToSrIds.has(ac.id)) acToSrIds.set(ac.id, new Set<string>());

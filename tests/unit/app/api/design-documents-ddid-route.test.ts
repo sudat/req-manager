@@ -1,21 +1,16 @@
-import { beforeAll, beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, mock } from "bun:test";
 import type { NextRequest } from "next/server";
+import {
+  registerSharedDataModuleMocks,
+  sharedDataModuleMocks,
+} from "./shared-data-module-mocks";
 
 type DdResult = {
   data: { id: string; name: string; projectId: string } | null;
   error: string | null;
 };
 
-const getDesignDocumentByIdMock = mock(
-  async (_ddId: string, _projectId?: string): Promise<DdResult> => ({
-    data: { id: "DD-AR-0001-0001", name: "テストDD", projectId: "project-1" },
-    error: null,
-  })
-);
-
-mock.module("@/lib/data/design-documents", () => ({
-  getDesignDocumentById: getDesignDocumentByIdMock,
-}));
+const getDesignDocumentByIdMock = sharedDataModuleMocks.getDesignDocumentByIdMock;
 
 let GET: (
   request: NextRequest,
@@ -23,12 +18,22 @@ let GET: (
 ) => Promise<Response>;
 
 beforeAll(async () => {
+  registerSharedDataModuleMocks();
+
   const route = await import("@/app/api/design-documents/[ddId]/route");
   GET = route.GET;
 });
 
 beforeEach(() => {
   getDesignDocumentByIdMock.mockReset();
+  getDesignDocumentByIdMock.mockResolvedValue({
+    data: { id: "DD-AR-0001-0001", name: "テストDD", projectId: "project-1" },
+    error: null,
+  } satisfies DdResult);
+});
+
+afterAll(() => {
+  mock.restore();
 });
 
 describe("GET /api/design-documents/[ddId]", () => {

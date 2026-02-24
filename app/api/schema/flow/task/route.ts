@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
 import { getTaskById } from "@/lib/data/tasks";
-import { parseYamlProcessSteps } from "@/lib/utils/yaml";
-import { taskProcessStepsToMermaidFlow } from "@/lib/utils/business-flow/task-flow-to-mermaid";
+import {
+	isProcessFlowV2Yaml,
+	parseYamlProcessFlow,
+	parseYamlProcessSteps,
+} from "@/lib/utils/yaml";
+import {
+	taskProcessFlowToMermaidFlow,
+	taskProcessStepsToMermaidFlow,
+} from "@/lib/utils/business-flow/task-flow-to-mermaid";
 
 /**
  * 業務タスク単体フローのMermaid DSLを取得するAPI
@@ -42,19 +49,37 @@ export async function GET(request: Request) {
 			);
 		}
 
-		const parsedProcessSteps = parseYamlProcessSteps(task.processSteps ?? "");
-		const result = taskProcessStepsToMermaidFlow(parsedProcessSteps.value, {
-			taskId: task.id,
-			taskName: task.name,
-		});
+		const processStepsText = task.processSteps ?? "";
+		const isV2Flow = isProcessFlowV2Yaml(processStepsText);
 
-		const warnings = [...result.warnings];
-		if (parsedProcessSteps.error) {
-			warnings.unshift(`YAML構文エラー: ${parsedProcessSteps.error}`);
+		let warnings: string[] = [];
+		let mermaidCode = "";
+		if (isV2Flow) {
+			const parsedFlow = parseYamlProcessFlow(processStepsText);
+			const result = taskProcessFlowToMermaidFlow(parsedFlow.value, {
+				taskId: task.id,
+				taskName: task.name,
+			});
+			mermaidCode = result.mermaidCode;
+			warnings = [...result.warnings];
+			if (parsedFlow.error) {
+				warnings.unshift(`YAML構文エラー: ${parsedFlow.error}`);
+			}
+		} else {
+			const parsedProcessSteps = parseYamlProcessSteps(processStepsText);
+			const result = taskProcessStepsToMermaidFlow(parsedProcessSteps.value, {
+				taskId: task.id,
+				taskName: task.name,
+			});
+			mermaidCode = result.mermaidCode;
+			warnings = [...result.warnings];
+			if (parsedProcessSteps.error) {
+				warnings.unshift(`YAML構文エラー: ${parsedProcessSteps.error}`);
+			}
 		}
 
 		return NextResponse.json({
-			mermaidCode: result.mermaidCode,
+			mermaidCode,
 			warnings,
 			taskInfo: {
 				id: task.id,

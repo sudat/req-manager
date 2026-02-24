@@ -49,7 +49,7 @@ export function useSettingsManager<T>(projectId: string | null, fns: SettingsFns
     return () => {
       mounted = false;
     };
-  }, [projectId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [projectId, fns]);
 
   // 設定の更新（楽観的更新）
   const updateSettings = useCallback((updater: (prev: T) => T) => {
@@ -60,8 +60,10 @@ export function useSettingsManager<T>(projectId: string | null, fns: SettingsFns
   }, []);
 
   // 設定の保存
-  const saveSettings = useCallback(async () => {
-    if (!projectId || !settings) {
+  const saveSettings = useCallback(async (nextSettings?: T) => {
+    const targetSettings = nextSettings ?? settings;
+
+    if (!projectId || !targetSettings) {
       setError("プロジェクトまたは設定が選択されていません");
       return false;
     }
@@ -70,7 +72,7 @@ export function useSettingsManager<T>(projectId: string | null, fns: SettingsFns
     setError(null);
     setSuccess(null);
 
-    const { error: saveError } = await fns.save(projectId, settings);
+    const { error: saveError } = await fns.save(projectId, targetSettings);
 
     if (saveError) {
       setError(saveError);
@@ -78,10 +80,14 @@ export function useSettingsManager<T>(projectId: string | null, fns: SettingsFns
       return false;
     }
 
+    if (nextSettings) {
+      setSettings(nextSettings);
+    }
+
     setSuccess("設定を保存しました");
     setSaving(false);
     return true;
-  }, [projectId, settings]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [projectId, settings, fns]);
 
   // 設定のリセット
   const resetSettings = useCallback(() => {
@@ -96,7 +102,7 @@ export function useSettingsManager<T>(projectId: string | null, fns: SettingsFns
     refetch();
     setSuccess(null);
     setError(null);
-  }, [projectId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [projectId, fns]);
 
   return {
     settings,

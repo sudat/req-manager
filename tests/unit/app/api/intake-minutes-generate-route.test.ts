@@ -1,32 +1,11 @@
-import { beforeAll, beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, mock } from "bun:test";
 import type { NextRequest } from "next/server";
+import {
+	registerSharedDataModuleMocks,
+	sharedDataModuleMocks,
+} from "./shared-data-module-mocks";
 
-const listTasksByBusinessAreaMock = mock(async () => ({
-	data: [
-		{
-			id: "BT-AR-0005",
-			name: "既存タスク",
-			summary: "",
-			businessArea: "AR",
-			triggerDescription: "",
-			triggerTaskIds: [],
-			frequency: "monthly",
-			frequencyDescription: "",
-			processSteps: "",
-			person: "",
-			input: "",
-			output: "",
-			conceptIdsYaml: "",
-			concepts: [],
-			businessReqCount: 0,
-			systemReqCount: 0,
-			sortOrder: 0,
-			createdAt: "",
-			updatedAt: "",
-		},
-	],
-	error: null,
-}));
+const listTasksByBusinessAreaMock = sharedDataModuleMocks.listTasksByBusinessAreaMock;
 
 const btDraftExecuteMock = mock(async () => ({
 	success: true,
@@ -55,26 +34,54 @@ const btDraftExecuteMock = mock(async () => ({
 	previewAvailable: true,
 }));
 
-mock.module("@/lib/data/tasks", () => ({
-	listTasksByBusinessArea: listTasksByBusinessAreaMock,
-}));
-
-mock.module("@/lib/mastra/tools/bt-draft", () => ({
-	btDraftTool: {
-		execute: btDraftExecuteMock,
-	},
-}));
-
 let POST: (request: NextRequest) => Promise<Response>;
 
 beforeAll(async () => {
+	registerSharedDataModuleMocks();
+	mock.module("@/lib/mastra/tools/bt-draft", () => ({
+		btDraftTool: {
+			execute: btDraftExecuteMock,
+		},
+	}));
+
 	const route = await import("@/app/api/intake/minutes/generate/route");
 	POST = route.POST;
 });
 
 beforeEach(() => {
-	listTasksByBusinessAreaMock.mockClear();
+	listTasksByBusinessAreaMock.mockReset();
 	btDraftExecuteMock.mockClear();
+
+	listTasksByBusinessAreaMock.mockResolvedValue({
+		data: [
+			{
+				id: "BT-AR-0005",
+				name: "既存タスク",
+				summary: "",
+				businessArea: "AR",
+				triggerDescription: "",
+				triggerTaskIds: [],
+				frequency: "monthly",
+				frequencyDescription: "",
+				processSteps: "",
+				person: "",
+				input: "",
+				output: "",
+				conceptIdsYaml: "",
+				concepts: [],
+				businessReqCount: 0,
+				systemReqCount: 0,
+				sortOrder: 0,
+				createdAt: "",
+				updatedAt: "",
+			},
+		],
+		error: null,
+	});
+});
+
+afterAll(() => {
+	mock.restore();
 });
 
 const createRequest = (body: unknown) =>
@@ -124,4 +131,3 @@ describe("/api/intake/minutes/generate", () => {
 		expect(btDraftExecuteMock).toHaveBeenCalledTimes(2);
 	});
 });
-

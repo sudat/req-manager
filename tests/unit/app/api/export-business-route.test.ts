@@ -1,15 +1,10 @@
-import { afterEach, beforeAll, beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, mock } from "bun:test";
+import {
+  registerSharedDataModuleMocks,
+  sharedDataModuleMocks,
+} from "./shared-data-module-mocks";
 
 let currentProjectCookie: string | undefined = "project-1";
-
-mock.module("next/headers", () => ({
-  cookies: async () => ({
-    get: (name: string) => {
-      if (name !== "current-project-id") return undefined;
-      return currentProjectCookie ? { value: currentProjectCookie } : undefined;
-    },
-  }),
-}));
 
 const listBusinessesMock = mock(async (_projectId: string) => ({
   data: [
@@ -26,71 +21,26 @@ const listBusinessesMock = mock(async (_projectId: string) => ({
   error: null,
 }));
 
-const listTasksByBusinessAreaMock = mock(async (_area: string, _projectId?: string) => ({
-  data: [
-    {
-      id: "BT-AR-0001",
-      name: "請求書発行",
-      summary: "請求書を作る",
-      businessArea: "AR",
-      triggerDescription: "",
-      triggerTaskIds: [],
-      frequency: "monthly",
-      frequencyDescription: "",
-      processSteps: [],
-      person: "",
-      input: null,
-      output: null,
-      conceptIds: [],
-      concepts: [],
-      businessReqCount: 0,
-      systemReqCount: 0,
-      sortOrder: 0,
-      createdAt: "",
-      updatedAt: "",
-    },
-  ],
-  error: null,
-}));
-
-const listBusinessRequirementsByTaskIdsMock = mock(async (_taskIds: string[], _projectId?: string) => ({
-  data: [
-    {
-      id: "BR-AR-0001-0001",
-      taskId: "BT-AR-0001",
-      title: "請求書を出力できる",
-      summary: "",
-      goal: "",
-      constraints: "",
-      owner: "",
-      conceptIds: [],
-      srfIds: [],
-      impacts: [],
-      acceptanceCriteriaJson: [],
-      acceptanceCriteria: [],
-      sortOrder: 0,
-      createdAt: "",
-      updatedAt: "",
-    },
-  ],
-  error: null,
-}));
-
-mock.module("@/lib/data/businesses", () => ({
-  listBusinesses: listBusinessesMock,
-}));
-
-mock.module("@/lib/data/tasks", () => ({
-  listTasksByBusinessArea: listTasksByBusinessAreaMock,
-}));
-
-mock.module("@/lib/data/business-requirements", () => ({
-  listBusinessRequirementsByTaskIds: listBusinessRequirementsByTaskIdsMock,
-}));
+const listTasksByBusinessAreaMock = sharedDataModuleMocks.listTasksByBusinessAreaMock;
+const listBusinessRequirementsByTaskIdsMock =
+  sharedDataModuleMocks.listBusinessRequirementsByTaskIdsMock;
 
 let GET: () => Promise<Response>;
 
 beforeAll(async () => {
+  mock.module("next/headers", () => ({
+    cookies: async () => ({
+      get: (name: string) => {
+        if (name !== "current-project-id") return undefined;
+        return currentProjectCookie ? { value: currentProjectCookie } : undefined;
+      },
+    }),
+  }));
+  mock.module("@/lib/data/businesses", () => ({
+    listBusinesses: listBusinessesMock,
+  }));
+  registerSharedDataModuleMocks();
+
   const route = await import("@/app/api/export/business/route");
   GET = route.GET;
 });
@@ -98,13 +48,66 @@ beforeAll(async () => {
 beforeEach(() => {
   currentProjectCookie = "project-1";
   listBusinessesMock.mockClear();
-  listTasksByBusinessAreaMock.mockClear();
-  listBusinessRequirementsByTaskIdsMock.mockClear();
+  listTasksByBusinessAreaMock.mockReset();
+  listBusinessRequirementsByTaskIdsMock.mockReset();
+
+  listTasksByBusinessAreaMock.mockResolvedValue({
+    data: [
+      {
+        id: "BT-AR-0001",
+        name: "請求書発行",
+        summary: "請求書を作る",
+        businessArea: "AR",
+        triggerDescription: "",
+        triggerTaskIds: [],
+        frequency: "monthly",
+        frequencyDescription: "",
+        processSteps: [],
+        person: "",
+        input: null,
+        output: null,
+        conceptIds: [],
+        concepts: [],
+        businessReqCount: 0,
+        systemReqCount: 0,
+        sortOrder: 0,
+        createdAt: "",
+        updatedAt: "",
+      },
+    ],
+    error: null,
+  });
+  listBusinessRequirementsByTaskIdsMock.mockResolvedValue({
+    data: [
+      {
+        id: "BR-AR-0001-0001",
+        taskId: "BT-AR-0001",
+        title: "請求書を出力できる",
+        summary: "",
+        goal: "",
+        constraints: "",
+        owner: "",
+        conceptIds: [],
+        srfIds: [],
+        impacts: [],
+        acceptanceCriteriaJson: [],
+        acceptanceCriteria: [],
+        sortOrder: 0,
+        createdAt: "",
+        updatedAt: "",
+      },
+    ],
+    error: null,
+  });
 });
 
 afterEach(() => {
   // 他テストへの mock.module リークに備えて、cookie状態をデフォルトに戻す
   currentProjectCookie = "project-1";
+});
+
+afterAll(() => {
+  mock.restore();
 });
 
 describe("GET /api/export/business", () => {

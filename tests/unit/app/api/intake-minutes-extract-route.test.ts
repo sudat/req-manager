@@ -1,4 +1,4 @@
-import { beforeAll, beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, mock } from "bun:test";
 import type { NextRequest } from "next/server";
 
 const listBusinessesMock = mock(async () => ({
@@ -75,25 +75,22 @@ const callOpenAIMock = mock(async () => ({
 	model: "gpt-5-mini",
 }));
 
-mock.module("@/lib/data/businesses", () => ({
-	listBusinesses: listBusinessesMock,
-}));
-
-mock.module("@/lib/data/system-domains", () => ({
-	listSystemDomains: listSystemDomainsMock,
-}));
-
-mock.module("@/lib/mastra/utils/llm-settings", () => ({
-	resolveProjectLlmRuntimeSettings: resolveProjectLlmRuntimeSettingsMock,
-}));
-
-mock.module("@/lib/mastra/utils/llm-helpers", () => ({
-	callOpenAI: callOpenAIMock,
-}));
-
 let POST: (request: NextRequest) => Promise<Response>;
 
 beforeAll(async () => {
+	mock.module("@/lib/data/businesses", () => ({
+		listBusinesses: listBusinessesMock,
+	}));
+	mock.module("@/lib/data/system-domains", () => ({
+		listSystemDomains: listSystemDomainsMock,
+	}));
+	mock.module("@/lib/mastra/utils/llm-settings", () => ({
+		resolveProjectLlmRuntimeSettings: resolveProjectLlmRuntimeSettingsMock,
+	}));
+	mock.module("@/lib/mastra/utils/llm-helpers", () => ({
+		callOpenAI: callOpenAIMock,
+	}));
+
 	const route = await import("@/app/api/intake/minutes/extract/route");
 	POST = route.POST;
 });
@@ -103,6 +100,10 @@ beforeEach(() => {
 	listSystemDomainsMock.mockClear();
 	resolveProjectLlmRuntimeSettingsMock.mockClear();
 	callOpenAIMock.mockClear();
+});
+
+afterAll(() => {
+	mock.restore();
 });
 
 const createRequest = (body: unknown) =>
@@ -142,4 +143,3 @@ describe("/api/intake/minutes/extract", () => {
 		expect(callOpenAIMock).toHaveBeenCalledTimes(1);
 	});
 });
-

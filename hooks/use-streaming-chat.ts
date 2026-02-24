@@ -41,6 +41,7 @@ type StreamEventPayload = {
 
 const REQUEST_TIMEOUT_MS = 180_000;
 const CHUNK_TIMEOUT_MS = 30_000;
+const ASSISTANT_SYNC_INTERVAL_MS = 50;
 
 const upsertProgressStep = (
   steps: ChatProgressStep[] | undefined,
@@ -90,9 +91,20 @@ const upsertMessage = (
   messageId: string,
   updater: (message: ChatMessage) => ChatMessage
 ) => {
-  setMessages((prev) =>
-    prev.map((message) => (message.id === messageId ? updater(message) : message))
-  );
+  setMessages((prev) => {
+    let index = -1;
+    for (let i = prev.length - 1; i >= 0; i -= 1) {
+      if (prev[i].id === messageId) {
+        index = i;
+        break;
+      }
+    }
+    if (index < 0) return prev;
+
+    const next = [...prev];
+    next[index] = updater(prev[index]);
+    return next;
+  });
 };
 
 const appendMessage = (
@@ -195,6 +207,7 @@ export function useStreamingChat(options: UseStreamingChatOptions): UseStreaming
     async (content: string) => {
       const abortController = new AbortController();
       let aborted = false;
+      let assistantSyncTimer: number | null = null;
 
       onConceptCandidates?.([]);
 
@@ -214,6 +227,22 @@ export function useStreamingChat(options: UseStreamingChatOptions): UseStreaming
         timestamp: new Date(),
         isStreaming: true,
         progressSteps: [],
+      };
+
+      const flushAssistantSync = () => {
+        if (assistantSyncTimer !== null) {
+          window.clearTimeout(assistantSyncTimer);
+          assistantSyncTimer = null;
+        }
+        syncAssistantMessage(setMessages, assistantMessage);
+      };
+
+      const scheduleAssistantSync = () => {
+        if (assistantSyncTimer !== null) return;
+        assistantSyncTimer = window.setTimeout(() => {
+          assistantSyncTimer = null;
+          syncAssistantMessage(setMessages, assistantMessage);
+        }, ASSISTANT_SYNC_INTERVAL_MS);
       };
 
       const timeoutId = setTimeout(() => {
@@ -275,6 +304,7 @@ export function useStreamingChat(options: UseStreamingChatOptions): UseStreaming
           for (const eventBlock of completeEvents) {
             for (const payloadText of extractDataLines(eventBlock)) {
               if (payloadText === "[DONE]") {
+                flushAssistantSync();
                 aborted = true;
                 break;
               }
@@ -295,14 +325,14 @@ export function useStreamingChat(options: UseStreamingChatOptions): UseStreaming
                     assistantMessage.progressSteps,
                     payload.step
                   );
-                  syncAssistantMessage(setMessages, assistantMessage);
+                  scheduleAssistantSync();
                   continue;
                 }
 
                 if (payload.event === "draft" && payload.draft) {
                   const draftType = normalizeDraftType(payload.draftType);
                   applyDraftUpdate(assistantMessage, draftType, payload.draft);
-                  syncAssistantMessage(setMessages, assistantMessage);
+                  scheduleAssistantSync();
                   continue;
                 }
 
@@ -316,7 +346,7 @@ export function useStreamingChat(options: UseStreamingChatOptions): UseStreaming
 
                 if (payload.content) {
                   assistantMessage.content += payload.content;
-                  syncAssistantMessage(setMessages, assistantMessage);
+                  scheduleAssistantSync();
                 }
               } catch (error) {
                 if (!isJsonSyntaxError(error)) {
@@ -360,6 +390,7 @@ export function useStreamingChat(options: UseStreamingChatOptions): UseStreaming
         });
       } finally {
         clearTimeout(timeoutId);
+        flushAssistantSync();
         setIsLoading(false);
         upsertMessage(setMessages, assistantMessage.id, (message) => ({
           ...message,

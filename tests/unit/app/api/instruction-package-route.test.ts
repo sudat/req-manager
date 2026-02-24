@@ -1,18 +1,12 @@
-import { beforeAll, beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, mock } from "bun:test";
 import type { NextRequest } from "next/server";
+import {
+  registerSharedDataModuleMocks,
+  sharedDataModuleMocks,
+} from "./shared-data-module-mocks";
 
-const getChangeRequestByIdMock = mock(async () => ({
-  data: {
-    id: "cr-1",
-    status: "review",
-  },
-  error: null,
-}));
-
-const updateChangeRequestStatusMock = mock(async () => ({
-  data: { id: "cr-1", status: "approved" },
-  error: null,
-}));
+const getChangeRequestByIdMock = sharedDataModuleMocks.getChangeRequestByIdMock;
+const updateChangeRequestStatusMock = sharedDataModuleMocks.updateChangeRequestStatusMock;
 
 const buildModificationPackageMock = mock(async () => ({
   data: {
@@ -25,23 +19,6 @@ const buildModificationPackageMock = mock(async () => ({
 }));
 
 const renderModificationPackageMarkdownMock = mock(() => "# 改修指示パッケージ\n");
-
-mock.module("next/headers", () => ({
-  cookies: async () => ({
-    get: (name: string) =>
-      name === "current-project-id" ? { value: "project-1" } : undefined,
-  }),
-}));
-
-mock.module("@/lib/data/change-requests", () => ({
-  getChangeRequestById: getChangeRequestByIdMock,
-  updateChangeRequestStatus: updateChangeRequestStatusMock,
-}));
-
-mock.module("@/lib/data/modification-packages", () => ({
-  buildModificationPackage: buildModificationPackageMock,
-  renderModificationPackageMarkdown: renderModificationPackageMarkdownMock,
-}));
 
 let POST: (
   request: NextRequest,
@@ -56,6 +33,18 @@ const createRequest = (url: string) =>
   }) as NextRequest;
 
 beforeAll(async () => {
+  mock.module("next/headers", () => ({
+    cookies: async () => ({
+      get: (name: string) =>
+        name === "current-project-id" ? { value: "project-1" } : undefined,
+    }),
+  }));
+  registerSharedDataModuleMocks();
+  mock.module("@/lib/data/modification-packages", () => ({
+    buildModificationPackage: buildModificationPackageMock,
+    renderModificationPackageMarkdown: renderModificationPackageMarkdownMock,
+  }));
+
   const route = await import("@/app/api/tickets/[id]/instruction-package/route");
   POST = route.POST;
 });
@@ -87,6 +76,10 @@ beforeEach(() => {
     error: null,
   });
   renderModificationPackageMarkdownMock.mockReturnValue("# 改修指示パッケージ\n");
+});
+
+afterAll(() => {
+  mock.restore();
 });
 
 describe("POST /api/tickets/[id]/instruction-package", () => {

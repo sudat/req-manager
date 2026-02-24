@@ -10,6 +10,8 @@ import type { ChatConfig, ChatMessage, ThreadSummary } from "@/components/ai-cha
 // ---------------------------------------------------------------------------
 
 const CHAT_STORAGE_PREFIX = "req-manager:chat";
+const DRAFT_PERSIST_DEBOUNCE_MS = 400;
+const STREAMING_PERSIST_DEBOUNCE_MS = 1200;
 
 const buildContextKey = (config: ChatConfig): string => {
 	const loc = config.location;
@@ -210,6 +212,19 @@ const deriveThreadTitle = (messages: ChatMessage[], fallback: string) => {
 	return title ? title.slice(0, 40) : fallback;
 };
 
+const hasDraftPayload = (message: ChatMessage): boolean =>
+	Boolean(
+		message.btDraft ||
+		message.brDraft ||
+		(message.brDrafts?.length ?? 0) > 0 ||
+		message.sfDraft ||
+		message.srDraft ||
+		(message.srDrafts?.length ?? 0) > 0 ||
+		message.ddDraft ||
+		(message.ddDrafts?.length ?? 0) > 0 ||
+		(message.progressSteps?.length ?? 0) > 0,
+	);
+
 const areThreadSummariesEqual = (
 	left: ThreadSummary[],
 	right: ThreadSummary[],
@@ -283,6 +298,7 @@ export function useChatPersistence({
 }: UseChatPersistenceProps) {
 	const contextKey = buildContextKey(config);
 	const threadsStorageKey = getThreadsStorageKey(projectId, config.resourceId, contextKey);
+	const hasStreamingMessage = messages.some((message) => message.isStreaming);
 	const [threads, setThreads] = useState<ThreadSummary[]>([]);
 	const hasLoadedHistoryRef = useRef(false);
 	const persistTimerRef = useRef<number | null>(null);
@@ -341,6 +357,9 @@ export function useChatPersistence({
 	useEffect(() => {
 		if (typeof window === "undefined") return;
 		if (!hasLoadedHistoryRef.current) return;
+		const persistDelayMs = hasStreamingMessage
+			? STREAMING_PERSIST_DEBOUNCE_MS
+			: DRAFT_PERSIST_DEBOUNCE_MS;
 
 		if (persistTimerRef.current) {
 			window.clearTimeout(persistTimerRef.current);
@@ -349,17 +368,7 @@ export function useChatPersistence({
 		persistTimerRef.current = window.setTimeout(() => {
 			// draftsデータのみ抽出して保存
 			const draftsOnly = messages
-				.filter((m) =>
-					m.btDraft ||
-					m.brDraft ||
-					m.brDrafts ||
-					m.sfDraft ||
-					m.srDraft ||
-					m.srDrafts ||
-					m.ddDraft ||
-					m.ddDrafts ||
-					m.progressSteps,
-				)
+				.filter(hasDraftPayload)
 				.slice(-200);
 
 			const draftsStorageKey = getMessagesStorageKey(
@@ -380,7 +389,11 @@ export function useChatPersistence({
 				draftsSnapshotRef.current = `${draftsStorageKey}:[]`;
 			}
 
-			// スレッド一覧も更新
+			if (hasStreamingMessage) {
+				return;
+			}
+
+			// スレッド一覧も更新（ストリーミング完了後）
 			const updatedAt = new Date().toISOString();
 			const title = deriveThreadTitle(
 				messages,
@@ -423,7 +436,7 @@ export function useChatPersistence({
 
 				return normalizedThreads;
 			});
-		}, 400);
+		}, persistDelayMs);
 
 		return () => {
 			if (persistTimerRef.current) {
@@ -439,6 +452,7 @@ export function useChatPersistence({
 		projectId,
 		threadId,
 		threadsStorageKey,
+		hasStreamingMessage,
 	]);
 
 	// ---------------------------------------------------------------------------

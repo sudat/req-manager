@@ -1,27 +1,26 @@
-import { afterEach, beforeAll, beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 let currentProjectCookie: string | undefined = "project-1";
-
-mock.module("next/headers", () => ({
-  cookies: async () => ({
-    get: (name: string) => {
-      if (name !== "current-project-id") return undefined;
-      return currentProjectCookie ? { value: currentProjectCookie } : undefined;
-    },
-  }),
-}));
 
 const generateRequirementsExportMock = mock(async (_projectId: string) => {
   return new Map<string, string>([["README.md", "# export"]]);
 });
 
-mock.module("@/lib/export/requirements-export", () => ({
-  generateRequirementsExport: generateRequirementsExportMock,
-}));
-
 let GET: () => Promise<Response>;
 
 beforeAll(async () => {
+  mock.module("next/headers", () => ({
+    cookies: async () => ({
+      get: (name: string) => {
+        if (name !== "current-project-id") return undefined;
+        return currentProjectCookie ? { value: currentProjectCookie } : undefined;
+      },
+    }),
+  }));
+  mock.module("@/lib/export/requirements-export", () => ({
+    generateRequirementsExport: generateRequirementsExportMock,
+  }));
+
   const route = await import("@/app/api/export/requirements/route");
   GET = route.GET;
 });
@@ -34,6 +33,10 @@ beforeEach(() => {
 afterEach(() => {
   // 他テストへの mock.module リークに備えて、cookie状態をデフォルトに戻す
   currentProjectCookie = "project-1";
+});
+
+afterAll(() => {
+  mock.restore();
 });
 
 describe("GET /api/export/requirements", () => {

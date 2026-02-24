@@ -15,7 +15,9 @@ import {
 import {
 	parseYamlIdList,
 	parseYamlKeySourceList,
-	parseYamlProcessSteps,
+	parseYamlProcessFlow,
+	type ProcessFlowExit,
+	type ProcessStepItem,
 } from "@/lib/utils/yaml";
 import Link from "next/link";
 import { Pencil } from "lucide-react";
@@ -137,58 +139,192 @@ type ProcessStepsBlockProps = {
 };
 
 function ProcessStepsBlock({ label, value }: ProcessStepsBlockProps) {
-	const parsed = parseYamlProcessSteps(value);
-	const steps = parsed.value.filter(
-		(step) => step.when || step.who || step.action,
-	);
+	const parsed = parseYamlProcessFlow(value);
+	const blocks = parsed.value.blocks.filter((block) => {
+		if (block.type === "step") {
+			return hasProcessStepContent(block.step);
+		}
+		return block.branches.some(
+			(branch) =>
+				branch.label.trim().length > 0 ||
+				branch.steps.some((step) => hasProcessStepContent(step))
+		) || block.else?.steps.some((step) => hasProcessStepContent(step)) || Boolean(block.else?.exit) || Boolean(block.defaultExit);
+	});
 
 	return (
 		<div className="space-y-2">
 			<p className="text-[14px] font-bold text-slate-900">{label}</p>
-			{steps.length === 0 ? (
+			{blocks.length === 0 ? (
 				<p className="text-[14px] text-slate-400">—</p>
 			) : (
-				<div className="rounded-md border border-slate-200 overflow-hidden inline-block">
-					<Table className="w-auto">
-						<TableHeader>
-							<TableRow className="bg-slate-50 hover:bg-slate-50">
-								<TableHead className="w-[40px] text-center text-[11px] font-semibold text-slate-600 py-2">
-									#
-								</TableHead>
-								<TableHead className="w-[160px] text-[11px] font-semibold text-slate-600 py-2">
-									タイミング
-								</TableHead>
-								<TableHead className="w-[160px] text-[11px] font-semibold text-slate-600 py-2">
-									担当者
-								</TableHead>
-								<TableHead className="min-w-[400px] text-[11px] font-semibold text-slate-600 py-2">
-									アクション
-								</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{steps.map((step, index) => (
-								<TableRow key={`${label}-${index}`} className="text-[13px]">
-									<TableCell className="w-[40px] text-center text-slate-500 font-medium py-2">
-										{index + 1}
-									</TableCell>
-									<TableCell className="w-[160px] text-slate-700 py-2">
-										{step.when || "—"}
-									</TableCell>
-									<TableCell className="w-[160px] text-slate-700 py-2">
-										{step.who || "—"}
-									</TableCell>
-									<TableCell className="min-w-[400px] text-slate-600 py-2">
-										{step.action || "—"}
-									</TableCell>
-								</TableRow>
-							))}
-						</TableBody>
-					</Table>
+				<div className="space-y-3">
+					{blocks.map((block, blockIndex) => (
+						<div
+							key={`process-block-${blockIndex}`}
+							className="rounded-md border border-slate-200 bg-white p-3 space-y-2"
+						>
+							<div className="flex items-center gap-2">
+								<Badge
+									variant={block.type === "branch" ? "default" : "outline"}
+									className="text-[11px]"
+								>
+									{block.type === "branch" ? "分岐" : "工程"}
+								</Badge>
+								<span className="text-[12px] text-slate-500">
+									{blockIndex + 1}
+								</span>
+								{block.type === "branch" && (
+									<span className="text-[12px] text-slate-700 font-medium">
+										{block.decisionLabel?.trim() || "条件分岐"}
+									</span>
+								)}
+							</div>
+
+							{block.type === "step" ? (
+								<ProcessStepsTable
+									steps={[block.step]}
+									rowKeyPrefix={`step-${blockIndex}`}
+								/>
+							) : (
+								<div className="space-y-3">
+									{block.branches.map((branch, branchIndex) => (
+										<div
+											key={`process-branch-${blockIndex}-${branchIndex}`}
+											className="rounded-md border border-slate-200 bg-slate-50 p-3 space-y-2"
+										>
+											<div className="flex items-center justify-between gap-2">
+												<p className="text-[12px] font-medium text-slate-700">
+													条件: {branch.label.trim() || `条件${branchIndex + 1}`}
+												</p>
+												<Badge variant="secondary" className="text-[11px]">
+													出口: {formatProcessFlowExit(branch.exit)}
+												</Badge>
+											</div>
+											{branch.steps.some((step) => hasProcessStepContent(step)) ? (
+												<ProcessStepsTable
+													steps={branch.steps}
+													rowKeyPrefix={`branch-${blockIndex}-${branchIndex}`}
+												/>
+											) : (
+												<p className="text-[12px] text-slate-500">
+													ステップ未設定
+												</p>
+											)}
+										</div>
+									))}
+									<div className="rounded-md border border-slate-200 bg-slate-50 p-3 space-y-2">
+										<div className="flex items-center justify-between gap-2">
+											<p className="text-[12px] font-medium text-slate-700">
+												それ以外
+											</p>
+											<Badge variant="secondary" className="text-[11px]">
+												出口: {formatProcessFlowExit(block.else?.exit ?? block.defaultExit)}
+											</Badge>
+										</div>
+										{(block.else?.steps ?? []).some((step) => hasProcessStepContent(step)) ? (
+											<ProcessStepsTable
+												steps={block.else?.steps ?? []}
+												rowKeyPrefix={`else-${blockIndex}`}
+											/>
+										) : (
+											<p className="text-[12px] text-slate-500">ステップ未設定</p>
+										)}
+									</div>
+								</div>
+							)}
+						</div>
+					))}
 				</div>
+			)}
+			{parsed.error && (
+				<p className="text-[12px] text-rose-600">
+					業務プロセスのYAML構文にエラーがあります。
+				</p>
 			)}
 		</div>
 	);
+}
+
+type ProcessStepsTableProps = {
+	steps: ProcessStepItem[];
+	rowKeyPrefix: string;
+	hideHeader?: boolean;
+};
+
+function ProcessStepsTable({
+	steps,
+	rowKeyPrefix,
+	hideHeader = false,
+}: ProcessStepsTableProps) {
+	return (
+		<div className="rounded-md border border-slate-200 overflow-hidden inline-block">
+			<Table className="w-auto">
+				{!hideHeader && (
+					<TableHeader>
+						<TableRow className="bg-slate-50 hover:bg-slate-50">
+							<TableHead className="w-[40px] text-center text-[11px] font-semibold text-slate-600 py-2">
+								#
+							</TableHead>
+							<TableHead className="w-[92px] text-[11px] font-semibold text-slate-600 py-2">
+								step
+							</TableHead>
+							<TableHead className="w-[160px] text-[11px] font-semibold text-slate-600 py-2">
+								タイミング
+							</TableHead>
+							<TableHead className="w-[160px] text-[11px] font-semibold text-slate-600 py-2">
+								担当者
+							</TableHead>
+							<TableHead className="min-w-[320px] text-[11px] font-semibold text-slate-600 py-2">
+								アクション
+							</TableHead>
+						</TableRow>
+					</TableHeader>
+				)}
+				<TableBody>
+					{steps
+						.filter((step) => hasProcessStepContent(step))
+						.map((step, index) => (
+							<TableRow key={`${rowKeyPrefix}-${index}`} className="text-[13px]">
+								<TableCell className="w-[40px] text-center text-slate-500 font-medium py-2">
+									{index + 1}
+								</TableCell>
+								<TableCell className="w-[92px] text-slate-600 py-2 font-mono text-[11px]">
+									{step.id?.trim() || "—"}
+								</TableCell>
+								<TableCell className="w-[160px] text-slate-700 py-2">
+									{step.when || "—"}
+								</TableCell>
+								<TableCell className="w-[160px] text-slate-700 py-2">
+									{step.who || "—"}
+								</TableCell>
+								<TableCell className="min-w-[320px] text-slate-600 py-2">
+									{step.action || "—"}
+								</TableCell>
+							</TableRow>
+						))}
+				</TableBody>
+			</Table>
+		</div>
+	);
+}
+
+function hasProcessStepContent(step: ProcessStepItem): boolean {
+	return Boolean(
+		step.id?.trim() ||
+			step.when.trim() ||
+			step.who.trim() ||
+			step.action.trim() ||
+			step.exception?.condition?.trim() ||
+			step.exception?.to?.trim()
+	);
+}
+
+function formatProcessFlowExit(exit: ProcessFlowExit | undefined): string {
+	const resolvedType = exit?.type ?? "next";
+	if (resolvedType === "next") return "次の工程に合流";
+	if (resolvedType === "end") return "業務を終了";
+	const target = exit?.to?.trim() ?? "";
+	return target ? `指定ステップへ遷移 (${target})` : "指定ステップへ遷移";
 }
 
 function KeySourceListBlock({ label, value }: TextBlockProps) {

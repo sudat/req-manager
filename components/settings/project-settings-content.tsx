@@ -54,19 +54,21 @@ export function ProjectSettingsContent() {
 	const handleSave = async () => {
 		if (!settings) return;
 
-		// テキストエリアの内容を設定に反映
-		updateSettings((prev) => ({
-			...prev,
+		const nextSettings: ProjectInvestigationSettings = {
+			...settings,
 			exploration: {
-				...prev.exploration,
+				...settings.exploration,
 				default_include_patterns: parseLines(includePatternsText),
 				default_exclude_patterns: parseLines(excludePatternsText),
 			},
 			shared_module_patterns: parseLines(sharedPatternsText),
-		}));
+		};
+
+		// テキストエリアの内容を設定に反映
+		updateSettings(() => nextSettings);
 
 		// 保存
-		await saveSettings();
+		await saveSettings(nextSettings);
 	};
 
 	const handleReset = () => {

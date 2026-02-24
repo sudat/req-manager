@@ -1,5 +1,9 @@
-import { beforeAll, beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, mock } from "bun:test";
 import type { NextRequest } from "next/server";
+import {
+  registerSharedDataModuleMocks,
+  sharedDataModuleMocks,
+} from "./shared-data-module-mocks";
 
 const getProductRequirementByProjectIdMock = mock(async () => ({
   data: {
@@ -19,9 +23,232 @@ const getProductRequirementByProjectIdMock = mock(async () => ({
   error: null,
 }));
 
-const searchTasksMock = mock(async () => ({
+const searchTasksMock = sharedDataModuleMocks.searchTasksMock;
+const getTaskByIdMock = sharedDataModuleMocks.getTaskByIdMock;
+const searchBusinessRequirementsMock = sharedDataModuleMocks.searchBusinessRequirementsMock;
+const listBusinessRequirementsByTaskIdMock = sharedDataModuleMocks.listBusinessRequirementsByTaskIdMock;
+const listBusinessRequirementsByIdsMock = sharedDataModuleMocks.listBusinessRequirementsByIdsMock;
+
+const getSystemFunctionByIdMock = sharedDataModuleMocks.getSystemFunctionByIdMock;
+const searchSystemFunctionsMock = sharedDataModuleMocks.searchSystemFunctionsMock;
+const searchSystemRequirementsMock = sharedDataModuleMocks.searchSystemRequirementsMock;
+const listSystemRequirementsByIdsMock = sharedDataModuleMocks.listSystemRequirementsByIdsMock;
+
+const searchConceptsMock = mock(async () => ({
   data: [
     {
+      id: "C-00001",
+      name: "インボイス制度",
+      synonyms: ["適格請求書"],
+      areas: ["AR"],
+      definition: "請求関連の制度",
+      relatedDocs: [],
+      requirementCount: 2,
+      sortOrder: 0,
+      createdAt: "",
+      updatedAt: "",
+    },
+  ],
+  error: null,
+}));
+
+const listRequirementLinksByNodeIdMock = sharedDataModuleMocks.listRequirementLinksByNodeIdMock;
+const getChangeRequestByIdMock = sharedDataModuleMocks.getChangeRequestByIdMock;
+
+const deleteImpactScopesByChangeRequestIdMock =
+  sharedDataModuleMocks.deleteImpactScopesByChangeRequestIdMock;
+const createImpactScopesMock = sharedDataModuleMocks.createImpactScopesMock;
+
+const createMcpAuditLogMock = mock(async () => ({
+  data: true,
+  error: null,
+}));
+
+let GET: () => Promise<Response>;
+let POST: (request: NextRequest) => Promise<Response>;
+
+beforeAll(async () => {
+  mock.module("@/lib/data/product-requirements", () => ({
+    getProductRequirementByProjectId: getProductRequirementByProjectIdMock,
+  }));
+  registerSharedDataModuleMocks();
+  mock.module("@/lib/data/concepts", () => ({
+    searchConcepts: searchConceptsMock,
+  }));
+  mock.module("@/lib/data/mcp-audit-logs", () => ({
+    createMcpAuditLog: createMcpAuditLogMock,
+  }));
+
+  const route = await import("@/app/api/mcp/route");
+  GET = route.GET;
+  POST = route.POST;
+});
+
+beforeEach(() => {
+  process.env.MCP_GUARD_MODE = "observe";
+  delete process.env.MCP_API_KEY;
+  delete process.env.MCP_API_KEYS;
+  delete process.env.MCP_RATE_LIMIT_WINDOW_MS;
+  delete process.env.MCP_RATE_LIMIT_MAX_REQUESTS;
+
+  getProductRequirementByProjectIdMock.mockClear();
+  searchTasksMock.mockReset();
+  getTaskByIdMock.mockReset();
+  searchBusinessRequirementsMock.mockReset();
+  listBusinessRequirementsByTaskIdMock.mockReset();
+  listBusinessRequirementsByIdsMock.mockReset();
+  getSystemFunctionByIdMock.mockReset();
+  searchSystemFunctionsMock.mockReset();
+  searchSystemRequirementsMock.mockReset();
+  listSystemRequirementsByIdsMock.mockReset();
+  searchConceptsMock.mockClear();
+  listRequirementLinksByNodeIdMock.mockReset();
+  getChangeRequestByIdMock.mockReset();
+  deleteImpactScopesByChangeRequestIdMock.mockReset();
+  createImpactScopesMock.mockReset();
+  createMcpAuditLogMock.mockClear();
+
+  getSystemFunctionByIdMock.mockResolvedValue({
+    data: {
+      id: "SF-AR-0001",
+      systemDomainId: "SD-AR",
+      category: "api",
+      title: "請求管理API",
+      summary: "請求を扱う",
+      designPolicy: "",
+      status: "draft",
+      relatedTaskIds: ["BT-AR-0001"],
+      requirementIds: ["SR-AR-0001-001"],
+      systemDesign: [],
+      entryPoints: [{ path: "src/api/invoice.ts", type: "api", responsibility: "請求" }],
+      deliverables: [],
+      codeRefs: [],
+      sortOrder: 0,
+      createdAt: "",
+      updatedAt: "",
+    },
+    error: null,
+  });
+  searchSystemFunctionsMock.mockResolvedValue({
+    data: [
+      {
+        id: "SF-AR-0001",
+        systemDomainId: "SD-AR",
+        category: "api",
+        title: "請求管理API",
+        summary: "請求を扱う",
+        designPolicy: "",
+        status: "draft",
+        relatedTaskIds: ["BT-AR-0001"],
+        requirementIds: ["SR-AR-0001-001"],
+        systemDesign: [],
+        entryPoints: [{ path: "src/api/invoice.ts", type: "api", responsibility: "請求" }],
+        deliverables: [],
+        codeRefs: [],
+        sortOrder: 0,
+        createdAt: "",
+        updatedAt: "",
+      },
+    ],
+    error: null,
+  });
+  searchSystemRequirementsMock.mockResolvedValue({
+    data: [
+      {
+        id: "SR-AR-0001-001",
+        taskId: "BT-AR-0001",
+        srfIds: ["SF-AR-0001"],
+        title: "登録番号を出力する",
+        summary: "インボイス対応",
+        conceptIds: [],
+        impacts: [],
+        category: "function",
+        categoryRaw: "function",
+        businessRequirementIds: ["BR-AR-0001-001"],
+        acceptanceCriteriaJson: [],
+        acceptanceCriteria: [],
+        systemDomainIds: ["SD-AR"],
+        sortOrder: 0,
+        createdAt: "",
+        updatedAt: "",
+      },
+    ],
+    error: null,
+  });
+  listSystemRequirementsByIdsMock.mockResolvedValue({
+    data: [
+      {
+        id: "SR-AR-0001-001",
+        taskId: "BT-AR-0001",
+        srfIds: ["SF-AR-0001"],
+        title: "登録番号を出力する",
+        summary: "インボイス対応",
+        conceptIds: [],
+        impacts: [],
+        category: "function",
+        categoryRaw: "function",
+        businessRequirementIds: ["BR-AR-0001-001"],
+        acceptanceCriteriaJson: [],
+        acceptanceCriteria: [],
+        systemDomainIds: ["SD-AR"],
+        sortOrder: 0,
+        createdAt: "",
+        updatedAt: "",
+      },
+    ],
+    error: null,
+  });
+  deleteImpactScopesByChangeRequestIdMock.mockResolvedValue({
+    data: true,
+    error: null,
+  });
+  createImpactScopesMock.mockResolvedValue({
+    data: [
+      {
+        id: "scope-1",
+        changeRequestId: "cr-1",
+        targetType: "system_function",
+        targetId: "SF-AR-0001",
+        targetTitle: "請求管理API",
+        rationale: "reason: 影響あり",
+        confirmed: false,
+        confirmedBy: null,
+        confirmedAt: null,
+        createdAt: "",
+        updatedAt: "",
+      },
+    ],
+    error: null,
+  });
+
+  searchTasksMock.mockResolvedValue({
+    data: [
+      {
+        id: "BT-AR-0001",
+        name: "請求書発行",
+        summary: "請求書を作る",
+        businessArea: "AR",
+        triggerDescription: "",
+        triggerTaskIds: [],
+        frequency: "monthly",
+        frequencyDescription: "",
+        processSteps: "",
+        person: "",
+        input: "",
+        output: "",
+        conceptIdsYaml: "",
+        concepts: [],
+        businessReqCount: 0,
+        systemReqCount: 0,
+        sortOrder: 0,
+        createdAt: "",
+        updatedAt: "",
+      },
+    ],
+    error: null,
+  });
+  getTaskByIdMock.mockResolvedValue({
+    data: {
       id: "BT-AR-0001",
       name: "請求書発行",
       summary: "請求書を作る",
@@ -42,360 +269,113 @@ const searchTasksMock = mock(async () => ({
       createdAt: "",
       updatedAt: "",
     },
-  ],
-  error: null,
-}));
-
-const getTaskByIdMock = mock(async () => ({
-  data: {
-    id: "BT-AR-0001",
-    name: "請求書発行",
-    summary: "請求書を作る",
-    businessArea: "AR",
-    triggerDescription: "",
-    triggerTaskIds: [],
-    frequency: "monthly",
-    frequencyDescription: "",
-    processSteps: "",
-    person: "",
-    input: "",
-    output: "",
-    conceptIdsYaml: "",
-    concepts: [],
-    businessReqCount: 0,
-    systemReqCount: 0,
-    sortOrder: 0,
-    createdAt: "",
-    updatedAt: "",
-  },
-  error: null,
-}));
-
-const searchBusinessRequirementsMock = mock(async () => ({
-  data: [
-    {
-      id: "BR-AR-0001-001",
-      taskId: "BT-AR-0001",
-      title: "請求書を出力できる",
-      summary: "PDFで出力",
-      goal: "PDF出力",
-      constraints: "",
-      owner: "",
-      conceptIds: [],
-      srfIds: ["SF-AR-0001"],
-      impacts: [],
-      acceptanceCriteriaJson: [],
-      acceptanceCriteria: [],
-      sortOrder: 0,
+    error: null,
+  });
+  searchBusinessRequirementsMock.mockResolvedValue({
+    data: [
+      {
+        id: "BR-AR-0001-001",
+        taskId: "BT-AR-0001",
+        title: "請求書を出力できる",
+        summary: "PDFで出力",
+        goal: "PDF出力",
+        constraints: "",
+        owner: "",
+        conceptIds: [],
+        srfIds: ["SF-AR-0001"],
+        impacts: [],
+        acceptanceCriteriaJson: [],
+        acceptanceCriteria: [],
+        sortOrder: 0,
+        createdAt: "",
+        updatedAt: "",
+      },
+    ],
+    error: null,
+  });
+  listBusinessRequirementsByTaskIdMock.mockResolvedValue({
+    data: [
+      {
+        id: "BR-AR-0001-001",
+        taskId: "BT-AR-0001",
+        title: "請求書を出力できる",
+        summary: "PDFで出力",
+        goal: "PDF出力",
+        constraints: "",
+        owner: "",
+        conceptIds: [],
+        srfIds: ["SF-AR-0001"],
+        impacts: [],
+        acceptanceCriteriaJson: [],
+        acceptanceCriteria: [],
+        sortOrder: 0,
+        createdAt: "",
+        updatedAt: "",
+      },
+    ],
+    error: null,
+  });
+  listBusinessRequirementsByIdsMock.mockResolvedValue({
+    data: [
+      {
+        id: "BR-AR-0001-001",
+        taskId: "BT-AR-0001",
+        title: "請求書を出力できる",
+        summary: "PDFで出力",
+        goal: "PDF出力",
+        constraints: "",
+        owner: "",
+        conceptIds: [],
+        srfIds: ["SF-AR-0001"],
+        impacts: [],
+        acceptanceCriteriaJson: [],
+        acceptanceCriteria: [],
+        sortOrder: 0,
+        createdAt: "",
+        updatedAt: "",
+      },
+    ],
+    error: null,
+  });
+  listRequirementLinksByNodeIdMock.mockResolvedValue({
+    data: [
+      {
+        id: "link-1",
+        projectId: "project-1",
+        sourceType: "br",
+        sourceId: "BR-AR-0001-001",
+        targetType: "sr",
+        targetId: "SR-AR-0001-001",
+        linkType: "derived_from",
+        metadata: null,
+        suspect: false,
+        suspectReason: null,
+        createdAt: "",
+        updatedAt: "",
+      },
+    ],
+    error: null,
+  });
+  getChangeRequestByIdMock.mockResolvedValue({
+    data: {
+      id: "cr-1",
+      ticketId: "CR-001",
+      title: "インボイス対応",
+      description: null,
+      background: null,
+      expectedBenefit: null,
+      status: "review",
+      priority: "high",
+      requestedBy: null,
       createdAt: "",
       updatedAt: "",
     },
-  ],
-  error: null,
-}));
-
-const listBusinessRequirementsByTaskIdMock = mock(async () => ({
-  data: [
-    {
-      id: "BR-AR-0001-001",
-      taskId: "BT-AR-0001",
-      title: "請求書を出力できる",
-      summary: "PDFで出力",
-      goal: "PDF出力",
-      constraints: "",
-      owner: "",
-      conceptIds: [],
-      srfIds: ["SF-AR-0001"],
-      impacts: [],
-      acceptanceCriteriaJson: [],
-      acceptanceCriteria: [],
-      sortOrder: 0,
-      createdAt: "",
-      updatedAt: "",
-    },
-  ],
-  error: null,
-}));
-
-const listBusinessRequirementsByIdsMock = mock(async () => ({
-  data: [
-    {
-      id: "BR-AR-0001-001",
-      taskId: "BT-AR-0001",
-      title: "請求書を出力できる",
-      summary: "PDFで出力",
-      goal: "PDF出力",
-      constraints: "",
-      owner: "",
-      conceptIds: [],
-      srfIds: ["SF-AR-0001"],
-      impacts: [],
-      acceptanceCriteriaJson: [],
-      acceptanceCriteria: [],
-      sortOrder: 0,
-      createdAt: "",
-      updatedAt: "",
-    },
-  ],
-  error: null,
-}));
-
-const getSystemFunctionByIdMock = mock(async () => ({
-  data: {
-    id: "SF-AR-0001",
-    systemDomainId: "SD-AR",
-    category: "api",
-    title: "請求管理API",
-    summary: "請求を扱う",
-    designPolicy: "",
-    status: "draft",
-    relatedTaskIds: ["BT-AR-0001"],
-    requirementIds: ["SR-AR-0001-001"],
-    systemDesign: [],
-    entryPoints: [{ path: "src/api/invoice.ts", type: "api", responsibility: "請求" }],
-    deliverables: [],
-    codeRefs: [],
-    sortOrder: 0,
-    createdAt: "",
-    updatedAt: "",
-  },
-  error: null,
-}));
-
-const searchSystemFunctionsMock = mock(async () => ({
-  data: [
-    {
-      id: "SF-AR-0001",
-      systemDomainId: "SD-AR",
-      category: "api",
-      title: "請求管理API",
-      summary: "請求を扱う",
-      designPolicy: "",
-      status: "draft",
-      relatedTaskIds: ["BT-AR-0001"],
-      requirementIds: ["SR-AR-0001-001"],
-      systemDesign: [],
-      entryPoints: [{ path: "src/api/invoice.ts", type: "api", responsibility: "請求" }],
-      deliverables: [],
-      codeRefs: [],
-      sortOrder: 0,
-      createdAt: "",
-      updatedAt: "",
-    },
-  ],
-  error: null,
-}));
-
-const searchSystemRequirementsMock = mock(async () => ({
-  data: [
-    {
-      id: "SR-AR-0001-001",
-      taskId: "BT-AR-0001",
-      srfIds: ["SF-AR-0001"],
-      title: "登録番号を出力する",
-      summary: "インボイス対応",
-      conceptIds: [],
-      impacts: [],
-      category: "function",
-      categoryRaw: "function",
-      businessRequirementIds: ["BR-AR-0001-001"],
-      acceptanceCriteriaJson: [],
-      acceptanceCriteria: [],
-      systemDomainIds: ["SD-AR"],
-      sortOrder: 0,
-      createdAt: "",
-      updatedAt: "",
-    },
-  ],
-  error: null,
-}));
-
-const listSystemRequirementsByIdsMock = mock(async () => ({
-  data: [
-    {
-      id: "SR-AR-0001-001",
-      taskId: "BT-AR-0001",
-      srfIds: ["SF-AR-0001"],
-      title: "登録番号を出力する",
-      summary: "インボイス対応",
-      conceptIds: [],
-      impacts: [],
-      category: "function",
-      categoryRaw: "function",
-      businessRequirementIds: ["BR-AR-0001-001"],
-      acceptanceCriteriaJson: [],
-      acceptanceCriteria: [],
-      systemDomainIds: ["SD-AR"],
-      sortOrder: 0,
-      createdAt: "",
-      updatedAt: "",
-    },
-  ],
-  error: null,
-}));
-
-const searchConceptsMock = mock(async () => ({
-  data: [
-    {
-      id: "C-00001",
-      name: "インボイス制度",
-      synonyms: ["適格請求書"],
-      areas: ["AR"],
-      definition: "請求関連の制度",
-      relatedDocs: [],
-      requirementCount: 2,
-      sortOrder: 0,
-      createdAt: "",
-      updatedAt: "",
-    },
-  ],
-  error: null,
-}));
-
-const listRequirementLinksByNodeIdMock = mock(async () => ({
-  data: [
-    {
-      id: "link-1",
-      projectId: "project-1",
-      sourceType: "br",
-      sourceId: "BR-AR-0001-001",
-      targetType: "sr",
-      targetId: "SR-AR-0001-001",
-      linkType: "derived_from",
-      metadata: null,
-      suspect: false,
-      suspectReason: null,
-      createdAt: "",
-      updatedAt: "",
-    },
-  ],
-  error: null,
-}));
-
-const getChangeRequestByIdMock = mock(async () => ({
-  data: {
-    id: "cr-1",
-    ticketId: "CR-001",
-    title: "インボイス対応",
-    description: null,
-    background: null,
-    expectedBenefit: null,
-    status: "review",
-    priority: "high",
-    requestedBy: null,
-    createdAt: "",
-    updatedAt: "",
-  },
-  error: null,
-}));
-
-const deleteImpactScopesByChangeRequestIdMock = mock(async () => ({
-  data: true,
-  error: null,
-}));
-
-const createImpactScopesMock = mock(async () => ({
-  data: [
-    {
-      id: "scope-1",
-      changeRequestId: "cr-1",
-      targetType: "system_function",
-      targetId: "SF-AR-0001",
-      targetTitle: "請求管理API",
-      rationale: "reason: 影響あり",
-      confirmed: false,
-      confirmedBy: null,
-      confirmedAt: null,
-      createdAt: "",
-      updatedAt: "",
-    },
-  ],
-  error: null,
-}));
-
-const createMcpAuditLogMock = mock(async () => ({
-  data: true,
-  error: null,
-}));
-
-mock.module("@/lib/data/product-requirements", () => ({
-  getProductRequirementByProjectId: getProductRequirementByProjectIdMock,
-}));
-
-mock.module("@/lib/data/tasks", () => ({
-  searchTasks: searchTasksMock,
-  getTaskById: getTaskByIdMock,
-}));
-
-mock.module("@/lib/data/business-requirements", () => ({
-  searchBusinessRequirements: searchBusinessRequirementsMock,
-  listBusinessRequirementsByTaskId: listBusinessRequirementsByTaskIdMock,
-  listBusinessRequirementsByIds: listBusinessRequirementsByIdsMock,
-}));
-
-mock.module("@/lib/data/system-functions", () => ({
-  getSystemFunctionById: getSystemFunctionByIdMock,
-  searchSystemFunctions: searchSystemFunctionsMock,
-}));
-
-mock.module("@/lib/data/system-requirements", () => ({
-  searchSystemRequirements: searchSystemRequirementsMock,
-  listSystemRequirementsByIds: listSystemRequirementsByIdsMock,
-}));
-
-mock.module("@/lib/data/concepts", () => ({
-  searchConcepts: searchConceptsMock,
-}));
-
-mock.module("@/lib/data/requirement-links", () => ({
-  listRequirementLinksByNodeId: listRequirementLinksByNodeIdMock,
-}));
-
-mock.module("@/lib/data/change-requests", () => ({
-  getChangeRequestById: getChangeRequestByIdMock,
-}));
-
-mock.module("@/lib/data/impact-scopes", () => ({
-  deleteImpactScopesByChangeRequestId: deleteImpactScopesByChangeRequestIdMock,
-  createImpactScopes: createImpactScopesMock,
-}));
-
-mock.module("@/lib/data/mcp-audit-logs", () => ({
-  createMcpAuditLog: createMcpAuditLogMock,
-}));
-
-let GET: () => Promise<Response>;
-let POST: (request: NextRequest) => Promise<Response>;
-
-beforeAll(async () => {
-  const route = await import("@/app/api/mcp/route");
-  GET = route.GET;
-  POST = route.POST;
+    error: null,
+  });
 });
 
-beforeEach(() => {
-  process.env.MCP_GUARD_MODE = "observe";
-  delete process.env.MCP_API_KEY;
-  delete process.env.MCP_API_KEYS;
-  delete process.env.MCP_RATE_LIMIT_WINDOW_MS;
-  delete process.env.MCP_RATE_LIMIT_MAX_REQUESTS;
-
-  getProductRequirementByProjectIdMock.mockClear();
-  searchTasksMock.mockClear();
-  getTaskByIdMock.mockClear();
-  searchBusinessRequirementsMock.mockClear();
-  listBusinessRequirementsByTaskIdMock.mockClear();
-  listBusinessRequirementsByIdsMock.mockClear();
-  getSystemFunctionByIdMock.mockClear();
-  searchSystemFunctionsMock.mockClear();
-  searchSystemRequirementsMock.mockClear();
-  listSystemRequirementsByIdsMock.mockClear();
-  searchConceptsMock.mockClear();
-  listRequirementLinksByNodeIdMock.mockClear();
-  getChangeRequestByIdMock.mockClear();
-  deleteImpactScopesByChangeRequestIdMock.mockClear();
-  createImpactScopesMock.mockClear();
-  createMcpAuditLogMock.mockClear();
+afterAll(() => {
+  mock.restore();
 });
 
 const createRequest = (body: unknown, headers?: Record<string, string>) =>

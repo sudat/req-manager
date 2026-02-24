@@ -88,7 +88,7 @@ export function TaskBasicInfoCard({
 					label="業務プロセス"
 					value={knowledge.processSteps}
 					onChange={(value) => onFieldChange("processSteps", value)}
-					helperText="いつ／誰が／何をするかを入力します（任意）。"
+					helperText="通常ステップに加えて、分岐ごとの複数ステップと出口先を設定できます（任意）。"
 				/>
 
 				<KeySourceListField

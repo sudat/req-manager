@@ -1,6 +1,9 @@
 import { describe, expect, it } from "bun:test";
-import { taskProcessStepsToMermaidFlow } from "../../../lib/utils/business-flow/task-flow-to-mermaid";
-import type { ProcessStepItem } from "../../../lib/utils/yaml";
+import {
+	taskProcessFlowToMermaidFlow,
+	taskProcessStepsToMermaidFlow,
+} from "../../../lib/utils/business-flow/task-flow-to-mermaid";
+import type { ProcessFlowDocument, ProcessStepItem } from "../../../lib/utils/yaml";
 
 describe("taskProcessStepsToMermaidFlow", () => {
 	it("直列ステップを基本フローとして描画できる", () => {
@@ -83,5 +86,60 @@ describe("taskProcessStepsToMermaidFlow", () => {
 
 		expect(result.warnings.length).toBeGreaterThan(0);
 		expect(result.warnings.join("\n")).toContain("exception.to");
+	});
+
+	it("v2分岐ブロックで分岐ごとの出口を描画できる", () => {
+		const flow: ProcessFlowDocument = {
+			version: 2,
+			blocks: [
+				{
+					type: "step",
+					step: { id: "s1", when: "", who: "担当", action: "申請を確認する" },
+				},
+				{
+					type: "branch",
+					decisionLabel: "承認判定",
+					branches: [
+						{
+							label: "承認",
+							steps: [
+								{ id: "s2", when: "", who: "課長", action: "承認する" },
+								{ id: "s3", when: "", who: "担当", action: "処理を進める" },
+							],
+							exit: { type: "next" },
+						},
+						{
+							label: "差戻し",
+							steps: [{ id: "s4", when: "", who: "担当", action: "修正する" }],
+							exit: { type: "step", to: "s1" },
+						},
+					],
+					else: {
+						steps: [
+							{ id: "s6", when: "", who: "担当", action: "差戻し通知を送る" },
+						],
+						exit: { type: "end" },
+					},
+				},
+				{
+					type: "step",
+					step: { id: "s5", when: "", who: "担当", action: "完了連絡する" },
+				},
+			],
+		};
+
+		const result = taskProcessFlowToMermaidFlow(flow, {
+			taskId: "BT-AR-0099",
+			taskName: "承認ワークフロー",
+		});
+
+		expect(result.warnings).toHaveLength(0);
+		expect(result.mermaidCode).toContain('DECISION_1{"承認判定"}');
+		expect(result.mermaidCode).toContain("DECISION_1 -->|承認| STEP_s2");
+		expect(result.mermaidCode).toContain("STEP_s2 --> STEP_s3");
+		expect(result.mermaidCode).toContain("STEP_s3 --> STEP_s5");
+		expect(result.mermaidCode).toContain("STEP_s4 --> STEP_s1");
+		expect(result.mermaidCode).toContain("DECISION_1 -->|それ以外| STEP_s6");
+		expect(result.mermaidCode).toContain("STEP_s6 --> END");
 	});
 });
