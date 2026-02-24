@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { businesses } from "@/lib/mock/data";
 import type { BusinessArea } from "@/lib/domain";
 
 const areaConfig = [
@@ -12,6 +11,7 @@ const areaConfig = [
 ];
 
 interface TicketScopeFormProps {
+  businesses: Array<{ area: string; name: string }>;
   selectedBusinessIds: string[];
   toggleBusiness: (businessId: string) => void;
   selectedAreas: BusinessArea[];
@@ -21,6 +21,7 @@ interface TicketScopeFormProps {
 }
 
 export function TicketScopeForm({
+  businesses,
   selectedBusinessIds,
   toggleBusiness,
   selectedAreas,

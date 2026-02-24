@@ -6,8 +6,11 @@
  */
 
 import { listBusinessRequirements } from "@/lib/data/business-requirements";
+import { listBusinesses } from "@/lib/data/businesses";
 import { listSystemFunctions } from "@/lib/data/system-functions";
+import { listSystemDomains } from "@/lib/data/system-domains";
 import { listSystemRequirements } from "@/lib/data/system-requirements";
+import { listTasks } from "@/lib/data/tasks";
 import { listDesignDocuments } from "@/lib/data/design-documents";
 import { listConcepts } from "@/lib/data/concepts";
 import { getProductRequirementByProjectId } from "@/lib/data/product-requirements";
@@ -248,74 +251,123 @@ function generateVersionMd(): string {
 // ────────────────────────────────────────
 // メインエクスポート関数
 // ────────────────────────────────────────
-export async function generateRequirementsExport(projectId: string): Promise<Map<string, string>> {
+export type RequirementsExportData = {
+  productRequirement: {
+    targetUsers: string;
+    experienceGoals: string;
+    qualityGoals: string;
+    designSystem: string;
+    uxGuidelines: string;
+    techStackProfile: string;
+    codingConventions: string | null;
+    forbiddenChoices: string | null;
+  } | null;
+  businesses: Array<{ area: string; sortOrder?: number | null }>;
+  tasks: Array<{
+    id: string;
+    name: string;
+    summary: string;
+    businessArea?: string | null;
+    sortOrder?: number | null;
+  }>;
+  businessRequirements: Array<{ id: string; taskId: string; title: string; goal: string }>;
+  systemDomains: Array<{ id: string; sortOrder?: number | null }>;
+  systemFunctions: Array<{
+    id: string;
+    systemDomainId?: string | null;
+    title: string;
+    summary: string;
+    sortOrder?: number | null;
+    entryPoints?: Array<{ path: string; type: string | null; responsibility: string | null }>;
+  }>;
+  systemRequirements: Array<{
+    id: string;
+    title: string;
+    summary: string;
+    acceptanceCriteria: string[];
+    srfIds?: string[] | null;
+  }>;
+  concepts: Array<{ id: string; name: string; definition: string; synonyms: string[]; areas: string[] }>;
+  links: Array<{
+    id: string;
+    sourceType: string;
+    sourceId: string;
+    targetType: string;
+    targetId: string;
+    linkType: string;
+    suspect: boolean;
+    suspectReason: string | null;
+  }>;
+};
+
+export function buildRequirementsExportFiles(data: RequirementsExportData): Map<string, string> {
   const files = new Map<string, string>();
 
-  // 全データ取得
-  const [
-    prResult,
-    brResult,
-    sfResult,
-    srResult,
-    ddResult,
-    conceptResult,
-    linkResult,
-  ] = await Promise.all([
-    getProductRequirementByProjectId(projectId),
-    listBusinessRequirements(projectId),
-    listSystemFunctions(projectId),
-    listSystemRequirements(projectId),
-    listDesignDocuments(projectId),
-    listConcepts(projectId),
-    listRequirementLinksByProjectId(projectId),
-  ]);
-
-  const brs = brResult.data ?? [];
-  const sfs = sfResult.data ?? [];
-  const srs = srResult.data ?? [];
-  const concepts = conceptResult.data ?? [];
-  const links = linkResult.data ?? [];
+  const {
+    productRequirement,
+    businesses,
+    tasks,
+    businessRequirements: brs,
+    systemDomains,
+    systemFunctions: sfs,
+    systemRequirements: srs,
+    concepts,
+    links,
+  } = data;
 
   // ── business/ グループing ──
-  // BRからタスクIDを収集し、業務領域別にグループ化
-  // BRのタスクIDは "BT-{AREA}-{NNNN}" 形式から AREA を抽出
-  const taskAreaMap = new Map<string, string>(); // taskId → area
+  // BTを正として業務領域別にグループ化し、BT名/概要を推測しない
   const taskBrMap = new Map<string, typeof brs>(); // taskId → BR[]
   for (const br of brs) {
-    const parts = br.taskId?.split("-");
-    const area = parts && parts.length >= 2 ? parts[1] : "UNKNOWN";
-    taskAreaMap.set(br.taskId, area);
     const list = taskBrMap.get(br.taskId) ?? [];
     list.push(br);
     taskBrMap.set(br.taskId, list);
   }
 
-  // 業務領域ごとのタスク一覧
-  const areaTasksMap = new Map<string, string[]>(); // area → taskId[]
-  for (const [taskId, area] of taskAreaMap) {
-    const list = areaTasksMap.get(area) ?? [];
-    if (!list.includes(taskId)) list.push(taskId);
-    areaTasksMap.set(area, list);
+  const tasksByArea = new Map<string, typeof tasks>(); // area → BT[]
+  for (const task of tasks) {
+    const area = task.businessArea?.trim() || "UNKNOWN";
+    const list = tasksByArea.get(area) ?? [];
+    list.push(task);
+    tasksByArea.set(area, list);
   }
 
-  const businessAreas = Array.from(areaTasksMap.keys()).sort();
+  const businessOrder = new Map(businesses.map((b) => [b.area, b.sortOrder] as const));
+  const businessAreaSet = new Set<string>([
+    ...businesses.map((b) => b.area),
+    ...Array.from(tasksByArea.keys()),
+  ]);
+  const businessAreas = Array.from(businessAreaSet).sort((a, b) => {
+    const orderA = businessOrder.get(a) ?? Number.POSITIVE_INFINITY;
+    const orderB = businessOrder.get(b) ?? Number.POSITIVE_INFINITY;
+    if (orderA !== orderB) return orderA - orderB;
+    return a.localeCompare(b);
+  });
 
   for (const area of businessAreas) {
-    const taskIds = areaTasksMap.get(area) ?? [];
+    const tasksInArea = tasksByArea.get(area) ?? [];
+    tasksInArea.sort(
+      (a, b) =>
+        (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.id.localeCompare(b.id)
+    );
+
     // _index.md
-    const tasksForIndex = taskIds.map((taskId) => {
-      const firstBr = (taskBrMap.get(taskId) ?? [])[0];
-      return { id: taskId, name: firstBr?.title ?? taskId, summary: firstBr?.goal ?? "" };
-    });
+    const tasksForIndex = tasksInArea.map((task) => ({
+      id: task.id,
+      name: task.name,
+      summary: task.summary,
+    }));
     files.set(`business/${area}/_index.md`, generateBusinessIndex(area, tasksForIndex));
 
     // 各BT .md
-    for (const taskId of taskIds) {
-      const brsByTask = taskBrMap.get(taskId) ?? [];
-      const task = { id: taskId, name: brsByTask[0]?.title ?? taskId, summary: brsByTask[0]?.goal ?? "" };
+    for (const task of tasksInArea) {
+      const brsByTask = taskBrMap.get(task.id) ?? [];
       files.set(
-        `business/${area}/${taskId}.md`,
-        generateBusinessTaskMd(task, brsByTask.map((br) => ({ id: br.id, title: br.title, goal: br.goal })))
+        `business/${area}/${task.id}.md`,
+        generateBusinessTaskMd(
+          { id: task.id, name: task.name, summary: task.summary },
+          brsByTask.map((br) => ({ id: br.id, title: br.title, goal: br.goal }))
+        )
       );
     }
   }
@@ -329,7 +381,17 @@ export async function generateRequirementsExport(projectId: string): Promise<Map
     sdSfMap.set(sdId, list);
   }
 
-  const systemDomainIds = Array.from(sdSfMap.keys()).sort();
+  const domainOrder = new Map(systemDomains.map((d) => [d.id, d.sortOrder] as const));
+  const systemDomainIdSet = new Set<string>([
+    ...systemDomains.map((d) => d.id),
+    ...Array.from(sdSfMap.keys()),
+  ]);
+  const systemDomainIds = Array.from(systemDomainIdSet).sort((a, b) => {
+    const orderA = domainOrder.get(a) ?? Number.POSITIVE_INFINITY;
+    const orderB = domainOrder.get(b) ?? Number.POSITIVE_INFINITY;
+    if (orderA !== orderB) return orderA - orderB;
+    return a.localeCompare(b);
+  });
 
   // SRをSFIDで引けるようにMAP
   const sfSrMap = new Map<string, typeof srs>(); // sfId → SR[]
@@ -343,47 +405,99 @@ export async function generateRequirementsExport(projectId: string): Promise<Map
 
   for (const sdId of systemDomainIds) {
     const sfsInDomain = sdSfMap.get(sdId) ?? [];
+    sfsInDomain.sort(
+      (a, b) =>
+        (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.id.localeCompare(b.id)
+    );
+
     // _index.md
     files.set(
       `system/${sdId}/_index.md`,
-      generateSystemIndex(sdId, sfsInDomain.map((sf) => ({ id: sf.id, title: sf.title, summary: sf.summary })))
+      generateSystemIndex(
+        sdId,
+        sfsInDomain.map((sf) => ({ id: sf.id, title: sf.title, summary: sf.summary }))
+      )
     );
 
     // 各SF .md
     for (const sf of sfsInDomain) {
       const srsForSf = sfSrMap.get(sf.id) ?? [];
-      // entry_points: deliverables から収集（あなたの新構造）
       const entryPoints = sf.entryPoints ?? [];
       files.set(
         `system/${sdId}/${sf.id}.md`,
         generateSystemFunctionMd(
           { id: sf.id, title: sf.title, summary: sf.summary, entryPoints },
-          srsForSf.map((sr) => ({ id: sr.id, title: sr.title, summary: sr.summary, acceptanceCriteria: sr.acceptanceCriteria }))
+          srsForSf.map((sr) => ({
+            id: sr.id,
+            title: sr.title,
+            summary: sr.summary,
+            acceptanceCriteria: sr.acceptanceCriteria,
+          }))
         )
       );
     }
   }
 
   // ── その他ファイル ──
-  // INDEX.md
   files.set("INDEX.md", generateIndex(businessAreas, systemDomainIds));
 
-  // product-requirement.yml
-  if (prResult.data) {
-    files.set("product-requirement.yml", generateProductRequirementYaml(prResult.data));
+  if (productRequirement) {
+    files.set("product-requirement.yml", generateProductRequirementYaml(productRequirement));
   }
 
-  // concept-dictionary.yml
   files.set(
     "concept-dictionary.yml",
-    generateConceptDictionaryYaml(concepts.map((c) => ({ id: c.id, name: c.name, definition: c.definition, synonyms: c.synonyms, areas: c.areas })))
+    generateConceptDictionaryYaml(
+      concepts.map((c) => ({
+        id: c.id,
+        name: c.name,
+        definition: c.definition,
+        synonyms: c.synonyms,
+        areas: c.areas,
+      }))
+    )
   );
 
-  // graph/requirements-links.json
   files.set("graph/requirements-links.json", generateLinksJson(links));
-
-  // VERSION.md
   files.set("VERSION.md", generateVersionMd());
 
   return files;
+}
+
+export async function generateRequirementsExport(projectId: string): Promise<Map<string, string>> {
+  const [
+    prResult,
+    bdResult,
+    btResult,
+    brResult,
+    sdResult,
+    sfResult,
+    srResult,
+    _ddResult,
+    conceptResult,
+    linkResult,
+  ] = await Promise.all([
+    getProductRequirementByProjectId(projectId),
+    listBusinesses(projectId),
+    listTasks(projectId),
+    listBusinessRequirements(projectId),
+    listSystemDomains(projectId),
+    listSystemFunctions(projectId),
+    listSystemRequirements(projectId),
+    listDesignDocuments(projectId),
+    listConcepts(projectId),
+    listRequirementLinksByProjectId(projectId),
+  ]);
+
+  return buildRequirementsExportFiles({
+    productRequirement: prResult.data ?? null,
+    businesses: bdResult.data ?? [],
+    tasks: btResult.data ?? [],
+    businessRequirements: brResult.data ?? [],
+    systemDomains: sdResult.data ?? [],
+    systemFunctions: sfResult.data ?? [],
+    systemRequirements: srResult.data ?? [],
+    concepts: conceptResult.data ?? [],
+    links: linkResult.data ?? [],
+  });
 }

@@ -15,11 +15,13 @@ import {
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { buildHealthScoreSummary } from "@/lib/health-score";
 import { buildBusinessRequirementsForHealth } from "@/lib/health-score/utils";
 import { TaskLoadingStatus, TaskNotFound } from "./components/TaskLoadingStatus";
 import { TaskSummaryCard } from "./components/TaskSummaryCard";
 import { BusinessRequirementsSection } from "./components/BusinessRequirementsSection";
+import { TaskFlowSection } from "./components/TaskFlowSection";
 import { useTaskDetail } from "./use-task-detail";
 import { useBusinessByKey } from "@/hooks/use-business-by-key";
 
@@ -33,6 +35,8 @@ export default function TaskDetailPage({ params }: PageProps) {
 	const { businessArea } = useBusinessByKey(businessKey);
 	const routeArea = businessArea ?? businessKey;
 	const {
+		projectId,
+		projectLoading,
 		task,
 		taskLoading,
 		taskError,
@@ -50,7 +54,6 @@ export default function TaskDetailPage({ params }: PageProps) {
 		systemFunctionMap,
 		systemFunctionDomainMap,
 		taskMap,
-		systemFunctions,
 		systemFunctionsFull,
 	} = useTaskDetail({ bizId: businessKey, taskId });
 
@@ -65,12 +68,6 @@ export default function TaskDetailPage({ params }: PageProps) {
 	const displayInput = task?.input ?? knowledge.input;
 	const displayOutput = task?.output ?? knowledge.output;
 	const displayConceptIds = task?.conceptIdsYaml ?? knowledge.conceptIdsYaml;
-	const businessRequirementMap = useMemo(
-		() =>
-			new Map(businessRequirements.map((req) => [req.id, req.title || req.id])),
-		[businessRequirements],
-	);
-
 	const systemRequirementsByBizReq = useMemo(() => {
 		const map = new Map<string, typeof systemRequirements>();
 		systemRequirements.forEach(sr => {
@@ -153,12 +150,14 @@ export default function TaskDetailPage({ params }: PageProps) {
 						<h1 className="text-[32px] font-semibold tracking-tight text-slate-900">
 							業務タスク詳細
 						</h1>
-						<Link href={routeArea ? `/chat?screen=BT&bdId=${routeArea}&btId=${taskId}` : "/chat"}>
-							<Button className="h-8 gap-2 text-[14px] bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white">
-								<Sparkles className="h-4 w-4" />
-								AIで追加
-							</Button>
-						</Link>
+						<div className="flex gap-2">
+							<Link href={routeArea ? `/chat?screen=BT&bdId=${routeArea}&btId=${taskId}` : "/chat"}>
+								<Button className="h-8 gap-2 text-[14px] bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white">
+									<Sparkles className="h-4 w-4" />
+									AIで追加
+								</Button>
+							</Link>
+						</div>
 					</div>
 
 					<TaskLoadingStatus
@@ -173,34 +172,50 @@ export default function TaskDetailPage({ params }: PageProps) {
 
 					{task !== null && (
 						<>
-						<div className="space-y-4">
-							<TaskSummaryCard
-								displayBizId={displayBizId}
-								taskId={taskId}
-								displayTaskName={displayTaskName}
-								displayTaskSummary={displayTaskSummary}
-								displayTriggerDescription={displayTriggerDescription}
-								displayTriggerTaskIds={displayTriggerTaskIds}
-								displayFrequency={displayFrequency}
-								displayFrequencyDescription={displayFrequencyDescription}
-								displayProcessSteps={displayProcessSteps}
-								displayInput={displayInput}
-								displayOutput={displayOutput}
-								displayConceptIds={displayConceptIds}
-								conceptMap={conceptMap}
-								taskMap={taskMap}
-								routeArea={routeArea}
-							/>
-							<HealthScoreCard
-								title="業務タスクヘルススコア"
-								summary={healthSummary}
-								loading={healthLoading}
-								error={healthError}
-								maxIssues={6}
-								showStats
-								pageType="business"
-							/>
-						</div>
+						<Tabs defaultValue="summary" className="space-y-4">
+							<TabsList className="grid w-[280px] grid-cols-2">
+								<TabsTrigger value="summary">概要</TabsTrigger>
+								<TabsTrigger value="flow">業務フロー</TabsTrigger>
+							</TabsList>
+
+							<TabsContent value="summary" className="space-y-4">
+								<TaskSummaryCard
+									displayBizId={displayBizId}
+									taskId={taskId}
+									displayTaskName={displayTaskName}
+									displayTaskSummary={displayTaskSummary}
+									displayTriggerDescription={displayTriggerDescription}
+									displayTriggerTaskIds={displayTriggerTaskIds}
+									displayFrequency={displayFrequency}
+									displayFrequencyDescription={displayFrequencyDescription}
+									displayProcessSteps={displayProcessSteps}
+									displayInput={displayInput}
+									displayOutput={displayOutput}
+									displayConceptIds={displayConceptIds}
+									conceptMap={conceptMap}
+									taskMap={taskMap}
+									routeArea={routeArea}
+								/>
+								<HealthScoreCard
+									title="業務タスクヘルススコア"
+									summary={healthSummary}
+									loading={healthLoading}
+									error={healthError}
+									maxIssues={6}
+									showStats
+									pageType="business"
+								/>
+							</TabsContent>
+
+							<TabsContent value="flow">
+								<TaskFlowSection
+									taskId={taskId}
+									businessArea={routeArea}
+									projectId={projectId}
+									projectLoading={projectLoading}
+								/>
+							</TabsContent>
+						</Tabs>
 
 							<div className="mt-6 space-y-6">
 								<section className="space-y-4">

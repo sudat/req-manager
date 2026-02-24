@@ -11,9 +11,16 @@ export type KeySourceItem = {
 };
 
 export type ProcessStepItem = {
+	id?: string;
 	when: string;
 	who: string;
 	action: string;
+	condition?: string;
+	parallel?: string;
+	exception?: {
+		condition: string;
+		to: string;
+	};
 };
 
 type YamlErrorLike = {
@@ -117,10 +124,26 @@ export function parseYamlProcessSteps(src: string): YamlParseResult<ProcessStepI
 		}
 		if (entry && typeof entry === "object") {
 			const obj = entry as Record<string, unknown>;
+			const rawException = obj.exception;
+			let exception: ProcessStepItem["exception"] | undefined;
+			if (rawException && typeof rawException === "object") {
+				const exceptionObj = rawException as Record<string, unknown>;
+				const condition = exceptionObj.condition
+					? String(exceptionObj.condition)
+					: "";
+				const to = exceptionObj.to ? String(exceptionObj.to) : "";
+				if (condition || to) {
+					exception = { condition, to };
+				}
+			}
 			return {
+				id: obj.id ? String(obj.id) : "",
 				when: obj.when ? String(obj.when) : "",
 				who: obj.who ? String(obj.who) : "",
 				action: obj.action ? String(obj.action) : "",
+				condition: obj.condition ? String(obj.condition) : "",
+				parallel: obj.parallel ? String(obj.parallel) : "",
+				exception,
 			};
 		}
 		return { when: "", who: "", action: "" };
@@ -141,7 +164,7 @@ export function buildYamlKeySourceList(items: KeySourceItem[]): string {
 
 	try {
 		return stringify(trimmed, YAML_PARSE_OPTIONS).trim();
-	} catch (_e) {
+	} catch {
 		return JSON.stringify(trimmed, null, 2);
 	}
 }
@@ -149,16 +172,40 @@ export function buildYamlKeySourceList(items: KeySourceItem[]): string {
 export function buildYamlProcessSteps(items: ProcessStepItem[]): string {
 	const trimmed = items
 		.map((item) => ({
+			id: item.id?.trim() ?? "",
 			when: item.when.trim(),
 			who: item.who.trim(),
 			action: item.action.trim(),
+			condition: item.condition?.trim() ?? "",
+			parallel: item.parallel?.trim() ?? "",
+			exceptionCondition: item.exception?.condition?.trim() ?? "",
+			exceptionTo: item.exception?.to?.trim() ?? "",
 		}))
-		.filter((item) => item.when.length > 0 || item.who.length > 0 || item.action.length > 0)
+		.filter(
+			(item) =>
+				item.id.length > 0 ||
+				item.when.length > 0 ||
+				item.who.length > 0 ||
+				item.action.length > 0 ||
+				item.condition.length > 0 ||
+				item.parallel.length > 0 ||
+				item.exceptionCondition.length > 0 ||
+				item.exceptionTo.length > 0
+		)
 		.map((item) => {
-			const entry: Record<string, string> = {};
+			const entry: Record<string, string | Record<string, string>> = {};
+			if (item.id) entry.id = item.id;
 			if (item.when) entry.when = item.when;
 			if (item.who) entry.who = item.who;
 			if (item.action) entry.action = item.action;
+			if (item.condition) entry.condition = item.condition;
+			if (item.parallel) entry.parallel = item.parallel;
+			if (item.exceptionCondition || item.exceptionTo) {
+				const exception: Record<string, string> = {};
+				if (item.exceptionCondition) exception.condition = item.exceptionCondition;
+				if (item.exceptionTo) exception.to = item.exceptionTo;
+				entry.exception = exception;
+			}
 			return entry;
 		});
 
@@ -166,7 +213,7 @@ export function buildYamlProcessSteps(items: ProcessStepItem[]): string {
 
 	try {
 		return stringify(trimmed, YAML_PARSE_OPTIONS).trim();
-	} catch (_e) {
+	} catch {
 		return JSON.stringify(trimmed, null, 2);
 	}
 }
@@ -199,7 +246,7 @@ export function buildYamlIdList(ids: string[]): string {
 	if (trimmed.length === 0) return "";
 	try {
 		return stringify(trimmed, YAML_PARSE_OPTIONS).trim();
-	} catch (_e) {
+	} catch {
 		return JSON.stringify(trimmed, null, 2);
 	}
 }
@@ -209,7 +256,7 @@ export function toYamlText(value: unknown): string {
 	if (value === null || value === undefined) return "";
 	try {
 		return stringify(value, YAML_PARSE_OPTIONS);
-	} catch (_e) {
+	} catch {
 		return typeof value === "string" ? value : JSON.stringify(value, null, 2);
 	}
 }

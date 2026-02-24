@@ -1,7 +1,7 @@
 import type { TicketStatus, TicketPriority } from "@/lib/domain";
 
 export const statusLabels: Record<TicketStatus, string> = {
-  open: "未対応",
+  open: "オープン",
   review: "レビュー中",
   approved: "承認済",
   applied: "適用済",

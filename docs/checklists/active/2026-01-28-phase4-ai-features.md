@@ -216,7 +216,7 @@ PRD 第11章 Phase4 のチェックリストを詳細化し、Mastra Agentを統
 
 ### 3.8 AIチャットUI実装（4-7）
 
-**関連ファイル**: `app/(with-sidebar)/[projectId]/chat/`, `components/ai-chat/`
+**関連ファイル**: `app/(with-sidebar)/chat/`, `components/ai-chat/`, `app/api/intake/minutes/`
 
 #### 実装項目
 - [x] チャットページ作成（`app/(with-sidebar)/chat/page.tsx`）
@@ -233,6 +233,10 @@ PRD 第11章 Phase4 のチェックリストを詳細化し、Mastra Agentを統
   - for await (const chunk of stream.textStream) でストリーミング
 - [ ] 構造化出力対応（z.object()でスキーマ定義）※将来の拡張用
 - [x] エラーハンドリング・リトライUI
+- [x] 「議事録から草案」導線追加（抽出→BD割当→BT/BR草案一括生成）
+  - UI: `components/ai-chat/minutes-intake-dialog.tsx`
+  - API: `app/api/intake/minutes/extract/route.ts`, `app/api/intake/minutes/generate/route.ts`
+  - E2E: `tests/e2e/chat-minutes-intake.spec.ts`
 
 #### 確認項目
 - [x] /chat画面が表示される（✅ 2026-02-02 E2E確認済み）
@@ -241,12 +245,13 @@ PRD 第11章 Phase4 のチェックリストを詳細化し、Mastra Agentを統
 - [x] クイックアクションが動作する（✅ 2026-02-02 E2E確認済み）
 - [x] threadIdでメモリが保持される（✅ 2026-02-02 E2E確認済み）
   - 補足（履歴UI）: 左上の吹き出しアイコン→履歴オーバーレイ→スレッド選択で過去メッセージが復元される
+- [x] 「議事録から草案」で複数BT/BR草案カードが生成される（✅ 2026-02-23 E2E確認済み）
 
 ---
 
 ### 3.9 草案プレビュー・確定フロー実装（4-8）
 
-**関連ファイル**: `components/ai-chat/draft-preview/`
+**関連ファイル**: `components/ai-chat/`
 
 #### 実装項目
 - [x] 草案プレビューカードコンポーネント

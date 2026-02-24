@@ -12,6 +12,7 @@ import { createChangeRequest } from "@/lib/data/change-requests";
 import { ImpactScopeSelector, type SelectedRequirement } from "@/components/tickets/impact-scope-selector";
 import { createImpactScopes } from "@/lib/data/impact-scopes";
 import { createAcceptanceConfirmations } from "@/lib/data/acceptance-confirmations";
+import { buildAcceptanceInputs, buildImpactScopeInputs } from "@/lib/data/transformers/acceptance-input-builder";
 
 export default function TicketCreatePage() {
   const router = useRouter();
@@ -54,15 +55,9 @@ export default function TicketCreatePage() {
 
     // 影響範囲を保存
     if (selectedRequirements.length > 0) {
-      const impactScopeInputs = selectedRequirements.map((req) => ({
-        changeRequestId: changeRequest.id,
-        targetType: req.type as "business_requirement" | "system_requirement",
-        targetId: req.id,
-        targetTitle: req.title,
-        rationale: null,
-      }))
+      const impactScopeInputs = buildImpactScopeInputs(selectedRequirements, changeRequest.id)
 
-      const { error: scopeError } = await createImpactScopes(impactScopeInputs)
+      const { error: scopeError } = await createImpactScopes(impactScopeInputs, currentProjectId)
       if (scopeError) {
         setError(`影響範囲の保存に失敗しました: ${scopeError}`)
         setSubmitting(false)
@@ -70,30 +65,10 @@ export default function TicketCreatePage() {
       }
 
       // 受入条件を自動登録
-      const acceptanceInputs: Array<{
-        changeRequestId: string
-        acceptanceCriterionId: string
-        acceptanceCriterionSourceType: "business_requirement" | "system_requirement"
-        acceptanceCriterionSourceId: string
-        acceptanceCriterionDescription: string
-        acceptanceCriterionVerificationMethod: string | null
-      }> = []
-
-      for (const req of selectedRequirements) {
-        for (const ac of req.acceptanceCriteria) {
-          acceptanceInputs.push({
-            changeRequestId: changeRequest.id,
-            acceptanceCriterionId: ac.id,
-            acceptanceCriterionSourceType: req.type === "business_requirement" ? "business_requirement" : "system_requirement",
-            acceptanceCriterionSourceId: req.id,
-            acceptanceCriterionDescription: ac.description,
-            acceptanceCriterionVerificationMethod: ac.verificationMethod,
-          })
-        }
-      }
+      const acceptanceInputs = buildAcceptanceInputs(selectedRequirements, changeRequest.id)
 
       if (acceptanceInputs.length > 0) {
-        const { error: acceptanceError } = await createAcceptanceConfirmations(acceptanceInputs)
+        const { error: acceptanceError } = await createAcceptanceConfirmations(acceptanceInputs, currentProjectId)
         if (acceptanceError) {
           setError(`受入条件の登録に失敗しました: ${acceptanceError}`)
           setSubmitting(false)

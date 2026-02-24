@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { ContextProvider } from "@/lib/mastra/context/provider";
-import { loadFromStorage, saveToStorage } from "@/lib/utils/local-storage";
+import { loadFromStorage, removeFromStorage, saveToStorage } from "@/lib/utils/local-storage";
 import type { ChatConfig, ChatMessage, ThreadSummary } from "@/components/ai-chat/types";
 
 // ---------------------------------------------------------------------------
@@ -82,7 +82,84 @@ const deserializeMessages = (raw: unknown): ChatMessage[] => {
 			sfDraft: m.sfDraft,
 			srDraft: m.srDraft,
 			srDrafts: m.srDrafts,
+			ddDraft: m.ddDraft,
+			ddDrafts: m.ddDrafts,
 		}));
+};
+
+type MastraHistoryMessage = {
+	id: string;
+	role: "user" | "assistant" | "system";
+	content: string;
+	createdAt: string;
+};
+
+const loadDraftMessages = (
+	projectId: string,
+	resourceId: string,
+	threadId: string,
+): ChatMessage[] => {
+	const key = getMessagesStorageKey(projectId, resourceId, threadId);
+	const raw = loadFromStorage<unknown>(key);
+	return raw ? deserializeMessages(raw) : [];
+};
+
+const mergeMastraMessagesWithDrafts = (
+	mastraMessages: MastraHistoryMessage[],
+	draftsData: ChatMessage[],
+): ChatMessage[] => {
+	const draftsMap = new Map(draftsData.map((draft) => [draft.id, draft]));
+	return mastraMessages.map((message) => {
+		const draft = draftsMap.get(message.id);
+		return {
+			id: message.id,
+			role: message.role,
+			content: message.content,
+			timestamp: new Date(message.createdAt),
+			isStreaming: false,
+			progressSteps: draft?.progressSteps,
+			btDraft: draft?.btDraft,
+			brDraft: draft?.brDraft,
+			brDrafts: draft?.brDrafts,
+			sfDraft: draft?.sfDraft,
+			srDraft: draft?.srDraft,
+			srDrafts: draft?.srDrafts,
+			ddDraft: draft?.ddDraft,
+			ddDrafts: draft?.ddDrafts,
+		};
+	});
+};
+
+const fetchThreadMessages = async (
+	threadId: string,
+	resourceId: string,
+): Promise<MastraHistoryMessage[]> => {
+	const response = await fetch(
+		`/api/chat?threadId=${encodeURIComponent(threadId)}&resourceId=${encodeURIComponent(resourceId)}`,
+	);
+	if (!response.ok) {
+		throw new Error(`Failed to load history: ${response.status}`);
+	}
+	const data = await response.json();
+	return data.messages || [];
+};
+
+const loadThreadMessages = async (params: {
+	projectId: string;
+	resourceId: string;
+	threadId: string;
+	logContext: "history" | "thread";
+}): Promise<ChatMessage[]> => {
+	const { projectId, resourceId, threadId, logContext } = params;
+
+	try {
+		const mastraMessages = await fetchThreadMessages(threadId, resourceId);
+		const draftsData = loadDraftMessages(projectId, resourceId, threadId);
+		return mergeMastraMessagesWithDrafts(mastraMessages, draftsData);
+	} catch (error) {
+		console.error(`[useChatPersistence] Failed to load ${logContext}:`, error);
+		return loadDraftMessages(projectId, resourceId, threadId);
+	}
 };
 
 // ---------------------------------------------------------------------------
@@ -132,6 +209,27 @@ const deriveThreadTitle = (messages: ChatMessage[], fallback: string) => {
 	const title = firstUser?.content.trim().split("\n")[0] ?? "";
 	return title ? title.slice(0, 40) : fallback;
 };
+
+const areThreadSummariesEqual = (
+	left: ThreadSummary[],
+	right: ThreadSummary[],
+): boolean => {
+	if (left.length !== right.length) return false;
+	return left.every((thread, index) => {
+		const target = right[index];
+		return (
+			thread.threadId === target.threadId &&
+			thread.title === target.title &&
+			thread.updatedAt === target.updatedAt &&
+			thread.contextKey === target.contextKey
+		);
+	});
+};
+
+const getThreadSnapshot = (
+	threadsStorageKey: string,
+	threads: ThreadSummary[],
+): string => `${threadsStorageKey}:${JSON.stringify(threads)}`;
 
 // ---------------------------------------------------------------------------
 // useState 初期化関数（container で使用）
@@ -184,15 +282,23 @@ export function useChatPersistence({
 	setMessages,
 }: UseChatPersistenceProps) {
 	const contextKey = buildContextKey(config);
+	const threadsStorageKey = getThreadsStorageKey(projectId, config.resourceId, contextKey);
 	const [threads, setThreads] = useState<ThreadSummary[]>([]);
 	const hasLoadedHistoryRef = useRef(false);
 	const persistTimerRef = useRef<number | null>(null);
+	const draftsSnapshotRef = useRef<string | null>(null);
+	const threadsSnapshotRef = useRef<string | null>(null);
 
 	// Effect 1: スレッド一覧の読み込み
 	useEffect(() => {
 		if (typeof window === "undefined") return;
-		setThreads(loadThreads(projectId, config.resourceId, contextKey));
-	}, [config.resourceId, projectId, contextKey]);
+		const restoredThreads = loadThreads(projectId, config.resourceId, contextKey);
+		setThreads(restoredThreads);
+		threadsSnapshotRef.current = getThreadSnapshot(
+			threadsStorageKey,
+			restoredThreads.slice(0, 50),
+		);
+	}, [config.resourceId, projectId, contextKey, threadsStorageKey]);
 
 	// Effect 2: 既存履歴を復元（Mastra Memory + localStorage drafts）
 	useEffect(() => {
@@ -200,69 +306,16 @@ export function useChatPersistence({
 		if (hasLoadedHistoryRef.current) return;
 
 		const loadHistory = async () => {
-			try {
-				// 1. Mastra Memoryから基本メッセージを取得
-				const response = await fetch(
-					`/api/chat?threadId=${encodeURIComponent(threadId)}&resourceId=${encodeURIComponent(config.resourceId)}`,
-				);
-				
-				if (!response.ok) {
-					throw new Error(`Failed to load history: ${response.status}`);
-				}
-				
-				const data = await response.json();
-				const mastraMessages: Array<{
-					id: string;
-					role: 'user' | 'assistant' | 'system';
-					content: string;
-					createdAt: string;
-				}> = data.messages || [];
-
-				// 2. localStorageからdraftsデータを取得（IDマッチング用）
-				const key = getMessagesStorageKey(projectId, config.resourceId, threadId);
-				const raw = loadFromStorage<unknown>(key);
-				const draftsData = raw ? deserializeMessages(raw) : [];
-				const draftsMap = new Map(draftsData.map((d) => [d.id, d]));
-
-				// 3. マージ（基本メッセージ + draftsデータ）
-				const merged: ChatMessage[] = mastraMessages.map((m) => {
-					const draft = draftsMap.get(m.id);
-					return {
-						id: m.id,
-						role: m.role,
-						content: m.content,
-						timestamp: new Date(m.createdAt),
-						isStreaming: false,
-						// draftsデータがあればマージ（マッチしなければundefined）
-						progressSteps: draft?.progressSteps,
-						btDraft: draft?.btDraft,
-						brDraft: draft?.brDraft,
-						brDrafts: draft?.brDrafts,
-						sfDraft: draft?.sfDraft,
-						srDraft: draft?.srDraft,
-						srDrafts: draft?.srDrafts,
-						ddDraft: draft?.ddDraft,
-						ddDrafts: draft?.ddDrafts,
-					};
-				});
-
-				if (merged.length > 0) {
-					setMessages(merged);
-				}
-			} catch (error) {
-				console.error('[useChatPersistence] Failed to load history:', error);
-				// エラー時はlocalStorageのフォールバック
-				const key = getMessagesStorageKey(projectId, config.resourceId, threadId);
-				const raw = loadFromStorage<unknown>(key);
-				if (raw) {
-					const restored = deserializeMessages(raw);
-					if (restored.length > 0) {
-						setMessages(restored);
-					}
-				}
-			} finally {
-				hasLoadedHistoryRef.current = true;
+			const restoredMessages = await loadThreadMessages({
+				projectId,
+				resourceId: config.resourceId,
+				threadId,
+				logContext: "history",
+			});
+			if (restoredMessages.length > 0) {
+				setMessages(restoredMessages);
 			}
+			hasLoadedHistoryRef.current = true;
 		};
 
 		loadHistory();
@@ -309,9 +362,22 @@ export function useChatPersistence({
 				)
 				.slice(-200);
 
+			const draftsStorageKey = getMessagesStorageKey(
+				projectId,
+				config.resourceId,
+				threadId,
+			);
+			const serializedDrafts = serializeMessages(draftsOnly);
+			const draftsSnapshot = `${draftsStorageKey}:${JSON.stringify(serializedDrafts)}`;
+
 			if (draftsOnly.length > 0) {
-				const key = getMessagesStorageKey(projectId, config.resourceId, threadId);
-				saveToStorage(key, serializeMessages(draftsOnly));
+				if (draftsSnapshotRef.current !== draftsSnapshot) {
+					saveToStorage(draftsStorageKey, serializedDrafts);
+					draftsSnapshotRef.current = draftsSnapshot;
+				}
+			} else if (draftsSnapshotRef.current !== `${draftsStorageKey}:[]`) {
+				removeFromStorage(draftsStorageKey);
+				draftsSnapshotRef.current = `${draftsStorageKey}:[]`;
 			}
 
 			// スレッド一覧も更新
@@ -320,13 +386,43 @@ export function useChatPersistence({
 				messages,
 				config.initialPrompt ?? "AI要件アシスタント",
 			);
-			const nextThreads = loadThreads(projectId, config.resourceId, contextKey);
-			const index = nextThreads.findIndex((t) => t.threadId === threadId);
-			const next: ThreadSummary = { threadId, title, updatedAt, contextKey };
-			if (index >= 0) nextThreads[index] = next;
-			else nextThreads.unshift(next);
-			saveThreads(projectId, config.resourceId, contextKey, nextThreads);
-			setThreads(nextThreads);
+			setThreads((previousThreads) => {
+				const baseThreads =
+					previousThreads.length > 0
+						? previousThreads
+						: loadThreads(projectId, config.resourceId, contextKey);
+				const index = baseThreads.findIndex((thread) => thread.threadId === threadId);
+				const nextEntry: ThreadSummary = { threadId, title, updatedAt, contextKey };
+				const nextThreads = [...baseThreads];
+
+				if (index >= 0) {
+					nextThreads[index] = nextEntry;
+				} else {
+					nextThreads.unshift(nextEntry);
+				}
+
+				const normalizedThreads = nextThreads.slice(0, 50);
+				const threadsSnapshot = getThreadSnapshot(
+					threadsStorageKey,
+					normalizedThreads,
+				);
+
+				if (threadsSnapshotRef.current !== threadsSnapshot) {
+					saveThreads(
+						projectId,
+						config.resourceId,
+						contextKey,
+						normalizedThreads,
+					);
+					threadsSnapshotRef.current = threadsSnapshot;
+				}
+
+				if (areThreadSummariesEqual(previousThreads, normalizedThreads)) {
+					return previousThreads;
+				}
+
+				return normalizedThreads;
+			});
 		}, 400);
 
 		return () => {
@@ -335,7 +431,15 @@ export function useChatPersistence({
 				persistTimerRef.current = null;
 			}
 		};
-	}, [config.resourceId, config.initialPrompt, contextKey, messages, projectId, threadId]);
+	}, [
+		config.resourceId,
+		config.initialPrompt,
+		contextKey,
+		messages,
+		projectId,
+		threadId,
+		threadsStorageKey,
+	]);
 
 	// ---------------------------------------------------------------------------
 	// アクション
@@ -345,64 +449,14 @@ export function useChatPersistence({
 		async (selectedThreadId: string) => {
 			if (typeof window === "undefined") return;
 
-			try {
-				// 1. Mastra Memoryから基本メッセージを取得
-				const response = await fetch(
-					`/api/chat?threadId=${encodeURIComponent(selectedThreadId)}&resourceId=${encodeURIComponent(config.resourceId)}`,
-				);
+			const restoredMessages = await loadThreadMessages({
+				projectId,
+				resourceId: config.resourceId,
+				threadId: selectedThreadId,
+				logContext: "thread",
+			});
 
-				if (!response.ok) {
-					throw new Error(`Failed to load history: ${response.status}`);
-				}
-
-				const data = await response.json();
-				const mastraMessages: Array<{
-					id: string;
-					role: 'user' | 'assistant' | 'system';
-					content: string;
-					createdAt: string;
-				}> = data.messages || [];
-
-				// 2. localStorageからdraftsデータを取得（IDマッチング用）
-				const key = getMessagesStorageKey(projectId, config.resourceId, selectedThreadId);
-				const raw = loadFromStorage<unknown>(key);
-				const draftsData = raw ? deserializeMessages(raw) : [];
-				const draftsMap = new Map(draftsData.map((d) => [d.id, d]));
-
-				// 3. マージ（基本メッセージ + draftsデータ）
-				const merged: ChatMessage[] = mastraMessages.map((m) => {
-					const draft = draftsMap.get(m.id);
-					return {
-						id: m.id,
-						role: m.role,
-						content: m.content,
-						timestamp: new Date(m.createdAt),
-						isStreaming: false,
-						// draftsデータがあればマージ（マッチしなければundefined）
-						progressSteps: draft?.progressSteps,
-						btDraft: draft?.btDraft,
-						brDraft: draft?.brDraft,
-						brDrafts: draft?.brDrafts,
-						sfDraft: draft?.sfDraft,
-						srDraft: draft?.srDraft,
-						srDrafts: draft?.srDrafts,
-						ddDraft: draft?.ddDraft,
-						ddDrafts: draft?.ddDrafts,
-					};
-				});
-
-				setMessages(merged);
-			} catch (error) {
-				console.error('[useChatPersistence] Failed to load thread:', error);
-				// エラー時はlocalStorageのフォールバック
-				const key = getMessagesStorageKey(projectId, config.resourceId, selectedThreadId);
-				const raw = loadFromStorage<unknown>(key);
-				if (raw) {
-					setMessages(deserializeMessages(raw));
-				} else {
-					setMessages([]);
-				}
-			}
+			setMessages(restoredMessages);
 
 			// ポインタを更新（raw 文字列）
 			const pointerKey = getThreadIdStorageKey(projectId, config.resourceId, contextKey);
@@ -426,8 +480,13 @@ export function useChatPersistence({
 	}, [config.resourceId, contextKey, projectId, setMessages, setThreadId]);
 
 	const refreshThreads = useCallback(() => {
-		setThreads(loadThreads(projectId, config.resourceId, contextKey));
-	}, [config.resourceId, projectId, contextKey]);
+		const restoredThreads = loadThreads(projectId, config.resourceId, contextKey);
+		setThreads(restoredThreads);
+		threadsSnapshotRef.current = getThreadSnapshot(
+			threadsStorageKey,
+			restoredThreads.slice(0, 50),
+		);
+	}, [config.resourceId, projectId, contextKey, threadsStorageKey]);
 
 	return { threads, selectThread, startNewChat, refreshThreads };
 }

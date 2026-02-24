@@ -227,6 +227,21 @@ export function Sidebar() {
 		}
 	};
 
+	const isSubGroupActive = (subGroup: MenuSubGroup) =>
+		subGroup.children.some((child) => isActive(child.href));
+
+	const isGroupActive = (group: MenuGroup) =>
+		group.children.some((child) =>
+			child.type === "item"
+				? isActive(child.href)
+				: isSubGroupActive(child),
+		);
+
+	const flattenGroupItems = (group: MenuGroup): MenuItem[] =>
+		group.children.flatMap((child) =>
+			child.type === "subgroup" ? child.children : [child],
+		);
+
 	const menuContent = (
 		<div className="flex flex-col h-full">
 			<div className="border-b border-slate-200 px-5 py-6">
@@ -236,18 +251,16 @@ export function Sidebar() {
 			</div>
 			<nav className="flex-1 py-2">
 				<ul className="space-y-0">
-					{menuConfig.map((item, index) => {
+					{menuConfig.map((item) => {
 						if (item.type === "group") {
 							const GroupIcon = item.icon;
-							const isGroupActive = item.children.some(child => 
-								child.type === "item" ? isActive(child.href) : child.children.some(grandChild => isActive(grandChild.href))
-							);
+							const activeGroup = isGroupActive(item);
 							return (
 								<li key={item.key}>
 									<div className="px-5 py-2">
 										<div className={cn(
 											"flex items-center gap-3 text-sm font-medium",
-											isGroupActive ? "text-brand-700" : "text-slate-700"
+											activeGroup ? "text-brand-700" : "text-slate-700"
 										)}>
 											<GroupIcon className="h-5 w-5" />
 											<span>{item.label}</span>
@@ -256,7 +269,7 @@ export function Sidebar() {
 											{item.children.map((child) => {
 												if (child.type === "subgroup") {
 													const SubGroupIcon = child.icon;
-													const isSubGroupActive = child.children.some(grandChild => isActive(grandChild.href));
+													const activeSubGroup = isSubGroupActive(child);
 													return (
 																	<li key={child.key}>
 																		<Popover open={openPopoverKey === child.key} onOpenChange={(open) => setOpenPopoverKey(open ? child.key : null)}>
@@ -265,7 +278,7 @@ export function Sidebar() {
 																					type="button"
 																					className={cn(
 																						"w-full flex items-center justify-between gap-2 py-2 text-sm transition hover:text-slate-900 cursor-pointer",
-																						isSubGroupActive
+																						activeSubGroup
 																							? "text-brand-700 font-semibold"
 																							: "text-slate-600",
 																					)}
@@ -428,19 +441,11 @@ export function Sidebar() {
 								isCollapsed && "space-y-1.5",
 							)}
 						>
-						{menuConfig.map((item, index) => {
+						{menuConfig.map((item) => {
 							if (item.type === "group") {
 								// 折りたたみ時は子要素・孫要素をフラットに表示
 								if (isCollapsed) {
-									// すべての子孫要素をフラットに展開
-									const flattenedItems: MenuItem[] = [];
-									item.children.forEach((child) => {
-										if (child.type === "subgroup") {
-											flattenedItems.push(...child.children);
-										} else {
-											flattenedItems.push(child);
-										}
-									});
+									const flattenedItems = flattenGroupItems(item);
 									
 									return flattenedItems.map((flattedItem) => {
 										const active = isActive(flattedItem.href);
@@ -476,15 +481,13 @@ export function Sidebar() {
 								
 								// 展開時はグループ表示
 								const GroupIcon = item.icon;
-								const isGroupActive = item.children.some(child => 
-									child.type === "item" ? isActive(child.href) : child.children.some(grandChild => isActive(grandChild.href))
-								);
+								const activeGroup = isGroupActive(item);
 								return (
 									<li key={item.key}>
 										<div className="px-5 py-2">
 											<div className={cn(
 												"flex items-center gap-3 text-sm font-medium",
-												isGroupActive ? "text-brand-700" : "text-slate-700"
+												activeGroup ? "text-brand-700" : "text-slate-700"
 											)}>
 												<GroupIcon className="h-5 w-5" />
 												<span>{item.label}</span>
@@ -493,19 +496,19 @@ export function Sidebar() {
 												{item.children.map((child) => {
 													if (child.type === "subgroup") {
 														const SubGroupIcon = child.icon;
-														const isSubGroupActive = child.children.some(grandChild => isActive(grandChild.href));
+														const activeSubGroup = isSubGroupActive(child);
 														return (
 																																														<li key={child.key}>
 																																															<Popover open={openPopoverKey === child.key} onOpenChange={(open) => setOpenPopoverKey(open ? child.key : null)}>
 																																																<PopoverTrigger asChild>
 																																																	<button
 																																																		type="button"
-																																																		className={cn(
-																																																			"w-full flex items-center justify-between gap-2 py-2 text-sm transition hover:text-slate-900 cursor-pointer",
-																																																			isSubGroupActive
-																																																				? "text-brand-700 font-semibold"
-																																																				: "text-slate-600",
-																																																		)}
+																																		className={cn(
+																																			"w-full flex items-center justify-between gap-2 py-2 text-sm transition hover:text-slate-900 cursor-pointer",
+																																			activeSubGroup
+																																				? "text-brand-700 font-semibold"
+																																				: "text-slate-600",
+																																		)}
 																																																		>
 																																																			<span className="flex items-center gap-2">
 																																																				<SubGroupIcon className="h-4 w-4" />

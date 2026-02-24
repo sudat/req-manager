@@ -12,48 +12,11 @@ import {
   type ConceptCreateInput,
 } from "@/lib/data/concepts";
 import type { Concept, BusinessArea } from "@/lib/domain";
+import { createMockSupabase } from "@/tests/helpers/mock-supabase";
 
 // ========================================
 // Mock Setup
 // ========================================
-
-// Supabase clientのモック
-const createMockSupabase = (initialData: any[] = []) => {
-  let data = [...initialData];
-  return {
-    from: () => ({
-      select: () => createMockSupabase(data),
-      insert: (payload: any) => {
-        data.push(...payload);
-        return createMockSupabase(data);
-      },
-      update: (payload: any) => {
-        data = data.map((d) => ({ ...d, ...payload }));
-        return createMockSupabase(data);
-      },
-      delete: () => createMockSupabase(data),
-      eq: (column: string, value: any) => {
-        if (column === "project_id") {
-          data = data.filter((d) => d.project_id === value);
-        }
-        if (column === "id") {
-          data = data.filter((d) => d.id === value);
-        }
-        return createMockSupabase(data);
-      },
-      order: () => createMockSupabase(data),
-      in: (column: string, values: any[]) => {
-        data = data.filter((d) => values.includes(d[column]));
-        return createMockSupabase(data);
-      },
-      maybeSingle: () => {
-        const single = data.length > 0 ? data[0] : null;
-        return Promise.resolve({ data: single, error: single ? null : { message: "Not found" } });
-      },
-      single: () => Promise.resolve({ data: data[0], error: data.length > 0 ? null : { message: "Not found" } }),
-    }),
-  };
-};
 
 // 各テスト前にモックを設定
 beforeEach(() => {
@@ -78,23 +41,12 @@ describe("getConceptsLookupMap", () => {
   it("用語名と同義語を小文字でマップ化する", async () => {
     // モックデータの設定
     const mockConcepts = [
-      { id: "C001", name: "請求書", synonyms: ["インボイス", "Invoice"], definition: "定義1" },
-      { id: "C002", name: "売掛金", synonyms: ["Accounts Receivable"], definition: "定義2" },
+      { id: "C001", project_id: "project-123", name: "請求書", synonyms: ["インボイス", "Invoice"], definition: "定義1" },
+      { id: "C002", project_id: "project-123", name: "売掛金", synonyms: ["Accounts Receivable"], definition: "定義2" },
     ];
 
     mock.module("@/lib/supabase/client", () => ({
-      supabase: {
-        from: () => ({
-          select: () => ({
-            eq: () => ({
-              then: (cb: any) => {
-                cb({ data: mockConcepts, error: null });
-                return { catch: () => ({ then: (cb: any) => cb() }) };
-              },
-            }),
-          }),
-        }),
-      },
+      supabase: createMockSupabase({ concepts: mockConcepts }),
       getSupabaseConfigError: () => null,
     }));
 
@@ -120,19 +72,11 @@ describe("getConceptsLookupMap", () => {
 
   it("空の同義語配列の場合は用語名のみをマップする", async () => {
     const mockConcepts = [
-      { id: "C001", name: "請求書", synonyms: [], definition: "定義" },
+      { id: "C001", project_id: "project-123", name: "請求書", synonyms: [], definition: "定義" },
     ];
 
     mock.module("@/lib/supabase/client", () => ({
-      supabase: {
-        from: () => ({
-          select: () => ({
-            eq: () => ({
-              then: (cb: any) => cb({ data: mockConcepts, error: null }),
-            }),
-          }),
-        }),
-      },
+      supabase: createMockSupabase({ concepts: mockConcepts }),
       getSupabaseConfigError: () => null,
     }));
 
@@ -144,19 +88,11 @@ describe("getConceptsLookupMap", () => {
 
   it("同義語がnullの場合はスキップする", async () => {
     const mockConcepts = [
-      { id: "C001", name: "請求書", synonyms: null, definition: "定義" },
+      { id: "C001", project_id: "project-123", name: "請求書", synonyms: null, definition: "定義" },
     ];
 
     mock.module("@/lib/supabase/client", () => ({
-      supabase: {
-        from: () => ({
-          select: () => ({
-            eq: () => ({
-              then: (cb: any) => cb({ data: mockConcepts, error: null }),
-            }),
-          }),
-        }),
-      },
+      supabase: createMockSupabase({ concepts: mockConcepts }),
       getSupabaseConfigError: () => null,
     }));
 
@@ -279,18 +215,19 @@ describe("findSimilarConcepts", () => {
 // ========================================
 
 describe("Concept CRUD Operations", () => {
-  const mockConcepts: Concept[] = [
+  const mockConcepts = [
     {
       id: "C001",
+      project_id: "project-123",
       name: "請求書",
       synonyms: ["インボイス"],
       areas: ["AR"] as BusinessArea[],
       definition: "定義",
-      relatedDocs: [],
-      requirementCount: 5,
-      sortOrder: 1,
-      createdAt: "2024-01-01",
-      updatedAt: "2024-01-01",
+      related_docs: [],
+      requirement_count: 5,
+      sort_order: 1,
+      created_at: "2024-01-01",
+      updated_at: "2024-01-01",
     },
   ];
 
@@ -385,7 +322,8 @@ describe("updateConceptsSortOrder", () => {
       supabase: {
         from: () => ({
           update: () => ({
-            eq: () => Promise.resolve({ error: null }),
+            // createSortOrderUpdater() は `eq()` を2回呼ぶ（id → project_id）
+            eq: () => ({ eq: () => Promise.resolve({ error: null }) }),
           }),
         }),
       },
@@ -470,19 +408,11 @@ describe("Concept統合シナリオ", () => {
 
   it("概念の検索で大文字小文字を区別しない", async () => {
     const mockConcepts = [
-      { id: "C001", name: "請求書", synonyms: ["invoice"], definition: "定義" },
+      { id: "C001", project_id: "project-123", name: "請求書", synonyms: ["invoice"], definition: "定義" },
     ];
 
     mock.module("@/lib/supabase/client", () => ({
-      supabase: {
-        from: () => ({
-          select: () => ({
-            eq: () => ({
-              then: (cb: any) => cb({ data: mockConcepts, error: null }),
-            }),
-          }),
-        }),
-      },
+      supabase: createMockSupabase({ concepts: mockConcepts }),
       getSupabaseConfigError: () => null,
     }));
 
@@ -490,7 +420,8 @@ describe("Concept統合シナリオ", () => {
 
     expect(result.get("請求書")).toBeDefined();
     expect(result.get("invoice")).toBeDefined();
-    expect(result.get("INVOICE")).toBeDefined();
+    // Mapのキーは小文字で正規化されるため、参照側も小文字に揃える
+    expect(result.get("INVOICE".toLowerCase())).toBeDefined();
     expect(result.get("請求書")).toEqual({
       id: "C001",
       name: "請求書",

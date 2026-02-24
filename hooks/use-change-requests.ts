@@ -25,7 +25,7 @@ export function useChangeRequests(projectId?: string | null): UseChangeRequestsR
         setLoading(false);
         return;
       }
-      const { data, error: fetchError } = await listChangeRequests(projectId ?? undefined);
+      const { data, error: fetchError } = await listChangeRequests(projectId);
       if (!active) return;
       if (fetchError) {
         setError(fetchError);
@@ -43,7 +43,12 @@ export function useChangeRequests(projectId?: string | null): UseChangeRequestsR
   }, [projectId]);
 
   const deleteRequest = async (id: string, ticketId: string) => {
-    const { error: deleteError } = await deleteChangeRequest(id, projectId ?? undefined);
+    const resolvedProjectId = projectId ?? undefined;
+    if (!resolvedProjectId) {
+      setError("プロジェクトが選択されていません");
+      return;
+    }
+    const { error: deleteError } = await deleteChangeRequest(id, resolvedProjectId);
     if (deleteError) {
       setError(`削除に失敗しました: ${deleteError}`);
       return;

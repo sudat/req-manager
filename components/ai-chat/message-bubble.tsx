@@ -21,11 +21,40 @@ type MessageBubbleProps = {
 };
 
 export function MessageBubble({ message, onCommitDraft, getCommitState, onUpdateDraft }: MessageBubbleProps) {
+  const normalizeContent = (value: unknown): string => {
+    if (typeof value === 'string') return value;
+    if (value === null || value === undefined) return '';
+    if (Array.isArray(value)) {
+      return value
+        .map((part) => {
+          if (typeof part === 'string') return part;
+          if (part && typeof part === 'object' && 'text' in part) {
+            return String((part as { text?: unknown }).text ?? '');
+          }
+          try {
+            return JSON.stringify(part);
+          } catch {
+            return String(part);
+          }
+        })
+        .join('');
+    }
+    if (value && typeof value === 'object' && 'text' in value) {
+      return String((value as { text?: unknown }).text ?? '');
+    }
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
+  };
+
+  const contentText = normalizeContent(message.content);
   const isUser = message.role === 'user';
   const isSystem = message.role === 'system';
   const progressSteps = message.progressSteps ?? [];
   const hasProgress = progressSteps.length > 0;
-  const hasContent = message.content.trim().length > 0;
+  const hasContent = contentText.trim().length > 0;
   const brDrafts = message.brDrafts?.length
     ? message.brDrafts
     : message.brDraft
@@ -49,7 +78,7 @@ export function MessageBubble({ message, onCommitDraft, getCommitState, onUpdate
     return (
       <div className="flex justify-center">
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 text-[11px] text-slate-600">
-          <span>{message.content}</span>
+          <span>{contentText}</span>
         </div>
       </div>
     );
@@ -75,13 +104,13 @@ export function MessageBubble({ message, onCommitDraft, getCommitState, onUpdate
           >
             {isUser ? (
               <div className="whitespace-pre-wrap break-all">
-                {message.content}
+                {contentText}
               </div>
             ) : (
               <>
                 {hasContent ? (
                   <MarkdownRenderer
-                    content={message.content}
+                    content={contentText}
                     className="prose prose-sm prose-slate max-w-none"
                   />
                 ) : hasProgress ? (
@@ -90,7 +119,7 @@ export function MessageBubble({ message, onCommitDraft, getCommitState, onUpdate
                   </div>
                 ) : (
                   <MarkdownRenderer
-                    content={message.content}
+                    content={contentText}
                     className="prose prose-sm prose-slate max-w-none"
                   />
                 )}

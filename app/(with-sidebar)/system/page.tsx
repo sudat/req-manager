@@ -11,9 +11,12 @@ import type { SystemFunction } from "@/lib/domain";
 type SystemDomainWithCount = SystemDomain & { functionCount: number };
 
 export default function SystemDomainsPage() {
-	const { currentProjectId } = useProject();
+	const { currentProjectId, loading: projectLoading } = useProject();
 
 	const fetchData = async () => {
+		if (projectLoading) {
+			return { data: null, error: null };
+		}
 		if (!currentProjectId) {
 			return { data: null, error: "プロジェクトが選択されていません" };
 		}
@@ -52,8 +55,11 @@ export default function SystemDomainsPage() {
 			config={systemDomainListConfig}
 			fetchData={fetchData}
 			deleteItem={async (id: string) => {
+				if (projectLoading || !currentProjectId) {
+					return { data: null, error: "プロジェクトが選択されていません" };
+				}
 				const { deleteSystemDomain } = await import("@/lib/data/system-domains");
-				return deleteSystemDomain(id);
+				return deleteSystemDomain(id, currentProjectId);
 			}}
 		/>
 	);

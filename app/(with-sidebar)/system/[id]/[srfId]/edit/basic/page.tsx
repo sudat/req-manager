@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { BasicInfoSection } from "../components/BasicInfoSection";
 import { useBasicInfoForm } from "../hooks/useBasicInfoForm";
-import { DEFAULT_PROJECT_ID } from "@/components/project/project-context";
+import { DEFAULT_PROJECT_ID, useProject } from "@/components/project/project-context";
 
 export default function SystemFunctionEditBasicPage({
 	params,
@@ -17,6 +17,8 @@ export default function SystemFunctionEditBasicPage({
 }) {
 	const { id: systemDomainId, srfId } = use(params);
 	const router = useRouter();
+	const { currentProjectId, loading: projectLoading } = useProject();
+	const projectId = currentProjectId ?? DEFAULT_PROJECT_ID;
 
 	const {
 		loading,
@@ -34,9 +36,9 @@ export default function SystemFunctionEditBasicPage({
 		designPolicy,
 		setDesignPolicy,
 		handleSave,
-	} = useBasicInfoForm(srfId, systemDomainId, DEFAULT_PROJECT_ID);
+	} = useBasicInfoForm(srfId, systemDomainId, projectId);
 
-	if (loading) {
+	if (projectLoading || loading) {
 		return (
 			<div className="flex items-center justify-center min-h-[400px]">
 				<Loader2 className="h-8 w-8 animate-spin text-slate-400" />

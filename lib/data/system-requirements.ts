@@ -230,6 +230,41 @@ export const listSystemRequirements = async (projectId?: string) => {
 	return mergeBusinessRequirementIdsFromLinks(withAcceptance.data, projectId);
 };
 
+export const searchSystemRequirements = async (
+	query: string,
+	projectId?: string,
+	limit = 10
+) => {
+	const configError = failIfMissingConfig();
+	if (configError) return configError;
+
+	const normalizedQuery = query.trim();
+	if (!normalizedQuery) return { data: [], error: null };
+
+	const safeLimit = Math.max(1, Math.min(Math.floor(limit), 50));
+	const escaped = normalizedQuery.replace(/[%_]/g, (matched) => `\\${matched}`);
+	const startsWithPattern = `${escaped}%`;
+	const containsPattern = `%${escaped}%`;
+
+	let dbQuery = supabase
+		.from("system_requirements")
+		.select("*")
+		.or(
+			`id.ilike.${startsWithPattern},title.ilike.${containsPattern},summary.ilike.${containsPattern}`
+		)
+		.order("sort_order")
+		.order("id")
+		.limit(safeLimit);
+
+	if (projectId) {
+		dbQuery = dbQuery.eq("project_id", projectId);
+	}
+
+	const { data, error } = await dbQuery;
+	if (error) return { data: null, error: error.message };
+	return { data: (data as SystemRequirementRow[]).map(toSystemRequirement), error: null };
+};
+
 export const createSystemRequirements = async (inputs: SystemRequirementCreateInput[]) => {
 	const configError = failIfMissingConfig();
 	if (configError) return configError;

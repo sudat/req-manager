@@ -2,6 +2,11 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react"
 import { listProjects } from "@/lib/data/projects"
+import {
+  CURRENT_PROJECT_COOKIE_MAX_AGE_SECONDS,
+  CURRENT_PROJECT_ID_KEY,
+  DEFAULT_PROJECT_ID,
+} from "@/lib/constants/project"
 import type { Project } from "@/lib/domain"
 
 interface ProjectContextValue {
@@ -16,9 +21,10 @@ interface ProjectContextValue {
 
 const ProjectContext = createContext<ProjectContextValue | undefined>(undefined)
 
-const STORAGE_KEY = "current-project-id"
-export const DEFAULT_PROJECT_ID = "00000000-0000-0000-0000-000000000001"
-const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365
+export { DEFAULT_PROJECT_ID }
+
+const STORAGE_KEY = CURRENT_PROJECT_ID_KEY
+const COOKIE_MAX_AGE_SECONDS = CURRENT_PROJECT_COOKIE_MAX_AGE_SECONDS
 
 export function ProjectProvider({ children }: { children: ReactNode }) {
   const [currentProjectId, setCurrentProjectIdState] = useState<string | undefined>(undefined)

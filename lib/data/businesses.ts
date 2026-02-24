@@ -136,17 +136,29 @@ export const listBusinessesWithRequirementCounts = async (projectId?: string) =>
     return { data: result, error: null };
   }
 
-  const { data: businessReqs, error: brError } = await supabase
+  let brQuery = supabase
     .from("business_requirements")
     .select("task_id")
     .in("task_id", taskIds);
 
+  if (projectId) {
+    brQuery = brQuery.eq("project_id", projectId);
+  }
+
+  const { data: businessReqs, error: brError } = await brQuery;
+
   if (brError) return { data: null, error: brError.message };
 
-  const { data: systemReqs, error: srError } = await supabase
+  let srQuery = supabase
     .from("system_requirements")
     .select("task_id")
     .in("task_id", taskIds);
+
+  if (projectId) {
+    srQuery = srQuery.eq("project_id", projectId);
+  }
+
+  const { data: systemReqs, error: srError } = await srQuery;
 
   if (srError) return { data: null, error: srError.message };
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, mock } from "bun:test";
+import { describe, it, expect, beforeEach, afterEach, mock } from "bun:test";
 import {
   listBusinesses,
   getBusinessByArea,
@@ -12,47 +12,22 @@ import {
   type BusinessCreateInput,
 } from "@/lib/data/businesses";
 import type { Business, BusinessArea } from "@/lib/domain";
+import { createMockSupabase } from "@/tests/helpers/mock-supabase";
 
 // ========================================
 // Mock Setup
 // ========================================
-
-const createMockSupabase = (initialData: any[] = []) => {
-  let data = [...initialData];
-  return {
-    from: () => ({
-      select: () => createMockSupabase(data),
-      insert: (payload: any) => createMockSupabase(data),
-      update: (payload: any) => createMockSupabase(data),
-      delete: () => createMockSupabase(data),
-      eq: (column: string, value: any) => {
-        if (column === "area") {
-          data = data.filter((d) => d.area === value);
-        }
-        if (column === "project_id") {
-          data = data.filter((d) => d.project_id === value);
-        }
-        return createMockSupabase(data);
-      },
-      order: () => createMockSupabase(data),
-      in: (column: string, values: any[]) => {
-        data = data.filter((d) => values.includes(d[column]));
-        return createMockSupabase(data);
-      },
-      maybeSingle: () => {
-        const single = data.length > 0 ? data[0] : null;
-        return Promise.resolve({ data: single, error: single ? null : { message: "Not found" } });
-      },
-      single: () => Promise.resolve({ data: data[0], error: data.length > 0 ? null : { message: "Not found" } }),
-    }),
-  };
-};
 
 beforeEach(() => {
   mock.module("@/lib/supabase/client", () => ({
     supabase: createMockSupabase(),
     getSupabaseConfigError: () => null,
   }));
+});
+
+afterEach(() => {
+  // mock.module の影響が他ファイルに漏れないようにしておく
+  mock.restore();
 });
 
 // ========================================
@@ -62,12 +37,13 @@ beforeEach(() => {
 describe("listBusinesses", () => {
   it("業務領域一覧を取得する", async () => {
     const mockBusinesses = [
-      { area: "AR", name: "請求", summary: "請求管理", sort_order: 1, created_at: "2024-01-01", updated_at: "2024-01-01" },
-      { area: "AP", name: "買掛", summary: "買掛管理", sort_order: 2, created_at: "2024-01-01", updated_at: "2024-01-01" },
+      { area: "AR", project_id: "project-123", name: "請求", summary: "請求管理", sort_order: 1, created_at: "2024-01-01", updated_at: "2024-01-01" },
+      { area: "AP", project_id: "project-123", name: "買掛", summary: "買掛管理", sort_order: 2, created_at: "2024-01-01", updated_at: "2024-01-01" },
     ];
 
     mock.module("@/lib/supabase/client", () => ({
       supabase: createMockSupabase(mockBusinesses),
+      getSupabaseConfigError: () => null,
     }));
 
     const result = await listBusinesses("project-123");
@@ -86,6 +62,7 @@ describe("listBusinesses", () => {
 
     mock.module("@/lib/supabase/client", () => ({
       supabase: createMockSupabase(mockBusinesses),
+      getSupabaseConfigError: () => null,
     }));
 
     const result = await listBusinesses("project-123");
@@ -102,11 +79,12 @@ describe("listBusinesses", () => {
 describe("getBusinessByArea", () => {
   it("エリアコードで業務領域を取得する", async () => {
     const mockBusinesses = [
-      { area: "AR", name: "請求", summary: "請求管理", sort_order: 1, created_at: "2024-01-01", updated_at: "2024-01-01" },
+      { area: "AR", project_id: "project-123", name: "請求", summary: "請求管理", sort_order: 1, created_at: "2024-01-01", updated_at: "2024-01-01" },
     ];
 
     mock.module("@/lib/supabase/client", () => ({
       supabase: createMockSupabase(mockBusinesses),
+      getSupabaseConfigError: () => null,
     }));
 
     const result = await getBusinessByArea("AR", "project-123");
@@ -118,11 +96,12 @@ describe("getBusinessByArea", () => {
 
   it("エリアコードを大文字・トリムで正規化する", async () => {
     const mockBusinesses = [
-      { area: "AR", name: "請求", summary: "請求管理", sort_order: 1, created_at: "2024-01-01", updated_at: "2024-01-01" },
+      { area: "AR", project_id: "project-123", name: "請求", summary: "請求管理", sort_order: 1, created_at: "2024-01-01", updated_at: "2024-01-01" },
     ];
 
     mock.module("@/lib/supabase/client", () => ({
       supabase: createMockSupabase(mockBusinesses),
+      getSupabaseConfigError: () => null,
     }));
 
     const result1 = await getBusinessByArea(" ar ", "project-123");
@@ -134,11 +113,12 @@ describe("getBusinessByArea", () => {
 
   it("空文字列の場合はdata: null, error: nullを返す", async () => {
     const mockBusinesses = [
-      { area: "AR", name: "請求", summary: "請求管理", sort_order: 1, created_at: "2024-01-01", updated_at: "2024-01-01" },
+      { area: "AR", project_id: "project-123", name: "請求", summary: "請求管理", sort_order: 1, created_at: "2024-01-01", updated_at: "2024-01-01" },
     ];
 
     mock.module("@/lib/supabase/client", () => ({
       supabase: createMockSupabase(mockBusinesses),
+      getSupabaseConfigError: () => null,
     }));
 
     const result = await getBusinessByArea("   ", "project-123");
@@ -149,11 +129,12 @@ describe("getBusinessByArea", () => {
 
   it("存在しないエリアコードの場合はdata: null, error: nullを返す", async () => {
     const mockBusinesses = [
-      { area: "AR", name: "請求", summary: "請求管理", sort_order: 1, created_at: "2024-01-01", updated_at: "2024-01-01" },
+      { area: "AR", project_id: "project-123", name: "請求", summary: "請求管理", sort_order: 1, created_at: "2024-01-01", updated_at: "2024-01-01" },
     ];
 
     mock.module("@/lib/supabase/client", () => ({
       supabase: createMockSupabase(mockBusinesses),
+      getSupabaseConfigError: () => null,
     }));
 
     const result = await getBusinessByArea("XX", "project-123");
@@ -181,96 +162,33 @@ describe("getBusinessByKey", () => {
 
 describe("listBusinessesWithRequirementCounts", () => {
   it("業務要件・システム要件数を集計する", async () => {
-    // モックデータの設定
-    const mockBusinesses = [
-      { area: "AR", sort_order: 1 },
-      { area: "AP", sort_order: 2 },
-    ];
+    const projectId = "project-123";
+    const supabaseMock = createMockSupabase({
+      business_domains: [
+        { area: "AR", project_id: projectId, name: "請求", summary: "", sort_order: 1, created_at: "2024-01-01", updated_at: "2024-01-01" },
+        { area: "AP", project_id: projectId, name: "買掛", summary: "", sort_order: 2, created_at: "2024-01-01", updated_at: "2024-01-01" },
+      ],
+      business_tasks: [
+        { id: "BT-AR-001", business_area: "AR", project_id: projectId },
+        { id: "BT-AP-001", business_area: "AP", project_id: projectId },
+      ],
+      business_requirements: [
+        { task_id: "BT-AR-001", project_id: projectId },
+        { task_id: "BT-AR-001", project_id: projectId },
+        { task_id: "BT-AR-001", project_id: projectId },
+      ],
+      system_requirements: [
+        { task_id: "BT-AR-001", project_id: projectId },
+        { task_id: "BT-AP-001", project_id: projectId },
+      ],
+    });
 
-    const mockTasks = [
-      { id: "BT-AR-001", business_area: "AR" },
-      { id: "BT-AP-001", business_area: "AP" },
-    ];
-
-    const mockBusinessReqs = [
-      { task_id: "BT-AR-001" },
-      { task_id: "BT-AR-001" },
-      { task_id: "BT-AR-001" },
-    ];
-
-    const mockSystemReqs = [
-      { task_id: "BT-AR-001" },
-      { task_id: "BT-AP-001" },
-    ];
-
-    // モックのチェーン設定
     mock.module("@/lib/supabase/client", () => ({
-      supabase: {
-        from: (table: string) => {
-          if (table === "business_domains") {
-            return {
-              select: () => ({
-                order: () => ({
-                  then: (cb: any) => {
-                    cb({ data: mockBusinesses, error: null });
-                    return { catch: () => ({ then: (cb: any) => cb() }) };
-                  },
-                }),
-              }),
-            };
-          } else if (table === "business_tasks") {
-            return {
-              in: () => ({
-                then: (cb: any) => {
-                  cb({ data: mockTasks, error: null });
-                  return { catch: () => ({ then: (cb: any) => cb() }) };
-                },
-              }),
-            };
-          } else if (table === "business_requirements") {
-            return {
-              in: () => ({
-                then: (cb: any) => {
-                  cb({ data: mockBusinessReqs, error: null });
-                  return { catch: () => ({ then: (cb: any) => cb() }) };
-                },
-              }),
-            };
-          } else if (table === "system_requirements") {
-            return {
-              in: () => ({
-                then: (cb: any) => {
-                  cb({ data: mockSystemReqs, error: null });
-                  return { catch: () => ({ then: (cb: any) => cb() }) };
-                },
-              }),
-            };
-          }
-          return { select: () => ({ eq: () => createMockSupabase() }) };
-        },
-      },
+      supabase: supabaseMock,
       getSupabaseConfigError: () => null,
     }));
 
-    // listBusinessesのモック
-    mock.module("@/lib/data/businesses", () => ({
-      listBusinesses: async () => ({
-        data: mockBusinesses.map((b) => ({
-          id: b.area,
-          name: b.area,
-          area: b.area as BusinessArea,
-          summary: "",
-          businessReqCount: 0,
-          systemReqCount: 0,
-          sortOrder: b.sort_order,
-          createdAt: "",
-          updatedAt: "",
-        })),
-        error: null,
-      }),
-    }));
-
-    const result = await listBusinessesWithRequirementCounts("project-123");
+    const result = await listBusinessesWithRequirementCounts(projectId);
 
     expect(result.error).toBeNull();
     expect(result.data).toHaveLength(2);
@@ -285,59 +203,18 @@ describe("listBusinessesWithRequirementCounts", () => {
   });
 
   it("タスクが存在しない場合は0件カウントを返す", async () => {
-    const mockBusinesses = [
-      { area: "AR", sort_order: 1 },
-    ];
-
+    const projectId = "project-123";
     mock.module("@/lib/supabase/client", () => ({
-      supabase: {
-        from: (table: string) => {
-          if (table === "business_domains") {
-            return {
-              select: () => ({
-                order: () => ({
-                  then: (cb: any) => {
-                    cb({ data: mockBusinesses, error: null });
-                    return { catch: () => ({ then: (cb: any) => cb() }) };
-                  },
-                }),
-              }),
-            };
-          } else if (table === "business_tasks") {
-            return {
-              in: () => ({
-                then: (cb: any) => {
-                  cb({ data: [], error: null });
-                  return { catch: () => ({ then: (cb: any) => cb() }) };
-                },
-              }),
-            };
-          }
-          return { select: () => ({ eq: () => createMockSupabase() }) };
-        },
-      },
+      supabase: createMockSupabase({
+        business_domains: [
+          { area: "AR", project_id: projectId, name: "請求", summary: "", sort_order: 1, created_at: "2024-01-01", updated_at: "2024-01-01" },
+        ],
+        business_tasks: [],
+      }),
       getSupabaseConfigError: () => null,
     }));
 
-    // listBusinessesのモック
-    mock.module("@/lib/data/businesses", () => ({
-      listBusinesses: async () => ({
-        data: mockBusinesses.map((b) => ({
-          id: b.area,
-          name: b.area,
-          area: b.area as BusinessArea,
-          summary: "",
-          businessReqCount: 0,
-          systemReqCount: 0,
-          sortOrder: b.sort_order,
-          createdAt: "",
-          updatedAt: "",
-        })),
-        error: null,
-      }),
-    }));
-
-    const result = await listBusinessesWithRequirementCounts("project-123");
+    const result = await listBusinessesWithRequirementCounts(projectId);
 
     expect(result.error).toBeNull();
     expect(result.data).toHaveLength(1);
@@ -346,50 +223,19 @@ describe("listBusinessesWithRequirementCounts", () => {
   });
 
   it("N+1クエリパターン: 複数のテーブルから順次取得する", async () => {
-    // このテストは実際のSupabase操作をモック化して検証する
-    // 実際の実装では4つのクエリ（businesses, tasks, BRs, SRs）が実行される
-    const mockBusinesses = [{ area: "AR", sort_order: 1 }];
-
+    // 実装は複数テーブルを順に取得する設計（N+1にはならないが複数クエリは発生する）
+    const projectId = "project-123";
     mock.module("@/lib/supabase/client", () => ({
-      supabase: {
-        from: (table: string) => {
-          const callOrder: string[] = [];
-          return {
-            select: () => {
-              callOrder.push(`${table}.select`);
-              return {
-                order: () => ({
-                  then: (cb: any) => {
-                    if (table === "business_domains") {
-                      cb({ data: mockBusinesses, error: null });
-                    } else {
-                      cb({ data: [], error: null });
-                    }
-                    return { catch: () => ({ then: (cb: any) => cb() }) };
-                  },
-                }),
-              };
-            },
-            in: () => {
-              callOrder.push(`${table}.in`);
-              return {
-                then: (cb: any) => {
-                  cb({ data: [], error: null });
-                  return { catch: () => ({ then: (cb: any) => cb() }) };
-                },
-              };
-            },
-          };
-        },
-      },
+      supabase: createMockSupabase({
+        business_domains: [
+          { area: "AR", project_id: projectId, name: "請求", summary: "", sort_order: 1, created_at: "2024-01-01", updated_at: "2024-01-01" },
+        ],
+        business_tasks: [],
+      }),
       getSupabaseConfigError: () => null,
     }));
 
-    // listBusinessesWithRequirementCountsの実行を確認
-    // 注: このテストでは実際のSupabase呼び出しを検証できないため、
-    // モックの設定のみを行う
-
-    const result = await listBusinessesWithRequirementCounts("project-123");
+    const result = await listBusinessesWithRequirementCounts(projectId);
 
     expect(result.error).toBeNull();
     expect(result.data).toBeDefined();
@@ -457,14 +303,14 @@ describe("Business CRUD Operations", () => {
 
 describe("updateBusinessesSortOrder", () => {
   beforeEach(() => {
+    const projectId = "project-123";
     mock.module("@/lib/supabase/client", () => ({
-      supabase: {
-        from: () => ({
-          update: () => ({
-            eq: () => Promise.resolve({ error: null }),
-          }),
-        }),
-      },
+      supabase: createMockSupabase({
+        business_domains: [
+          { area: "AR", project_id: projectId, name: "請求", summary: "", sort_order: 1, created_at: "2024-01-01", updated_at: "2024-01-01" },
+          { area: "AP", project_id: projectId, name: "買掛", summary: "", sort_order: 2, created_at: "2024-01-01", updated_at: "2024-01-01" },
+        ],
+      }),
       getSupabaseConfigError: () => null,
     }));
   });
@@ -488,86 +334,34 @@ describe("updateBusinessesSortOrder", () => {
 
 describe("Business統合シナリオ", () => {
   it("AR/AP/GLの3領域の要件数を正しく集計する", async () => {
-    // モックデータ
-    const mockBusinesses = [
-      { area: "AR", sort_order: 1 },
-      { area: "AP", sort_order: 2 },
-      { area: "GL", sort_order: 3 },
-    ];
-
-    const mockTasks = [
-      { id: "BT-AR-001", business_area: "AR" },
-      { id: "BT-AR-002", business_area: "AR" },
-      { id: "BT-AP-001", business_area: "AP" },
-    ];
-
-    const mockBusinessReqs = [
-      { task_id: "BT-AR-001" },
-      { task_id: "BT-AR-002" },
-      { task_id: "BT-AP-001" },
-    ];
-
-    const mockSystemReqs = [
-      { task_id: "BT-AR-001" },
-      { task_id: "BT-AR-002" },
-      { task_id: "BT-AP-001" },
-    ];
-
+    const projectId = "project-123";
     mock.module("@/lib/supabase/client", () => ({
-      supabase: {
-        from: (table: string) => {
-          if (table === "business_domains") {
-            return {
-              select: () => ({
-                order: () => ({
-                  then: (cb: any) => cb({ data: mockBusinesses, error: null }),
-                }),
-              }),
-            };
-          } else if (table === "business_tasks") {
-            return {
-              in: () => ({
-                then: (cb: any) => cb({ data: mockTasks, error: null }),
-              }),
-            };
-          } else if (table === "business_requirements") {
-            return {
-              in: () => ({
-                then: (cb: any) => cb({ data: mockBusinessReqs, error: null }),
-              }),
-            };
-          } else if (table === "system_requirements") {
-            return {
-              in: () => ({
-                then: (cb: any) => cb({ data: mockSystemReqs, error: null }),
-              }),
-            };
-          }
-          return { select: () => ({ eq: () => createMockSupabase() }) };
-        },
-      },
+      supabase: createMockSupabase({
+        business_domains: [
+          { area: "AR", project_id: projectId, name: "請求", summary: "", sort_order: 1, created_at: "2024-01-01", updated_at: "2024-01-01" },
+          { area: "AP", project_id: projectId, name: "買掛", summary: "", sort_order: 2, created_at: "2024-01-01", updated_at: "2024-01-01" },
+          { area: "GL", project_id: projectId, name: "総勘定元帳", summary: "", sort_order: 3, created_at: "2024-01-01", updated_at: "2024-01-01" },
+        ],
+        business_tasks: [
+          { id: "BT-AR-001", business_area: "AR", project_id: projectId },
+          { id: "BT-AR-002", business_area: "AR", project_id: projectId },
+          { id: "BT-AP-001", business_area: "AP", project_id: projectId },
+        ],
+        business_requirements: [
+          { task_id: "BT-AR-001", project_id: projectId },
+          { task_id: "BT-AR-002", project_id: projectId },
+          { task_id: "BT-AP-001", project_id: projectId },
+        ],
+        system_requirements: [
+          { task_id: "BT-AR-001", project_id: projectId },
+          { task_id: "BT-AR-002", project_id: projectId },
+          { task_id: "BT-AP-001", project_id: projectId },
+        ],
+      }),
       getSupabaseConfigError: () => null,
     }));
 
-    // listBusinessesのモック
-    mock.module("@/lib/data/businesses", () => ({
-      listBusinesses: async () => ({
-        data: mockBusinesses.map((b) => ({
-          id: b.area,
-          name: b.area,
-          area: b.area as BusinessArea,
-          summary: "",
-          businessReqCount: 0,
-          systemReqCount: 0,
-          sortOrder: b.sort_order,
-          createdAt: "",
-          updatedAt: "",
-        })),
-        error: null,
-      }),
-    }));
-
-    const result = await listBusinessesWithRequirementCounts("project-123");
+    const result = await listBusinessesWithRequirementCounts(projectId);
 
     expect(result.data).toHaveLength(3);
 

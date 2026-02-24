@@ -25,6 +25,12 @@ export function AcceptanceConfirmationPanel({
   const { confirmations, loading, error, saving, updateStatus, bulkUpdateStatus } =
     useAcceptanceConfirmations({ changeRequestId, onCompletionChange });
 
+  const total = confirmations.length;
+  const okCount = confirmations.filter((c) => c.status === "verified_ok").length;
+  const ngCount = confirmations.filter((c) => c.status === "verified_ng").length;
+  const unverifiedCount = confirmations.filter((c) => c.status === "unverified").length;
+  const completionRate = total > 0 ? (okCount / total) * 100 : 100;
+
   const { selectedIds, toggleSelect, toggleSelectAll, bulkUpdate } =
     useAcceptanceSelection({
       items: confirmations,
@@ -79,6 +85,29 @@ export function AcceptanceConfirmationPanel({
           onBulkOk={() => handleBulkUpdate("verified_ok")}
           onBulkNg={() => handleBulkUpdate("verified_ng")}
         />
+
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-[13px]">
+          <div>
+            <span className="text-slate-500">総数:</span>
+            <span className="ml-2 font-mono text-slate-900">{total}</span>
+          </div>
+          <div>
+            <span className="text-slate-500">OK:</span>
+            <span className="ml-2 font-mono text-emerald-600">{okCount}</span>
+          </div>
+          <div>
+            <span className="text-slate-500">NG:</span>
+            <span className="ml-2 font-mono text-rose-600">{ngCount}</span>
+          </div>
+          <div>
+            <span className="text-slate-500">未確認:</span>
+            <span className="ml-2 font-mono text-amber-600">{unverifiedCount}</span>
+          </div>
+          <div>
+            <span className="text-slate-500">達成率:</span>
+            <span className="ml-2 font-mono text-slate-900">{completionRate.toFixed(1)}%</span>
+          </div>
+        </div>
 
         {error && (
           <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2">

@@ -3,6 +3,7 @@ import {
   listAcceptanceConfirmationsByChangeRequestId,
   updateAcceptanceConfirmationStatus,
 } from "@/lib/data/acceptance-confirmations";
+import { useProject } from "@/components/project/project-context";
 import type {
   AcceptanceConfirmation,
   AcceptanceConfirmationStatus,
@@ -47,14 +48,21 @@ export function useAcceptanceConfirmations({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const { currentProjectId, loading: projectLoading } = useProject();
 
   // データ取得
   useEffect(() => {
     let active = true;
     const fetchData = async () => {
       setLoading(true);
+      if (projectLoading) return;
+      if (!currentProjectId) {
+        setError("プロジェクトが選択されていません");
+        setLoading(false);
+        return;
+      }
       const { data, error: fetchError } =
-        await listAcceptanceConfirmationsByChangeRequestId(changeRequestId);
+        await listAcceptanceConfirmationsByChangeRequestId(changeRequestId, currentProjectId);
       if (!active) return;
       if (fetchError) {
         setError(fetchError);
@@ -67,7 +75,7 @@ export function useAcceptanceConfirmations({
     return () => {
       active = false;
     };
-  }, [changeRequestId]);
+  }, [changeRequestId, currentProjectId, projectLoading]);
 
   // 完了状況を監視して親に通知
   useEffect(() => {
@@ -95,12 +103,18 @@ export function useAcceptanceConfirmations({
   ) => {
     setSaving(true);
     setError(null);
+    if (projectLoading || !currentProjectId) {
+      setError("プロジェクトが選択されていません");
+      setSaving(false);
+      return;
+    }
 
     const { data, error: updateError } =
       await updateAcceptanceConfirmationStatus(
         id,
         newStatus,
         verifiedBy || "システム",
+        currentProjectId,
         evidence || undefined
       );
 
@@ -132,8 +146,12 @@ export function useAcceptanceConfirmations({
     status: AcceptanceConfirmationStatus,
     onSuccess: () => void
   ) => {
+    if (projectLoading || !currentProjectId) {
+      setError("プロジェクトが選択されていません");
+      return;
+    }
     const promises = Array.from(ids).map((id) =>
-      updateAcceptanceConfirmationStatus(id, status, "システム", undefined)
+      updateAcceptanceConfirmationStatus(id, status, "システム", currentProjectId, undefined)
     );
 
     const results = await Promise.all(promises);

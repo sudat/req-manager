@@ -248,11 +248,39 @@ export async function GET(request: NextRequest) {
       perPage: 50,
     });
 
+    const normalizeContent = (value: unknown): string => {
+      if (typeof value === 'string') return value;
+      if (value === null || value === undefined) return '';
+      if (Array.isArray(value)) {
+        return value
+          .map((part) => {
+            if (typeof part === 'string') return part;
+            if (part && typeof part === 'object' && 'text' in part) {
+              return String((part as { text?: unknown }).text ?? '');
+            }
+            try {
+              return JSON.stringify(part);
+            } catch {
+              return String(part);
+            }
+          })
+          .join('');
+      }
+      if (value && typeof value === 'object' && 'text' in value) {
+        return String((value as { text?: unknown }).text ?? '');
+      }
+      try {
+        return JSON.stringify(value);
+      } catch {
+        return String(value);
+      }
+    };
+
     // MastraDBMessage型からフロントエンド用の型に変換
     const messages = result.messages.map((msg) => ({
       id: msg.id,
       role: msg.role as 'user' | 'assistant' | 'system',
-      content: msg.content,
+      content: normalizeContent(msg.content),
       createdAt: msg.createdAt,
     }));
 

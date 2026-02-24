@@ -1,6 +1,7 @@
 import { supabase, getSupabaseConfigError } from "@/lib/supabase/client";
 import type { Project } from "@/lib/domain";
 import { createCrudOperations } from "./crud-factory";
+import { DEFAULT_PROJECT_ID } from "@/lib/constants/project";
 
 export type ProjectInput = {
   name: string;
@@ -96,5 +97,8 @@ export const updateProject = async (id: string, input: Partial<ProjectInput>) =>
 };
 
 export const deleteProject = async (id: string) => {
+  if (id === DEFAULT_PROJECT_ID) {
+    return { data: null, error: "デフォルトプロジェクトは削除できません" };
+  }
   return projectCrud.delete(id);
 };

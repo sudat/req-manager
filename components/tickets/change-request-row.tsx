@@ -7,6 +7,7 @@ import { ChangeRequestActions } from "./change-request-actions";
 import type { ChangeRequest } from "@/lib/domain/value-objects";
 import { getAcceptanceConfirmationCompletionStatus } from "@/lib/data/acceptance-confirmations";
 import { CheckCircle2 } from "lucide-react";
+import { useProject } from "@/components/project/project-context";
 
 const statusLabels: Record<string, string> = {
   open: "オープン",
@@ -33,9 +34,11 @@ export function ChangeRequestRow({
   onDelete,
 }: ChangeRequestRowProps) {
   const [completionStatus, setCompletionStatus] = useState<{ total: number; verified: number; completionRate: number } | null>(null);
+  const { currentProjectId, loading: projectLoading } = useProject();
 
   useEffect(() => {
-    getAcceptanceConfirmationCompletionStatus(request.id).then((res) => {
+    if (projectLoading || !currentProjectId) return;
+    getAcceptanceConfirmationCompletionStatus(request.id, currentProjectId).then((res) => {
       if (res.data) {
         setCompletionStatus({
           total: res.data.total,
@@ -44,7 +47,7 @@ export function ChangeRequestRow({
         });
       }
     });
-  }, [request.id]);
+  }, [request.id, currentProjectId, projectLoading]);
 
   const isNorthStarMet = completionStatus && completionStatus.total > 0 && completionStatus.verified === completionStatus.total;
 

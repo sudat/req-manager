@@ -66,8 +66,8 @@ export function useManualAddData(businessKey: string | null): UseManualAddDataRe
         { data: allTasks, error: allError },
         { data: business, error: businessError },
       ] = await Promise.all([
-        listTasks(currentProjectId ?? undefined),
-        getBusinessByKey(businessKey!, currentProjectId ?? undefined),
+        listTasks(currentProjectId),
+        getBusinessByKey(businessKey!, currentProjectId),
       ]);
 
       if (!active) return;
@@ -89,7 +89,7 @@ export function useManualAddData(businessKey: string | null): UseManualAddDataRe
 
       const { data: bizTasks, error: bizError } = await listTasksByBusinessArea(
         business.area,
-        currentProjectId ?? undefined
+        currentProjectId
       );
 
       if (!active) return;
@@ -141,10 +141,10 @@ export function useManualAddData(businessKey: string | null): UseManualAddDataRe
         { data: domainRows, error: domainError },
         { data: sysReqRows, error: sysReqError },
       ] = await Promise.all([
-        listConcepts(currentProjectId ?? undefined),
-        listSystemFunctions(currentProjectId ?? undefined),
-        listSystemDomains(currentProjectId ?? undefined),
-        listSystemRequirements(currentProjectId ?? undefined),
+        listConcepts(currentProjectId),
+        listSystemFunctions(currentProjectId),
+        listSystemDomains(currentProjectId),
+        listSystemRequirements(currentProjectId),
       ]);
 
       if (!active) return;

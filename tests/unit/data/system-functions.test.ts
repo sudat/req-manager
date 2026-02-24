@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, mock } from "bun:test";
+import { describe, it, expect, beforeEach, afterEach, mock } from "bun:test";
 import {
   listSystemFunctions,
   listSystemFunctionsByDomain,
@@ -12,83 +12,22 @@ import {
   type SystemFunctionCreateInput,
 } from "@/lib/data/system-functions";
 import type { SystemFunction, EntryPoint, SrfCategory, SrfStatus } from "@/lib/domain";
+import { createMockSupabase } from "@/tests/helpers/mock-supabase";
 
 // ========================================
 // Mock Setup
 // ========================================
-
-const createMockSupabase = (initialData: any[] = []) => {
-  let data = [...initialData];
-  return {
-    from: () => ({
-      select: () => createMockSupabase(data),
-      insert: (payload: any) => {
-        data.push(payload);
-        return createMockSupabase(data);
-      },
-      update: (payload: any) => {
-        data = data.map((d) => ({ ...d, ...payload }));
-        return createMockSupabase(data);
-      },
-      delete: () => createMockSupabase(data),
-      eq: (column: string, value: any) => {
-        if (column === "project_id") {
-          data = data.filter((d) => d.project_id === value);
-        }
-        if (column === "id") {
-          data = data.filter((d) => d.id === value);
-        }
-        if (column === "system_domain_id") {
-          data = data.filter((d) => d.system_domain_id === value);
-        }
-        return createMockSupabase(data);
-      },
-      order: () => createMockSupabase(data),
-      maybeSingle: () => {
-        const single = data.length > 0 ? data[0] : null;
-        return Promise.resolve({ data: single, error: single ? null : { message: "Not found" } });
-      },
-      single: () => Promise.resolve({ data: data[0], error: data.length > 0 ? null : { message: "Not found" } }),
-    }),
-  };
-};
 
 beforeEach(() => {
   mock.module("@/lib/supabase/client", () => ({
     supabase: createMockSupabase(),
     getSupabaseConfigError: () => null,
   }));
+});
 
-  // structured.tsのモック
-  mock.module("@/lib/data/structured", () => ({
-    codeRefsToEntryPoints: (codeRefs: any) => {
-      if (!codeRefs || codeRefs.length === 0) return [];
-      return codeRefs.flatMap((cr: any) =>
-        (cr.paths || []).map((path: string) => ({
-          path,
-          type: null,
-          responsibility: null,
-        }))
-      );
-    },
-    entryPointsToCodeRefs: (entryPoints: EntryPoint[]) => {
-      if (!entryPoints || entryPoints.length === 0) return [];
-      const paths = entryPoints.map((ep) => ep.path);
-      return [{ paths }];
-    },
-    normalizeEntryPoints: (data: any) => {
-      if (Array.isArray(data)) {
-        return data.filter((p: any) => p && p.path && p.path.trim() !== "");
-      }
-      return [];
-    },
-    normalizeCodeRefs: (data: any) => {
-      if (Array.isArray(data)) {
-        return data.filter((cr: any) => cr && cr.paths && Array.isArray(cr.paths));
-      }
-      return [];
-    },
-  }));
+afterEach(() => {
+  // Bunのmock.moduleが他のテストファイルへ漏れるのを防ぐ
+  mock.restore();
 });
 
 // ========================================
@@ -589,11 +528,9 @@ describe("SystemFunction CRUD Operations", () => {
   describe("deleteSystemFunction", () => {
     it("システム機能を削除する", async () => {
       mock.module("@/lib/supabase/client", () => ({
-        supabase: {
-          from: () => ({
-            delete: () => Promise.resolve({ error: null }),
-          }),
-        },
+        supabase: createMockSupabase([
+          { id: "SF-001", project_id: "project-123", created_at: "2024-01-01", updated_at: "2024-01-01" },
+        ]),
         getSupabaseConfigError: () => null,
       }));
 
@@ -684,16 +621,6 @@ describe("SystemFunction統合シナリオ", () => {
         { path: "/valid/path.ts", type: "api", responsibility: "API処理" },
         { path: "   ", type: "batch", responsibility: "バッチ処理" },
       ];
-
-      // normalizeEntryPointsのモック動作
-      mock.module("@/lib/data/structured", () => ({
-        normalizeEntryPoints: (data: any) => {
-          if (Array.isArray(data)) {
-            return data.filter((p: any) => p && p.path && p.path.trim() !== "");
-          }
-          return [];
-        },
-      }));
 
       const normalized = entryPointsWithEmpty.filter((p) => p.path.trim() !== "");
 

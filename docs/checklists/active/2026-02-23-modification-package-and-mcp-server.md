@@ -63,8 +63,8 @@ PRDの方針変更（1.4.1 / 6.20）に合わせ、ビジネスMVP時は「開�
 - [x] 生成結果のダウンロード導線（json or md）を実装
 
 #### 確認項目
-- [ ] review済みチケットで生成操作できる
-- [ ] 実行後にダウンロードが開始される
+- [x] review済みチケットで生成操作できる
+- [x] 実行後にダウンロードが開始される
 
 ---
 
@@ -111,18 +111,20 @@ PRDの方針変更（1.4.1 / 6.20）に合わせ、ビジネスMVP時は「開�
 **PMF確認後の拡張スコープ**: 書き込みツール追加、APIキー認証、レート制限、監査ログ。
 
 #### 実装項目（Phase 6）
-- [ ] 追加ツール実装:
-  - [ ] `search_concepts` - 概念辞書検索
-  - [ ] `get_links` - 要件間リンク取得
-  - [ ] `submit_impact_proposal` - 影響範囲候補送信
-- [ ] APIキー認証（ヘッダ）を実装
-- [ ] レート制限（Rate Limiting）
-- [ ] 監査ログ
+- [x] 追加ツール実装:
+  - [x] `search_concepts` - 概念辞書検索
+  - [x] `get_links` - 要件間リンク取得
+  - [x] `submit_impact_proposal` - 影響範囲候補送信
+- [x] APIキー認証（ヘッダ）を実装（`MCP_GUARD_MODE=off|observe|enforce`）
+- [x] レート制限（Rate Limiting）を実装（同上）
+- [x] 監査ログ
+  - [x] 監査ログ仕様を設計書に明文化（`docs/design/mcp-guard-mode.md`）
+  - [x] DB永続化（`public.mcp_audit_logs` + `lib/data/mcp-audit-logs.ts`）
 
 #### 確認項目（Phase 6）
-- [ ] APIキーなしアクセスが拒否される
-- [ ] APIキーありで全ツールが呼べる
-- [ ] レート制限が機能する
+- [x] APIキーなしアクセスが拒否される（`enforce`時）
+- [x] APIキーありで全ツールが呼べる（`enforce`時）
+- [x] レート制限が機能する（`enforce`時）
 
 ---
 
@@ -136,12 +138,33 @@ PRDの方針変更（1.4.1 / 6.20）に合わせ、ビジネスMVP時は「開�
 - [x] 主要APIハッピーパスの確認
 
 #### 実装項目（Phase 6）
-- [ ] MCP認証ガードのユニットテスト追加
-- [ ] レート制限のテスト
+- [x] MCP認証ガードのユニットテスト追加
+- [x] レート制限のテスト
 
 #### 確認項目
 - [x] 追加テストが通る
 - [x] 既存テストに回帰がない
+
+---
+
+### 8. 5-9 設計決定ログ記録機能（変更要求詳細）
+
+ファイル: `supabase/migrations/20260223102000_add_design_decision_logs.sql`, `lib/data/design-decision-logs.ts`, `components/tickets/ticket-design-decision-log-card.tsx`, `app/(with-sidebar)/tickets/[id]/page.tsx`
+
+#### 実装項目
+- [x] `design_decision_logs` テーブルを追加（change_request_id紐付け）
+- [x] データ層（一覧・作成）を追加
+- [x] 変更要求詳細画面に「設計決定ログ（なぜメモ）」入力UIを追加
+- [x] 追加したログを同画面で即時一覧表示
+- [x] 対象種別・対象IDを指定してログ登録できるUIに拡張
+- [x] 影響調査実行時にAgentログを自動投入（BR/SF/SR/AC）
+- [x] Agent `proposed` ログを `confirmed/rejected` できるレビューUIを追加
+
+#### 確認項目
+- [x] 決定内容と根拠メモを記録できる
+- [x] 変更要求ごとにログが分離される
+- [x] 「どのIDでなぜ判断したか」がログに残る
+- [x] Agentの下書き判断をユーザが承認/差し戻しできる
 
 ---
 
@@ -154,9 +177,9 @@ PRDの方針変更（1.4.1 / 6.20）に合わせ、ビジネスMVP時は「開�
 - [x] 正本参照APIが最低限利用可能
 
 ### Phase 6 フロー
-- [ ] MCP APIキー認証が有効
-- [ ] 全MCPツールが利用可能
-- [ ] レート制限・監査ログが機能
+- [x] MCP APIキー認証が有効
+- [x] 全MCPツールが利用可能
+- [x] レート制限・監査ログが機能
 
 ---
 
@@ -164,7 +187,7 @@ PRDの方針変更（1.4.1 / 6.20）に合わせ、ビジネスMVP時は「開�
 
 - [x] Phase 5-1（改修指示パッケージ生成）がUI/APIで動作
 - [x] Phase 5-2（MCP Server 最小限版 / 手動Claude Code・Codex運用向け）が動作
-- [ ] Phase 6（MCP Server 完全版 + 認証・監査）が動作
+- [x] Phase 6（MCP Server 完全版 + 認証・監査）が動作
 - [x] TypeScriptエラーなし
 - [x] PRDの未実装項目に対応する実装メモを残す
 

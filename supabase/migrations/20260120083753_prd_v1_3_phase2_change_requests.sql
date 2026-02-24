@@ -60,11 +60,6 @@ create index if not exists idx_change_requests_status
 create index if not exists idx_change_requests_created_at
   on public.change_requests(created_at desc);
 
-create trigger update_change_requests_updated_at
-  before update on public.change_requests
-  for each row
-  execute procedure public.update_updated_at_column();
-
 -- 2) change_request_impact_scopes テーブル
 create table if not exists public.change_request_impact_scopes (
   id uuid primary key default gen_random_uuid(),
@@ -97,11 +92,6 @@ create index if not exists idx_change_request_impact_scopes_change_request_id
   on public.change_request_impact_scopes(change_request_id);
 create index if not exists idx_change_request_impact_scopes_target
   on public.change_request_impact_scopes(target_type, target_id);
-
-create trigger update_change_request_impact_scopes_updated_at
-  before update on public.change_request_impact_scopes
-  for each row
-  execute procedure public.update_updated_at_column();
 
 -- 3) change_request_acceptance_confirmations テーブル
 create table if not exists public.change_request_acceptance_confirmations (
@@ -153,10 +143,5 @@ create index if not exists idx_change_request_acceptance_confirmations_source
   on public.change_request_acceptance_confirmations(acceptance_criterion_source_type, acceptance_criterion_source_id);
 create index if not exists idx_change_request_acceptance_confirmations_status
   on public.change_request_acceptance_confirmations(status);
-
-create trigger update_change_request_acceptance_confirmations_updated_at
-  before update on public.change_request_acceptance_confirmations
-  for each row
-  execute procedure public.update_updated_at_column();
 
 commit;

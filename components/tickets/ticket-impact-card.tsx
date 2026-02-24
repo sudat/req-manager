@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Globe, Check, Lock } from "lucide-react";
 import type { ImpactScope } from "@/lib/domain/value-objects";
 import { confirmImpactScope } from "@/lib/data/impact-scopes";
+import { useProject } from "@/components/project/project-context";
 
 interface TicketImpactCardProps {
   impactScopes: ImpactScope[];
@@ -22,13 +23,15 @@ const targetTypeLabels: Record<string, string> = {
 export function TicketImpactCard({ impactScopes }: TicketImpactCardProps) {
   const [confirming, setConfirming] = useState<string | null>(null);
   const [scopes, setScopes] = useState<ImpactScope[]>(impactScopes);
+  const { currentProjectId, loading: projectLoading } = useProject();
 
   const hasUnconfirmed = scopes.some(s => !s.confirmed);
   const allConfirmed = scopes.length > 0 && scopes.every(s => s.confirmed);
 
   const handleConfirm = async (scopeId: string) => {
+    if (projectLoading || !currentProjectId) return;
     setConfirming(scopeId);
-    const { data, error } = await confirmImpactScope(scopeId, "システム");
+    const { data, error } = await confirmImpactScope(scopeId, "システム", currentProjectId);
     if (data) {
       setScopes(prev => prev.map(s => s.id === scopeId ? data : s));
     }
@@ -36,10 +39,11 @@ export function TicketImpactCard({ impactScopes }: TicketImpactCardProps) {
   };
 
   const handleConfirmAll = async () => {
+    if (projectLoading || !currentProjectId) return;
     for (const scope of scopes) {
       if (!scope.confirmed) {
         setConfirming(scope.id);
-        const { data } = await confirmImpactScope(scope.id, "システム");
+        const { data } = await confirmImpactScope(scope.id, "システム", currentProjectId);
         if (data) {
           setScopes(prev => prev.map(s => s.id === scope.id ? data : s));
         }

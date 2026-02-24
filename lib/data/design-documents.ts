@@ -133,10 +133,16 @@ export const listDesignDocumentsBySrfId = async (srfId: string, projectId?: stri
       const nameByDdId = new Map<string, string>();
       
       if (uniqueCallerDdIds.length > 0) {
-        const { data: ddData } = await supabase
+        let nameQuery = supabase
           .from("design_documents")
           .select("id, name")
           .in("id", uniqueCallerDdIds);
+
+        if (projectId) {
+          nameQuery = nameQuery.eq("project_id", projectId);
+        }
+
+        const { data: ddData } = await nameQuery;
         
         if (ddData) {
           for (const dd of ddData) {

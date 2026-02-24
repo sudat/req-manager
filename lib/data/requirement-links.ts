@@ -127,6 +127,39 @@ export const listRequirementLinksByProjectId = async (projectId: string) => {
   return { data: (data as RequirementLinkRow[]).map(toRequirementLink), error: null };
 };
 
+export const listRequirementLinksByNodeId = async (
+  nodeId: string,
+  direction: "from" | "to" | "both" = "both",
+  projectId?: string
+) => {
+  const configError = failIfMissingConfig();
+  if (configError) return configError;
+
+  const normalizedId = nodeId.trim();
+  if (!normalizedId) return { data: [], error: null };
+
+  let query = supabase
+    .from("requirement_links")
+    .select("*")
+    .order("updated_at", { ascending: false });
+
+  if (projectId) {
+    query = query.eq("project_id", projectId);
+  }
+
+  if (direction === "from") {
+    query = query.eq("source_id", normalizedId);
+  } else if (direction === "to") {
+    query = query.eq("target_id", normalizedId);
+  } else {
+    query = query.or(`source_id.eq.${normalizedId},target_id.eq.${normalizedId}`);
+  }
+
+  const { data, error } = await query;
+  if (error) return { data: null, error: error.message };
+  return { data: (data as RequirementLinkRow[]).map(toRequirementLink), error: null };
+};
+
 export const listRequirementLinksBySource = async (
   sourceType: RequirementLinkNodeType,
   sourceId: string,

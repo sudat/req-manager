@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { useProject } from "@/components/project/project-context"
+import { DEFAULT_PROJECT_ID, useProject } from "@/components/project/project-context"
 import { deleteProject } from "@/lib/data/projects"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -61,6 +61,8 @@ export default function ProjectsPage() {
   const canDelete = (projectId: string) => {
     // 現在選択中のプロジェクトは削除不可
     if (projectId === currentProjectId) return false
+    // デフォルトプロジェクトは削除不可（サーバ側フォールバックで利用されるため）
+    if (projectId === DEFAULT_PROJECT_ID) return false
     // 最後の1件は削除不可
     if (projects.length <= 1) return false
     return true
@@ -68,6 +70,7 @@ export default function ProjectsPage() {
 
   const getDeleteTooltip = (projectId: string) => {
     if (projectId === currentProjectId) return "現在選択中のプロジェクトは削除できません"
+    if (projectId === DEFAULT_PROJECT_ID) return "デフォルトプロジェクトは削除できません"
     if (projects.length <= 1) return "最後のプロジェクトは削除できません"
     return undefined
   }

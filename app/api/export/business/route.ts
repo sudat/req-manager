@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { listBusinesses } from "@/lib/data/businesses";
 import { listTasksByBusinessArea } from "@/lib/data/tasks";
 import { listBusinessRequirementsByTaskIds } from "@/lib/data/business-requirements";
+import { CURRENT_PROJECT_ID_KEY, DEFAULT_PROJECT_ID } from "@/lib/constants/project";
 import {
   buildChildrenMap,
   buildExcelBuffer,
@@ -15,7 +17,10 @@ import {
  */
 export async function GET() {
   try {
-    const { data: businesses, error: bizError } = await listBusinesses();
+    const cookieStore = await cookies();
+    const projectId = cookieStore.get(CURRENT_PROJECT_ID_KEY)?.value ?? DEFAULT_PROJECT_ID;
+
+    const { data: businesses, error: bizError } = await listBusinesses(projectId);
     if (bizError) {
       return NextResponse.json({ error: bizError }, { status: 500 });
     }
@@ -27,7 +32,7 @@ export async function GET() {
       businesses,
       (business) => business.area,
       async (business) => {
-        const { data } = await listTasksByBusinessArea(business.area);
+        const { data } = await listTasksByBusinessArea(business.area, projectId);
         return data;
       },
     );
@@ -36,7 +41,7 @@ export async function GET() {
       .flat()
       .map((task) => task.id);
 
-    const { data: requirements } = await listBusinessRequirementsByTaskIds(allTaskIds);
+    const { data: requirements } = await listBusinessRequirementsByTaskIds(allTaskIds, projectId);
     const requirementsMap = groupByKey(requirements, (req) => req.taskId);
 
     const rows: Array<{

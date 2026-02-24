@@ -5,8 +5,7 @@ import {
   buildModificationPackage,
   renderModificationPackageMarkdown,
 } from "@/lib/data/modification-packages";
-
-const DEFAULT_PROJECT_ID = "00000000-0000-0000-0000-000000000001";
+import { CURRENT_PROJECT_ID_KEY, DEFAULT_PROJECT_ID } from "@/lib/constants/project";
 
 const toErrorStatus = (message: string): number => {
   if (message.includes("疑義リンク")) return 409;
@@ -19,7 +18,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   try {
     const { id: changeRequestId } = await params;
     const cookieStore = await cookies();
-    const projectId = cookieStore.get("current-project-id")?.value ?? DEFAULT_PROJECT_ID;
+    const projectId = cookieStore.get(CURRENT_PROJECT_ID_KEY)?.value ?? DEFAULT_PROJECT_ID;
     const format = request.nextUrl.searchParams.get("format") ?? "markdown";
 
     const { data: changeRequest } = await getChangeRequestById(changeRequestId, projectId);

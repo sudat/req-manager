@@ -4,10 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useEffect, useMemo, useState, type FormEvent } from "react";
 import { ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
+import { SystemDomainForm } from "@/components/forms/system-domain-form";
 import { getSystemDomainById, updateSystemDomain, type SystemDomain } from "@/lib/data/system-domains";
 import { useProject } from "@/components/project/project-context";
 
@@ -124,50 +121,21 @@ export default function SystemDomainEditPage({ params }: { params: Promise<{ id:
 
           <h1 className="text-2xl font-semibold text-slate-900 mb-6">システム領域を編集</h1>
 
-          <Card className="p-6">
-            <form className="space-y-6" onSubmit={handleSubmit}>
-              <div className="space-y-2">
-                <Label>コード</Label>
-                <Input value={domain.id} disabled />
-                <p className="text-xs text-slate-500">コードは変更できません</p>
-              </div>
-
-              <div className="space-y-2">
-                <Label>
-                  名称<span className="text-rose-500">*</span>
-                </Label>
-                <Input value={name} onChange={(event) => setName(event.target.value)} required />
-              </div>
-
-              <div className="space-y-2">
-                <Label>説明</Label>
-                <Input value={description} onChange={(event) => setDescription(event.target.value)} />
-              </div>
-
-              <div className="space-y-2">
-                <Label>表示順</Label>
-                <Input
-                  type="number"
-                  value={String(sortOrder)}
-                  onChange={(event) => setSortOrder(Number(event.target.value) || 0)}
-                  placeholder="例: 1"
-                />
-              </div>
-
-              {error && <p className="text-sm text-rose-600">{error}</p>}
-
-              <div className="flex gap-3">
-                <Link href="/system">
-                  <Button type="button" variant="outline">
-                    キャンセル
-                  </Button>
-                </Link>
-                <Button type="submit" className="bg-slate-900 hover:bg-slate-800" disabled={!canSubmit || saving}>
-                  {saving ? "保存中..." : "保存"}
-                </Button>
-              </div>
-            </form>
-          </Card>
+          <SystemDomainForm
+            mode="edit"
+            domainId={domain.id}
+            name={name}
+            description={description}
+            sortOrder={sortOrder}
+            error={error}
+            saving={saving}
+            canSubmit={canSubmit}
+            cancelHref="/system"
+            onSubmit={handleSubmit}
+            onNameChange={setName}
+            onDescriptionChange={setDescription}
+            onSortOrderChange={setSortOrder}
+          />
         </div>
       </div>
     </>

@@ -19,6 +19,7 @@ export type ImpactScopeInput = {
 type ImpactScopeRow = {
 	id: string;
 	change_request_id: string;
+	project_id: string;
 	target_type: string;
 	target_id: string;
 	target_title: string;
@@ -68,7 +69,7 @@ const toImpactScopeRowBase = (input: ImpactScopeInput) => ({
 });
 
 
-export const listImpactScopesByChangeRequestId = async (changeRequestId: string) => {
+export const listImpactScopesByChangeRequestId = async (changeRequestId: string, projectId: string) => {
 	const configError = failIfMissingConfig();
 	if (configError) return configError;
 
@@ -76,19 +77,21 @@ export const listImpactScopesByChangeRequestId = async (changeRequestId: string)
 		.from("change_request_impact_scopes")
 		.select("*")
 		.eq("change_request_id", changeRequestId)
+		.eq("project_id", projectId)
 		.order("created_at", { ascending: true });
 
 	if (error) return { data: null, error: error.message };
 	return { data: (data as ImpactScopeRow[]).map(toImpactScope), error: null };
 };
 
-export const createImpactScope = async (input: ImpactScopeInput) => {
+export const createImpactScope = async (input: ImpactScopeInput, projectId: string) => {
 	const configError = failIfMissingConfig();
 	if (configError) return configError;
 
 	const now = new Date().toISOString();
 	const payload = {
 		...toImpactScopeRowBase(input),
+		project_id: projectId,
 		created_at: now,
 		updated_at: now,
 	};
@@ -103,7 +106,7 @@ export const createImpactScope = async (input: ImpactScopeInput) => {
 	return { data: toImpactScope(data as ImpactScopeRow), error: null };
 };
 
-export const createImpactScopes = async (inputs: ImpactScopeInput[]) => {
+export const createImpactScopes = async (inputs: ImpactScopeInput[], projectId: string) => {
 	const configError = failIfMissingConfig();
 	if (configError) return configError;
 	if (inputs.length === 0) return { data: [], error: null };
@@ -111,6 +114,7 @@ export const createImpactScopes = async (inputs: ImpactScopeInput[]) => {
 	const now = new Date().toISOString();
 	const payload = inputs.map((input) => ({
 		...toImpactScopeRowBase(input),
+		project_id: projectId,
 		created_at: now,
 		updated_at: now,
 	}));
@@ -124,7 +128,7 @@ export const createImpactScopes = async (inputs: ImpactScopeInput[]) => {
 	return { data: (data as ImpactScopeRow[]).map(toImpactScope), error: null };
 };
 
-export const updateImpactScope = async (id: string, input: Omit<ImpactScopeInput, "changeRequestId">) => {
+export const updateImpactScope = async (id: string, input: Omit<ImpactScopeInput, "changeRequestId">, projectId: string) => {
 	const configError = failIfMissingConfig();
 	if (configError) return configError;
 
@@ -144,6 +148,7 @@ export const updateImpactScope = async (id: string, input: Omit<ImpactScopeInput
 		.from("change_request_impact_scopes")
 		.update(payload)
 		.eq("id", id)
+		.eq("project_id", projectId)
 		.select("*")
 		.single();
 
@@ -151,7 +156,7 @@ export const updateImpactScope = async (id: string, input: Omit<ImpactScopeInput
 	return { data: toImpactScope(data as ImpactScopeRow), error: null };
 };
 
-export const confirmImpactScope = async (id: string, confirmedBy: string) => {
+export const confirmImpactScope = async (id: string, confirmedBy: string, projectId: string) => {
 	const configError = failIfMissingConfig();
 	if (configError) return configError;
 
@@ -166,6 +171,7 @@ export const confirmImpactScope = async (id: string, confirmedBy: string) => {
 			updated_at: now,
 		})
 		.eq("id", id)
+		.eq("project_id", projectId)
 		.select("*")
 		.single();
 
@@ -173,27 +179,29 @@ export const confirmImpactScope = async (id: string, confirmedBy: string) => {
 	return { data: toImpactScope(data as ImpactScopeRow), error: null };
 };
 
-export const deleteImpactScope = async (id: string) => {
+export const deleteImpactScope = async (id: string, projectId: string) => {
 	const configError = failIfMissingConfig();
 	if (configError) return configError;
 
 	const { error } = await supabase
 		.from("change_request_impact_scopes")
 		.delete()
-		.eq("id", id);
+		.eq("id", id)
+		.eq("project_id", projectId);
 
 	if (error) return { data: null, error: error.message };
 	return { data: true, error: null };
 };
 
-export const deleteImpactScopesByChangeRequestId = async (changeRequestId: string) => {
+export const deleteImpactScopesByChangeRequestId = async (changeRequestId: string, projectId: string) => {
 	const configError = failIfMissingConfig();
 	if (configError) return configError;
 
 	const { error } = await supabase
 		.from("change_request_impact_scopes")
 		.delete()
-		.eq("change_request_id", changeRequestId);
+		.eq("change_request_id", changeRequestId)
+		.eq("project_id", projectId);
 
 	if (error) return { data: null, error: error.message };
 	return { data: true, error: null };

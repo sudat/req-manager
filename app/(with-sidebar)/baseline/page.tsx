@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { MobileHeader } from "@/components/layout/mobile-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useProject } from "@/components/project/project-context";
+import { listBaselinesByProject } from "@/lib/mock/data/baselines";
 import {
   Table,
   TableBody,
@@ -14,32 +16,11 @@ import {
 } from "@/components/ui/table";
 import { Plus, Eye, Pencil, Trash2, Search } from "lucide-react";
 
-const baselines = [
-  {
-    version: "v2.1",
-    summary: "電子帳簿保存法対応とワークフロー改善",
-    date: "2024-02-15",
-    changeRequests: 3,
-    isLatest: true,
-  },
-  {
-    version: "v2.0",
-    summary: "インボイス制度対応とマスタ統合",
-    date: "2024-01-20",
-    changeRequests: 5,
-    isLatest: false,
-  },
-  {
-    version: "v1.5",
-    summary: "請求書出力テンプレート刷新とUI改善",
-    date: "2023-11-05",
-    changeRequests: 2,
-    isLatest: false,
-  },
-];
-
 export default function BaselinePage() {
   const router = useRouter();
+  const { currentProject, currentProjectId, loading: projectLoading } = useProject();
+
+  const baselines = currentProjectId ? listBaselinesByProject(currentProjectId) : [];
 
   const handleRowClick = (version: string) => {
     router.push(`/baseline/${version}`);
@@ -58,7 +39,26 @@ export default function BaselinePage() {
             <p className="text-[13px] text-slate-500">
               システムの版管理と変更履歴
             </p>
+            <p className="text-[12px] text-slate-500 mt-2">
+              現在プロジェクト:{" "}
+              <span className="font-mono text-slate-900">{currentProject?.name ?? currentProjectId ?? "(未選択)"}</span>
+            </p>
           </div>
+
+          {projectLoading ? (
+            <div className="rounded-md border border-slate-200 bg-slate-50 p-4 text-[13px] text-slate-600">
+              読み込み中...
+            </div>
+          ) : !currentProjectId ? (
+            <div className="rounded-md border border-rose-200 bg-rose-50 p-4 text-[13px] text-rose-700">
+              プロジェクトが選択されていません
+            </div>
+          ) : baselines.length === 0 ? (
+            <div className="rounded-md border border-slate-200 bg-white p-6 text-center">
+              <p className="text-[13px] text-slate-600">このプロジェクトのベースラインは未設定です。</p>
+              <p className="text-[12px] text-slate-500 mt-1">MVPではDB永続化と追加/削除は未実装です。</p>
+            </div>
+          ) : null}
 
           {/* Search Bar */}
           <div className="mb-6 flex items-center gap-4 rounded-md border border-slate-200 bg-slate-50/50 px-4 py-3">
@@ -71,10 +71,19 @@ export default function BaselinePage() {
               />
             </div>
             <div className="flex items-center gap-3">
-              <Button variant="outline" className="h-8 px-4 text-[14px] font-medium border-slate-200 hover:bg-slate-50">
+              <Button
+                variant="outline"
+                disabled
+                title="未実装"
+                className="h-8 px-4 text-[14px] font-medium border-slate-200 hover:bg-slate-50"
+              >
                 版間差分
               </Button>
-              <Button className="h-8 px-4 text-[14px] font-medium bg-slate-900 hover:bg-slate-800 gap-2">
+              <Button
+                disabled
+                title="未実装"
+                className="h-8 px-4 text-[14px] font-medium bg-slate-900 hover:bg-slate-800 gap-2"
+              >
                 <Plus className="h-4 w-4" />
                 追加
               </Button>
@@ -135,7 +144,7 @@ export default function BaselinePage() {
                     <TableCell className="px-4 py-3">
                       <div className="flex items-baseline gap-1.5">
                         <span className="font-mono text-[16px] font-semibold text-slate-900 tabular-nums">
-                          {baseline.changeRequests}
+                          {baseline.changeRequestIds.length}
                         </span>
                         <span className="text-[11px] text-slate-400">件</span>
                       </div>
@@ -146,6 +155,7 @@ export default function BaselinePage() {
                           size="icon"
                           variant="outline"
                           title="照会"
+                          onClick={() => handleRowClick(baseline.version)}
                           className="h-8 w-8 rounded-md border-slate-200 hover:bg-slate-900 hover:text-white hover:border-slate-900"
                         >
                           <Eye className="h-4 w-4" />
@@ -153,7 +163,8 @@ export default function BaselinePage() {
                         <Button
                           size="icon"
                           variant="outline"
-                          title="編集"
+                          title="未実装"
+                          disabled
                           className="h-8 w-8 rounded-md border-slate-200 hover:bg-slate-900 hover:text-white hover:border-slate-900"
                         >
                           <Pencil className="h-4 w-4" />
@@ -161,7 +172,8 @@ export default function BaselinePage() {
                         <Button
                           size="icon"
                           variant="outline"
-                          title="削除"
+                          title="未実装"
+                          disabled
                           className="h-8 w-8 rounded-md border-slate-200 hover:bg-slate-900 hover:text-white hover:border-slate-900"
                         >
                           <Trash2 className="h-4 w-4" />

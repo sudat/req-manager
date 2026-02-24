@@ -175,6 +175,28 @@ export interface InvestigationResult {
     affectedACs: string[];
     affectedEntryPoints: Array<{ sfId: string; path: string }>;
   };
+  bottomUpResult?: {
+    repositoryUrl: string | null;
+    error?: string | null;
+    explorationMetadata: {
+      totalFilesScanned: number;
+      totalDependenciesFound: number;
+      maxDepthReached: number;
+      truncated: boolean;
+      truncationReason?: string | null;
+    };
+    affectedFiles: Array<{
+      filePath: string;
+      impactType: "direct" | "indirect";
+      depth: number;
+      confidence: number;
+      changeLikelihood: "high" | "medium" | "low";
+      reason: string;
+      dependencyChain: string[];
+      dependencyType: "import" | "type" | "runtime" | "config";
+      sharedModule?: boolean;
+    }>;
+  };
   suspectLinksDetected: Array<{
     id: string;
     sourceType: string;
@@ -186,6 +208,45 @@ export interface InvestigationResult {
   }>;
   createdAt: string;
   updatedAt: string;
+}
+
+export type DesignDecisionLogCreatedBy = "agent" | "human";
+export type DesignDecisionLogStatus = "proposed" | "confirmed" | "rejected";
+export type DesignDecisionLogRationaleType =
+  | "pr_reference"
+  | "ac_reference"
+  | "convention"
+  | "inference"
+  | "user_input";
+export type DesignDecisionLogTargetType =
+  | "bt"
+  | "br"
+  | "sf"
+  | "sr"
+  | "ac"
+  | "impl_unit"
+  | "change_request";
+
+export interface DesignDecisionLog {
+  id: string;
+  changeRequestId: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: DesignDecisionLogCreatedBy;
+  context: {
+    targetType: DesignDecisionLogTargetType;
+    targetId: string;
+    field?: string | null;
+  };
+  decision: string;
+  rationale: {
+    type: DesignDecisionLogRationaleType;
+    reference?: string | null;
+    explanation: string;
+  };
+  status: DesignDecisionLogStatus;
+  confirmedBy?: string | null;
+  confirmedAt?: string | null;
 }
 
 /**

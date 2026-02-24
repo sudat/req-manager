@@ -1,47 +1,51 @@
 begin;
 
--- 1) business_tasks の外部キーを外し、business_id を business_area に変更
+-- ============================================================
+-- バックアップ: business_context カラムのデータを保存
+-- ============================================================
+do $$
+begin
+  if to_regclass('public._backup_business_context_20260214') is null then
+    if exists (
+      select 1
+      from information_schema.columns
+      where table_schema = 'public'
+        and table_name = 'business_tasks'
+        and column_name = 'business_context'
+    ) then
+      execute $sql$
+        create table public._backup_business_context_20260214 as
+        select id, business_context, created_at, updated_at
+        from public.business_tasks
+        where business_context is not null
+      $sql$;
+    else
+      -- business_context が既に削除済みでも、このバックアップテーブル自体は残す（実DBの状態に合わせる）
+      execute $sql$
+        create table public._backup_business_context_20260214 (
+          id text,
+          business_context text,
+          created_at timestamptz,
+          updated_at timestamptz
+        )
+      $sql$;
+    end if;
+
+    execute $sql$
+      comment on table public._backup_business_context_20260214 is 'business_tasks.business_contextカラム削除前のバックアップ（2026-02-14）'
+    $sql$;
+  end if;
+end $$;
+
+-- ============================================================
+-- 1) business_tasks から business_context カラムを削除
+-- ============================================================
 alter table public.business_tasks
-  drop constraint if exists tasks_business_id_fkey;
-alter table public.business_tasks
-  drop constraint if exists business_tasks_business_id_fkey;
+  drop column if exists business_context;
 
-alter table public.business_tasks
-  rename column business_id to business_area;
-
--- 2) 既存データを area に変換（旧BIZ-xxx → area）
-update public.business_tasks bt
-set business_area = bd.area
-from public.business_domains bd
-where bt.business_area = bd.id
-  and bt.project_id = bd.project_id;
-
--- 3) インデックスの差し替え
-drop index if exists public.tasks_business_id_idx;
-create index if not exists tasks_business_area_idx
-  on public.business_tasks(business_area);
-
--- 4) business_domains のPKを area + project_id に変更し、id列を削除
-alter table public.business_domains
-  drop constraint if exists businesses_pkey;
-alter table public.business_domains
-  drop constraint if exists business_domains_pkey;
-
-alter table public.business_domains
-  drop column if exists id;
-
-alter table public.business_domains
-  add primary key (project_id, area);
-
--- 5) 新しい外部キー（area + project_id）を追加
-alter table public.business_tasks
-  add constraint business_tasks_business_area_fkey
-  foreign key (project_id, business_area)
-  references public.business_domains(project_id, area)
-  on delete cascade
-  on update cascade;
-
--- 6) commit_draft RPC を area 対応に更新
+-- ============================================================
+-- 2) commit_draft RPC 関数を更新（business_context除去）
+-- ============================================================
 CREATE OR REPLACE FUNCTION commit_draft(
   p_draft_id TEXT,
   p_type TEXT,
@@ -68,7 +72,6 @@ BEGIN
         id,
         name,
         summary,
-        business_context,
         process_steps,
         input,
         output,
@@ -85,7 +88,6 @@ BEGIN
         p_content->>'code',
         p_content->>'name',
         p_content->>'summary',
-        p_content->>'businessContext',
         p_content->'processSteps',
         p_content->'input',
         p_content->'output',
@@ -184,20 +186,22 @@ BEGIN
       )
       RETURNING id INTO v_result_id;
 
-    WHEN 'impl_unit' THEN
-      INSERT INTO impl_unit_sds (
+    WHEN 'dd' THEN
+      INSERT INTO design_documents (
         system_function_id,
         code,
         name,
-        entry_point,
-        design_notes
+        io_type,
+        summary,
+        details
       )
       VALUES (
         p_content->>'system_function_id',
         p_content->>'code',
         p_content->>'name',
-        p_content->>'entry_point',
-        p_content->>'design_notes'
+        p_content->>'ioType',
+        p_content->>'summary',
+        p_content->'details'
       )
       RETURNING id INTO v_result_id;
 

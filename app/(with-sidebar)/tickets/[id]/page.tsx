@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { MobileHeader } from "@/components/layout/mobile-header";
 import { Button } from "@/components/ui/button";
 import { Pencil } from "lucide-react";
+import { CURRENT_PROJECT_ID_KEY, DEFAULT_PROJECT_ID } from "@/lib/constants/project";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -14,30 +15,74 @@ import {
 } from "@/components/ui/breadcrumb";
 import { getChangeRequestById } from "@/lib/data/change-requests";
 import { listImpactScopesByChangeRequestId } from "@/lib/data/impact-scopes";
-import { getAcceptanceConfirmationCompletionStatus } from "@/lib/data/acceptance-confirmations";
 import { getInvestigationResultByChangeRequestId } from "@/lib/data/investigation-results";
+import { listDesignDecisionLogsByChangeRequestId } from "@/lib/data/design-decision-logs";
 import { TicketBasicInfoCard } from "@/components/tickets/ticket-basic-info-card";
 import { TicketImpactCard } from "@/components/tickets/ticket-impact-card";
 import { AcceptanceConfirmationPanel } from "@/components/tickets/acceptance-confirmation-panel";
 import { InvestigateButton } from "@/components/tickets/investigate-button";
 import { TicketInvestigationSection } from "@/components/tickets/ticket-investigation-section";
 import { GenerateInstructionPackageButton } from "@/components/tickets/generate-instruction-package-button";
-
-const DEFAULT_PROJECT_ID = "00000000-0000-0000-0000-000000000001";
+import { TicketDesignDecisionLogCard } from "@/components/tickets/ticket-design-decision-log-card";
+import type { DesignDecisionLogTargetType } from "@/lib/domain/value-objects";
 
 export default async function TicketDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const cookieStore = await cookies();
-  const projectId = cookieStore.get("current-project-id")?.value ?? DEFAULT_PROJECT_ID;
+  const projectId = cookieStore.get(CURRENT_PROJECT_ID_KEY)?.value ?? DEFAULT_PROJECT_ID;
   const { data: changeRequest, error } = await getChangeRequestById(id, projectId);
 
   if (error || !changeRequest) {
     notFound();
   }
 
-  const { data: impactScopes } = await listImpactScopesByChangeRequestId(id);
-  const { data: completionStatus } = await getAcceptanceConfirmationCompletionStatus(id);
+  const { data: impactScopes } = await listImpactScopesByChangeRequestId(id, projectId);
   const { data: investigationResult } = await getInvestigationResultByChangeRequestId(id, projectId);
+  const { data: designDecisionLogs } = await listDesignDecisionLogsByChangeRequestId(id);
+  const targetOptionMap = new Map<string, {
+    targetType: DesignDecisionLogTargetType;
+    targetId: string;
+    label: string;
+  }>();
+
+  const addTargetOption = (
+    targetType: DesignDecisionLogTargetType,
+    targetId: string,
+    label: string
+  ) => {
+    if (!targetId) return;
+    const key = `${targetType}:${targetId}`;
+    if (!targetOptionMap.has(key)) {
+      targetOptionMap.set(key, { targetType, targetId, label });
+    }
+  };
+
+  addTargetOption("change_request", id, changeRequest.title);
+  (impactScopes ?? []).forEach((scope) => {
+    if (scope.targetType === "business_requirement") {
+      addTargetOption("br", scope.targetId, scope.targetTitle);
+    } else if (scope.targetType === "system_requirement") {
+      addTargetOption("sr", scope.targetId, scope.targetTitle);
+    } else if (scope.targetType === "system_function") {
+      addTargetOption("sf", scope.targetId, scope.targetTitle);
+    } else if (scope.targetType === "file") {
+      addTargetOption("impl_unit", scope.targetId, scope.targetTitle);
+    }
+  });
+
+  (investigationResult?.topDownResult.affectedBRs ?? []).forEach((brId) =>
+    addTargetOption("br", brId, brId)
+  );
+  (investigationResult?.topDownResult.affectedSFs ?? []).forEach((sfId) =>
+    addTargetOption("sf", sfId, sfId)
+  );
+  (investigationResult?.topDownResult.affectedSRs ?? []).forEach((srId) =>
+    addTargetOption("sr", srId, srId)
+  );
+  (investigationResult?.topDownResult.affectedACs ?? []).forEach((acId) =>
+    addTargetOption("ac", acId, acId)
+  );
+  const targetOptions = Array.from(targetOptionMap.values());
 
   return (
     <>
@@ -97,33 +142,14 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
               initialResult={investigationResult ?? null}
             />
 
+            <TicketDesignDecisionLogCard
+              changeRequestId={id}
+              initialLogs={designDecisionLogs ?? []}
+              targetOptions={targetOptions}
+            />
+
             {/* 受入条件確認パネル - Phase 5.6で実装済み */}
             <AcceptanceConfirmationPanel changeRequestId={id} />
-
-            {/* 北極星KPI達成状況サマリー */}
-            {completionStatus && (
-              <div className="rounded-md border border-slate-200 bg-white p-4">
-                <h3 className="text-[14px] font-semibold text-slate-900 mb-3">受入条件確認状況サマリー</h3>
-                <div className="flex items-center gap-6 text-[13px]">
-                  <div>
-                    <span className="text-slate-500">総数:</span>
-                    <span className="ml-2 font-mono text-slate-900">{completionStatus.total}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-500">確認済:</span>
-                    <span className="ml-2 font-mono text-emerald-600">{completionStatus.verified}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-500">未確認:</span>
-                    <span className="ml-2 font-mono text-amber-600">{completionStatus.pending}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-500">達成率:</span>
-                    <span className="ml-2 font-mono text-slate-900">{completionStatus.completionRate.toFixed(1)}%</span>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>

@@ -11,7 +11,7 @@ import { RequirementListSection } from "@/components/forms/requirement-list-sect
 import { SelectionDialog } from "@/components/forms/SelectionDialog";
 import { useSystemRequirementsForm } from "../hooks/useSystemRequirementsForm";
 import { useMasterData } from "@/app/(with-sidebar)/business/[id]/[taskId]/edit/hooks/useMasterData";
-import { DEFAULT_PROJECT_ID } from "@/components/project/project-context";
+import { DEFAULT_PROJECT_ID, useProject } from "@/components/project/project-context";
 import type { SelectionDialogState } from "@/lib/domain/forms";
 
 export default function SystemFunctionEditRequirementsPage({
@@ -21,6 +21,8 @@ export default function SystemFunctionEditRequirementsPage({
 }) {
 	const { id: systemDomainId, srfId } = use(params);
 	const router = useRouter();
+	const { currentProjectId, loading: projectLoading } = useProject();
+	const projectId = currentProjectId ?? DEFAULT_PROJECT_ID;
 
 	const {
 		loading,
@@ -32,7 +34,7 @@ export default function SystemFunctionEditRequirementsPage({
 		updateSystemRequirement,
 		removeSystemRequirement,
 		handleSave,
-	} = useSystemRequirementsForm(srfId, systemDomainId, DEFAULT_PROJECT_ID);
+	} = useSystemRequirementsForm(srfId, systemDomainId, projectId);
 
 	const {
 		concepts,
@@ -58,7 +60,7 @@ export default function SystemFunctionEditRequirementsPage({
 		? systemRequirements.find((r) => r.id === dialogState.reqId) || null
 		: null;
 
-	if (loading) {
+	if (projectLoading || loading) {
 		return (
 			<div className="flex items-center justify-center min-h-[400px]">
 				<Loader2 className="h-8 w-8 animate-spin text-slate-400" />

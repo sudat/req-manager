@@ -30,6 +30,8 @@ type UseTaskDetailParams = {
 };
 
 type UseTaskDetailReturn = {
+	projectId: string | undefined;
+	projectLoading: boolean;
 	task: Task | null;
 	taskLoading: boolean;
 	taskError: string | null;
@@ -207,6 +209,8 @@ export function useTaskDetail({
 	);
 
 	return {
+		projectId: currentProjectId,
+		projectLoading,
 		task,
 		taskLoading,
 		taskError,

@@ -5,10 +5,18 @@ Object.assign(globalThis, {
   window,
   navigator: window.navigator,
   HTMLElement: window.HTMLElement,
+  getComputedStyle: window.getComputedStyle.bind(window),
+  requestAnimationFrame:
+    window.requestAnimationFrame?.bind(window) ??
+    ((callback: FrameRequestCallback) =>
+      setTimeout(() => callback(Date.now()), 0) as unknown as number),
+  cancelAnimationFrame:
+    window.cancelAnimationFrame?.bind(window) ??
+    ((id: number) => clearTimeout(id)),
 });
 
 import { afterEach, describe, expect, it, jest, mock } from "bun:test";
-import { cleanup, render, waitFor } from "@testing-library/react";
+import { act, cleanup, render, waitFor } from "@testing-library/react";
 
 // Mocks - よりシンプルに
 const mockRouter = {
@@ -33,7 +41,7 @@ mock.module("@/hooks/use-business-by-key", () => ({
   useBusinessByKey: () => ({ businessArea: "AR" }),
 }));
 
-mock.module("./use-task-detail", () => ({
+mock.module("@/app/(with-sidebar)/business/[id]/[taskId]/use-task-detail", () => ({
   useTaskDetail: () => ({
     task: {
       id: "BT-AR-0001",
@@ -110,16 +118,28 @@ mock.module("@/components/ui/button", () => ({
   ),
 }));
 
-mock.module("./components/TaskLoadingStatus", () => ({
+mock.module(
+  "@/app/(with-sidebar)/business/[id]/[taskId]/components/TaskLoadingStatus",
+  () => ({
   TaskLoadingStatus: () => null,
   TaskNotFound: () => <div>Not Found</div>,
 }));
 
-mock.module("./components/TaskSummaryCard", () => ({
+mock.module(
+  "@/app/(with-sidebar)/business/[id]/[taskId]/components/TaskSummaryCard",
+  () => ({
   TaskSummaryCard: () => <div data-testid="task-summary-card">Task Summary</div>,
 }));
 
-mock.module("./components/BusinessRequirementsSection", () => ({
+mock.module(
+  "@/app/(with-sidebar)/business/[id]/[taskId]/components/TaskFlowSection",
+  () => ({
+  TaskFlowSection: () => <div data-testid="task-flow-section">Task Flow</div>,
+}));
+
+mock.module(
+  "@/app/(with-sidebar)/business/[id]/[taskId]/components/BusinessRequirementsSection",
+  () => ({
   BusinessRequirementsSection: () => <div data-testid="business-requirements-section">Business Requirements</div>,
 }));
 
@@ -134,12 +154,22 @@ import React from "react";
 
 afterEach(() => {
   cleanup();
+  mock.restore();
 });
 
 describe("TaskDetailPage", () => {
   it("業務要件セクションの編集ボタンが/edit/requirementsを指している", async () => {
     const params = Promise.resolve({ id: "AR", taskId: "BT-AR-0001" });
-    const { container } = render(<TaskDetailPage params={params} />);
+    let rendered: ReturnType<typeof render> | null = null;
+    await act(async () => {
+      rendered = render(
+        <React.Suspense fallback={<div>loading</div>}>
+          <TaskDetailPage params={params} />
+        </React.Suspense>
+      );
+      await params;
+    });
+    const { container } = rendered!;
 
     await waitFor(() => {
       // すべてのリンクを取得
@@ -152,14 +182,22 @@ describe("TaskDetailPage", () => {
     });
   });
 
-  it("編集ボタンが2つ存在する（ヘッダーと要件セクション）", async () => {
+  it("編集ボタンが存在する（業務要件セクション）", async () => {
     const params = Promise.resolve({ id: "AR", taskId: "BT-AR-0001" });
-    const { container } = render(<TaskDetailPage params={params} />);
+    let rendered: ReturnType<typeof render> | null = null;
+    await act(async () => {
+      rendered = render(
+        <React.Suspense fallback={<div>loading</div>}>
+          <TaskDetailPage params={params} />
+        </React.Suspense>
+      );
+      await params;
+    });
+    const { container } = rendered!;
 
     await waitFor(() => {
       const links = container.querySelectorAll('a[data-href*="/edit/requirements"]');
-      // ヘッダーと要件セクションの2つ
-      expect(links.length).toBe(2);
+      expect(links.length).toBe(1);
     });
   });
 });

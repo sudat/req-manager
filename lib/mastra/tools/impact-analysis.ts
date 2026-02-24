@@ -29,7 +29,7 @@ export const impactAnalysisTool = createTool({
   execute: async ({ crId, projectId }) => {
     try {
       // 1. 影響対象を取得
-      const { data: impactScopes, error: scopeError } = await listImpactScopesByChangeRequestId(crId);
+      const { data: impactScopes, error: scopeError } = await listImpactScopesByChangeRequestId(crId, projectId);
       if (scopeError) return toolError(scopeError, '影響範囲の取得に失敗しました');
 
       // 影響対象からBR IDを収集

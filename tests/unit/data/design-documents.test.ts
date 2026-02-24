@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, mock } from "bun:test";
+import { describe, it, expect, beforeEach, afterEach, mock } from "bun:test";
 import {
   listDesignDocuments,
   listDesignDocumentsBySrfId,
@@ -11,108 +11,44 @@ import {
   type DesignDocumentCreateInput,
 } from "@/lib/data/design-documents";
 import type { DesignDocument, DdType, DdCallerLink } from "@/lib/domain";
+import { createMockSupabase } from "@/tests/helpers/mock-supabase";
 
 // ========================================
 // Mock Setup
 // ========================================
 
-const createMockSupabase = (initialData: any[] = []) => {
-  let data = [...initialData];
-  return {
-    from: () => ({
-      select: () => createMockSupabase(data),
-      insert: (payload: any) => {
-        data.push(...(Array.isArray(payload) ? payload : [payload]));
-        return createMockSupabase(data);
-      },
-      update: (payload: any) => {
-        data = data.map((d) => ({ ...d, ...payload }));
-        return createMockSupabase(data);
-      },
-      delete: () => createMockSupabase(data),
-      eq: (column: string, value: any) => {
-        if (column === "project_id") {
-          data = data.filter((d) => d.project_id === value);
-        }
-        if (column === "srf_id") {
-          data = data.filter((d) => d.srf_id === value);
-        }
-        if (column === "id") {
-          data = data.filter((d) => d.id === value);
-        }
-        return createMockSupabase(data);
-      },
-      in: (column: string, values: any[]) => {
-        if (column === "id") {
-          data = data.filter((d) => values.includes(d.id));
-        }
-        return createMockSupabase(data);
-      },
-      order: () => createMockSupabase(data),
-      maybeSingle: () => {
-        const single = data.length > 0 ? data[0] : null;
-        return Promise.resolve({ data: single, error: single ? null : { message: "Not found" } });
-      },
-      single: () => Promise.resolve({ data: data[0], error: data.length > 0 ? null : { message: "Not found" } }),
-    }),
-  };
-};
-
 beforeEach(() => {
-  mock.module("@/lib/supabase/client", {
+  mock.module("@/lib/supabase/client", () => ({
     supabase: createMockSupabase(),
     getSupabaseConfigError: () => null,
-  });
+  }));
 
-  // structured.tsのモック
-  mock.module("@/lib/data/structured", {
-    normalizeEntryPoints: (data: any) => {
-      if (Array.isArray(data)) {
-        return data.filter((p: any) => p && p.path && p.path.trim() !== "");
-      }
-      return [];
-    },
-  });
+	  // requirement-links.tsのモック
+	  mock.module("@/lib/data/requirement-links", () => ({
+	    listDdCallersByTargetIds: async (ddIds: string[], projectId?: string) => {
+	      // モックデータを返す
+	      const mockCallers: DdCallerLink[] = [
+	        {
+	          targetDdId: ddIds[0],
+	          callerType: "system",
+	          callerDdId: "DD-001",
+	          callType: "sync",
+	        },
+	        {
+	          targetDdId: ddIds[0],
+	          callerType: "system",
+	          callerDdId: "DD-002",
+	          callType: "async",
+	        },
+	      ];
+	      return { data: mockCallers, error: null };
+	    },
+	  }));
+});
 
-  // requirement-links.tsのモック
-  mock.module("@/lib/data/requirement-links", {
-    listDdCallersByTargetIds: async (ddIds: string[], projectId?: string) => {
-      // モックデータを返す
-      const mockCallers: DdCallerLink[] = [
-        {
-          id: "link-1",
-          project_id: projectId || "project-123",
-          target_type: "design_document",
-          target_id: ddIds[0],
-          source_type: "design_document",
-          source_id: "DD-001",
-          link_type: "dd_calls",
-          callerType: "system",
-          callerDdId: "DD-001",
-          callerSfId: null,
-          callType: "sync",
-          created_at: "2024-01-01",
-          updated_at: "2024-01-01",
-        },
-        {
-          id: "link-2",
-          project_id: projectId || "project-123",
-          target_type: "design_document",
-          target_id: ddIds[0],
-          source_type: "design_document",
-          source_id: "DD-002",
-          link_type: "dd_calls",
-          callerType: "system",
-          callerDdId: "DD-002",
-          callerSfId: null,
-          callType: "async",
-          created_at: "2024-01-01",
-          updated_at: "2024-01-01",
-        },
-      ];
-      return { data: mockCallers, error: null };
-    },
-  });
+afterEach(() => {
+  // Bunのmock.moduleが他のテストファイルへ漏れるのを防ぐ
+  mock.restore();
 });
 
 // ========================================
@@ -196,18 +132,18 @@ describe("listDesignDocumentsBySrfId", () => {
       },
     ];
 
-    mock.module("@/lib/supabase/client", {
+    mock.module("@/lib/supabase/client", () => ({
       supabase: createMockSupabase(mockDocuments),
       getSupabaseConfigError: () => null,
-    });
+    }));
 
     // design-documents.tsのlistDdCallersByTargetIdsをモック
-    mock.module("@/lib/data/requirement-links", {
+    mock.module("@/lib/data/requirement-links", () => ({
       listDdCallersByTargetIds: async () => ({
         data: [],
         error: null,
       }),
-    });
+    }));
 
     const result = await listDesignDocumentsBySrfId("SF-001");
 
@@ -217,41 +153,40 @@ describe("listDesignDocumentsBySrfId", () => {
   });
 
   it("呼び出し元（callers）を取得してマージする", async () => {
-    const mockDocuments = [
-      {
-        id: "DD-001",
-        srf_id: "SF-001",
-        project_id: "project-123",
-        name: "請求書発行画面",
-        type: "screen",
-        sort_order: 1,
-        created_at: "2024-01-01",
-        updated_at: "2024-01-01",
-      },
-    ];
+	    const mockDocuments = [
+	      {
+	        id: "DD-001",
+	        srf_id: "SF-001",
+	        project_id: "project-123",
+	        name: "請求書発行画面",
+	        type: "screen",
+	        sort_order: 1,
+	        created_at: "2024-01-01",
+	        updated_at: "2024-01-01",
+	      },
+	    ];
 
-    mock.module("@/lib/supabase/client", {
-      supabase: {
-        from: () => ({
-          select: () => ({
-            eq: () => createMockSupabase(mockDocuments),
-            in: () => ({
-              then: (cb: any) => {
-                cb({
-                  data: [
-                    { id: "DD-001", name: "請求書発行画面" },
-                    { id: "DD-002", name: "請求書PDF生成" },
-                  ],
-                  error: null,
-                });
-                return { catch: () => ({ then: (cb: any) => cb() }) };
-              },
-            }),
-          }),
-        }),
-      },
-      getSupabaseConfigError: () => null,
-    });
+	    mock.module("@/lib/supabase/client", () => ({
+	      supabase: createMockSupabase({
+	        design_documents: [
+	          ...mockDocuments,
+	          {
+	            id: "DD-002",
+	            srf_id: "SF-999",
+	            project_id: "project-123",
+	            name: "請求書PDF生成",
+	            type: "batch",
+	            summary: "",
+	            entry_points: [],
+	            design_policy: "",
+	            details: {},
+	            created_at: "2024-01-01",
+	            updated_at: "2024-01-01",
+	          },
+	        ],
+	      }),
+	      getSupabaseConfigError: () => null,
+	    }));
 
     const result = await listDesignDocumentsBySrfId("SF-001", "project-123");
 
@@ -262,66 +197,55 @@ describe("listDesignDocumentsBySrfId", () => {
   });
 
   it("呼び出し元の名称（callerName）を正しく設定する", async () => {
-    const mockDocuments = [
-      {
-        id: "DD-001",
-        srf_id: "SF-001",
-        project_id: "project-123",
-        name: "請求書発行画面",
-        type: "screen",
-        sort_order: 1,
-        created_at: "2024-01-01",
-        updated_at: "2024-01-01",
-      },
-    ];
+	    const mockDocuments = [
+	      {
+	        id: "DD-001",
+	        srf_id: "SF-001",
+	        project_id: "project-123",
+	        name: "請求書発行画面",
+	        type: "screen",
+	        sort_order: 1,
+	        created_at: "2024-01-01",
+	        updated_at: "2024-01-01",
+	      },
+	    ];
 
-    mock.module("@/lib/supabase/client", {
-      supabase: {
-        from: () => ({
-          select: () => ({
-            eq: () => ({
-              in: () => ({
-                then: (cb: any) => {
-                  cb({
-                    data: [
-                      { id: "DD-001", name: "請求書発行画面" },
-                      { id: "DD-002", name: "請求書PDF生成" },
-                    ],
-                    error: null,
-                  });
-                  return { catch: () => ({ then: (cb: any) => cb() }) };
-                },
-              }),
-            }),
-          }),
-        }),
-      },
-      getSupabaseConfigError: () => null,
-    });
+	    mock.module("@/lib/supabase/client", () => ({
+	      supabase: createMockSupabase({
+	        design_documents: [
+	          ...mockDocuments,
+	          {
+	            id: "DD-002",
+	            srf_id: "SF-999",
+	            project_id: "project-123",
+	            name: "請求書PDF生成",
+	            type: "batch",
+	            summary: "",
+	            entry_points: [],
+	            design_policy: "",
+	            details: {},
+	            created_at: "2024-01-01",
+	            updated_at: "2024-01-01",
+	          },
+	        ],
+	      }),
+	      getSupabaseConfigError: () => null,
+	    }));
 
     // 呼び出し元のモック
-    mock.module("@/lib/data/requirement-links", {
-      listDdCallersByTargetIds: async (ddIds: string[]) => {
-        const mockCallers: DdCallerLink[] = [
-          {
-            id: "link-1",
-            target_id: ddIds[0],
-            source_id: "DD-002",
-            callerType: "system",
-            callerDdId: "DD-002",
-            callType: "sync",
-            project_id: "project-123",
-            target_type: "design_document",
-            source_type: "design_document",
-            link_type: "dd_calls",
-            callerSfId: null,
-            created_at: "2024-01-01",
-            updated_at: "2024-01-01",
-          },
-        ];
-        return { data: mockCallers, error: null };
-      },
-    });
+		    mock.module("@/lib/data/requirement-links", () => ({
+		      listDdCallersByTargetIds: async (ddIds: string[]) => {
+		        const mockCallers: DdCallerLink[] = [
+		          {
+		            targetDdId: ddIds[0],
+		            callerType: "system",
+		            callerDdId: "DD-002",
+		            callType: "sync",
+		          },
+		        ];
+		        return { data: mockCallers, error: null };
+		      },
+		    }));
 
     const result = await listDesignDocumentsBySrfId("SF-001", "project-123");
 
@@ -335,9 +259,9 @@ describe("listDesignDocumentsBySrfId", () => {
 // createDesignDocuments Tests
 // ========================================
 
-describe("createDesignDocuments", () => {
-  it("複数のDDを一括作成する", async () => {
-    const inputs: DesignDocumentCreateInput[] = [
+  describe("createDesignDocuments", () => {
+	  it("複数のDDを一括作成する", async () => {
+	    const inputs: DesignDocumentCreateInput[] = [
       {
         id: "DD-001",
         srfId: "SF-001",
@@ -362,34 +286,12 @@ describe("createDesignDocuments", () => {
         codeRefs: [],
         projectId: "project-123",
       },
-    ];
+	    ];
 
-    mock.module("@/lib/supabase/client", {
-      supabase: {
-        from: () => ({
-          insert: () => ({
-            select: () => ({
-              then: (cb: any) => {
-                cb({
-                  data: inputs.map((input) => ({
-                    id: input.id,
-                    srf_id: input.srfId,
-                    name: input.name,
-                    type: input.type,
-                    project_id: input.projectId,
-                    created_at: "2024-01-01",
-                    updated_at: "2024-01-01",
-                  })),
-                  error: null,
-                });
-                return { catch: () => ({ then: (cb: any) => cb() }) };
-              },
-            }),
-          }),
-        }),
-      },
-      getSupabaseConfigError: () => null,
-    });
+	    mock.module("@/lib/supabase/client", () => ({
+	      supabase: createMockSupabase({ design_documents: [] }),
+	      getSupabaseConfigError: () => null,
+	    }));
 
     const result = await createDesignDocuments(inputs);
 
@@ -411,14 +313,26 @@ describe("createDesignDocuments", () => {
 
 describe("deleteDesignDocumentsBySrfId", () => {
   it("srfIdでDDを一括削除する", async () => {
-    mock.module("@/lib/supabase/client", {
-      supabase: {
-        from: () => ({
-          delete: () => Promise.resolve({ error: null }),
-        }),
-      },
+    mock.module("@/lib/supabase/client", () => ({
+      supabase: createMockSupabase({
+        design_documents: [
+          {
+            id: "DD-001",
+            srf_id: "SF-001",
+            project_id: "project-123",
+            name: "請求書発行画面",
+            type: "screen",
+            summary: "",
+            entry_points: [],
+            design_policy: "",
+            details: {},
+            created_at: "2024-01-01",
+            updated_at: "2024-01-01",
+          },
+        ],
+      }),
       getSupabaseConfigError: () => null,
-    });
+    }));
 
     const result = await deleteDesignDocumentsBySrfId("SF-001", "project-123");
 
@@ -450,10 +364,10 @@ describe("DesignDocument CRUD Operations", () => {
   ];
 
   beforeEach(() => {
-    mock.module("@/lib/supabase/client", {
+    mock.module("@/lib/supabase/client", () => ({
       supabase: createMockSupabase(mockDocuments),
       getSupabaseConfigError: () => null,
-    });
+    }));
   });
 
   describe("createDesignDocument", () => {
@@ -471,28 +385,6 @@ describe("DesignDocument CRUD Operations", () => {
         projectId: "project-123",
       };
 
-      mock.module("@/lib/supabase/client", {
-        supabase: {
-          from: () => ({
-            insert: () => ({
-              select: () => ({
-                single: () => Promise.resolve({
-                  data: {
-                    id: "DD-002",
-                    srf_id: "SF-001",
-                    name: "請求書PDF生成",
-                    created_at: "2024-01-01",
-                    updated_at: "2024-01-01",
-                  },
-                  error: null
-                }),
-              }),
-            }),
-          }),
-        },
-        getSupabaseConfigError: () => null,
-      });
-
       const result = await createDesignDocument(input);
 
       expect(result.error).toBeNull();
@@ -502,28 +394,6 @@ describe("DesignDocument CRUD Operations", () => {
 
   describe("updateDesignDocument", () => {
     it("DDを更新する", async () => {
-      mock.module("@/lib/supabase/client", {
-        supabase: {
-          from: () => ({
-            update: () => ({
-              eq: () => ({
-                select: () => ({
-                  single: () => Promise.resolve({
-                    data: {
-                      id: "DD-001",
-                      name: "更新済み名",
-                      updated_at: "2024-01-02",
-                    },
-                    error: null
-                  }),
-                }),
-              }),
-            }),
-          }),
-        },
-        getSupabaseConfigError: () => null,
-      });
-
       const result = await updateDesignDocument("DD-001", {
         srfId: "SF-001",
         name: "更新済み名",
@@ -542,15 +412,6 @@ describe("DesignDocument CRUD Operations", () => {
 
   describe("deleteDesignDocument", () => {
     it("DDを削除する", async () => {
-      mock.module("@/lib/supabase/client", {
-        supabase: {
-          from: () => ({
-            delete: () => Promise.resolve({ error: null }),
-          }),
-        },
-        getSupabaseConfigError: () => null,
-      });
-
       const result = await deleteDesignDocument("DD-001", "project-123");
 
       expect(result.error).toBeNull();

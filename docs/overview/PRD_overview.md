@@ -89,18 +89,17 @@
 ### 3.1 変更対応フロー
 
 ```
-draft → investigating → reviewed → approved → completed
-                ↓
-            rejected
+open → review → approved → applied
 ```
 
 | ステータス | 意味 | 次のアクション |
 |-----------|------|---------------|
-| draft | 起票済、影響調査前 | 影響調査を開始 |
-| investigating | 影響調査中 | 調査結果を確認 |
-| reviewed | 調査完了、疑義解消済 | 改修を承認/却下 |
-| approved | 改修承認済 | 改修指示パッケージ生成 |
-| completed | 改修完了 | - |
+| open | 起票済、影響調査前 | 影響調査を開始 |
+| review | 影響調査完了後のレビュー段階（疑義リンク解消など） | 改修指示パッケージ生成 |
+| approved | 改修指示パッケージ生成済（改修実行可能） | 改修実行/PR作成 |
+| applied | 改修適用済 | - |
+
+※ 影響調査の実行中/完了/失敗は `investigation_results.status`（`pending/running/completed/failed`）で管理する。
 
 ### 3.2 影響調査の双方向アプローチ
 
@@ -338,6 +337,12 @@ draft → investigating → reviewed → approved → completed
 | owner | 組織設定、プロジェクト作成・削除、メンバー管理、全操作 |
 | editor | 要件の作成・編集、CR起票、影響調査実行、改修指示パッケージ生成 |
 | viewer | 要件の閲覧のみ |
+
+### 6.4 プロジェクト選択（MVP）
+
+- 現在プロジェクトIDは `current-project-id`（cookie/localStorage）で管理する
+- サーバ側（SSR/API）は cookie を参照し、未設定時は `DEFAULT_PROJECT_ID` にフォールバックする
+- 詳細規約: `docs/design/project-selection-policy.md`
 
 ---
 

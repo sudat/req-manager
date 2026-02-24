@@ -53,7 +53,7 @@ export function useSystemFunctionDataFetch(
 			input.setLoading(true);
 			const { data, error: fetchError } = await getSystemFunctionById(
 				srfId,
-				currentProjectId ?? undefined
+				currentProjectId
 			);
 
 			if (!active) return;
@@ -102,9 +102,9 @@ export function useSystemFunctionDataFetch(
 				{ data: allDds, error: allDdsError },
 			] =
 				await Promise.all([
-					listSystemRequirementsBySrfId(srfId, currentProjectId ?? undefined),
-					listDesignDocumentsBySrfId(srfId, currentProjectId ?? undefined),
-					listDesignDocuments(currentProjectId ?? undefined),
+					listSystemRequirementsBySrfId(srfId, currentProjectId),
+					listDesignDocumentsBySrfId(srfId, currentProjectId),
+					listDesignDocuments(currentProjectId),
 				]);
 			if (!active) return;
 
@@ -132,7 +132,7 @@ export function useSystemFunctionDataFetch(
 				}
 				if (ddIds.length > 0) {
 					const { data: dependencies, error: dependencyError } =
-						await listDdDependenciesBySourceIds(ddIds, currentProjectId ?? undefined);
+						await listDdDependenciesBySourceIds(ddIds, currentProjectId);
 					if (!active) return;
 					if (dependencyError) {
 						console.error("DD依存リンク読み込みエラー:", dependencyError);
@@ -159,7 +159,7 @@ export function useSystemFunctionDataFetch(
 					}
 
 					const { data: callers, error: callerError } =
-						await listDdCallersByTargetIds(ddIds, currentProjectId ?? undefined);
+						await listDdCallersByTargetIds(ddIds, currentProjectId);
 					if (!active) return;
 					if (callerError) {
 						console.error("DD呼び出し元リンク読み込みエラー:", callerError);

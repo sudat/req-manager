@@ -208,36 +208,28 @@ export function detectChangedFields(
 ): string[] {
 	const changedFields: string[] = [];
 
-	const fieldsToCompare = [
-		"title",
-		"summary",
-		"goal",
-		"constraints",
-		"acceptanceCriteria",
-		"acceptance_criteria",
-	];
-
-	for (const field of fieldsToCompare) {
-		// フィールドが両方のオブジェクトに存在するか確認
-		if (!(field in edited) || !(field in existing)) {
-			continue;
-		}
+	// edited/existing の共通フィールドのみを比較する
+	// undefined は「未指定」とみなし比較対象外（部分更新のユースケース想定）
+	for (const field of Object.keys(edited)) {
+		if (!(field in existing)) continue;
 
 		const editedValue = edited[field];
 		const existingValue = existing[field];
 
-		// 配列やオブジェクトの場合はJSON文字列で比較
-		if (
-			typeof editedValue === "object" ||
-			typeof existingValue === "object"
-		) {
+		if (editedValue === undefined || existingValue === undefined) {
+			continue;
+		}
+
+		// 配列やオブジェクトの場合はJSON文字列で比較（要件の変更検出としては十分）
+		if (typeof editedValue === "object" || typeof existingValue === "object") {
 			if (JSON.stringify(editedValue) !== JSON.stringify(existingValue)) {
 				changedFields.push(field);
 			}
-		} else {
-			if (editedValue !== existingValue) {
-				changedFields.push(field);
-			}
+			continue;
+		}
+
+		if (editedValue !== existingValue) {
+			changedFields.push(field);
 		}
 	}
 

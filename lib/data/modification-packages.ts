@@ -9,6 +9,8 @@ import { listAcceptanceConfirmationsByChangeRequestId } from "@/lib/data/accepta
 import { listSuspectLinks } from "@/lib/data/requirement-links";
 import { getProductRequirementByProjectId } from "@/lib/data/product-requirements";
 import { getProjectById } from "@/lib/data/projects";
+import { getProjectInvestigationSettings } from "@/lib/data/project-settings";
+import { decideAllowPathsFromAffectedFiles } from "@/lib/analysis/allow-paths-decision";
 
 const unique = <T>(items: T[]): T[] => Array.from(new Set(items));
 
@@ -63,7 +65,7 @@ export const buildModificationPackage = async (
     listBusinessRequirementsByIds(investigationResult.topDownResult.affectedBRs, projectId),
     listSystemRequirementsByIds(investigationResult.topDownResult.affectedSRs, projectId),
     listSystemFunctions(projectId),
-    listAcceptanceConfirmationsByChangeRequestId(changeRequestId),
+    listAcceptanceConfirmationsByChangeRequestId(changeRequestId, projectId),
   ]);
 
   const affectedSystemFunctions = (sfResult.data ?? []).filter((sf) =>
@@ -83,7 +85,58 @@ export const buildModificationPackage = async (
     designDocuments.flatMap((document) => document.entryPoints.map((entryPoint) => entryPoint.path))
   );
 
-  const allowPaths = affectedEntryPoints.length > 0 ? affectedEntryPoints : fallbackEntryPoints;
+  const targetEntryPoints = affectedEntryPoints.length > 0 ? affectedEntryPoints : fallbackEntryPoints;
+
+  // allow_paths はボトムアップ（コード依存）解析結果を正として自動決定する（MVP: 解析結果が無い場合はentry_pointへフォールバック）
+  let allowPaths = targetEntryPoints;
+  const excludedFromScope: NonNullable<ModificationPackage["excludedFromScope"]> = [];
+  const ruleResidualRisks: NonNullable<ModificationPackage["residualRisks"]> = [];
+
+  const { data: investigationSettings } = await getProjectInvestigationSettings(projectId);
+  const bottomUpAffectedFiles = investigationResult.bottomUpResult?.affectedFiles ?? [];
+
+  if (investigationSettings && bottomUpAffectedFiles.length > 0) {
+    const decision = decideAllowPathsFromAffectedFiles({
+      affectedFiles: bottomUpAffectedFiles,
+      settings: investigationSettings,
+    });
+    allowPaths = decision.allowPaths.length > 0 ? decision.allowPaths : targetEntryPoints;
+    excludedFromScope.push(...decision.excludedFromScope);
+    ruleResidualRisks.push(...decision.residualRisks);
+  } else if (!investigationResult.bottomUpResult) {
+    ruleResidualRisks.push({
+      riskType: "missing_bottom_up_result",
+      description: "ボトムアップ（コード依存）解析結果が無いため、entry_pointのみを allow_paths に採用しています",
+      severity: "medium",
+      mitigation: "影響調査を再実行するか、projects.github_url / entry_point の設定を見直してください",
+    });
+  } else if (investigationResult.bottomUpResult.error) {
+    ruleResidualRisks.push({
+      riskType: "bottom_up_failed",
+      description: `ボトムアップ（コード依存）解析に失敗したため、entry_pointのみを allow_paths に採用しています: ${investigationResult.bottomUpResult.error}`,
+      severity: "medium",
+      mitigation: "projects.github_url（public repo）や解析設定（include/exclude/max_depth）を見直してください",
+    });
+  }
+
+  // 安全制限を超過しており、かつ「超過時はレビュー/確認が必要」という設定の場合は、生成をブロックする
+  const shouldEscalateOnExceeds =
+    investigationSettings?.allow_paths_rule.safety_limits.escalate_if_exceeds ?? false;
+  if (shouldEscalateOnExceeds) {
+    const blockingRisk = ruleResidualRisks.find(
+      (risk) =>
+        risk.severity === "high" &&
+        (risk.riskType === "allow_paths_truncated" ||
+          risk.riskType === "allow_paths_too_many_directories" ||
+          risk.riskType === "shared_module_exceeds_threshold")
+    );
+    if (blockingRisk) {
+      return {
+        data: null,
+        error: `allow_paths候補が安全制限を超過しています（${blockingRisk.riskType}）。影響範囲を絞るか、影響範囲レビュー（AI/人手）を実施してください。`,
+      };
+    }
+  }
   const acceptanceCriteriaIds = unique((acResult.data ?? []).map((item) => item.acceptanceCriterionId));
 
   const implementationUnits: ModificationPackage["implementationUnits"] = designDocuments.map((document) => ({
@@ -101,7 +154,7 @@ export const buildModificationPackage = async (
     }
   }
 
-  const targets: ModificationPackage["targets"] = allowPaths.map((entryPointPath) => {
+  const targets: ModificationPackage["targets"] = targetEntryPoints.map((entryPointPath) => {
     const dd = ddByEntryPoint.get(entryPointPath);
     const relatedRequirements = dd
       ? unique(
@@ -125,6 +178,7 @@ export const buildModificationPackage = async (
   ];
 
   const residualRisks: ModificationPackage["residualRisks"] = [];
+  residualRisks.push(...ruleResidualRisks);
   if (allowPaths.length === 0) {
     residualRisks.push({
       riskType: "missing_allow_paths",
@@ -191,6 +245,7 @@ export const buildModificationPackage = async (
     codingGuidelines: prResult.data?.codingConventions ?? "",
     testCommands: ["bunx tsc --noEmit"],
     residualRisks,
+    excludedFromScope: excludedFromScope.length > 0 ? excludedFromScope : undefined,
   };
 
   return { data: packageData, error: null };

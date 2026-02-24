@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { listSystemDomains } from "@/lib/data/system-domains";
 import { listSystemFunctionsByDomain } from "@/lib/data/system-functions";
 import { listSystemRequirementsBySrfId } from "@/lib/data/system-requirements";
+import { CURRENT_PROJECT_ID_KEY, DEFAULT_PROJECT_ID } from "@/lib/constants/project";
 import {
   buildChildrenMap,
   buildExcelBuffer,
@@ -14,7 +16,10 @@ import {
  */
 export async function GET() {
   try {
-    const { data: domains, error: domainError } = await listSystemDomains();
+    const cookieStore = await cookies();
+    const projectId = cookieStore.get(CURRENT_PROJECT_ID_KEY)?.value ?? DEFAULT_PROJECT_ID;
+
+    const { data: domains, error: domainError } = await listSystemDomains(projectId);
     if (domainError) {
       return NextResponse.json({ error: domainError }, { status: 500 });
     }
@@ -26,7 +31,7 @@ export async function GET() {
       domains,
       (domain) => domain.id,
       async (domain) => {
-        const { data } = await listSystemFunctionsByDomain(domain.id);
+        const { data } = await listSystemFunctionsByDomain(domain.id, projectId);
         return data;
       },
     );
@@ -36,7 +41,7 @@ export async function GET() {
       allFunctions,
       (func) => func.id,
       async (func) => {
-        const { data } = await listSystemRequirementsBySrfId(func.id);
+        const { data } = await listSystemRequirementsBySrfId(func.id, projectId);
         return data;
       },
     );

@@ -8,9 +8,9 @@ Supabase（PostgreSQL）をバックエンドとして使用し、フロント�
 ## 基本方針
 
 - **ID採番**: アプリ側で行う（例: `TASK-001`, `BR-TASK-001-001`, `SRF-001`, `DD-001`）
-- **マルチプロジェクト対応**: 全テーブルに `project_id` を追加し、プロジェクト単位のデータ分離を実現
+- **マルチプロジェクト対応**: 原則 `project_id` で分離（ログ等の一部は親FKにより間接的に分離）
 - **構造化データ**: JSONBを使用（設計書詳細、入出力定義、コアロジック等）
-- **RLS**: 全テーブルで有効化（開発時は匿名アクセス許可、本番では認証必須）
+- **RLS**: 現状は主要要件テーブルのみ有効化（開発時は匿名アクセス許可）。本番はメンバー制御へ拡張予定
 - **外部キー制約**: CASCADE DELETEを使用
 
 ## ID採番規約
@@ -39,15 +39,17 @@ Supabase（PostgreSQL）をバックエンドとして使用し、フロント�
 
 ## テーブル定義一覧
 
-全18テーブルを以下のカテゴリに分類する：
+全19テーブル（+運用バックアップ 1 テーブル）を以下のカテゴリに分類する：
 
 | カテゴリ | テーブル数 | テーブル |
 |----------|------------|----------|
 | プロジェクト管理 | 2 | `projects`, `product_requirements` |
 | 業務要件系 | 3 | `business_domains`, `business_tasks`, `business_requirements` |
 | システム要件系 | 4 | `system_domains`, `system_functions`, `system_requirements`, `acceptance_criteria` |
-| 設計・連携系 | 4 | `design_documents`, `requirement_links`, `concepts` |
-| 変更管理系 | 5 | `change_requests`, `change_request_impact_scopes`, `change_request_acceptance_confirmations`, `investigation_results`, `key_label_mappings` |
+| 設計・連携系 | 3 | `design_documents`, `requirement_links`, `concepts` |
+| 変更管理系 | 6 | `change_requests`, `change_request_impact_scopes`, `change_request_acceptance_confirmations`, `investigation_results`, `key_label_mappings`, `design_decision_logs` |
+| 監査ログ | 1 | `mcp_audit_logs` |
+| 運用バックアップ | 1 | `_backup_business_context_20260214` |
 
 ---
 
@@ -69,6 +71,7 @@ erDiagram
     projects ||--o{ change_requests : "has"
     projects ||--o{ investigation_results : "has"
     projects ||--o{ key_label_mappings : "has"
+    projects ||--o{ mcp_audit_logs : "has"
 
     business_domains }o--|| business_tasks : "has (composite FK)"
     business_tasks ||--o{ business_requirements : "has"
@@ -80,6 +83,7 @@ erDiagram
     change_requests ||--o{ change_request_impact_scopes : "has"
     change_requests ||--o{ change_request_acceptance_confirmations : "has"
     change_requests ||--o{ investigation_results : "has"
+    change_requests ||--o{ design_decision_logs : "has"
 ```
 
 ---
@@ -484,6 +488,7 @@ erDiagram
 |----------|-----|----------|---------|------|
 | id | uuid | PK | gen_random_uuid() | 一意識別子 |
 | change_request_id | uuid | FK → change_requests(id) | ✔ | - | 変更要求ID |
+| project_id | uuid | FK → projects(id) | ✔ | - | 所属プロジェクト |
 | target_type | text | ✔ | - | ターゲット種別 |
 | target_id | text | ✔ | - | ターゲットID |
 | target_title | text | ✔ | - | ターゲット名 |
@@ -496,6 +501,7 @@ erDiagram
 
 **外部キー**:
 - `change_request_id` → `change_requests(id)` ON DELETE CASCADE
+- `project_id` → `projects(id)` ON DELETE CASCADE
 
 **制約**:
 - CHECK: `target_type IN ('business_requirement', 'system_requirement', 'system_function', 'file')`
@@ -503,6 +509,7 @@ erDiagram
 **インデックス**:
 - `idx_change_request_impact_scopes_change_request_id`: (change_request_id)
 - `idx_change_request_impact_scopes_target`: (target_type, target_id)
+- `idx_change_request_impact_scopes_project_id`: (project_id)
 
 ---
 
@@ -514,6 +521,7 @@ erDiagram
 |----------|-----|----------|---------|------|
 | id | uuid | PK | gen_random_uuid() | 一意識別子 |
 | change_request_id | uuid | FK → change_requests(id) | ✔ | - | 変更要求ID |
+| project_id | uuid | FK → projects(id) | ✔ | - | 所属プロジェクト |
 | acceptance_criterion_id | text | ✔ | - | 受入条件ID |
 | acceptance_criterion_source_type | text | ✔ | - | ソース種別 |
 | acceptance_criterion_source_id | text | ✔ | - | ソースID |
@@ -528,6 +536,7 @@ erDiagram
 
 **外部キー**:
 - `change_request_id` → `change_requests(id)` ON DELETE CASCADE
+- `project_id` → `projects(id)` ON DELETE CASCADE
 
 **制約**:
 - UNIQUE: (change_request_id, acceptance_criterion_id)
@@ -538,6 +547,7 @@ erDiagram
 - `idx_change_request_acceptance_confirmations_change_request_id`: (change_request_id)
 - `idx_change_request_acceptance_confirmations_source`: (acceptance_criterion_source_type, acceptance_criterion_source_id)
 - `idx_change_request_acceptance_confirmations_status`: (status)
+- `idx_change_request_acceptance_confirmations_project_id`: (project_id)
 
 ---
 
@@ -592,6 +602,94 @@ erDiagram
 
 **インデックス**:
 - `idx_key_label_mappings_project_context`: (project_id, context)
+
+---
+
+#### 5.6 design_decision_logs（設計判断ログ）
+
+変更要求に紐づく設計判断のログ（エージェント/人間の意思決定記録）。
+
+| カラム名 | 型 | NOT NULL | DEFAULT | 説明 |
+|----------|-----|----------|---------|------|
+| id | uuid | PK | gen_random_uuid() | 一意識別子 |
+| change_request_id | uuid | FK → change_requests(id) | ✔ | - | 変更要求ID |
+| created_by | text | ✔ | 'human' | 作成者（agent/human） |
+| context_target_type | text | ✔ | 'change_request' | 対象種別（bt/br/sf/sr/ac/dd/change_request 等） |
+| context_target_id | text | ✔ | - | 対象ID |
+| context_field | text | - | - | 対象フィールド（任意） |
+| decision | text | ✔ | - | 判断内容 |
+| rationale_type | text | ✔ | 'user_input' | 根拠種別 |
+| rationale_reference | text | - | - | 参照（任意） |
+| rationale_explanation | text | ✔ | - | 根拠説明 |
+| status | text | ✔ | 'confirmed' | 状態（proposed/confirmed/rejected） |
+| confirmed_by | text | - | - | 確認者（任意） |
+| confirmed_at | timestamptz | - | - | 確認日時（任意） |
+| created_at | timestamptz | ✔ | now() | 作成日時 |
+| updated_at | timestamptz | ✔ | now() | 更新日時 |
+
+**外部キー**:
+- `change_request_id` → `change_requests(id)` ON DELETE CASCADE
+
+**制約**:
+- CHECK: `created_by IN ('agent', 'human')`
+- CHECK: `context_target_type IN ('bt', 'br', 'sf', 'sr', 'ac', 'dd', 'change_request')`（実装に合わせて拡張可）
+- CHECK: `rationale_type IN ('pr_reference', 'ac_reference', 'convention', 'inference', 'user_input')`
+- CHECK: `status IN ('proposed', 'confirmed', 'rejected')`
+
+**インデックス**:
+- `idx_design_decision_logs_change_request_id`: (change_request_id, created_at DESC)
+- `idx_design_decision_logs_status`: (status)
+
+---
+
+### 6. 監査ログ系
+
+#### 6.1 mcp_audit_logs（MCP監査ログ）
+
+MCP経由のツール呼び出し監査ログ。RLSは現状未適用（運用ログ用途）。
+
+| カラム名 | 型 | NOT NULL | DEFAULT | 説明 |
+|----------|-----|----------|---------|------|
+| id | uuid | PK | gen_random_uuid() | 一意識別子 |
+| request_id | text | ✔ | - | リクエスト識別子 |
+| project_id | uuid | ✔ | - | 対象プロジェクトID（FKは付けない運用） |
+| tool_name | text | ✔ | - | ツール名 |
+| transport | text | ✔ | - | jsonrpc/simple |
+| guard_mode | text | ✔ | - | off/observe/enforce |
+| auth_result | text | ✔ | - | pass/fail/skipped |
+| rate_limit_result | text | ✔ | - | pass/fail/skipped |
+| status_code | int | ✔ | - | ステータスコード |
+| duration_ms | int | ✔ | - | 処理時間 |
+| blocked | boolean | ✔ | false | ブロック有無 |
+| arg_keys | text[] | ✔ | '{}' | 引数キー一覧（値は保存しない） |
+| error_code | text | - | - | エラーコード（任意） |
+| created_at | timestamptz | ✔ | now() | 作成日時 |
+
+**制約**:
+- CHECK: `transport IN ('jsonrpc', 'simple')`
+- CHECK: `guard_mode IN ('off', 'observe', 'enforce')`
+- CHECK: `auth_result IN ('pass', 'fail', 'skipped')`
+- CHECK: `rate_limit_result IN ('pass', 'fail', 'skipped')`
+
+**インデックス**:
+- `idx_mcp_audit_logs_project_created`: (project_id, created_at DESC)
+- `idx_mcp_audit_logs_request_id`: (request_id)
+- `idx_mcp_audit_logs_tool_name`: (tool_name)
+
+---
+
+### 7. 運用バックアップ
+
+#### 7.1 _backup_business_context_20260214（business_context削除前バックアップ）
+
+`business_tasks.business_context` 削除前に退避したバックアップ（運用上の保全用）。アプリ本体は参照しない。
+
+| カラム名 | 型 | NOT NULL | DEFAULT | 説明 |
+|----------|-----|----------|---------|------|
+| id | text | - | - | 業務タスクID |
+| business_context | text | - | - | 旧business_context |
+| created_at | timestamptz | - | - | 作成日時 |
+| updated_at | timestamptz | - | - | 更新日時 |
 
 ---
 
@@ -875,13 +973,17 @@ JSONB形式で構造化された入出力定義。
 ### CHECK制約
 
 - `projects.review_link_threshold`: ('low', 'medium', 'high')
-- `system_requirements.type`: ('function', 'data', 'exception', 'non_functional')
+- `system_requirements.category`: ('function', 'data', 'exception', 'non_functional')
 - `change_requests.status`: ('open', 'review', 'approved', 'applied')
 - `change_requests.priority`: ('low', 'medium', 'high')
 - `change_request_impact_scopes.target_type`: ('business_requirement', 'system_requirement', 'system_function', 'file')
 - `change_request_acceptance_confirmations.status`: ('unverified', 'verified_ok', 'verified_ng')
 - `change_request_acceptance_confirmations.acceptance_criterion_source_type`: ('business_requirement', 'system_requirement')
 - `investigation_results.status`: ('pending', 'running', 'completed', 'failed')
+- `mcp_audit_logs.transport`: ('jsonrpc', 'simple')
+- `mcp_audit_logs.guard_mode`: ('off', 'observe', 'enforce')
+- `mcp_audit_logs.auth_result`: ('pass', 'fail', 'skipped')
+- `mcp_audit_logs.rate_limit_result`: ('pass', 'fail', 'skipped')
 
 ### NOT NULL制約
 
@@ -893,8 +995,14 @@ JSONB形式で構造化された入出力定義。
 
 ## RLS（Row Level Security）ポリシー
 
-### 開発環境
-- 全テーブルで匿名アクセス許可（SELECT/INSERT/UPDATE/DELETE）
+### 現状（開発優先）
+
+- RLS有効 + 匿名許可（開発用の全許可ポリシーあり）:
+  - `business_domains`, `business_tasks`, `business_requirements`, `concepts`, `system_domains`, `system_functions`, `system_requirements`
+- RLS未適用（現状は機能優先。将来の本番運用で段階的に有効化する想定）:
+  - `projects`, `product_requirements`, `design_documents`, `requirement_links`, `acceptance_criteria`
+  - `change_requests` 系、`investigation_results`、`key_label_mappings`
+  - 監査ログ/運用バックアップ系（`mcp_audit_logs`, `_backup_business_context_20260214` など）
 
 ### 本番環境（将来拡張）
 - プロジェクトメンバー限定アクセス
@@ -906,6 +1014,7 @@ JSONB形式で構造化された入出力定義。
 
 | 日付 | 変更内容 |
 |------|----------|
+| 2026-02-23 | `mcp_audit_logs` / `design_decision_logs` / `_backup_business_context_20260214` を追記。RLSの現状運用（部分適用）を明文化。migrationsとの整合監査を反映 |
 | 2026-02-11 | Phase 4.5完了。構造化スキーマ定義、UIエディター/ビューアー、互換性レイヤー実装 |
 | 2026-02-09 | 設計書を全面更新。全18テーブルの定義を網羅。business_domainsの複合PK変更、business_tasksのFK変更、acceptance_criteria独立、design_documents詳細追加、JSONBスキーマ詳細追加、TypeScript型対応表追加 |
 | 2026-02-07 | system_functions.deliverables、system_requirements.related_deliverable_ids削除。機能はdesign_documentsに集約 |

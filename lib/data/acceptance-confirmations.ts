@@ -22,6 +22,7 @@ export type AcceptanceConfirmationInput = {
 type AcceptanceConfirmationRow = {
 	id: string;
 	change_request_id: string;
+	project_id: string;
 	acceptance_criterion_id: string;
 	acceptance_criterion_source_type: string;
 	acceptance_criterion_source_id: string;
@@ -79,7 +80,7 @@ const toAcceptanceConfirmationRowBase = (input: AcceptanceConfirmationInput) => 
 });
 
 
-export const listAcceptanceConfirmationsByChangeRequestId = async (changeRequestId: string) => {
+export const listAcceptanceConfirmationsByChangeRequestId = async (changeRequestId: string, projectId: string) => {
 	const configError = failIfMissingConfig();
 	if (configError) return configError;
 
@@ -87,19 +88,21 @@ export const listAcceptanceConfirmationsByChangeRequestId = async (changeRequest
 		.from("change_request_acceptance_confirmations")
 		.select("*")
 		.eq("change_request_id", changeRequestId)
+		.eq("project_id", projectId)
 		.order("created_at", { ascending: true });
 
 	if (error) return { data: null, error: error.message };
 	return { data: (data as AcceptanceConfirmationRow[]).map(toAcceptanceConfirmation), error: null };
 };
 
-export const createAcceptanceConfirmation = async (input: AcceptanceConfirmationInput) => {
+export const createAcceptanceConfirmation = async (input: AcceptanceConfirmationInput, projectId: string) => {
 	const configError = failIfMissingConfig();
 	if (configError) return configError;
 
 	const now = new Date().toISOString();
 	const payload = {
 		...toAcceptanceConfirmationRowBase(input),
+		project_id: projectId,
 		created_at: now,
 		updated_at: now,
 	};
@@ -114,7 +117,7 @@ export const createAcceptanceConfirmation = async (input: AcceptanceConfirmation
 	return { data: toAcceptanceConfirmation(data as AcceptanceConfirmationRow), error: null };
 };
 
-export const createAcceptanceConfirmations = async (inputs: AcceptanceConfirmationInput[]) => {
+export const createAcceptanceConfirmations = async (inputs: AcceptanceConfirmationInput[], projectId: string) => {
 	const configError = failIfMissingConfig();
 	if (configError) return configError;
 	if (inputs.length === 0) return { data: [], error: null };
@@ -122,6 +125,7 @@ export const createAcceptanceConfirmations = async (inputs: AcceptanceConfirmati
 	const now = new Date().toISOString();
 	const payload = inputs.map((input) => ({
 		...toAcceptanceConfirmationRowBase(input),
+		project_id: projectId,
 		created_at: now,
 		updated_at: now,
 	}));
@@ -135,7 +139,7 @@ export const createAcceptanceConfirmations = async (inputs: AcceptanceConfirmati
 	return { data: (data as AcceptanceConfirmationRow[]).map(toAcceptanceConfirmation), error: null };
 };
 
-export const updateAcceptanceConfirmation = async (id: string, input: Omit<AcceptanceConfirmationInput, "changeRequestId">) => {
+export const updateAcceptanceConfirmation = async (id: string, input: Omit<AcceptanceConfirmationInput, "changeRequestId">, projectId: string) => {
 	const configError = failIfMissingConfig();
 	if (configError) return configError;
 
@@ -157,6 +161,7 @@ export const updateAcceptanceConfirmation = async (id: string, input: Omit<Accep
 		.from("change_request_acceptance_confirmations")
 		.update(payload)
 		.eq("id", id)
+		.eq("project_id", projectId)
 		.select("*")
 		.single();
 
@@ -168,6 +173,7 @@ export const updateAcceptanceConfirmationStatus = async (
 	id: string,
 	status: AcceptanceConfirmationStatus,
 	verifiedBy: string,
+	projectId: string,
 	evidence?: string
 ) => {
 	const configError = failIfMissingConfig();
@@ -186,6 +192,7 @@ export const updateAcceptanceConfirmationStatus = async (
 			updated_at: now,
 		})
 		.eq("id", id)
+		.eq("project_id", projectId)
 		.select("*")
 		.single();
 
@@ -193,40 +200,43 @@ export const updateAcceptanceConfirmationStatus = async (
 	return { data: toAcceptanceConfirmation(data as AcceptanceConfirmationRow), error: null };
 };
 
-export const deleteAcceptanceConfirmation = async (id: string) => {
+export const deleteAcceptanceConfirmation = async (id: string, projectId: string) => {
 	const configError = failIfMissingConfig();
 	if (configError) return configError;
 
 	const { error } = await supabase
 		.from("change_request_acceptance_confirmations")
 		.delete()
-		.eq("id", id);
+		.eq("id", id)
+		.eq("project_id", projectId);
 
 	if (error) return { data: null, error: error.message };
 	return { data: true, error: null };
 };
 
-export const deleteAcceptanceConfirmationsByChangeRequestId = async (changeRequestId: string) => {
+export const deleteAcceptanceConfirmationsByChangeRequestId = async (changeRequestId: string, projectId: string) => {
 	const configError = failIfMissingConfig();
 	if (configError) return configError;
 
 	const { error } = await supabase
 		.from("change_request_acceptance_confirmations")
 		.delete()
-		.eq("change_request_id", changeRequestId);
+		.eq("change_request_id", changeRequestId)
+		.eq("project_id", projectId);
 
 	if (error) return { data: null, error: error.message };
 	return { data: true, error: null };
 };
 
-export const getAcceptanceConfirmationCompletionStatus = async (changeRequestId: string) => {
+export const getAcceptanceConfirmationCompletionStatus = async (changeRequestId: string, projectId: string) => {
 	const configError = failIfMissingConfig();
 	if (configError) return configError;
 
 	const { data, error } = await supabase
 		.from("change_request_acceptance_confirmations")
 		.select("status")
-		.eq("change_request_id", changeRequestId);
+		.eq("change_request_id", changeRequestId)
+		.eq("project_id", projectId);
 
 	if (error) return { data: null, error: error.message };
 

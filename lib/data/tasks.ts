@@ -157,4 +157,35 @@ export const listTasksByIds = async (ids: string[], projectId?: string) => {
   return { data: (data as TaskRow[]).map(toTask), error: null };
 };
 
+export const searchTasks = async (query: string, projectId?: string, limit = 10) => {
+  const configError = failIfMissingConfig();
+  if (configError) return configError;
+
+  const normalizedQuery = query.trim();
+  if (!normalizedQuery) return { data: [], error: null };
+
+  const safeLimit = Math.max(1, Math.min(Math.floor(limit), 50));
+  const escaped = normalizedQuery.replace(/[%_]/g, (matched) => `\\${matched}`);
+  const startsWithPattern = `${escaped}%`;
+  const containsPattern = `%${escaped}%`;
+
+  let dbQuery = supabase
+    .from("business_tasks")
+    .select("*")
+    .or(
+      `id.ilike.${startsWithPattern},name.ilike.${containsPattern},summary.ilike.${containsPattern}`
+    )
+    .order("sort_order")
+    .order("id")
+    .limit(safeLimit);
+
+  if (projectId) {
+    dbQuery = dbQuery.eq("project_id", projectId);
+  }
+
+  const { data, error } = await dbQuery;
+  if (error) return { data: null, error: error.message };
+  return { data: (data as TaskRow[]).map(toTask), error: null };
+};
+
 export const updateTasksSortOrder = createSortOrderUpdater("business_tasks");

@@ -31,17 +31,15 @@ export default function IdeaCreatePage() {
   const { currentProjectId, loading: projectLoading } = useProject();
 
   useEffect(() => {
-    if (
-      !requireProjectId({
-        currentProjectId,
-        projectLoading,
-        onMissing: setError,
-      })
-    )
-      return;
+    const projectId = requireProjectId({
+      currentProjectId,
+      projectLoading,
+      onMissing: setError,
+    });
+    if (!projectId) return;
     let active = true;
-    async function fetchNextId(): Promise<void> {
-      const { data, error: fetchError } = await listConcepts();
+    async function fetchNextId(resolvedProjectId: string): Promise<void> {
+      const { data, error: fetchError } = await listConcepts(resolvedProjectId);
       if (!active) return;
       if (fetchError) {
         setError(fetchError);
@@ -49,7 +47,7 @@ export default function IdeaCreatePage() {
       }
       setNextId(nextSequentialIdFrom("C", data ?? [], (concept) => concept.id));
     }
-    fetchNextId();
+    fetchNextId(projectId);
     return () => {
       active = false;
     };

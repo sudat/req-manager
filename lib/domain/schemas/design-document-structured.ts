@@ -275,19 +275,19 @@ export const structuredDesignDocumentSpecSchema = z
         );
 
         for (const [relIndex, relationship] of (value.typeDetail.relationships ?? []).entries()) {
-          if (relationship.type !== "N:M") {
-            const mappings = relationship.columnMappings ?? [];
-            if (mappings.length === 0) {
-              ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                path: ["typeDetail", "relationships", relIndex, "columnMappings"],
-                message: "N:M 以外の関連では columnMappings を1件以上設定してください",
-              });
-              continue;
-            }
+          // columnMappings は後方互換のため optional。
+          // 新しいschema(version="2") では、N:M 以外の関連で columnMappings を推奨（未入力はエラー）。
+          const mappings = relationship.columnMappings ?? [];
+          if (value.version === "2" && relationship.type !== "N:M" && mappings.length === 0) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["typeDetail", "relationships", relIndex, "columnMappings"],
+              message: "N:M 以外の関連では columnMappings を1件以上設定してください",
+            });
+            continue;
           }
 
-          for (const [mappingIndex, mapping] of (relationship.columnMappings ?? []).entries()) {
+          for (const [mappingIndex, mapping] of mappings.entries()) {
             if (!attributeNameSet.has(mapping.source)) {
               ctx.addIssue({
                 code: z.ZodIssueCode.custom,

@@ -130,8 +130,31 @@ describe("structuredDesignDocumentSpecSchema", () => {
     expect(result.success).toBe(false);
   });
 
-  it("rejects non N:M relationship without columnMappings", () => {
+  it("accepts non N:M relationship without columnMappings on version=1 (backward compat)", () => {
     const result = structuredDesignDocumentSpecSchema.safeParse({
+      ioType: "model",
+      typeDetail: {
+        ioType: "model",
+        entityName: "Invoice",
+        attributes: [
+          { name: "id", type: "UUID", primaryKey: true },
+          { name: "customerId", type: "UUID" },
+        ],
+        relationships: [
+          {
+            target: "Customer",
+            type: "N:1",
+          },
+        ],
+      },
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects non N:M relationship without columnMappings on version=2", () => {
+    const result = structuredDesignDocumentSpecSchema.safeParse({
+      version: "2",
       ioType: "model",
       typeDetail: {
         ioType: "model",

@@ -13,6 +13,7 @@ import { useDraftCommit } from "@/hooks/use-draft-commit";
 import { useStreamingChat } from "@/hooks/use-streaming-chat";
 import type { ReasoningEffort } from "@/lib/mastra/reasoning-effort";
 import { DEFAULT_REASONING_EFFORT } from "@/lib/mastra/reasoning-effort";
+import { ChatHeader } from "./chat-header";
 import { ChatInput } from "./chat-input";
 import { ChatMessages } from "./chat-messages";
 import {
@@ -20,7 +21,9 @@ import {
 	ConceptSuggestionCard,
 } from "./concept-suggestion";
 import { ThreadHistoryPanel } from "./thread-history-panel";
+import { MinutesIntakeDialog } from "./minutes-intake-dialog";
 import type { ChatConfig, DraftUpdatePayload, BtDraft, BrDraft, SfDraft, SrDraft, DdDraft, ChatMessage } from "./types";
+import type { ConceptCandidate } from "./concept-suggestion";
 
 type ChatContainerProps = {
 	config: ChatConfig;
@@ -49,6 +52,7 @@ export function ChatContainer({ config }: ChatContainerProps) {
 	);
 	const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 	const [isConceptsOpen, setIsConceptsOpen] = useState(false);
+	const [isMinutesIntakeOpen, setIsMinutesIntakeOpen] = useState(false);
 
 	const concept = useConceptManagement({ projectId: resolvedProjectId });
 
@@ -97,6 +101,67 @@ export function ChatContainer({ config }: ChatContainerProps) {
 		persistence.startNewChat();
 		setIsHistoryOpen(false);
 	}, [persistence.startNewChat]);
+
+	const openMinutesIntake = useCallback(() => {
+		setIsMinutesIntakeOpen(true);
+	}, []);
+
+	const handleMinutesGenerated = useCallback(
+		(args: {
+			generated: Array<{
+				itemId: string;
+				btDraft: BtDraft;
+				brDrafts: BrDraft[];
+				conceptCandidates: ConceptCandidate[];
+			}>;
+			errors: Array<{ itemId: string; error: string }>;
+		}) => {
+			const now = Date.now();
+
+			if (args.errors.length > 0) {
+				setMessages((prev) => [
+					...prev,
+					{
+						id: `system-intake-error-${now}`,
+						role: "system",
+						content: `草案生成に失敗した候補があります（${args.errors.length}件）。必要なら個別に試してください。`,
+						timestamp: new Date(),
+					},
+				]);
+			}
+
+			const assistantMessages: ChatMessage[] = args.generated.map((g, idx) => ({
+				id: `assistant-intake-${now}-${idx}`,
+				role: "assistant",
+				content: `📋 議事録から業務タスク草案を作成しました（候補: ${g.itemId}）。内容をご確認ください。`,
+				timestamp: new Date(),
+				btDraft: g.btDraft,
+				brDrafts: g.brDrafts,
+			}));
+
+			if (assistantMessages.length > 0) {
+				setMessages((prev) => [...prev, ...assistantMessages]);
+			}
+
+			const nextCandidates: ConceptCandidate[] = [];
+			for (const g of args.generated) {
+				for (const c of g.conceptCandidates ?? []) nextCandidates.push(c);
+			}
+			if (nextCandidates.length > 0) {
+				// term重複は潰しておく（UIが見やすい）
+				const seen = new Set<string>();
+				const deduped = nextCandidates.filter((c) => {
+					const key = String(c?.term ?? "");
+					if (!key) return false;
+					if (seen.has(key)) return false;
+					seen.add(key);
+					return true;
+				});
+				concept.setCandidates(deduped);
+			}
+		},
+		[concept, setMessages],
+	);
 
 	/** 草案インライン編集 → メッセージ内のdraftを更新 */
 	const handleUpdateDraft = useCallback(
@@ -159,6 +224,20 @@ export function ChatContainer({ config }: ChatContainerProps) {
 
 	return (
 		<div className="relative h-screen flex flex-col min-h-0 overflow-hidden bg-white">
+			<ChatHeader
+				location={config.location}
+				onOpenMinutesIntake={openMinutesIntake}
+				onToggleHistory={openHistory}
+				onNewChat={handleNewChat}
+			/>
+
+			<MinutesIntakeDialog
+				open={isMinutesIntakeOpen}
+				onOpenChange={setIsMinutesIntakeOpen}
+				projectId={resolvedProjectId}
+				onGenerated={handleMinutesGenerated}
+			/>
+
 			{/* スクロール可能なメインエリア */}
 			<div className="flex-1 overflow-y-auto hide-scrollbar">
 				{/* 履歴オーバーレイ */}
@@ -173,8 +252,6 @@ export function ChatContainer({ config }: ChatContainerProps) {
 				<ChatMessages
 					messages={messages}
 					isLoading={isLoading}
-					onToggleHistory={openHistory}
-					onNewChat={handleNewChat}
 					onCommitDraft={draft.commitDraft}
 					getCommitState={draft.getCommitState}
 					onUpdateDraft={handleUpdateDraft}

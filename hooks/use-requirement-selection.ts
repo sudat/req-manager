@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import type { ImpactScopeTargetType } from "@/lib/domain/value-objects"
 import type { BusinessRequirement } from "@/lib/data/business-requirements"
 import type { SystemRequirement } from "@/lib/data/system-requirements"
@@ -22,6 +22,7 @@ export interface UseRequirementSelectionReturn {
 	isSelected: (type: ImpactScopeTargetType, id: string) => boolean
 	toggle: (type: ImpactScopeTargetType, req: BusinessRequirement | SystemRequirement) => void
 	remove: (type: ImpactScopeTargetType, id: string) => void
+	reset: (nextSelection?: SelectedRequirement[]) => void
 	businessSelectedCount: number
 	systemSelectedCount: number
 }
@@ -89,6 +90,14 @@ export function useRequirementSelection({
 		onSelectionChange?.(newSelection)
 	}
 
+	const reset = useCallback(
+		(nextSelection: SelectedRequirement[] = []) => {
+			setSelectedItems(nextSelection)
+			onSelectionChange?.(nextSelection)
+		},
+		[onSelectionChange],
+	)
+
 	const businessSelectedCount = selectedItems.filter((i) => i.type === "business_requirement").length
 	const systemSelectedCount = selectedItems.filter((i) => i.type === "system_requirement").length
 
@@ -97,6 +106,7 @@ export function useRequirementSelection({
 		isSelected,
 		toggle,
 		remove,
+		reset,
 		businessSelectedCount,
 		systemSelectedCount,
 	}

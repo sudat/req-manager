@@ -1,6 +1,7 @@
 import type { Concept, BusinessArea } from "@/lib/domain";
 import type { OpenAIModel } from "@/lib/mastra/utils/llm-helpers";
-import { createCrudOperations, createSortOrderUpdater } from "./crud-factory";
+import { createCrudOperations, createSortOrderUpdater, failIfMissingConfig } from "./crud-factory";
+import { supabase } from "@/lib/supabase/client";
 
 export type ConceptInput = {
   id: string;
@@ -73,6 +74,88 @@ export const deleteConcept = crud.delete;
 
 export const updateConceptsSortOrder = createSortOrderUpdater("concepts");
 
+export const searchConcepts = async (query: string, projectId?: string, limit = 10) => {
+  const configError = failIfMissingConfig();
+  if (configError) return configError;
+
+  const normalizedQuery = query.trim();
+  if (!normalizedQuery) return { data: [], error: null };
+
+  const safeLimit = Math.max(1, Math.min(Math.floor(limit), 50));
+  const escaped = normalizedQuery.replace(/[%_]/g, (matched) => `\\${matched}`);
+  const startsWithPattern = `${escaped}%`;
+  const containsPattern = `%${escaped}%`;
+
+  let dbQuery = supabase
+    .from("concepts")
+    .select("*")
+    .or(`id.ilike.${startsWithPattern},name.ilike.${containsPattern},definition.ilike.${containsPattern}`)
+    .order("sort_order")
+    .order("id")
+    .limit(safeLimit);
+
+  if (projectId) {
+    dbQuery = dbQuery.eq("project_id", projectId);
+  }
+
+  const { data, error } = await dbQuery;
+  if (error) return { data: null, error: error.message };
+  return { data: (data as ConceptRow[]).map(toConcept), error: null };
+};
+
+export type ConceptRequirementReference = {
+  id: string;
+  title: string;
+  type: "業務要件" | "システム要件";
+};
+
+export const listRequirementReferencesByConceptId = async (
+  conceptId: string,
+  projectId?: string
+): Promise<{ data: ConceptRequirementReference[] | null; error: string | null }> => {
+  const configError = failIfMissingConfig();
+  if (configError) return configError;
+
+  const normalizedConceptId = conceptId.trim();
+  if (!normalizedConceptId) return { data: [], error: null };
+
+  let brQuery = supabase
+    .from("business_requirements")
+    .select("id, title")
+    .contains("concept_ids", [normalizedConceptId])
+    .order("id");
+
+  let srQuery = supabase
+    .from("system_requirements")
+    .select("id, title")
+    .contains("concept_ids", [normalizedConceptId])
+    .order("id");
+
+  if (projectId) {
+    brQuery = brQuery.eq("project_id", projectId);
+    srQuery = srQuery.eq("project_id", projectId);
+  }
+
+  const [{ data: businessData, error: businessError }, { data: systemData, error: systemError }] =
+    await Promise.all([brQuery, srQuery]);
+
+  if (businessError) return { data: null, error: businessError.message };
+  if (systemError) return { data: null, error: systemError.message };
+
+  const businessRequirements = (businessData ?? []).map((item) => ({
+    id: item.id as string,
+    title: item.title as string,
+    type: "業務要件" as const,
+  }));
+  const systemRequirements = (systemData ?? []).map((item) => ({
+    id: item.id as string,
+    title: item.title as string,
+    type: "システム要件" as const,
+  }));
+
+  return { data: [...businessRequirements, ...systemRequirements], error: null };
+};
+
 /**
  * 既存概念の検索用マップを取得
  * 用語名と同義語の小文字をキーとしたMapを返す
@@ -83,7 +166,6 @@ export const updateConceptsSortOrder = createSortOrderUpdater("concepts");
 export async function getConceptsLookupMap(
   projectId: string
 ): Promise<Map<string, { id: string; name: string; definition: string }>> {
-  const supabase = (await import('@/lib/supabase/client')).supabase;
   const { data: concepts } = await supabase
     .from('concepts')
     .select('id, name, definition, synonyms')

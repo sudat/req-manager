@@ -239,6 +239,37 @@ export const deleteSystemFunction = systemFunctionCrud.delete;
 
 export const updateSystemFunctionsSortOrder = createSortOrderUpdater("system_functions");
 
+export const searchSystemFunctions = async (query: string, projectId?: string, limit = 10) => {
+  const configError = getSupabaseConfigError();
+  if (configError) return { data: null, error: configError };
+
+  const normalizedQuery = query.trim();
+  if (!normalizedQuery) return { data: [], error: null };
+
+  const safeLimit = Math.max(1, Math.min(Math.floor(limit), 50));
+  const escaped = normalizedQuery.replace(/[%_]/g, (matched) => `\\${matched}`);
+  const startsWithPattern = `${escaped}%`;
+  const containsPattern = `%${escaped}%`;
+
+  let dbQuery = supabase
+    .from("system_functions")
+    .select("*")
+    .or(
+      `id.ilike.${startsWithPattern},title.ilike.${containsPattern},summary.ilike.${containsPattern}`
+    )
+    .order("sort_order")
+    .order("id")
+    .limit(safeLimit);
+
+  if (projectId) {
+    dbQuery = dbQuery.eq("project_id", projectId);
+  }
+
+  const { data, error } = await dbQuery;
+  if (error) return { data: null, error: error.message };
+  return { data: (data as SystemFunctionRow[]).map(toSystemFunction), error: null };
+};
+
 export const getDesignCategoryLabel = (category: DesignItemCategory): string => {
   const labels: Record<DesignItemCategory, string> = {
     database: "データベース設計",

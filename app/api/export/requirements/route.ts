@@ -2,13 +2,12 @@ import { NextResponse } from "next/server";
 import JSZip from "jszip";
 import { cookies } from "next/headers";
 import { generateRequirementsExport } from "@/lib/export/requirements-export";
-
-const DEFAULT_PROJECT_ID = "00000000-0000-0000-0000-000000000001";
+import { CURRENT_PROJECT_ID_KEY, DEFAULT_PROJECT_ID } from "@/lib/constants/project";
 
 export async function GET() {
   try {
     const cookieStore = await cookies();
-    const projectId = cookieStore.get("current-project-id")?.value ?? DEFAULT_PROJECT_ID;
+    const projectId = cookieStore.get(CURRENT_PROJECT_ID_KEY)?.value ?? DEFAULT_PROJECT_ID;
 
     const files = await generateRequirementsExport(projectId);
 

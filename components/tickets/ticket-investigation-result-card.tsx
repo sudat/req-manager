@@ -9,7 +9,7 @@ interface TicketInvestigationResultCardProps {
 }
 
 export function TicketInvestigationResultCard({ result }: TicketInvestigationResultCardProps) {
-  const { topDownResult } = result;
+  const { topDownResult, bottomUpResult } = result;
 
   const sections = [
     { label: "業務要件 (BR)", items: topDownResult.affectedBRs, color: "bg-blue-100 text-blue-800 border-blue-200" },
@@ -64,6 +64,72 @@ export function TicketInvestigationResultCard({ result }: TicketInvestigationRes
             </div>
           </div>
         )}
+
+        {/* ボトムアップ（コード依存） */}
+        <div>
+          <p className="text-[12px] font-medium text-slate-500 mb-1.5">ボトムアップ（コード依存）</p>
+          {!bottomUpResult ? (
+            <p className="text-[12px] text-slate-400 italic">未実行（影響調査を再実行すると生成されます）</p>
+          ) : bottomUpResult.error ? (
+            <p className="text-[12px] text-rose-600">解析失敗: {bottomUpResult.error}</p>
+          ) : (
+            <div className="space-y-2">
+              {bottomUpResult.repositoryUrl && (
+                <p className="text-[12px] text-slate-600">
+                  リポジトリ:{" "}
+                  <span className="font-mono text-slate-900">{bottomUpResult.repositoryUrl}</span>
+                </p>
+              )}
+              <p className="text-[12px] text-slate-600">
+                影響ファイル:{" "}
+                <span className="font-mono text-slate-900">{bottomUpResult.affectedFiles.length}</span>
+                {" / "}
+                スキャン:{" "}
+                <span className="font-mono text-slate-900">
+                  {bottomUpResult.explorationMetadata.totalFilesScanned}
+                </span>
+                {" / "}
+                深さ:{" "}
+                <span className="font-mono text-slate-900">
+                  {bottomUpResult.explorationMetadata.maxDepthReached}
+                </span>
+                {" / "}
+                shared:{" "}
+                <span className="font-mono text-slate-900">
+                  {bottomUpResult.affectedFiles.filter((f) => f.sharedModule).length}
+                </span>
+                {bottomUpResult.explorationMetadata.truncated && (
+                  <span className="ml-2 text-amber-700">
+                    （truncated: {bottomUpResult.explorationMetadata.truncationReason ?? "unknown"}）
+                  </span>
+                )}
+              </p>
+              {bottomUpResult.affectedFiles.length === 0 ? (
+                <p className="text-[12px] text-slate-400 italic">該当なし</p>
+              ) : (
+                <>
+                  <div className="max-h-28 overflow-y-auto pr-1 flex flex-wrap gap-1.5">
+                    {bottomUpResult.affectedFiles.slice(0, 30).map((file) => (
+                      <Badge
+                        key={file.filePath}
+                        variant="outline"
+                        title={`depth=${file.depth}, confidence=${file.confidence.toFixed(2)}`}
+                        className="bg-slate-50 text-slate-700 border-slate-200 text-[11px] font-mono px-2 py-0.5"
+                      >
+                        {file.filePath}
+                      </Badge>
+                    ))}
+                  </div>
+                  {bottomUpResult.affectedFiles.length > 30 && (
+                    <p className="text-[12px] text-slate-400">
+                      他 {bottomUpResult.affectedFiles.length - 30} 件
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

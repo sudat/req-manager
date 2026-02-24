@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { use, useEffect, useMemo, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,9 +15,13 @@ import {
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Pencil, FileText, Plus, Scissors, Trash2 } from "lucide-react";
-import { getRelatedRequirements, type RequirementReference } from "@/lib/mock/data";
 import type { Concept } from "@/lib/domain";
-import { getConceptById, deleteConcept } from "@/lib/data/concepts";
+import {
+	getConceptById,
+	deleteConcept,
+	listRequirementReferencesByConceptId,
+	type ConceptRequirementReference,
+} from "@/lib/data/concepts";
 import { CardSkeleton, PageHeaderSkeleton } from "@/components/skeleton";
 import { confirmDelete } from "@/lib/ui/confirm";
 import { useProject } from "@/components/project/project-context";
@@ -26,6 +30,7 @@ export default function IdeaDetailPage({ params }: { params: Promise<{ id: strin
   const { id } = use(params);
   const router = useRouter();
   const [concept, setConcept] = useState<Concept | null>(null);
+  const [relatedRequirements, setRelatedRequirements] = useState<ConceptRequirementReference[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const { currentProjectId, loading: projectLoading } = useProject();
@@ -41,14 +46,20 @@ export default function IdeaDetailPage({ params }: { params: Promise<{ id: strin
     let active = true;
     const fetchData = async () => {
       setLoading(true);
-      const { data, error: fetchError } = await getConceptById(id, currentProjectId);
+      const [{ data, error: fetchError }, { data: relatedData, error: relatedError }] =
+        await Promise.all([
+          getConceptById(id, currentProjectId),
+          listRequirementReferencesByConceptId(id, currentProjectId),
+        ]);
       if (!active) return;
       if (fetchError) {
         setError(fetchError);
         setConcept(null);
+        setRelatedRequirements([]);
       } else {
-        setError(null);
+        setError(relatedError ?? null);
         setConcept(data ?? null);
+        setRelatedRequirements(relatedData ?? []);
       }
       setLoading(false);
     };
@@ -57,8 +68,6 @@ export default function IdeaDetailPage({ params }: { params: Promise<{ id: strin
       active = false;
     };
   }, [id, currentProjectId, projectLoading]);
-
-  const relatedRequirements = useMemo(() => getRelatedRequirements(id), [id]);
 
   const handleDelete = async () => {
     if (!concept) return;
@@ -303,7 +312,7 @@ export default function IdeaDetailPage({ params }: { params: Promise<{ id: strin
                 </CardHeader>
                 <CardContent className="p-4">
                   <ul className="space-y-2">
-                    {relatedRequirements.map((req: RequirementReference) => (
+                    {relatedRequirements.map((req: ConceptRequirementReference) => (
                       <li key={req.id} className="flex items-start justify-between gap-3 rounded-md border border-slate-100 bg-white px-3 py-2 hover:border-slate-200/60 transition-colors">
                         <div className="flex-1">
                           <div className="font-mono text-[12px] text-slate-400">{req.id}</div>

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { HealthScoreCard } from "@/components/health-score/health-score-card";
@@ -7,12 +8,14 @@ import { MobileHeader } from "@/components/layout/mobile-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { listChangeRequests } from "@/lib/data/change-requests";
 import { listBusinessRequirements } from "@/lib/data/business-requirements";
 import { listConcepts } from "@/lib/data/concepts";
 import { listSystemFunctions } from "@/lib/data/system-functions";
 import { listSystemRequirements } from "@/lib/data/system-requirements";
 import { listDesignDocuments } from "@/lib/data/design-documents";
 import { useProject } from "@/components/project/project-context";
+import { getLatestBaseline } from "@/lib/mock/data/baselines";
 import {
 	buildHealthScoreSummary,
 	healthIssueFilters,
@@ -20,6 +23,8 @@ import {
 } from "@/lib/health-score";
 import { buildBusinessRequirementsForHealth } from "@/lib/health-score/utils";
 import { SuspectLinksCard } from "./components/suspect-links-card";
+import type { ChangeRequest } from "@/lib/domain/value-objects";
+import { priorityLabels } from "@/lib/utils/ticket-labels";
 
 export default function DashboardPage() {
 	const router = useRouter();
@@ -29,6 +34,12 @@ export default function DashboardPage() {
 	const [healthLoading, setHealthLoading] = useState(true);
 	const [healthError, setHealthError] = useState<string | null>(null);
 	const { currentProjectId, loading: projectLoading } = useProject();
+	const latestBaseline = currentProjectId ? getLatestBaseline(currentProjectId) : undefined;
+	const [crLoading, setCrLoading] = useState(true);
+	const [crError, setCrError] = useState<string | null>(null);
+	const [openCrCount, setOpenCrCount] = useState(0);
+	const [reviewCrCount, setReviewCrCount] = useState(0);
+	const [reviewCrList, setReviewCrList] = useState<ChangeRequest[]>([]);
 
 	const handleIssueClick = (issueId: string) => {
 		const filter = healthIssueFilters[issueId];
@@ -98,6 +109,52 @@ export default function DashboardPage() {
 		};
 	}, [currentProjectId, projectLoading]);
 
+	useEffect(() => {
+		if (projectLoading) return;
+		if (!currentProjectId) {
+			setCrError("プロジェクトが選択されていません");
+			setCrLoading(false);
+			setOpenCrCount(0);
+			setReviewCrCount(0);
+			setReviewCrList([]);
+			return;
+		}
+
+		const projectId = currentProjectId;
+		let active = true;
+
+		async function fetchChangeRequests(): Promise<void> {
+			setCrLoading(true);
+			const { data, error } = await listChangeRequests(projectId);
+			if (!active) return;
+
+			if (error) {
+				setCrError(error);
+				setOpenCrCount(0);
+				setReviewCrCount(0);
+				setReviewCrList([]);
+				setCrLoading(false);
+				return;
+			}
+
+			const list = data ?? [];
+			const open = list.filter((cr) => cr.status === "open").length;
+			const review = list.filter((cr) => cr.status === "review");
+			const reviewSorted = [...review].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
+			setCrError(null);
+			setOpenCrCount(open);
+			setReviewCrCount(review.length);
+			setReviewCrList(reviewSorted.slice(0, 3));
+			setCrLoading(false);
+		}
+
+		fetchChangeRequests();
+		return () => {
+			active = false;
+		};
+	}, [currentProjectId, projectLoading]);
+
 	return (
 		<>
 			<MobileHeader />
@@ -111,11 +168,13 @@ export default function DashboardPage() {
 							</h1>
 							<div className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-1">
 								<span className="text-[11px] font-medium text-slate-700">
-									ベースライン v1.2
+									{latestBaseline ? `ベースライン ${latestBaseline.version}` : "ベースライン 未設定"}
 								</span>
 							</div>
 						</div>
-						<p className="text-[13px] text-slate-500">作成: 2026-01-05</p>
+						<p className="text-[13px] text-slate-500">
+							作成: {latestBaseline?.date ?? "-"}
+						</p>
 					</div>
 
 					{/* コンパクトメトリクスバー */}
@@ -125,7 +184,7 @@ export default function DashboardPage() {
 								オープン変更要求
 							</span>
 							<span className="font-mono text-[18px] font-semibold tabular-nums text-slate-900">
-								12
+								{crLoading ? "-" : openCrCount}
 							</span>
 						</div>
 						<div className="h-4 w-px bg-slate-200" />
@@ -134,7 +193,7 @@ export default function DashboardPage() {
 								レビュー待ち
 							</span>
 							<span className="font-mono text-[18px] font-semibold tabular-nums text-slate-900">
-								3
+								{crLoading ? "-" : reviewCrCount}
 							</span>
 						</div>
 						<div className="h-4 w-px bg-slate-200" />
@@ -177,97 +236,62 @@ export default function DashboardPage() {
 									レビュー待ち変更要求
 								</CardTitle>
 								<p className="text-[11px] text-slate-500 mt-0.5">
-									優先度: リリース日が近い順 → 重大度
+									優先度: 作成日の新しい順（MVP）
 								</p>
 							</CardHeader>
 							<CardContent className="p-0">
-								<ul className="divide-y divide-slate-100">
-									{[
-										{
-											id: "CR-2026-031",
-											title: "インボイス制度対応",
-											category: "債権管理",
-											release: "2026-01-12",
-											days: 7,
-											severity: "高",
-										},
-										{
-											id: "CR-2026-030",
-											title: "電子帳簿保存法対応",
-											category: "一般会計",
-											release: "2026-01-20",
-											days: 15,
-											severity: "中",
-										},
-										{
-											id: "CR-2026-029",
-											title: "支払処理自動化",
-											category: "債務管理",
-											release: "2026-02-01",
-											days: 27,
-											severity: "中",
-										},
-									].map((item) => (
-										<li key={item.id} className="px-4 py-3">
-											<div className="flex items-start justify-between gap-4 mb-2">
-												<div className="flex-1 min-w-0">
-													<div className="flex items-center gap-2 mb-1">
-														<span className="font-mono text-[11px] text-slate-400">
-															{item.id}
-														</span>
-														<Badge
-															variant="outline"
-															className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] px-1.5 py-0 font-medium"
-														>
-															レビュー中
-														</Badge>
-													</div>
-													<div className="text-[14px] font-medium text-slate-900 mb-0.5">
-														{item.title}
-													</div>
-													<div className="text-[13px] text-slate-500">
-														{item.category}
+								{crLoading ? (
+									<div className="px-4 py-3 text-[13px] text-slate-500">読み込み中...</div>
+								) : crError ? (
+									<div className="px-4 py-3 text-[13px] text-rose-600">エラー: {crError}</div>
+								) : reviewCrList.length === 0 ? (
+									<div className="px-4 py-3 text-[13px] text-slate-500">レビュー待ちの変更要求はありません</div>
+								) : (
+									<ul className="divide-y divide-slate-100">
+										{reviewCrList.map((cr) => (
+											<li key={cr.id} className="px-4 py-3">
+												<div className="flex items-start justify-between gap-4 mb-2">
+													<div className="flex-1 min-w-0">
+														<div className="flex items-center gap-2 mb-1">
+															<span className="font-mono text-[11px] text-slate-400">
+																{cr.ticketId}
+															</span>
+															<Badge
+																variant="outline"
+																className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] px-1.5 py-0 font-medium"
+															>
+																レビュー中
+															</Badge>
+														</div>
+														<div className="text-[14px] font-medium text-slate-900 mb-0.5">
+															{cr.title}
+														</div>
+														<div className="text-[13px] text-slate-500">
+															優先度: {priorityLabels[cr.priority]}
+														</div>
 													</div>
 												</div>
-											</div>
-											<div className="flex items-center gap-2 flex-wrap">
-												<Badge
-													variant="outline"
-													className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] font-mono px-2 py-0.5"
-												>
-													{item.release}
-												</Badge>
-												<Badge
-													variant="outline"
-													className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] font-medium px-2 py-0.5"
-												>
-													残り {item.days}日
-												</Badge>
-												<Badge
-													variant="outline"
-													className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] font-medium px-2 py-0.5"
-												>
-													重大度: {item.severity}
-												</Badge>
-												<div className="flex gap-1.5 ml-auto">
-													<Button
-														size="sm"
-														className="h-7 px-3 text-[14px] font-medium bg-slate-900 hover:bg-slate-800"
-													>
-														承認
-													</Button>
-													<Button
-														size="sm"
+												<div className="flex items-center gap-2 flex-wrap">
+													<Badge
 														variant="outline"
-														className="h-7 px-3 text-[14px] font-medium border-slate-200 hover:bg-slate-50"
+														className="border-slate-200 bg-slate-50 text-slate-600 text-[12px] font-mono px-2 py-0.5"
 													>
-														否認
-													</Button>
+														{cr.createdAt.split("T")[0]}
+													</Badge>
+													<Link href={`/tickets/${cr.id}`} className="ml-auto">
+														<Button
+															size="sm"
+															variant="outline"
+															className="h-7 px-3 text-[14px] font-medium border-slate-200 hover:bg-slate-50"
+														>
+															開く
+														</Button>
+													</Link>
 												</div>
-											</div>
-										</li>
-									))}
-								</ul>
+											</li>
+										))}
+									</ul>
+								)}
 							</CardContent>
 						</Card>
 					</div>

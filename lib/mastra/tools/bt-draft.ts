@@ -89,6 +89,7 @@ export const btDraftTool = createTool({
         .from('business_tasks')
         .select('id')
         .eq('business_area', resolvedBdArea)
+        .eq('project_id', projectId)
         .order('id', { ascending: false })
         .limit(200);
 

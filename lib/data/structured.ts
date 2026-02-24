@@ -34,8 +34,8 @@ export const normalizeAcceptanceCriteriaJson = (raw: unknown): AcceptanceCriteri
   return raw.map((item, index) => {
     if (!isRecord(item)) return defaultAcceptanceCriterion(index, "");
 
-    const id =
-      typeof item.id === "string" && item.id.length > 0 ? item.id : `AC-${pad3(index + 1)}`;
+    const rawId = typeof item.id === "string" ? item.id.trim() : "";
+    const id = rawId.length > 0 ? rawId : `AC-${pad3(index + 1)}`;
 
     const description = typeof item.description === "string" ? item.description : "";
 

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DesignDocumentList } from "@/components/forms/design-document-list";
 import { useDesignDocumentsForm } from "../hooks/useDesignDocumentsForm";
-import { DEFAULT_PROJECT_ID } from "@/components/project/project-context";
+import { DEFAULT_PROJECT_ID, useProject } from "@/components/project/project-context";
 
 export default function SystemFunctionEditDesignDocumentsPage({
 	params,
@@ -18,6 +18,8 @@ export default function SystemFunctionEditDesignDocumentsPage({
 }) {
 	const { id: systemDomainId, srfId } = use(params);
 	const router = useRouter();
+	const { currentProjectId, loading: projectLoading } = useProject();
+	const projectId = currentProjectId ?? DEFAULT_PROJECT_ID;
 
 	const {
 		loading,
@@ -29,9 +31,9 @@ export default function SystemFunctionEditDesignDocumentsPage({
 		allDDs,
 		allSFs,
 		handleSave,
-	} = useDesignDocumentsForm(srfId, systemDomainId, DEFAULT_PROJECT_ID);
+	} = useDesignDocumentsForm(srfId, systemDomainId, projectId);
 
-	if (loading) {
+	if (projectLoading || loading) {
 		return (
 			<div className="flex items-center justify-center min-h-[400px]">
 				<Loader2 className="h-8 w-8 animate-spin text-slate-400" />

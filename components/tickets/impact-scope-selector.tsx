@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Loader2 } from "lucide-react"
 import { useRequirementSelection, type SelectedRequirement } from "@/hooks/use-requirement-selection"
 import { ImpactScopeSelectedPanel } from "@/components/tickets/impact-scope-selected-panel"
+import { useProject } from "@/components/project/project-context"
 import { cn } from "@/lib/utils"
 import type { Task, SystemFunction } from "@/lib/domain"
 import { listTasks } from "@/lib/data/tasks"
@@ -35,6 +36,9 @@ export function ImpactScopeSelector({
 	onSelectionChange,
 	readonly = false,
 }: ImpactScopeSelectorProps) {
+	const { currentProjectId, loading: projectLoading } = useProject()
+	const prevProjectIdRef = useRef<string | undefined>(undefined)
+
 	const [tasks, setTasks] = useState<Task[]>([])
 	const [businessReqs, setBusinessReqs] = useState<BusinessRequirement[]>([])
 	const [systemFunctions, setSystemFunctions] = useState<SystemFunction[]>([])
@@ -63,15 +67,38 @@ export function ImpactScopeSelector({
 		let active = true
 
 		const load = async () => {
+			if (projectLoading) return
+
+			// プロジェクトが切り替わったら、選択状態も含めてリセット
+			if (
+				prevProjectIdRef.current !== undefined &&
+				prevProjectIdRef.current !== currentProjectId
+			) {
+				selection.reset([])
+				setSelectedTaskId(null)
+				setSelectedFunctionId(null)
+			}
+			prevProjectIdRef.current = currentProjectId
+
+			if (!currentProjectId) {
+				setTasks([])
+				setBusinessReqs([])
+				setSystemFunctions([])
+				setSystemReqs([])
+				setError("プロジェクトが選択されていません")
+				setLoading(false)
+				return
+			}
+
 			setLoading(true)
 			setError(null)
 
 			const [tasksResult, businessReqsResult, systemFunctionsResult, systemReqsResult] =
 				await Promise.all([
-					listTasks(),
-					listBusinessRequirements(),
-					listSystemFunctions(),
-					listSystemRequirements(),
+					listTasks(currentProjectId),
+					listBusinessRequirements(currentProjectId),
+					listSystemFunctions(currentProjectId),
+					listSystemRequirements(currentProjectId),
 				])
 
 			if (!active) return
@@ -97,7 +124,7 @@ export function ImpactScopeSelector({
 		return () => {
 			active = false
 		}
-	}, [])
+	}, [currentProjectId, projectLoading, selection.reset])
 
 	const selectedTaskName = useMemo(() => {
 		if (!selectedTaskId) return null
@@ -161,7 +188,7 @@ export function ImpactScopeSelector({
 		})
 	}, [selectedFunctionId, systemReqSearchQuery, systemReqs])
 
-	if (loading) {
+	if (projectLoading || loading) {
 		return (
 			<Card className="p-6">
 				<div className="flex items-center justify-center py-8">
@@ -181,6 +208,8 @@ export function ImpactScopeSelector({
 			? `${selection.systemSelectedCount}件を選択中`
 			: "システム要件を選択"
 
+	const selectionDisabled = !currentProjectId || !!error
+
 	return (
 		<div className="space-y-4">
 			<ImpactScopeSelectedPanel
@@ -192,44 +221,48 @@ export function ImpactScopeSelector({
 			{!readonly && (
 				<Card className="p-4">
 					<div className="space-y-3">
-						<div className="grid gap-2 md:grid-cols-2">
-							<button
-								type="button"
-								onClick={() => setTaskDialogOpen(true)}
-								className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-left hover:border-slate-400 transition-colors"
-							>
-								<div className="flex items-center justify-between">
-									<span className="text-sm font-medium text-slate-900">業務タスクから選択</span>
-									<Badge variant="secondary">{businessScopeLabel}</Badge>
-								</div>
+							<div className="grid gap-2 md:grid-cols-2">
+								<button
+									type="button"
+									disabled={selectionDisabled}
+									onClick={() => setTaskDialogOpen(true)}
+									className={cn(
+										"w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-left transition-colors",
+										selectionDisabled ? "cursor-not-allowed opacity-60" : "hover:border-slate-400",
+									)}
+								>
+									<div className="flex items-center justify-between">
+										<span className="text-sm font-medium text-slate-900">業務タスクから選択</span>
+										<Badge variant="secondary">{businessScopeLabel}</Badge>
+									</div>
 								<p className="mt-1 text-xs text-slate-500">
 									業務タスクを選択して、対象の業務要件をチェック
 								</p>
 							</button>
 
-							<button
-								type="button"
-								onClick={() => setSystemDialogOpen(true)}
-								className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-left hover:border-slate-400 transition-colors"
-							>
-								<div className="flex items-center justify-between">
-									<span className="text-sm font-medium text-slate-900">システム機能から選択</span>
-									<Badge variant="secondary">{systemScopeLabel}</Badge>
-								</div>
+								<button
+									type="button"
+									disabled={selectionDisabled}
+									onClick={() => setSystemDialogOpen(true)}
+									className={cn(
+										"w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-left transition-colors",
+										selectionDisabled ? "cursor-not-allowed opacity-60" : "hover:border-slate-400",
+									)}
+								>
+									<div className="flex items-center justify-between">
+										<span className="text-sm font-medium text-slate-900">システム機能から選択</span>
+										<Badge variant="secondary">{systemScopeLabel}</Badge>
+									</div>
 								<p className="mt-1 text-xs text-slate-500">
 									システム機能を選択して、対象のシステム要件をチェック
 								</p>
 							</button>
 						</div>
 
-						{error && (
-							<p className="text-xs text-rose-600">
-								データ読込に失敗しました: {error}
-							</p>
-						)}
-					</div>
-				</Card>
-			)}
+							{error && <p className="text-xs text-rose-600">エラー: {error}</p>}
+						</div>
+					</Card>
+				)}
 
 			<Dialog
 				open={taskDialogOpen}

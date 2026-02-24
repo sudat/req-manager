@@ -20,11 +20,16 @@ export function useLinkBatchOperations(
 	const handleConfirmLink = async (linkId: string) => {
 		setConfirmingId(linkId);
 		setActionError(null);
+		if (!currentProjectId) {
+			setActionError("プロジェクトが選択されていません");
+			setConfirmingId(null);
+			return;
+		}
 
 		const { data, error } = await updateRequirementLink(
 			linkId,
 			{ suspect: false },
-			currentProjectId ?? undefined
+			currentProjectId
 		);
 
 		if (error) {
@@ -40,6 +45,10 @@ export function useLinkBatchOperations(
 	// 一括確認ハンドラー
 	const handleBatchConfirm = async () => {
 		if (selectedIds.size === 0) return;
+		if (!currentProjectId) {
+			setActionError("プロジェクトが選択されていません");
+			return;
+		}
 
 		setIsBatchConfirming(true);
 		setActionError(null);
@@ -52,7 +61,7 @@ export function useLinkBatchOperations(
 			const { error } = await updateRequirementLink(
 				linkId,
 				{ suspect: false },
-				currentProjectId ?? undefined
+				currentProjectId
 			);
 
 			if (error) {

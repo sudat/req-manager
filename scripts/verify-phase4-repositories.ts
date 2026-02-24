@@ -280,14 +280,14 @@ async function testImpactScopes() {
 			targetId: 'FILE-TEST-001',
 			targetTitle: 'test.ts',
 		},
-	]);
+	], DEFAULT_PROJECT_ID);
 	await assert(
 		'createImpactScopes(inputs[]) - 複数件一括作成（4件）',
 		createResult.error === null && createResult.data !== null && createResult.data.length === 4
 	);
 
 	// listImpactScopesByChangeRequestId - 一覧取得
-	const listResult = await listImpactScopesByChangeRequestId(changeRequestId);
+	const listResult = await listImpactScopesByChangeRequestId(changeRequestId, DEFAULT_PROJECT_ID);
 	await assert(
 		'listImpactScopesByChangeRequestId(changeRequestId) - 一覧取得',
 		listResult.error === null && listResult.data !== null && listResult.data.length === 4
@@ -301,7 +301,7 @@ async function testImpactScopes() {
 			targetId: firstScope.targetId,
 			targetTitle: '更新後のタイトル',
 			rationale: '更新後の根拠',
-		});
+		}, DEFAULT_PROJECT_ID);
 		await assert(
 			'updateImpactScope(id, input) - 更新',
 			updateResult.error === null && updateResult.data !== null && updateResult.data.targetTitle === '更新後のタイトル'
@@ -310,14 +310,14 @@ async function testImpactScopes() {
 
 	// deleteImpactScope - 1件削除
 	if (listResult.data && listResult.data.length > 0) {
-		const deleteResult = await deleteImpactScope(listResult.data[0].id);
+		const deleteResult = await deleteImpactScope(listResult.data[0].id, DEFAULT_PROJECT_ID);
 		await assert(
 			'deleteImpactScope(id) - 1件削除',
 			deleteResult.error === null && deleteResult.data === true
 		);
 
 		// 削除確認（3件になっているはず）
-		const afterDeleteList = await listImpactScopesByChangeRequestId(changeRequestId);
+		const afterDeleteList = await listImpactScopesByChangeRequestId(changeRequestId, DEFAULT_PROJECT_ID);
 		await assert(
 			'deleteImpactScope(id) - 削除確認（残り3件）',
 			afterDeleteList.error === null && afterDeleteList.data !== null && afterDeleteList.data.length === 3
@@ -325,14 +325,14 @@ async function testImpactScopes() {
 	}
 
 	// deleteImpactScopesByChangeRequestId - 全削除
-	const deleteAllResult = await deleteImpactScopesByChangeRequestId(changeRequestId);
+	const deleteAllResult = await deleteImpactScopesByChangeRequestId(changeRequestId, DEFAULT_PROJECT_ID);
 	await assert(
 		'deleteImpactScopesByChangeRequestId(changeRequestId) - 全削除',
 		deleteAllResult.error === null && deleteAllResult.data === true
 	);
 
 	// 全削除確認
-	const afterDeleteAllList = await listImpactScopesByChangeRequestId(changeRequestId);
+	const afterDeleteAllList = await listImpactScopesByChangeRequestId(changeRequestId, DEFAULT_PROJECT_ID);
 	await assert(
 		'deleteImpactScopesByChangeRequestId(changeRequestId) - 全削除確認（0件）',
 		afterDeleteAllList.error === null && afterDeleteAllList.data !== null && afterDeleteAllList.data.length === 0
@@ -349,11 +349,11 @@ async function testImpactScopes() {
 			targetId: 'BR-TEST-002',
 			targetTitle: '確定テスト用',
 		},
-	]);
+	], DEFAULT_PROJECT_ID);
 
 	if (confirmTestResult.data && confirmTestResult.data.length > 0) {
 		const scopeId = confirmTestResult.data[0].id;
-		const confirmResult = await confirmImpactScope(scopeId, 'test-user');
+		const confirmResult = await confirmImpactScope(scopeId, 'test-user', DEFAULT_PROJECT_ID);
 		await assert(
 			'confirmImpactScope(id, confirmedBy) - confirmedがtrueになる',
 			confirmResult.error === null && confirmResult.data !== null && confirmResult.data.confirmed === true
@@ -379,15 +379,15 @@ async function testImpactScopes() {
 			targetId: 'SF-TEST-002',
 			targetTitle: '正規化テスト',
 		},
-	]);
+	], DEFAULT_PROJECT_ID);
 	await assert(
 		'正規化ロジック - 有効なtarget_typeで作成成功',
 		normalizeResult.error === null && normalizeResult.data !== null && normalizeResult.data[0].targetType === 'system_function'
 	);
 
 	// クリーンアップ
-	await deleteImpactScopesByChangeRequestId(changeRequestId);
-	await deleteChangeRequest(changeRequestId);
+	await deleteImpactScopesByChangeRequestId(changeRequestId, DEFAULT_PROJECT_ID);
+	await deleteChangeRequest(changeRequestId, DEFAULT_PROJECT_ID);
 }
 
 // ============================================================================
@@ -440,29 +440,29 @@ async function testAcceptanceConfirmations() {
 			acceptanceCriterionSourceId: 'BR-TEST-002',
 			acceptanceCriterionDescription: '受入条件3',
 		},
-	]);
+	], DEFAULT_PROJECT_ID);
 	await assert(
 		'createAcceptanceConfirmations(inputs[]) - 複数件一括作成（3件）',
 		createResult.error === null && createResult.data !== null && createResult.data.length === 3
 	);
 
 	// listAcceptanceConfirmationsByChangeRequestId - 一覧取得
-	const listResult = await listAcceptanceConfirmationsByChangeRequestId(changeRequestId);
+	const listResult = await listAcceptanceConfirmationsByChangeRequestId(changeRequestId, DEFAULT_PROJECT_ID);
 	await assert(
 		'listAcceptanceConfirmationsByChangeRequestId(changeRequestId) - 一覧取得',
 		listResult.error === null && listResult.data !== null && listResult.data.length === 3
 	);
 
 	// updateAcceptanceConfirmation - 更新
-	if (listResult.data && listResult.data.length > 0) {
-		const firstConfirmation = listResult.data[0];
-		const updateResult = await updateAcceptanceConfirmation(firstConfirmation.id, {
+		if (listResult.data && listResult.data.length > 0) {
+			const firstConfirmation = listResult.data[0];
+			const updateResult = await updateAcceptanceConfirmation(firstConfirmation.id, {
 			acceptanceCriterionId: firstConfirmation.acceptanceCriterionId,
 			acceptanceCriterionSourceType: firstConfirmation.acceptanceCriterionSourceType,
 			acceptanceCriterionSourceId: firstConfirmation.acceptanceCriterionSourceId,
 			acceptanceCriterionDescription: '更新後の受入条件',
 			acceptanceCriterionVerificationMethod: '更新後の検証方法',
-		});
+			}, DEFAULT_PROJECT_ID);
 		await assert(
 			'updateAcceptanceConfirmation(id, input) - 更新',
 			updateResult.error === null && updateResult.data !== null && updateResult.data.acceptanceCriterionDescription === '更新後の受入条件'
@@ -471,14 +471,14 @@ async function testAcceptanceConfirmations() {
 
 	// deleteAcceptanceConfirmation - 1件削除
 	if (listResult.data && listResult.data.length > 0) {
-		const deleteResult = await deleteAcceptanceConfirmation(listResult.data[0].id);
+		const deleteResult = await deleteAcceptanceConfirmation(listResult.data[0].id, DEFAULT_PROJECT_ID);
 		await assert(
 			'deleteAcceptanceConfirmation(id) - 1件削除',
 			deleteResult.error === null && deleteResult.data === true
 		);
 
 		// 削除確認（2件になっているはず）
-		const afterDeleteList = await listAcceptanceConfirmationsByChangeRequestId(changeRequestId);
+		const afterDeleteList = await listAcceptanceConfirmationsByChangeRequestId(changeRequestId, DEFAULT_PROJECT_ID);
 		await assert(
 			'deleteAcceptanceConfirmation(id) - 削除確認（残り2件）',
 			afterDeleteList.error === null && afterDeleteList.data !== null && afterDeleteList.data.length === 2
@@ -486,14 +486,14 @@ async function testAcceptanceConfirmations() {
 	}
 
 	// deleteAcceptanceConfirmationsByChangeRequestId - 全削除
-	const deleteAllResult = await deleteAcceptanceConfirmationsByChangeRequestId(changeRequestId);
+	const deleteAllResult = await deleteAcceptanceConfirmationsByChangeRequestId(changeRequestId, DEFAULT_PROJECT_ID);
 	await assert(
 		'deleteAcceptanceConfirmationsByChangeRequestId(changeRequestId) - 全削除',
 		deleteAllResult.error === null && deleteAllResult.data === true
 	);
 
 	// 全削除確認
-	const afterDeleteAllList = await listAcceptanceConfirmationsByChangeRequestId(changeRequestId);
+	const afterDeleteAllList = await listAcceptanceConfirmationsByChangeRequestId(changeRequestId, DEFAULT_PROJECT_ID);
 	await assert(
 		'deleteAcceptanceConfirmationsByChangeRequestId(changeRequestId) - 全削除確認（0件）',
 		afterDeleteAllList.error === null && afterDeleteAllList.data !== null && afterDeleteAllList.data.length === 0
@@ -510,16 +510,17 @@ async function testAcceptanceConfirmations() {
 			acceptanceCriterionSourceId: 'BR-TEST-001',
 			acceptanceCriterionDescription: 'ステータステスト用受入条件',
 		},
-	]);
+	], DEFAULT_PROJECT_ID);
 
 	if (statusTestResult.data && statusTestResult.data.length > 0) {
 		const confirmationId = statusTestResult.data[0].id;
-		const statusUpdateResult = await updateAcceptanceConfirmationStatus(
-			confirmationId,
-			'verified_ok',
-			'test-verifier',
-			'テストエビデンス'
-		);
+			const statusUpdateResult = await updateAcceptanceConfirmationStatus(
+				confirmationId,
+				'verified_ok',
+				'test-verifier',
+				DEFAULT_PROJECT_ID,
+				'テストエビデンス'
+			);
 		await assert(
 			'updateAcceptanceConfirmationStatus(id, status, verifiedBy, evidence?) - statusが更新される',
 			statusUpdateResult.error === null && statusUpdateResult.data !== null && statusUpdateResult.data.status === 'verified_ok'
@@ -542,10 +543,10 @@ async function testAcceptanceConfirmations() {
 	console.log('\n[3.3 北極星KPI判定]');
 
 	// まず全ての既存データをクリアしてからテスト開始
-	await deleteAcceptanceConfirmationsByChangeRequestId(changeRequestId);
+	await deleteAcceptanceConfirmationsByChangeRequestId(changeRequestId, DEFAULT_PROJECT_ID);
 
 	// 受入条件0件時
-	const emptyStatusResult = await getAcceptanceConfirmationCompletionStatus(changeRequestId);
+	const emptyStatusResult = await getAcceptanceConfirmationCompletionStatus(changeRequestId, DEFAULT_PROJECT_ID);
 	await assertEqual(
 		'getAcceptanceConfirmationCompletionStatus(changeRequestId) - 受入条件0件時: completionRate: 100',
 		emptyStatusResult.data?.completionRate,
@@ -560,9 +561,9 @@ async function testAcceptanceConfirmations() {
 		{ changeRequestId, acceptanceCriterionId: 'AC-KPI-004', acceptanceCriterionSourceType: 'business_requirement', acceptanceCriterionSourceId: 'BR-004', acceptanceCriterionDescription: 'KPIテスト4', status: 'unverified' },
 		{ changeRequestId, acceptanceCriterionId: 'AC-KPI-005', acceptanceCriterionSourceType: 'business_requirement', acceptanceCriterionSourceId: 'BR-005', acceptanceCriterionDescription: 'KPIテスト5', status: 'unverified' },
 		{ changeRequestId, acceptanceCriterionId: 'AC-KPI-006', acceptanceCriterionSourceType: 'business_requirement', acceptanceCriterionSourceId: 'BR-006', acceptanceCriterionDescription: 'KPIテスト6', status: 'verified_ng' },
-	]);
+	], DEFAULT_PROJECT_ID);
 
-	const mixedStatusResult = await getAcceptanceConfirmationCompletionStatus(changeRequestId);
+	const mixedStatusResult = await getAcceptanceConfirmationCompletionStatus(changeRequestId, DEFAULT_PROJECT_ID);
 	await assertEqual(
 		'getAcceptanceConfirmationCompletionStatus(changeRequestId) - 混在状態（verified_ok 3件 / unverified 2件 / verified_ng 1件）: completionRate: 50',
 		mixedStatusResult.data?.completionRate,
@@ -585,13 +586,13 @@ async function testAcceptanceConfirmations() {
 	);
 
 	// 全件verified_ok時
-	await deleteAcceptanceConfirmationsByChangeRequestId(changeRequestId);
+	await deleteAcceptanceConfirmationsByChangeRequestId(changeRequestId, DEFAULT_PROJECT_ID);
 	await createAcceptanceConfirmations([
 		{ changeRequestId, acceptanceCriterionId: 'AC-KPI-007', acceptanceCriterionSourceType: 'business_requirement', acceptanceCriterionSourceId: 'BR-007', acceptanceCriterionDescription: 'KPIテスト7', status: 'verified_ok' },
 		{ changeRequestId, acceptanceCriterionId: 'AC-KPI-008', acceptanceCriterionSourceType: 'business_requirement', acceptanceCriterionSourceId: 'BR-008', acceptanceCriterionDescription: 'KPIテスト8', status: 'verified_ok' },
-	]);
+	], DEFAULT_PROJECT_ID);
 
-	const allOkStatusResult = await getAcceptanceConfirmationCompletionStatus(changeRequestId);
+	const allOkStatusResult = await getAcceptanceConfirmationCompletionStatus(changeRequestId, DEFAULT_PROJECT_ID);
 	await assertEqual(
 		'getAcceptanceConfirmationCompletionStatus(changeRequestId) - 全件verified_ok時: completionRate: 100',
 		allOkStatusResult.data?.completionRate,
@@ -602,7 +603,7 @@ async function testAcceptanceConfirmations() {
 	console.log('\n[3.4 一意制約]');
 
 	// 一度クリアしてからテスト
-	await deleteAcceptanceConfirmationsByChangeRequestId(changeRequestId);
+	await deleteAcceptanceConfirmationsByChangeRequestId(changeRequestId, DEFAULT_PROJECT_ID);
 
 	// まず1件目を作成
 	const firstResult = await createAcceptanceConfirmations([
@@ -613,7 +614,7 @@ async function testAcceptanceConfirmations() {
 			acceptanceCriterionSourceId: 'BR-001',
 			acceptanceCriterionDescription: '一意制約テスト1件目',
 		},
-	]);
+	], DEFAULT_PROJECT_ID);
 
 	if (firstResult.error === null) {
 		// 同一IDで2件目を作成しようとして失敗することを確認
@@ -625,7 +626,7 @@ async function testAcceptanceConfirmations() {
 				acceptanceCriterionSourceId: 'BR-002',
 				acceptanceCriterionDescription: '一意制約テスト2件目',
 			},
-		]);
+		], DEFAULT_PROJECT_ID);
 		await assert(
 			'同一(changeRequestId, acceptanceCriterionId)で重複作成すると失敗する（一意制約）',
 			duplicateResult.error !== null
@@ -633,8 +634,8 @@ async function testAcceptanceConfirmations() {
 	}
 
 	// クリーンアップ
-	await deleteAcceptanceConfirmationsByChangeRequestId(changeRequestId);
-	await deleteChangeRequest(changeRequestId);
+	await deleteAcceptanceConfirmationsByChangeRequestId(changeRequestId, DEFAULT_PROJECT_ID);
+	await deleteChangeRequest(changeRequestId, DEFAULT_PROJECT_ID);
 }
 
 // ============================================================================
